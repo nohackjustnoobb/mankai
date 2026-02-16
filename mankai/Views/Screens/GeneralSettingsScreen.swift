@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct GeneralSettingsScreen: View {
-    @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue: Double = SettingsDefaults.inMemoryCacheExpiryDuration
+    @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue: Double = SettingsDefaults.inMemoryCacheExpiryDuration.rawValue
+    @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue: Int = SettingsDefaults.diskCacheSizeLimit.rawValue
     @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
         SettingsDefaults.hideBuiltInPlugins
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
@@ -33,15 +34,14 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
-            Section("cache") {
+            Section {
                 Picker(
                     "inMemoryCacheExpiryDuration",
                     selection: Binding(
-                        get: { CacheDuration(rawValue: inMemoryCacheExpiryDurationRawValue) ?? .auto },
+                        get: { CacheDuration(rawValue: inMemoryCacheExpiryDurationRawValue) ?? SettingsDefaults.inMemoryCacheExpiryDuration },
                         set: { inMemoryCacheExpiryDurationRawValue = $0.rawValue }
                     )
                 ) {
-                    Text("auto").tag(CacheDuration.auto)
                     Text("15m").tag(CacheDuration.fifteenMinutes)
                     Text("30m").tag(CacheDuration.thirtyMinutes)
                     Text("1h").tag(CacheDuration.oneHour)
@@ -49,6 +49,20 @@ struct GeneralSettingsScreen: View {
                     Text("6h").tag(CacheDuration.sixHours)
                     Text("12h").tag(CacheDuration.twelveHours)
                     Text("1d").tag(CacheDuration.oneDay)
+                }
+
+                Picker(
+                    "cacheSizeLimit",
+                    selection: Binding(
+                        get: { DiskCacheLimit(rawValue: diskCacheSizeLimitRawValue) ?? SettingsDefaults.diskCacheSizeLimit },
+                        set: { diskCacheSizeLimitRawValue = $0.rawValue }
+                    )
+                ) {
+                    Text("500mb").tag(DiskCacheLimit.fiveHundredMB)
+                    Text("1gb").tag(DiskCacheLimit.oneGB)
+                    Text("2gb").tag(DiskCacheLimit.twoGB)
+                    Text("5gb").tag(DiskCacheLimit.fiveGB)
+                    Text("10gb").tag(DiskCacheLimit.tenGB)
                 }
 
                 LabeledContent("cacheSize") {
@@ -75,6 +89,10 @@ struct GeneralSettingsScreen: View {
                 } message: {
                     Text("clearCacheMessage")
                 }
+            } header: {
+                Text("cache")
+            } footer: {
+                Text("cacheDescription")
             }
 
             Section("about") {
@@ -83,7 +101,7 @@ struct GeneralSettingsScreen: View {
                 }
 
                 LabeledContent("license") {
-                    Text("MIT License")
+                    Text("GNU GPLv3")
                 }
             }
 
@@ -156,7 +174,7 @@ struct GeneralSettingsScreen: View {
                     try fileManager.removeItem(at: url)
                 }
             } catch {
-                print("Failed to clear cache: \(error)")
+                Logger.ui.error("Failed to clear cache: \(error)")
             }
 
             DispatchQueue.main.async {

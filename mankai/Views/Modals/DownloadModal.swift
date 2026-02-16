@@ -100,7 +100,7 @@ struct DownloadModal: View {
         do {
             downloadedMangas = try await downloadPlugin.getDownloadedMangas()
         } catch {
-            print("Failed to load downloaded mangas: \(error)")
+            Logger.ui.error("Failed to load downloaded mangas: \(error)")
         }
     }
 

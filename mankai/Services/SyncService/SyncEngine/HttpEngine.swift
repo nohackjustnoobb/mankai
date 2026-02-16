@@ -206,7 +206,6 @@ class HttpEngine: SyncEngine {
             }
 
             if let deletedArr = json["deleted"] as? [[String: Any]] {
-                print("HttpEngine deletedArr: \(deletedArr)")
                 for dict in deletedArr {
                     if let mangaId = dict["mangaId"] as? String,
                        let pluginId = dict["pluginId"] as? String,

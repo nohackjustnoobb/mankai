@@ -57,7 +57,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     // Layout groups (derived from readerSession.groups with added layout info)
     private var groups: [ContinuousGroup] = []
-    private var urls: [String] { readerSession.urls }
+    private var urls: [String] {
+        readerSession.urls
+    }
 
     // Reading state variables
     private var currentPage: Int = 0
@@ -65,7 +67,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var startY: CGFloat = 0.0
 
     private var defaultGroupSize: Int {
-        switch cachedImageLayout {
+        switch imageLayout {
         case .auto:
             return UIScreen.main.bounds.width > UIScreen.main.bounds.height ? 2 : 1
         case .onePerRow:
@@ -88,12 +90,33 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     var isNavigationBarHidden = false
     var isNavigationBarAnimating = false
 
-    // Cached settings
-    private var cachedTapNavigation: Bool = SettingsDefaults.CR_tapNavigation
-    private var cachedSnapToPage: Bool = SettingsDefaults.CR_snapToPage
-    private var cachedImageLayout: ImageLayout = SettingsDefaults.imageLayout
-    private var cachedReadingDirection: ReadingDirection = SettingsDefaults.CR_readingDirection
-    private var cachedSoftSnap: Bool = SettingsDefaults.CR_softSnap
+    /// Cached settings -> Computed properties
+    private var tapNavigation: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.CR_tapNavigation.rawValue) as? Bool
+            ?? SettingsDefaults.CR_tapNavigation
+    }
+
+    private var snapToPage: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.CR_snapToPage.rawValue) as? Bool
+            ?? SettingsDefaults.CR_snapToPage
+    }
+
+    private var imageLayout: ImageLayout {
+        ImageLayout(rawValue: UserDefaults.standard.integer(forKey: SettingsKey.imageLayout.rawValue))
+            ?? SettingsDefaults.imageLayout
+    }
+
+    private var readingDirection: ReadingDirection {
+        ReadingDirection(
+            rawValue: UserDefaults.standard.integer(forKey: SettingsKey.CR_readingDirection.rawValue)
+        )
+            ?? SettingsDefaults.CR_readingDirection
+    }
+
+    private var softSnap: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.CR_softSnap.rawValue) as? Bool
+            ?? SettingsDefaults.CR_softSnap
+    }
 
     // UI Components
     private let scrollView = UIScrollView()
@@ -169,30 +192,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             context: nil
         )
 
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.CR_tapNavigation.rawValue,
-            options: [.new],
-            context: nil
-        )
-
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.CR_snapToPage.rawValue,
-            options: [.new],
-            context: nil
-        )
-
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.CR_softSnap.rawValue,
-            options: [.new],
-            context: nil
-        )
-
-        // Initialize cached settings
-        updateCachedSettings()
-        readerSession.readingDirection = cachedReadingDirection
+        // Initialize settings
+        readerSession.readingDirection = readingDirection
 
         // Subscribe to ReaderSession changes
         readerSession.$images
@@ -210,11 +211,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.CR_readingDirection.rawValue
         )
-        UserDefaults.standard.removeObserver(
-            self, forKeyPath: SettingsKey.CR_tapNavigation.rawValue
-        )
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_snapToPage.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_softSnap.rawValue)
+
         saveTimer?.invalidate()
     }
 
@@ -256,8 +253,6 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         change _: [NSKeyValueChangeKey: Any]?,
         context _: UnsafeMutableRawPointer?
     ) {
-        updateCachedSettings()
-
         if keyPath == SettingsKey.imageLayout.rawValue
             || keyPath == SettingsKey.CR_readingDirection.rawValue
         {
@@ -268,31 +263,11 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     @objc private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.readerSession.imageLayout = self.cachedImageLayout
-            self.readerSession.readingDirection = self.cachedReadingDirection
+            self.readerSession.imageLayout = self.imageLayout
+            self.readerSession.readingDirection = self.readingDirection
             self.syncGroupsFromSession()
             self.navigateToPage(self.currentPage, animated: false)
         }
-    }
-
-    private func updateCachedSettings() {
-        let defaults = UserDefaults.standard
-        cachedTapNavigation =
-            defaults.object(forKey: SettingsKey.CR_tapNavigation.rawValue) as? Bool
-                ?? SettingsDefaults.CR_tapNavigation
-        cachedSnapToPage =
-            defaults.object(forKey: SettingsKey.CR_snapToPage.rawValue) as? Bool
-                ?? SettingsDefaults.CR_snapToPage
-        cachedImageLayout =
-            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue))
-                ?? SettingsDefaults.imageLayout
-        cachedReadingDirection =
-            ReadingDirection(
-                rawValue: defaults.integer(forKey: SettingsKey.CR_readingDirection.rawValue))
-            ?? SettingsDefaults.CR_readingDirection
-        cachedSoftSnap =
-            defaults.object(forKey: SettingsKey.CR_softSnap.rawValue) as? Bool
-                ?? SettingsDefaults.CR_softSnap
     }
 
     // MARK: - Scroll Event Monitoring
@@ -331,7 +306,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         withVelocity _: CGPoint,
         targetContentOffset: UnsafeMutablePointer<CGPoint>
     ) {
-        guard cachedSnapToPage else { return }
+        guard snapToPage else { return }
 
         let zoomScale = scrollView.zoomScale
         let viewportHeight = view.bounds.height
@@ -398,7 +373,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             let clampedY = max(0, min(clampedClosestGroupScrollY, maxScrollY))
             let clampedX = max(0, min(scrollView.contentOffset.x, maxScrollX))
 
-            if cachedSoftSnap {
+            if softSnap {
                 targetContentOffset.pointee.y = clampedY
             } else {
                 targetContentOffset.pointee.y = scrollView.contentOffset.y
@@ -778,7 +753,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         let width = scrollView.bounds.width
 
         // If tap navigation is disabled, only toggle navigation bar
-        if !cachedTapNavigation {
+        if !tapNavigation {
             if isNavigationBarHidden {
                 showNavigationBar()
             } else {
@@ -882,7 +857,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private func setupConstraints() {
         // Create container constraints with references
         containerLeadingConstraint = containerView.leadingAnchor.constraint(
-            equalTo: contentView.leadingAnchor)
+            equalTo: contentView.leadingAnchor
+        )
         containerTopConstraint = containerView.topAnchor.constraint(equalTo: contentView.topAnchor)
         containerWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 0)
         containerHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
@@ -1148,7 +1124,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         guard let window = view.window else { return ([:], 0) }
 
         let width = window.safeAreaLayoutGuide.layoutFrame.width
-        let isRTL = cachedReadingDirection == .rightToLeft
+        let isRTL = readingDirection == .rightToLeft
         var frames: [String: CGRect] = [:]
         var currentY: CGFloat = 0
 
@@ -1349,9 +1325,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             configuration.image = UIImage(systemName: systemImage)
         }
 
-        let button = UIButton(configuration: configuration)
-
-        return button
+        return UIButton(configuration: configuration)
     }
 
     private func updateBottomBar() {

@@ -8,9 +8,12 @@
 import Foundation
 
 enum SettingsKey: String {
-    case inMemoryCacheExpiryDuration
     case hideBuiltInPlugins
     case showDebugScreen
+
+    /// Cache Settings
+    case inMemoryCacheExpiryDuration
+    case diskCacheSizeLimit
 
     // Shared Reader Settings
     case readerType
@@ -66,4 +69,12 @@ enum CacheDuration: Double {
     case sixHours = 21600 // 6 hours
     case twelveHours = 43200 // 12 hours
     case oneDay = 86400 // 24 hours
+}
+
+enum DiskCacheLimit: Int {
+    case fiveHundredMB = 500
+    case oneGB = 1024
+    case twoGB = 2048
+    case fiveGB = 5120
+    case tenGB = 10240
 }

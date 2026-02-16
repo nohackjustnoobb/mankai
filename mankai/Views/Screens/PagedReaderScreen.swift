@@ -100,12 +100,14 @@ private class OverscrollViewController: UIViewController {
                 constraints.append(
                     containerView.bottomAnchor.constraint(
                         equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40
-                    ))
+                    )
+                )
             } else {
                 constraints.append(
                     containerView.topAnchor.constraint(
                         equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 40
-                    ))
+                    )
+                )
             }
         } else {
             // Position near left or right edge for horizontal scrolling
@@ -120,12 +122,14 @@ private class OverscrollViewController: UIViewController {
                     constraints.append(
                         containerView.leadingAnchor.constraint(
                             equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 40
-                        ))
+                        )
+                    )
                 } else {
                     constraints.append(
                         containerView.trailingAnchor.constraint(
                             equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -40
-                        ))
+                        )
+                    )
                 }
             } else {
                 // LTR: Previous is on left, Next is on right
@@ -133,12 +137,14 @@ private class OverscrollViewController: UIViewController {
                     constraints.append(
                         containerView.trailingAnchor.constraint(
                             equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -40
-                        ))
+                        )
+                    )
                 } else {
                     constraints.append(
                         containerView.leadingAnchor.constraint(
                             equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 40
-                        ))
+                        )
+                    )
                 }
             }
         }
@@ -220,9 +226,14 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private let readerSession: ReaderSession
     private var cancellables = Set<AnyCancellable>()
 
-    // Derived from readerSession
-    private var urls: [String] { readerSession.urls }
-    private var groups: [ReaderGroup] { readerSession.groups }
+    /// Derived from readerSession
+    private var urls: [String] {
+        readerSession.urls
+    }
+
+    private var groups: [ReaderGroup] {
+        readerSession.groups
+    }
 
     // Reading state variables
     private var currentPage: Int = 0
@@ -236,12 +247,32 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     var isNavigationBarHidden = false
     var isNavigationBarAnimating = false
 
-    // Cached settings
-    private var cachedReadingDirection: ReadingDirection = SettingsDefaults.PR_readingDirection
-    private var cachedNavigationOrientation: NavigationOrientation = SettingsDefaults
-        .PR_navigationOrientation
-    private var cachedTapNavigation: Bool = SettingsDefaults.PR_tapNavigation
-    private var cachedTapNavigationBehavior: TapBehavior = SettingsDefaults.PR_tapNavigationBehavior
+    /// Settings (Directly from UserDefaults)
+    private var readingDirection: ReadingDirection {
+        ReadingDirection(
+            rawValue: UserDefaults.standard.integer(forKey: SettingsKey.PR_readingDirection.rawValue)
+        )
+            ?? SettingsDefaults.PR_readingDirection
+    }
+
+    private var navigationOrientation: NavigationOrientation {
+        NavigationOrientation(
+            rawValue: UserDefaults.standard.integer(forKey: SettingsKey.PR_navigationOrientation.rawValue)
+        )
+            ?? SettingsDefaults.PR_navigationOrientation
+    }
+
+    private var tapNavigation: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.PR_tapNavigation.rawValue) as? Bool
+            ?? SettingsDefaults.PR_tapNavigation
+    }
+
+    private var tapNavigationBehavior: TapBehavior {
+        TapBehavior(
+            rawValue: UserDefaults.standard.integer(forKey: SettingsKey.PR_tapNavigationBehavior.rawValue)
+        )
+            ?? SettingsDefaults.PR_tapNavigationBehavior
+    }
 
     // UI Components
     private var pageViewController: UIPageViewController!
@@ -278,8 +309,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        updateCachedSettings()
-        readerSession.readingDirection = cachedReadingDirection
+        readerSession.readingDirection = readingDirection
 
         setupUI()
         setupGestures()
@@ -290,20 +320,6 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         UserDefaults.standard.addObserver(
             self,
             forKeyPath: SettingsKey.PR_readingDirection.rawValue,
-            options: [.new],
-            context: nil
-        )
-
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.PR_tapNavigation.rawValue,
-            options: [.new],
-            context: nil
-        )
-
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.PR_tapNavigationBehavior.rawValue,
             options: [.new],
             context: nil
         )
@@ -330,12 +346,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.PR_readingDirection.rawValue
         )
-        UserDefaults.standard.removeObserver(
-            self, forKeyPath: SettingsKey.PR_tapNavigation.rawValue
-        )
-        UserDefaults.standard.removeObserver(
-            self, forKeyPath: SettingsKey.PR_tapNavigationBehavior.rawValue
-        )
+
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.PR_navigationOrientation.rawValue
         )
@@ -370,35 +381,13 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         change _: [NSKeyValueChangeKey: Any]?,
         context _: UnsafeMutableRawPointer?
     ) {
-        updateCachedSettings()
-
         if keyPath == SettingsKey.PR_readingDirection.rawValue {
-            readerSession.readingDirection = cachedReadingDirection
+            readerSession.readingDirection = readingDirection
             navigateToGroup(currentGroup, animated: false)
         } else if keyPath == SettingsKey.PR_navigationOrientation.rawValue {
             // Recreate page view controller with new orientation
             recreatePageViewController()
         }
-    }
-
-    private func updateCachedSettings() {
-        let defaults = UserDefaults.standard
-
-        cachedReadingDirection =
-            ReadingDirection(
-                rawValue: defaults.integer(forKey: SettingsKey.PR_readingDirection.rawValue))
-            ?? SettingsDefaults.PR_readingDirection
-        cachedNavigationOrientation =
-            NavigationOrientation(
-                rawValue: defaults.integer(forKey: SettingsKey.PR_navigationOrientation.rawValue))
-            ?? SettingsDefaults.PR_navigationOrientation
-        cachedTapNavigation =
-            defaults.object(forKey: SettingsKey.PR_tapNavigation.rawValue) as? Bool
-                ?? SettingsDefaults.PR_tapNavigation
-        cachedTapNavigationBehavior =
-            TapBehavior(
-                rawValue: defaults.integer(forKey: SettingsKey.PR_tapNavigationBehavior.rawValue))
-            ?? SettingsDefaults.PR_tapNavigationBehavior
     }
 
     // MARK: - Record
@@ -692,7 +681,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         let width = view.bounds.width
 
         // If tap navigation is disabled, only toggle navigation bar
-        if !cachedTapNavigation {
+        if !tapNavigation {
             if isNavigationBarHidden {
                 showNavigationBar()
             } else {
@@ -702,7 +691,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         // Vertical mode: use left/right taps, always previous/next behavior
-        if cachedNavigationOrientation == .vertical {
+        if navigationOrientation == .vertical {
             if location.x < width / 3 {
                 // Left third: previous page
                 navigateToGroup(currentGroup - 1, animated: true)
@@ -723,12 +712,12 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         // Horizontal mode: left/right taps
         if location.x < width / 3 {
             // Left third: behavior depends on setting
-            if cachedTapNavigationBehavior == .previousNext {
+            if tapNavigationBehavior == .previousNext {
                 // Left = previous page
                 navigateToGroup(currentGroup - 1, animated: true)
             } else {
                 // Follow reading direction
-                if cachedReadingDirection == .rightToLeft {
+                if readingDirection == .rightToLeft {
                     navigateToGroup(currentGroup + 1, animated: true)
                 } else {
                     navigateToGroup(currentGroup - 1, animated: true)
@@ -736,12 +725,12 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             }
         } else if location.x > width * 2 / 3 {
             // Right third: behavior depends on setting
-            if cachedTapNavigationBehavior == .previousNext {
+            if tapNavigationBehavior == .previousNext {
                 // Right = next page
                 navigateToGroup(currentGroup + 1, animated: true)
             } else {
                 // Follow reading direction
-                if cachedReadingDirection == .rightToLeft {
+                if readingDirection == .rightToLeft {
                     navigateToGroup(currentGroup - 1, animated: true)
                 } else {
                     navigateToGroup(currentGroup + 1, animated: true)
@@ -771,7 +760,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
     private func createPageViewController() {
         let orientation: UIPageViewController.NavigationOrientation =
-            cachedNavigationOrientation == .vertical ? .vertical : .horizontal
+            navigationOrientation == .vertical ? .vertical : .horizontal
 
         pageViewController = UIPageViewController(
             transitionStyle: .scroll,
@@ -940,7 +929,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         let direction: UIPageViewController.NavigationDirection
         // Only reverse animation direction for horizontal RTL
-        if cachedNavigationOrientation == .horizontal, cachedReadingDirection == .rightToLeft {
+        if navigationOrientation == .horizontal, readingDirection == .rightToLeft {
             direction = group > currentGroup ? .reverse : .forward
         } else {
             direction = group > currentGroup ? .forward : .reverse
@@ -993,7 +982,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                 pageIndex: 0,
                 urls: [],
                 images: [:],
-                readingDirection: cachedReadingDirection
+                readingDirection: readingDirection
             )
         }
 
@@ -1006,7 +995,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             pageIndex: groupIndex,
             urls: group.urls,
             images: groupImages,
-            readingDirection: cachedReadingDirection
+            readingDirection: readingDirection
         )
     }
 
@@ -1034,8 +1023,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         return OverscrollViewController(
             type: type,
-            orientation: cachedNavigationOrientation,
-            readingDirection: cachedReadingDirection,
+            orientation: navigationOrientation,
+            readingDirection: readingDirection,
             isLocked: isLocked,
             hasChapter: hasChapter
         )
@@ -1058,16 +1047,16 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         let newIndex: Int
         // In vertical mode, "before" means previous page (scroll up)
         // In horizontal mode, "before" depends on reading direction
-        if cachedNavigationOrientation == .vertical {
+        if navigationOrientation == .vertical {
             newIndex = contentVC.pageIndex - 1
-        } else if cachedReadingDirection == .rightToLeft {
+        } else if readingDirection == .rightToLeft {
             newIndex = contentVC.pageIndex + 1
         } else {
             newIndex = contentVC.pageIndex - 1
         }
 
         // Check if we are at the edge
-        if cachedReadingDirection == .rightToLeft, cachedNavigationOrientation == .horizontal {
+        if readingDirection == .rightToLeft, navigationOrientation == .horizontal {
             // RTL Logic
             // Before -> Next Chapter (End of Chapter)
             if newIndex >= groupCount {
@@ -1102,15 +1091,15 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         let newIndex: Int
         // In vertical mode, "after" means next page (scroll down)
         // In horizontal mode, "after" depends on reading direction
-        if cachedNavigationOrientation == .vertical {
+        if navigationOrientation == .vertical {
             newIndex = contentVC.pageIndex + 1
-        } else if cachedReadingDirection == .rightToLeft {
+        } else if readingDirection == .rightToLeft {
             newIndex = contentVC.pageIndex - 1
         } else {
             newIndex = contentVC.pageIndex + 1
         }
 
-        if cachedReadingDirection == .rightToLeft, cachedNavigationOrientation == .horizontal {
+        if readingDirection == .rightToLeft, navigationOrientation == .horizontal {
             // RTL Logic
             // After -> Previous Chapter (Start of Chapter)
             if newIndex < 0 {
@@ -1294,9 +1283,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             configuration.image = UIImage(systemName: systemImage)
         }
 
-        let button = UIButton(configuration: configuration)
-
-        return button
+        return UIButton(configuration: configuration)
     }
 
     private func updateBottomBar() {
@@ -1507,7 +1494,8 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
             let screenWidth = UIScreen.main.bounds.width
             let defaultWidth = screenWidth / CGFloat(urls.count)
             let widthConstraint = containerView.widthAnchor.constraint(
-                equalToConstant: defaultWidth)
+                equalToConstant: defaultWidth
+            )
             widthConstraint.isActive = true
             imageWidthConstraints[url] = widthConstraint
 

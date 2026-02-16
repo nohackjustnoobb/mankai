@@ -17,13 +17,34 @@ class HttpPlugin: Plugin {
     private var _repository: String?
     private var _availableGenres: [Genre]
 
-    override var id: String { _id }
-    override var name: String? { _name }
-    override var version: String? { _version }
-    override var description: String? { _description }
-    override var authors: [String] { _authors }
-    override var repository: String? { _repository }
-    override var availableGenres: [Genre] { _availableGenres }
+    override var id: String {
+        _id
+    }
+
+    override var name: String? {
+        _name
+    }
+
+    override var version: String? {
+        _version
+    }
+
+    override var description: String? {
+        _description
+    }
+
+    override var authors: [String] {
+        _authors
+    }
+
+    override var repository: String? {
+        _repository
+    }
+
+    override var availableGenres: [Genre] {
+        _availableGenres
+    }
+
     override var configs: [Config] {
         [
             Config(key: "username", name: "username", type: .text, defaultValue: ""),
@@ -32,7 +53,9 @@ class HttpPlugin: Plugin {
     }
 
     private var _authenticationEnabled: Bool
-    var authenticationEnabled: Bool { _authenticationEnabled }
+    var authenticationEnabled: Bool {
+        _authenticationEnabled
+    }
 
     private var baseUrl: String
     lazy var authManager: AuthManager = .init(id: id)
@@ -43,6 +66,10 @@ class HttpPlugin: Plugin {
 
     override var tags: [String] {
         [String(localized: "http")]
+    }
+
+    override var shouldCache: Bool {
+        true
     }
 
     // MARK: - Init

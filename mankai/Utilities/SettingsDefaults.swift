@@ -9,11 +9,14 @@ import Foundation
 import UIKit
 
 enum SettingsDefaults {
-    static let inMemoryCacheExpiryDuration: Double = CacheDuration.auto.rawValue
     static let hideBuiltInPlugins: Bool = false
     static let showDebugScreen: Bool = false
 
-    // Default Reader
+    // Cache Settings
+    static let inMemoryCacheExpiryDuration: CacheDuration = .oneHour
+    static let diskCacheSizeLimit: DiskCacheLimit = .oneGB
+
+    /// Default Reader
     static var readerType: ReaderType {
         UIDevice.isIPad ? .paged : .continuous
     }

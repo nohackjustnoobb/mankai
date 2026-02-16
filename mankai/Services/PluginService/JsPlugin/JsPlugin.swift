@@ -19,23 +19,6 @@ enum ScriptType: String {
     case getImage
 }
 
-struct CacheEntry {
-    let data: Any
-    let expiryTime: Date
-
-    var isExpired: Bool {
-        return Date() > expiryTime
-    }
-}
-
-enum JsPluginConstants {
-    /// Default cache expiry duration
-    static let defaultInMemoryCacheExpiryDuration: TimeInterval = CacheDuration.oneHour.rawValue
-
-    /// Maximum number of cache entries before triggering cleanup of expired entries
-    static let maxCacheSize: Int = 100
-}
-
 class JsPlugin: Plugin {
     // MARK: - Metadata
 
@@ -48,18 +31,47 @@ class JsPlugin: Plugin {
     private var _availableGenres: [Genre]
     private var _configs: [Config]
 
-    override var id: String { _id }
-    override var name: String? { _name }
-    override var version: String? { _version }
-    override var description: String? { _description }
-    override var authors: [String] { _authors }
-    override var repository: String? { _repository }
-    override var availableGenres: [Genre] { _availableGenres }
-    override var configs: [Config] { _configs }
+    override var id: String {
+        _id
+    }
+
+    override var name: String? {
+        _name
+    }
+
+    override var version: String? {
+        _version
+    }
+
+    override var description: String? {
+        _description
+    }
+
+    override var authors: [String] {
+        _authors
+    }
+
+    override var repository: String? {
+        _repository
+    }
+
+    override var availableGenres: [Genre] {
+        _availableGenres
+    }
+
+    override var configs: [Config] {
+        _configs
+    }
 
     private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
-    var updatesUrl: String? { _updatesUrl }
+    var updatesUrl: String? {
+        _updatesUrl
+    }
+
+    override var shouldCache: Bool {
+        true
+    }
 
     // MARK: - Methods Scripts
 
@@ -110,7 +122,8 @@ class JsPlugin: Plugin {
             }
 
             let funcName = String(script[funcRange]).trimmingCharacters(
-                in: .whitespacesAndNewlines)
+                in: .whitespacesAndNewlines
+            )
             let cleanedScript = regex.stringByReplacingMatches(
                 in: script, options: [],
                 range: NSRange(location: 0, length: script.utf16.count), withTemplate: ""
@@ -249,75 +262,6 @@ class JsPlugin: Plugin {
         return results
     }
 
-    // MARK: Cache
-
-    private var cache: [String: CacheEntry] = [:]
-    private let cacheLock = NSLock()
-
-    private func getInMemoryCacheExpiryDuration() -> TimeInterval {
-        let duration = UserDefaults.standard.double(forKey: SettingsKey.inMemoryCacheExpiryDuration.rawValue)
-        return duration > 0 ? duration : JsPluginConstants.defaultInMemoryCacheExpiryDuration
-    }
-
-    private func getCacheKey(for method: ScriptType, with parameters: [String]) -> String {
-        // URL-encode parameters to handle special characters
-        let encodedParams = parameters.map { param in
-            param.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? param
-        }
-        let paramString = encodedParams.joined(separator: "_")
-        return "\(id)_\(method.rawValue)_\(paramString)"
-    }
-
-    private func getCachedData<T>(for key: String, as _: T.Type) -> T? {
-        // Periodically clear expired cache entries
-        if cache.count > JsPluginConstants.maxCacheSize {
-            clearExpiredCache()
-        }
-
-        guard let entry = cache[key], !entry.isExpired else {
-            removeExpiredEntry(for: key)
-            return nil
-        }
-
-        return entry.data as? T
-    }
-
-    private func removeExpiredEntry(for key: String) {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        cache.removeValue(forKey: key)
-    }
-
-    private func setCachedData(_ data: Any, for key: String) {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        let expiryTime = Date().addingTimeInterval(getInMemoryCacheExpiryDuration())
-        cache[key] = CacheEntry(data: data, expiryTime: expiryTime)
-    }
-
-    private func clearCache() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        cache.removeAll()
-    }
-
-    private func clearExpiredCache() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        cache = cache.filter { _, entry in
-            !entry.isExpired
-        }
-    }
-
-    // Public method to clear cache manually
-    func clearAllCache() {
-        clearCache()
-    }
-
     // MARK: - Methods
 
     override func savePlugin() throws {
@@ -434,11 +378,6 @@ class JsPlugin: Plugin {
 
     override func getSuggestions(_ query: String) async throws -> [String] {
         Logger.jsPlugin.debug("Getting suggestions for query: \(query) (plugin: \(id))")
-        // Check cache first
-        let cacheKey = getCacheKey(for: .getSuggestion, with: [query])
-        if let cachedSuggestions = getCachedData(for: cacheKey, as: [String].self) {
-            return cachedSuggestions
-        }
 
         if _scripts[.getSuggestion] == nil {
             fatalError("Script for getSuggestion is not defined")
@@ -457,19 +396,11 @@ class JsPlugin: Plugin {
             )
         }
 
-        // Cache the result
-        setCachedData(suggestions, for: cacheKey)
-
         return suggestions
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
         Logger.jsPlugin.debug("Searching for: \(query), page: \(page) (plugin: \(id))")
-        // Check cache first
-        let cacheKey = getCacheKey(for: .search, with: [query, String(page)])
-        if let cachedMangas = getCachedData(for: cacheKey, as: [Manga].self) {
-            return cachedMangas
-        }
 
         if _scripts[.search] == nil {
             fatalError("Script for search is not defined")
@@ -488,24 +419,13 @@ class JsPlugin: Plugin {
             )
         }
 
-        let mangaResults = mangas.compactMap { Manga(from: $0) }
-
-        // Cache the result
-        setCachedData(mangaResults, for: cacheKey)
-
-        return mangaResults
+        return mangas.compactMap { Manga(from: $0) }
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         Logger.jsPlugin.debug(
-            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
-        // Check cache first
-        let cacheKey = getCacheKey(
-            for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)]
+            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))"
         )
-        if let cachedMangas = getCachedData(for: cacheKey, as: [Manga].self) {
-            return cachedMangas
-        }
 
         if _scripts[.getList] == nil {
             fatalError("Script for getList is not defined")
@@ -524,12 +444,7 @@ class JsPlugin: Plugin {
             )
         }
 
-        let mangaResults = mangas.compactMap { Manga(from: $0) }
-
-        // Cache the result
-        setCachedData(mangaResults, for: cacheKey)
-
-        return mangaResults
+        return mangas.compactMap { Manga(from: $0) }
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
@@ -559,11 +474,6 @@ class JsPlugin: Plugin {
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         Logger.jsPlugin.debug("Getting detailed manga: \(id) (plugin: \(self.id))")
-        // Check cache first
-        let cacheKey = getCacheKey(for: .getDetailedManga, with: [id])
-        if let cachedDetailedManga = getCachedData(for: cacheKey, as: DetailedManga.self) {
-            return cachedDetailedManga
-        }
 
         if _scripts[.getDetailedManga] == nil {
             fatalError("Script for getDetailedManga is not defined")
@@ -583,8 +493,6 @@ class JsPlugin: Plugin {
         }
 
         if let detailedMangaResult = DetailedManga(from: detailedManga) {
-            // Cache the result
-            setCachedData(detailedMangaResult, for: cacheKey)
             return detailedMangaResult
         } else {
             throw NSError(
@@ -598,16 +506,6 @@ class JsPlugin: Plugin {
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         Logger.jsPlugin.debug("Getting chapter: \(chapter.id) (plugin: \(id))")
-        // Check cache first
-        var cacheKey: String?
-
-        let chapterId = chapter.id
-        let mangaId = manga.id
-
-        cacheKey = getCacheKey(for: .getChapter, with: [mangaId, chapterId])
-        if let cachedImages = getCachedData(for: cacheKey!, as: [String].self) {
-            return cachedImages
-        }
 
         if _scripts[.getChapter] == nil {
             fatalError("Script for getChapter is not defined")
@@ -640,36 +538,11 @@ class JsPlugin: Plugin {
             )
         }
 
-        // Cache the result
-        if cacheKey != nil {
-            setCachedData(images, for: cacheKey!)
-        }
-
         return images
     }
 
     override func getImage(_ url: String) async throws -> Data {
         Logger.jsPlugin.debug("Getting image: \(url) (plugin: \(id))")
-        // Check cache first
-        let cacheKey = getCacheKey(for: .getImage, with: [url])
-
-        let fileManager = FileManager.default
-        let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-
-        let pluginCacheDir = cacheDir.appendingPathComponent(_id)
-        if !fileManager.fileExists(atPath: pluginCacheDir.path) {
-            try? fileManager.createDirectory(
-                at: pluginCacheDir, withIntermediateDirectories: true, attributes: nil
-            )
-        }
-
-        // Try to read from disk cache
-        let imageCacheFile = pluginCacheDir.appendingPathComponent(cacheKey)
-        if fileManager.fileExists(atPath: imageCacheFile.path) {
-            if let data = try? Data(contentsOf: imageCacheFile) {
-                return data
-            }
-        }
 
         if let headers = _getImageHeaders {
             guard let url = URL(string: url) else {
@@ -685,9 +558,6 @@ class JsPlugin: Plugin {
             }
 
             let (data, _) = try await URLSession.shared.data(for: request)
-
-            // Write to disk cache
-            try? data.write(to: imageCacheFile)
 
             return data
         }
@@ -718,9 +588,6 @@ class JsPlugin: Plugin {
             )
         }
 
-        // Write to disk cache
-        try? imageData.write(to: imageCacheFile)
-
         return imageData
     }
 
@@ -738,7 +605,8 @@ class JsPlugin: Plugin {
 
         if newPlugin.version != version {
             Logger.jsPlugin.info(
-                "Updating plugin: \(id) from version \(version ?? "nil") to \(newPlugin.version ?? "nil")")
+                "Updating plugin: \(id) from version \(version ?? "nil") to \(newPlugin.version ?? "nil")"
+            )
 
             do {
                 _name = newPlugin._name

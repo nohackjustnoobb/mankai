@@ -73,6 +73,10 @@ class Plugin: Identifiable, ObservableObject {
         true
     }
 
+    var shouldCache: Bool {
+        false
+    }
+
     // MARK: - Config Values
 
     lazy var _configValues: [String: ConfigValue] = {

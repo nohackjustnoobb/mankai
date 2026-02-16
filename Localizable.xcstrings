@@ -74,6 +74,22 @@
         }
       }
     },
+    "1gb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 GB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 GB"
+          }
+        }
+      }
+    },
     "1h" : {
       "localizations" : {
         "en" : {
@@ -86,6 +102,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1小時"
+          }
+        }
+      }
+    },
+    "2gb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 GB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 GB"
           }
         }
       }
@@ -106,6 +138,22 @@
         }
       }
     },
+    "5gb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 GB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 GB"
+          }
+        }
+      }
+    },
     "6h" : {
       "localizations" : {
         "en" : {
@@ -118,6 +166,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "6小時"
+          }
+        }
+      }
+    },
+    "10gb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 GB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "10 GB"
           }
         }
       }
@@ -166,6 +230,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "30分鐘"
+          }
+        }
+      }
+    },
+    "500mb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500 MB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "500 MB"
           }
         }
       }
@@ -558,6 +638,22 @@
         }
       }
     },
+    "cacheDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changes to cache settings may take a few minutes to take effect."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取設定的變更可能需要幾分鐘才會生效。"
+          }
+        }
+      }
+    },
     "cacheSize" : {
       "localizations" : {
         "en" : {
@@ -570,6 +666,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "快取大小"
+          }
+        }
+      }
+    },
+    "cacheSizeLimit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache Size Limit"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取大小限制"
           }
         }
       }
@@ -2229,6 +2341,9 @@
     "getSuggestion" : {
       "shouldTranslate" : false
     },
+    "GNU GPLv3" : {
+      "shouldTranslate" : false
+    },
     "harem" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3324,22 +3439,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缺少網址參數"
-          }
-        }
-      }
-    },
-    "MIT License" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MIT License"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MIT授權"
           }
         }
       }

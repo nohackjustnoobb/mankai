@@ -31,7 +31,7 @@ enum LogCategory: String {
     case httpPlugin = "HttpPlugin"
     case downloadPlugin = "DownloadPlugin"
 
-    // Runtime
+    /// Runtime
     case jsRuntime = "JsRuntime"
 
     // Sync Engines
@@ -42,6 +42,7 @@ enum LogCategory: String {
     // General
     case general = "General"
     case authManager = "AuthManager"
+    case cacheWrapper = "CacheWrapper"
 
     var subsystem: String {
         return "app.mankai"
@@ -184,7 +185,7 @@ extension Logger {
     static let appDirPlugin = Logger(category: .appDirPlugin)
     static let downloadPlugin = Logger(category: .downloadPlugin)
 
-    // Runtime
+    /// Runtime
     static let jsRuntime = Logger(category: .jsRuntime)
 
     // Sync Engines
@@ -195,4 +196,5 @@ extension Logger {
     // General
     static let general = Logger(category: .general)
     static let authManager = Logger(category: .authManager)
+    static let cacheWrapper = Logger(category: .cacheWrapper)
 }

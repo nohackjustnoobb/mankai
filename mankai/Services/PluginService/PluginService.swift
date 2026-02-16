@@ -41,7 +41,11 @@ class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(jsPlugins.count) JS plugins")
 
         for jsPlugin in jsPlugins {
-            _plugins[jsPlugin.id] = jsPlugin
+            if jsPlugin.shouldCache {
+                _plugins[jsPlugin.id] = CacheWrapper(plugin: jsPlugin)
+            } else {
+                _plugins[jsPlugin.id] = jsPlugin
+            }
         }
 
         Task {
@@ -57,7 +61,11 @@ class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(fsPlugins.count) FS plugins")
 
         for fsPlugin in fsPlugins {
-            _plugins[fsPlugin.id] = fsPlugin
+            if fsPlugin.shouldCache {
+                _plugins[fsPlugin.id] = CacheWrapper(plugin: fsPlugin)
+            } else {
+                _plugins[fsPlugin.id] = fsPlugin
+            }
         }
     }
 
@@ -67,7 +75,11 @@ class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(httpPlugins.count) HTTP plugins")
 
         for httpPlugin in httpPlugins {
-            _plugins[httpPlugin.id] = httpPlugin
+            if httpPlugin.shouldCache {
+                _plugins[httpPlugin.id] = CacheWrapper(plugin: httpPlugin)
+            } else {
+                _plugins[httpPlugin.id] = httpPlugin
+            }
         }
     }
 
@@ -83,7 +95,11 @@ class PluginService: ObservableObject {
     /// - Throws: An error if saving the plugin fails.
     func addPlugin(_ plugin: Plugin) throws {
         Logger.pluginService.debug("Adding plugin: \(plugin.id)")
-        _plugins[plugin.id] = plugin
+        if plugin.shouldCache {
+            _plugins[plugin.id] = CacheWrapper(plugin: plugin)
+        } else {
+            _plugins[plugin.id] = plugin
+        }
 
         DispatchQueue.main.async {
             self.objectWillChange.send()

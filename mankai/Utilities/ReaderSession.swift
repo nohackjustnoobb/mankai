@@ -68,8 +68,15 @@ class ReaderSession: ObservableObject {
     private var adjacencyTasks: [String: Task<Void, Never>] = [:]
     private var checkedPairs: Set<String> = []
     private var adjacencyScores: [String: Double] = [:]
-    private var useSmartGrouping: Bool
-    private var smartGroupingSensitivity: Double
+    private var useSmartGrouping: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
+            ?? SettingsDefaults.useSmartGrouping
+    }
+
+    private var smartGroupingSensitivity: Double {
+        UserDefaults.standard.object(forKey: SettingsKey.smartGroupingSensitivity.rawValue) as? Double
+            ?? SettingsDefaults.smartGroupingSensitivity
+    }
 
     init(plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, readingDirection: ReadingDirection? = nil) {
         self.plugin = plugin
@@ -81,11 +88,6 @@ class ReaderSession: ObservableObject {
         // Initialize from UserDefaults
         let rawValue = UserDefaults.standard.integer(forKey: SettingsKey.imageLayout.rawValue)
         imageLayout = ImageLayout(rawValue: rawValue) ?? SettingsDefaults.imageLayout
-
-        useSmartGrouping = UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
-            ?? SettingsDefaults.useSmartGrouping
-        smartGroupingSensitivity = UserDefaults.standard.object(forKey: SettingsKey.smartGroupingSensitivity.rawValue) as? Double
-            ?? SettingsDefaults.smartGroupingSensitivity
 
         // Observe UserDefaults changes
         NotificationCenter.default.addObserver(
@@ -111,20 +113,10 @@ class ReaderSession: ObservableObject {
     @objc private func defaultsChanged() {
         let rawValue = UserDefaults.standard.integer(forKey: SettingsKey.imageLayout.rawValue)
         let newLayout = ImageLayout(rawValue: rawValue) ?? SettingsDefaults.imageLayout
-        if newLayout != imageLayout {
-            Task { @MainActor in
+        Task { @MainActor in
+            if newLayout != imageLayout {
                 self.imageLayout = newLayout
-            }
-        }
-
-        let newUseSmartGrouping = UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
-            ?? SettingsDefaults.useSmartGrouping
-        let newSensitivity = UserDefaults.standard.object(forKey: SettingsKey.smartGroupingSensitivity.rawValue) as? Double
-            ?? SettingsDefaults.smartGroupingSensitivity
-        if newUseSmartGrouping != useSmartGrouping || newSensitivity != smartGroupingSensitivity {
-            Task { @MainActor in
-                self.useSmartGrouping = newUseSmartGrouping
-                self.smartGroupingSensitivity = newSensitivity
+            } else {
                 self.groupImages()
             }
         }
