@@ -27,15 +27,23 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 
 ### iPhone
 
-|               Home               |                Library                 |                Details                 |
-| :------------------------------: | :------------------------------------: | :------------------------------------: |
-| ![Home](assets/iphone-home.jpeg) | ![Library](assets/iphone-library.jpeg) | ![Details](assets/iphone-details.jpeg) |
+|              Home               |                Library                |                Details                |
+| :-----------------------------: | :-----------------------------------: | :-----------------------------------: |
+| ![Home](assets/iphone-home.png) | ![Library](assets/iphone-library.png) | ![Details](assets/iphone-details.png) |
+
+|                History                |                 Downloads                 |               Reader                |
+| :-----------------------------------: | :---------------------------------------: | :---------------------------------: |
+| ![History](assets/iphone-history.png) | ![Downloads](assets/iphone-downloads.png) | ![Reader](assets/iphone-reader.png) |
 
 ### iPad
 
-|              Home              |               Library                |               Details                |
-| :----------------------------: | :----------------------------------: | :----------------------------------: |
-| ![Home](assets/ipad-home.jpeg) | ![Library](assets/ipad-library.jpeg) | ![Details](assets/ipad-details.jpeg) |
+|             Home              |               Library               |               Details               |
+| :---------------------------: | :---------------------------------: | :---------------------------------: |
+| ![Home](assets/ipad-home.png) | ![Library](assets/ipad-library.png) | ![Details](assets/ipad-details.png) |
+
+|               History               |                Downloads                |              Reader               |
+| :---------------------------------: | :-------------------------------------: | :-------------------------------: |
+| ![History](assets/ipad-history.png) | ![Downloads](assets/ipad-downloads.png) | ![Reader](assets/ipad-reader.png) |
 
 </details>
 
