@@ -25,6 +25,7 @@ struct MangaDetailsScreen: View {
 
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
+    @State private var isSelectChaptersModalPresented = false
 
     @State private var selectedGenre: Genre? = nil
     @State private var showPluginLibraryScreen = false
@@ -36,6 +37,19 @@ struct MangaDetailsScreen: View {
 
     @State private var record: RecordModel? = nil
     @State private var saved: SavedModel? = nil
+
+    // Offline access
+    private var downloadMangaId: String {
+        return "\(plugin.id)+\(manga.id)"
+    }
+
+    @State private var downloadManga: DetailedManga?
+    // chaptersKey -> set of chapter ids
+    @State private var downloadChapters: [String: Set<String>]?
+
+    private var mangaData: DetailedManga? {
+        return detailedManga ?? downloadManga
+    }
 
     init(plugin: Plugin, manga: Manga) {
         self.plugin = plugin
@@ -60,30 +74,28 @@ struct MangaDetailsScreen: View {
     }
 
     private func handleReadContinueAction() {
-        if let record = record {
-            if let detailedManga = detailedManga {
-                for (chaptersKey, chapters) in detailedManga.chapters {
-                    if let chapter = chapters.first(where: {
-                        $0.id == record.chapterId
-                    }) {
-                        navigateToChapter(
-                            chapter, page: record.page, chaptersKey: chaptersKey
-                        )
-                        break
-                    }
+        if let record = record, let mangaData = mangaData {
+            for (chaptersKey, chapters) in mangaData.chapters {
+                if let chapter = chapters.first(where: {
+                    $0.id == record.chapterId
+                }) {
+                    navigateToChapter(
+                        chapter, page: record.page, chaptersKey: chaptersKey
+                    )
+                    return
                 }
             }
-        } else {
-            if let detailedManga = detailedManga {
-                let sortedChapters = Array(detailedManga.chapters).sorted {
-                    $0.value.count > $1.value.count
-                }
+        }
 
-                if let chapters = sortedChapters.first,
-                   let chapter = chapters.value.first
-                {
-                    navigateToChapter(chapter, chaptersKey: chapters.key)
-                }
+        if let mangaData = mangaData {
+            let sortedChapters = Array(mangaData.chapters).sorted {
+                $0.value.count > $1.value.count
+            }
+
+            if let chapters = sortedChapters.first,
+               let chapter = chapters.value.first
+            {
+                navigateToChapter(chapter, chaptersKey: chapters.key)
             }
         }
     }
@@ -126,7 +138,17 @@ struct MangaDetailsScreen: View {
 
     var info: some View {
         List {
-            if let remarks = detailedManga?.remarks, !remarks.isEmpty {
+            if mangaData != nil && detailedManga == nil {
+                Section {
+                    Text("usingDownloadMangaDescription")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } header: {
+                    Spacer(minLength: 0)
+                }
+            }
+
+            if let remarks = mangaData?.remarks, !remarks.isEmpty {
                 Section("remarks") {
                     Text(remarks)
                 }
@@ -134,20 +156,20 @@ struct MangaDetailsScreen: View {
 
             Section {} header: {
                 VStack {
-                    MangaCoverView(coverUrl: detailedManga?.title ?? manga.cover, plugin: plugin)
+                    MangaCoverView(coverUrl: mangaData?.cover ?? manga.cover, plugin: plugin)
                         .aspectRatio(3 / 4, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal)
                         .padding(.horizontal)
 
-                    Text(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
+                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
                         .font(.title2)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                         .padding(.top, 12)
                         .foregroundColor(.primary)
 
-                    if let authors = detailedManga?.authors,
+                    if let authors = mangaData?.authors,
                        !authors.isEmpty
                     {
                         HStack(spacing: 4) {
@@ -178,16 +200,16 @@ struct MangaDetailsScreen: View {
             Section {
                 VStack(spacing: 8) {
                     HStack(spacing: 4) {
-                        if let updatedAt = detailedManga?.updatedAt {
+                        if let updatedAt = mangaData?.updatedAt {
                             Text(updatedAt.formatted(date: .abbreviated, time: .omitted))
                             Text("•")
                         }
 
-                        if let chapters = detailedManga?.chapters {
+                        if let chapters = mangaData?.chapters {
                             Text("\(chapters.values.flatMap { $0 }.count) chapters")
                         }
 
-                        if let status = detailedManga?.status {
+                        if let status = mangaData?.status {
                             Text("•")
                             Text(statusText(status))
                         }
@@ -246,18 +268,16 @@ struct MangaDetailsScreen: View {
                 Spacer(minLength: 0)
             }
 
-            if let detailedManga = detailedManga {
-                if let description = detailedManga.description {
-                    Section {
-                        Text(description)
-                    } header: {
-                        Text("description")
-                            .padding(.top)
-                    }
+            if let description = mangaData?.description {
+                Section {
+                    Text(description)
+                } header: {
+                    Text("description")
+                        .padding(.top)
                 }
             }
 
-            if let genres = detailedManga?.genres,
+            if let genres = mangaData?.genres,
                !genres.isEmpty
             {
                 Section {
@@ -279,12 +299,12 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if let detailedManga = detailedManga,
-               !detailedManga.chapters.isEmpty
+            if let mangaData = mangaData,
+               !mangaData.chapters.isEmpty
             {
                 Section {
                     ForEach(
-                        Array(detailedManga.chapters).sorted { $0.value.count > $1.value.count },
+                        Array(mangaData.chapters).sorted { $0.value.count > $1.value.count },
                         id: \.key
                     ) { key, chapters in
                         Button(action: {
@@ -340,7 +360,7 @@ struct MangaDetailsScreen: View {
                         .frame(maxWidth: 400)
 
                     if let selectedChapterKey = selectedChapterKey,
-                       let chapters = detailedManga?.chapters[selectedChapterKey]
+                       let chapters = mangaData?.chapters[selectedChapterKey]
                     {
                         ScrollViewReader { proxy in
                             List {
@@ -357,6 +377,13 @@ struct MangaDetailsScreen: View {
                                                 HStack {
                                                     Text(chapter.title ?? chapter.id)
                                                         .foregroundColor(.primary)
+
+                                                    if let downloadChapters = downloadChapters?[selectedChapterKey],
+                                                       downloadChapters.contains(chapter.id)
+                                                    {
+                                                        Image(systemName: "network.slash")
+                                                            .foregroundColor(.secondary)
+                                                    }
 
                                                     if let record = record, record.chapterId == chapter.id {
                                                         Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
@@ -396,7 +423,7 @@ struct MangaDetailsScreen: View {
                                             }
                                             .buttonStyle(.plain)
 
-                                            if plugin is Editable {
+                                            if plugin is Editable, detailedManga != nil {
                                                 Button(action: {
                                                     isUpdateChaptersModalPresented = true
                                                 }) {
@@ -438,16 +465,17 @@ struct MangaDetailsScreen: View {
         }
         .listSectionSpacing(0)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
-        .sheet(isPresented: $showingChaptersModal) { [detailedManga, selectedChapterKey] in
-            if let detailedManga = detailedManga,
+        .navigationTitle(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
+        .sheet(isPresented: $showingChaptersModal) { [mangaData, selectedChapterKey] in
+            if let mangaData = mangaData,
                let selectedChapterKey = selectedChapterKey
             {
                 ChaptersModal(
                     plugin: plugin,
-                    manga: detailedManga,
+                    manga: mangaData,
                     chaptersKey: selectedChapterKey,
                     record: record,
+                    downloadChapters: downloadChapters?[selectedChapterKey],
                     onNavigateToChapter: navigateToChapter
                 )
             }
@@ -471,14 +499,37 @@ struct MangaDetailsScreen: View {
                 )
             }
         }
+        .sheet(isPresented: $isSelectChaptersModalPresented) { [detailedManga] in
+            if let detailedManga = detailedManga {
+                SelectChaptersModal(
+                    plugin: plugin,
+                    detailedManga: detailedManga,
+                    alreadyDownloaded: downloadChapters,
+                    downloadChapters: { chapters in
+                        Task {
+                            do {
+                                _ = try await DownloadService.shared.queue(
+                                    plugin: plugin,
+                                    manga: detailedManga,
+                                    chapters: chapters
+                                )
+                            } catch {
+                                Logger.ui.error("Failed to queue download", error: error)
+                            }
+                        }
+                    }
+                )
+            }
+        }
         .navigationDestination(isPresented: $showReaderScreen) {
             if let readerChapter = readerChapter,
                let readerChapterKey = readerChapterKey,
-               let detailedManga = detailedManga
+               let mangaData = mangaData
             {
                 ReaderScreen(
                     plugin: plugin,
-                    manga: detailedManga,
+                    manga: mangaData,
+                    downloadManga: downloadManga,
                     chaptersKey: readerChapterKey,
                     chapter: readerChapter,
                     initialPage: readerPage
@@ -498,7 +549,7 @@ struct MangaDetailsScreen: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack {
-                    Text(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
+                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
                         .font(.headline)
                     Text(plugin.name ?? plugin.id)
                         .font(.caption)
@@ -506,8 +557,14 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if plugin is Editable {
-                ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if mangaData == nil || detailedManga != nil {
+                    Button(action: { isSelectChaptersModalPresented = true }) {
+                        Image(systemName: "arrow.down.circle")
+                    }
+                }
+
+                if plugin is Editable, detailedManga != nil {
                     Button(action: { isUpdateMangaModalPresented = true }) {
                         Image(systemName: "pencil.circle")
                     }
@@ -520,6 +577,9 @@ struct MangaDetailsScreen: View {
             updateSaved()
         }
         .onReceive(plugin.objectWillChange) {
+            loadDetailedManga()
+        }
+        .onReceive(DownloadPlugin.shared.objectWillChange) {
             loadDetailedManga()
         }
         .onReceive(SavedService.shared.objectWillChange) {
@@ -539,15 +599,45 @@ struct MangaDetailsScreen: View {
 
     private func loadDetailedManga() {
         Task {
+            var cachedError: Error?
+
             do {
                 detailedManga = try await plugin.getDetailedManga(manga.id)
                 selectedChapterKey =
                     Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }
                         .first?.key
             } catch {
+                // If the plugin is editable, there is a high chance that it is deleted
                 if !(plugin is Editable) {
                     Logger.ui.error("Failed to load detailed manga", error: error)
+                    cachedError = error
                 }
+            }
+
+            do {
+                downloadManga = try await DownloadPlugin.shared.getDetailedManga(downloadMangaId)
+                selectedChapterKey =
+                    Array(downloadManga!.chapters).sorted { $0.value.count > $1.value.count }
+                        .first?.key
+
+                var downloadChapters: [String: Set<String>] = [:]
+                for (chaptersKey, chapters) in downloadManga!.chapters {
+                    downloadChapters[chaptersKey] = Set(
+                        chapters.filter { !($0.locked ?? false) }
+                            .map { $0.id }
+                    )
+                }
+                self.downloadChapters = downloadChapters
+            } catch {
+                if detailedManga == nil {
+                    Logger.ui.error("Failed to load detailed manga", error: error)
+                    cachedError = error
+                }
+            }
+
+            if mangaData == nil, let cachedError = cachedError {
+                let message = String(localized: "failedToLoadMangaDetails")
+                NotificationService.shared.showError(String(format: message, cachedError.localizedDescription))
 
                 dismiss()
             }

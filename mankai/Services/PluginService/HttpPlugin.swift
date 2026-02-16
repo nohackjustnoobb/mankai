@@ -211,7 +211,7 @@ class HttpPlugin: Plugin {
             let metaUrl = URL(string: baseUrl)
             guard let metaUrl = metaUrl else {
                 throw NSError(
-                    domain: "HttpPlugin", code: 1,
+                    domain: "HttpPlugin", code: 0,
                     userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
                 )
             }
@@ -240,7 +240,7 @@ class HttpPlugin: Plugin {
         guard let username = username, let password = password else {
             Logger.httpPlugin.error("Username or password not set")
             throw NSError(
-                domain: "HttpPlugin", code: 1,
+                domain: "HttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
             )
         }
@@ -260,7 +260,7 @@ class HttpPlugin: Plugin {
         Logger.httpPlugin.debug("Saving plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
-                domain: "HttpPlugin", code: 1,
+                domain: "HttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -291,7 +291,7 @@ class HttpPlugin: Plugin {
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw NSError(
-                domain: "HttpPlugin", code: 1,
+                domain: "HttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeMetaData")]
             )
         }
@@ -308,7 +308,7 @@ class HttpPlugin: Plugin {
         )
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
             throw NSError(
-                domain: "HttpPlugin", code: 1,
+                domain: "HttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeConfigValuesData")]
             )
         }
@@ -330,7 +330,7 @@ class HttpPlugin: Plugin {
         Logger.httpPlugin.debug("Deleting plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
-                domain: "HttpPlugin", code: 1,
+                domain: "HttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }

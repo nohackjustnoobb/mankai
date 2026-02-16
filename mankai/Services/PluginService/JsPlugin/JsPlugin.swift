@@ -324,7 +324,7 @@ class JsPlugin: Plugin {
         Logger.jsPlugin.debug("Saving plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -361,7 +361,7 @@ class JsPlugin: Plugin {
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeMetaData")]
             )
         }
@@ -378,7 +378,7 @@ class JsPlugin: Plugin {
         )
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeConfigValuesData")]
             )
         }
@@ -398,7 +398,7 @@ class JsPlugin: Plugin {
         Logger.jsPlugin.debug("Deleting plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -422,7 +422,7 @@ class JsPlugin: Plugin {
 
         guard let isOnline = result as? Bool else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForIsOnline"),
                 ]
@@ -450,7 +450,7 @@ class JsPlugin: Plugin {
 
         guard let suggestions = result as? [String] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForSuggestions"),
                 ]
@@ -481,7 +481,7 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
@@ -517,7 +517,7 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
@@ -547,7 +547,7 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
@@ -575,7 +575,7 @@ class JsPlugin: Plugin {
 
         guard let detailedManga = result as? [String: Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
                 ]
@@ -588,7 +588,7 @@ class JsPlugin: Plugin {
             return detailedMangaResult
         } else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
                 ]
@@ -620,7 +620,7 @@ class JsPlugin: Plugin {
               let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat"),
                 ]
@@ -633,7 +633,7 @@ class JsPlugin: Plugin {
 
         guard let images = result as? [String] else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImages"),
                 ]
@@ -674,7 +674,7 @@ class JsPlugin: Plugin {
         if let headers = _getImageHeaders {
             guard let url = URL(string: url) else {
                 throw NSError(
-                    domain: "JsPlugin", code: 1,
+                    domain: "JsPlugin", code: 0,
                     userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
                 )
             }
@@ -702,7 +702,7 @@ class JsPlugin: Plugin {
 
         guard let imageBase64Encoded = result as? String else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImage"),
                 ]
@@ -711,7 +711,7 @@ class JsPlugin: Plugin {
 
         guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
             throw NSError(
-                domain: "JsPlugin", code: 1,
+                domain: "JsPlugin", code: 0,
                 userInfo: [
                     NSLocalizedDescriptionKey: String(localized: "invalidBase64StringForImage"),
                 ]

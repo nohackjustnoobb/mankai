@@ -300,7 +300,7 @@ class HttpEngine: SyncEngine {
         else {
             Logger.httpEngine.error("HttpEngine invalid hash response")
             throw NSError(
-                domain: "HttpEngine", code: 1,
+                domain: "HttpEngine", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidHashResponse")]
             )
         }

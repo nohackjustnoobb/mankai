@@ -181,7 +181,7 @@ class SyncService: ObservableObject {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(
-                domain: "SyncService", code: 1,
+                domain: "SyncService", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
             )
         }
@@ -206,7 +206,7 @@ class SyncService: ObservableObject {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(
-                domain: "SyncService", code: 1,
+                domain: "SyncService", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
             )
         }
@@ -222,7 +222,7 @@ class SyncService: ObservableObject {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(
-                domain: "SyncService", code: 1,
+                domain: "SyncService", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
             )
         }

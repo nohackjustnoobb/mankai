@@ -89,10 +89,32 @@ class DbService {
         }
     }
 
-    /// Retrieves an open file-system database pool by its path.
-    /// - Parameter path: The file system path to the database.
-    /// - Returns: The `DatabasePool` if found, otherwise `nil`.
-    func getFsDb(_ path: String) -> DatabasePool? {
-        return fsDb[path]
+    private var downloadDb: DatabasePool?
+
+    func openDownloadDb(_ path: String) -> DatabasePool? {
+        if let db = downloadDb {
+            return db
+        }
+
+        Logger.dbService.debug("Opening DownloadDb at \(path)")
+        var config = Configuration()
+        config.busyMode = .timeout(5.0)
+
+        do {
+            let pool = try DatabasePool(path: path, configuration: config)
+
+            try pool.write { db in
+                try DownloadMangaModel.createTable(db)
+                try DownloadChapterModel.createTable(db)
+                try DownloadImageModel.createTable(db)
+            }
+
+            downloadDb = pool
+            Logger.dbService.info("DownloadDb opened successfully at \(path)")
+            return pool
+        } catch {
+            Logger.dbService.error("Failed to open DownloadDb at \(path)", error: error)
+            return nil
+        }
     }
 }

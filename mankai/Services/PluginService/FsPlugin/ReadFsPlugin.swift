@@ -51,7 +51,7 @@ class ReadFsPlugin: Plugin {
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
             )
         }
@@ -62,7 +62,7 @@ class ReadFsPlugin: Plugin {
         let idFile = url.appendingPathComponent("mankai.id")
         guard FileManager.default.fileExists(atPath: idFile.path) else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdNotFound")]
             )
         }
@@ -71,7 +71,7 @@ class ReadFsPlugin: Plugin {
             in: .whitespacesAndNewlines)
         guard !id.isEmpty else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdEmpty")]
             )
         }
@@ -183,7 +183,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Saving plugin: \(id)")
         guard let db = DbService.shared.appDb else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -209,7 +209,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Deleting plugin: \(id)")
         guard let db = DbService.shared.appDb else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -327,7 +327,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for suggestions")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -349,7 +349,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for search")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -376,7 +376,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for list")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -414,7 +414,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getMangas")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -436,7 +436,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getDetailedManga")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -445,7 +445,7 @@ class ReadFsPlugin: Plugin {
             guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
                 Logger.fsPlugin.warning("Manga not found in DB: \(id)")
                 throw NSError(
-                    domain: "ReadFsPlugin", code: 1,
+                    domain: "ReadFsPlugin", code: 0,
                     userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaDirectoryNotFound")]
                 )
             }
@@ -453,7 +453,7 @@ class ReadFsPlugin: Plugin {
             guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
                 Logger.fsPlugin.error("Failed to convert manga model to detailed manga: \(id)")
                 throw NSError(
-                    domain: "ReadFsPlugin", code: 1,
+                    domain: "ReadFsPlugin", code: 0,
                     userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadMangaDetails")]
                 )
             }
@@ -467,7 +467,7 @@ class ReadFsPlugin: Plugin {
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getChapter")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -475,7 +475,7 @@ class ReadFsPlugin: Plugin {
         guard let chapterIdInt = Int(chapter.id) else {
             Logger.fsPlugin.error("Invalid chapter ID: \(chapter.id)")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat")]
             )
         }
@@ -501,7 +501,7 @@ class ReadFsPlugin: Plugin {
         guard fileManager.fileExists(atPath: fullImagePath) else {
             Logger.fsPlugin.error("Image file not found: \(fullImagePath)")
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
             )
         }
@@ -512,7 +512,7 @@ class ReadFsPlugin: Plugin {
         } catch {
             Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
             throw NSError(
-                domain: "ReadFsPlugin", code: 1,
+                domain: "ReadFsPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
             )
         }

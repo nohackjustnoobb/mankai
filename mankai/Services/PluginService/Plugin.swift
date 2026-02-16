@@ -216,7 +216,7 @@ extension Plugin {
             return manga
         } else {
             throw NSError(
-                domain: "Plugin", code: 1,
+                domain: "Plugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
             )
         }

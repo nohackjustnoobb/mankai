@@ -207,6 +207,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 {
     let plugin: Plugin
     let manga: DetailedManga
+    let downloadManga: DetailedManga?
     let chaptersKey: String
     let chapter: Chapter
 
@@ -247,11 +248,12 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private let bottomBar = UIView()
 
     init(
-        plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter,
+        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, chaptersKey: String, chapter: Chapter,
         initialPage: Int?
     ) {
         self.plugin = plugin
         self.manga = manga
+        self.downloadManga = downloadManga
         self.chaptersKey = chaptersKey
         self.chapter = chapter
         self.initialPage = initialPage
@@ -261,7 +263,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         readerSession = ReaderSession(
             plugin: plugin,
-            manga: manga
+            manga: manga,
+            downloadManga: downloadManga
         )
 
         super.init(nibName: nil, bundle: nil)
@@ -1608,6 +1611,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
 private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
     let plugin: Plugin
     let manga: DetailedManga
+    let downloadManga: DetailedManga?
     let chaptersKey: String
     let chapter: Chapter
     let initialPage: Int?
@@ -1616,6 +1620,7 @@ private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
         return PagedReaderViewController(
             plugin: plugin,
             manga: manga,
+            downloadManga: downloadManga,
             chaptersKey: chaptersKey,
             chapter: chapter,
             initialPage: initialPage
@@ -1632,6 +1637,7 @@ private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
 struct PagedReaderScreen: View {
     let plugin: Plugin
     let manga: DetailedManga
+    let downloadManga: DetailedManga?
     let chaptersKey: String
     let chapter: Chapter
     var initialPage: Int? = nil
@@ -1641,6 +1647,7 @@ struct PagedReaderScreen: View {
             PagedReaderViewControllerWrapper(
                 plugin: plugin,
                 manga: manga,
+                downloadManga: downloadManga,
                 chaptersKey: chaptersKey,
                 chapter: chapter,
                 initialPage: initialPage

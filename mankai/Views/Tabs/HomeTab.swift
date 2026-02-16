@@ -15,6 +15,11 @@ private enum HomeMangaStatus: String, CaseIterable {
     case updated
 }
 
+private enum HomeDataSource: String, CaseIterable {
+    case saved
+    case downloads
+}
+
 struct HomeTab: View {
     private let pluginService = PluginService.shared
 
@@ -28,20 +33,38 @@ struct HomeTab: View {
     @State private var searchText: String = ""
     @State private var showPlugins: [String] = []
     @State private var status: HomeMangaStatus = .all
+    @State private var dataSource: HomeDataSource = .saved
     @State private var filteredOrders: [String] = []
     @State private var showingFilters = false
+    @State private var showingDownloads = false
 
-    // Temp filter states for modal
-    @State private var tempShowPlugins: [String] = []
-    @State private var tempStatus: HomeMangaStatus = .all
+    // Downloads state
+    @State private var isLoadingDownloads = false
 
     // Update state
     @State private var isRefreshing = false
 
+    // First initialization and connectivity check
+    @State private var isFirstLoad = true
+    @State private var showNoInternetAlert = false
+
+    // Navigation from download modal
+    @State private var navigateToManga: Manga? = nil
+    @State private var navigateToPlugin: Plugin? = nil
+    @State private var navigateToDetails: Bool = false
+
     private var hasActiveFilters: Bool {
+        if dataSource == .downloads {
+            return false
+        }
+
         let allPluginIds = Set(pluginService.plugins.map { $0.id })
         let showSet = Set(showPlugins)
-        return showSet != allPluginIds || status != .all
+        return showSet != allPluginIds
+    }
+
+    private var isDownloadsMode: Bool {
+        dataSource == .downloads
     }
 
     private var availablePlugins: [Plugin] {
@@ -55,7 +78,7 @@ struct HomeTab: View {
     var body: some View {
         NavigationStack {
             Group {
-                if orders.isEmpty {
+                if !isDownloadsMode && orders.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "bookmark.slash.fill")
                             .font(.title)
@@ -64,6 +87,9 @@ struct HomeTab: View {
                     }
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if isDownloadsMode && orders.isEmpty && isLoadingDownloads {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if filteredOrders.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
@@ -75,29 +101,60 @@ struct HomeTab: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        MangasListView(
-                            mangas: mangas,
-                            plugins: plugins,
-                            keys: filteredOrders,
-                            records: records,
-                            saveds: saveds,
-                            showNotRead: true
-                        )
+                        VStack(spacing: 12) {
+                            MangasListView(
+                                mangas: mangas,
+                                plugins: plugins,
+                                keys: filteredOrders,
+                                records: records,
+                                saveds: saveds,
+                                showNotRead: true
+                            )
+                        }
                         .padding()
                     }
                     .refreshable {
-                        await performUpdate()
+                        if isDownloadsMode {
+                            await reloadDownloads()
+                        } else {
+                            await performUpdate()
+                        }
                     }
                 }
             }
             .navigationTitle("home")
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker("source", selection: $dataSource) {
+                            Text("favourites").tag(HomeDataSource.saved)
+                            Text("downloads").tag(HomeDataSource.downloads)
+                        }
+
+                        Picker("status", selection: $status) {
+                            Text("all").tag(HomeMangaStatus.all)
+                            Text("onGoing").tag(HomeMangaStatus.onGoing)
+                            Text("ended").tag(HomeMangaStatus.ended)
+                            Text("updated").tag(HomeMangaStatus.updated)
+                        }
+                        .disabled(isDownloadsMode)
+                    } label: {
+                        Text(LocalizedStringKey(isDownloadsMode ? dataSource.rawValue : status.rawValue))
+                    }
+                }
+
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button(action: {
+                        showingDownloads = true
+                    }) {
+                        Image(systemName: "arrow.down.circle")
+                    }
+
                     Button(action: {
                         showingFilters = true
                     }) {
                         ZStack {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
+                            Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
                                 Circle()
@@ -107,105 +164,86 @@ struct HomeTab: View {
                             }
                         }
                     }
+                    .disabled(isDownloadsMode)
                 }
             }
-            .searchable(text: $searchText, prompt: "searchSavedManga")
+            .searchable(text: $searchText, prompt: isDownloadsMode ? LocalizedStringKey("searchDownloadedManga") : LocalizedStringKey("searchSavedManga"))
             .onChange(of: searchText) {
                 filterManga()
             }
+            .onChange(of: status) {
+                filterManga()
+            }
+            .onChange(of: dataSource) {
+                Task {
+                    if isDownloadsMode {
+                        await reloadDownloads()
+                    } else {
+                        updateSaved()
+                    }
+                }
+            }
             .onAppear {
                 initializeShowPlugins()
-                updateSaved()
+
+                if isFirstLoad {
+                    isFirstLoad = false
+                    checkInternetAndPrompt()
+                }
+
+                if isDownloadsMode {
+                    Task {
+                        await reloadDownloads()
+                    }
+                } else {
+                    updateSaved()
+                }
             }
             .onReceive(pluginService.objectWillChange) {
                 initializeShowPlugins()
-                updateSaved()
+                if !isDownloadsMode {
+                    updateSaved()
+                }
             }
             .onReceive(SavedService.shared.objectWillChange) {
-                updateSaved()
+                if !isDownloadsMode {
+                    updateSaved()
+                }
             }
             .onReceive(HistoryService.shared.objectWillChange) {
                 updateRecord()
             }
             .sheet(isPresented: $showingFilters) {
-                NavigationView {
-                    List {
-                        Section {
-                            Picker("status", selection: $tempStatus) {
-                                Text("all")
-                                    .tag(HomeMangaStatus.all)
-                                Text("onGoing")
-                                    .tag(HomeMangaStatus.onGoing)
-                                Text("ended")
-                                    .tag(HomeMangaStatus.ended)
-                                Text("updated")
-                                    .tag(HomeMangaStatus.updated)
-                            }
-                            .pickerStyle(.menu)
-                        } header: {
-                            Spacer(minLength: 0)
-                        }
+                HomeFilterModal(
+                    isPresented: $showingFilters,
+                    showPlugins: $showPlugins,
+                    availablePlugins: availablePlugins,
+                    onReset: resetFilters,
+                    onApply: filterManga
+                )
+            }
+            .sheet(isPresented: $showingDownloads) {
+                DownloadModal { plugin, manga in
+                    navigateToDetails = true
+                    navigateToPlugin = plugin
+                    navigateToManga = manga
 
-                        Section("showPlugins") {
-                            ForEach(availablePlugins, id: \.id) { plugin in
-                                Button(action: {
-                                    if tempShowPlugins.contains(plugin.id) {
-                                        tempShowPlugins.removeAll { $0 == plugin.id }
-                                    } else {
-                                        tempShowPlugins.append(plugin.id)
-                                    }
-                                }) {
-                                    HStack {
-                                        Text(plugin.name ?? plugin.id)
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        if tempShowPlugins.contains(plugin.id) {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Section {
-                            Button(
-                                "reset",
-                                role: .destructive,
-                                action: {
-                                    resetFilters()
-                                    showingFilters = false
-                                }
-                            )
-                        }
-                    }
-                    .navigationTitle("filters")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(action: {
-                                tempShowPlugins = showPlugins
-                                tempStatus = status
-                                showingFilters = false
-                            }) {
-                                Text("cancel")
-                            }
-                        }
-
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button(action: {
-                                setFilters(showPlugins: tempShowPlugins, status: tempStatus)
-                                showingFilters = false
-                            }) {
-                                Text("done")
-                            }
-                        }
-                    }
+                    showingDownloads = false
                 }
-                .presentationDetents([.medium])
-                .onAppear {
-                    tempShowPlugins = showPlugins
-                    tempStatus = status
+            }
+            .navigationDestination(isPresented: $navigateToDetails) {
+                if let plugin = navigateToPlugin, let manga = navigateToManga {
+                    MangaDetailsScreen(plugin: plugin, manga: manga)
                 }
+            }
+            .alert("noInternetConnection", isPresented: $showNoInternetAlert) {
+                Button("switch") {
+                    dataSource = .downloads
+                }
+
+                Button("cancel", role: .cancel) {}
+            } message: {
+                Text("noInternetConnectionMessage")
             }
         }
     }
@@ -217,7 +255,7 @@ struct HomeTab: View {
 
         let savedList: [SavedModel] = SavedService.shared.getAll()
         for saved in savedList {
-            let key = "\(saved.pluginId)_\(saved.mangaId)"
+            let key = "\(saved.pluginId)+\(saved.mangaId)"
 
             if let plugin = pluginService.getPlugin(saved.pluginId) {
                 plugins[key] = plugin
@@ -247,12 +285,17 @@ struct HomeTab: View {
     }
 
     private func updateRecord() {
+        if isDownloadsMode {
+            updateDownloadRecords(for: orders)
+            return
+        }
+
         var records: [String: RecordModel] = [:]
         let ids = saveds.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
         let historyRecords = HistoryService.shared.get(ids: ids)
 
         for record in historyRecords {
-            let key = "\(record.pluginId)_\(record.mangaId)"
+            let key = "\(record.pluginId)+\(record.mangaId)"
             if saveds[key] != nil {
                 records[key] = record
             }
@@ -302,26 +345,28 @@ struct HomeTab: View {
             }
         }
 
-        // Filter by shown plugins
-        filtered = filtered.filter { key in
-            let pluginId = key.split(separator: "_").first.map(String.init) ?? ""
-            return showPlugins.contains(pluginId)
-        }
-
-        // Filter by status
-        if status != .all {
+        if !isDownloadsMode {
+            // Filter by shown plugins
             filtered = filtered.filter { key in
-                guard let manga = mangas[key], let saved = saveds[key] else { return false }
+                let pluginId = key.split(separator: "+").first.map(String.init) ?? ""
+                return showPlugins.contains(pluginId)
+            }
 
-                switch status {
-                case .all:
-                    return true
-                case .onGoing:
-                    return manga.status == .onGoing
-                case .ended:
-                    return manga.status == .ended
-                case .updated:
-                    return saved.updates
+            // Filter by status
+            if status != .all {
+                filtered = filtered.filter { key in
+                    guard let manga = mangas[key], let saved = saveds[key] else { return false }
+
+                    switch status {
+                    case .all:
+                        return true
+                    case .onGoing:
+                        return manga.status == .onGoing
+                    case .ended:
+                        return manga.status == .ended
+                    case .updated:
+                        return saved.updates
+                    }
                 }
             }
         }
@@ -339,22 +384,11 @@ struct HomeTab: View {
         showPlugins = pluginService.plugins.map { $0.id }
     }
 
-    private func setFilters(showPlugins: [String], status: HomeMangaStatus) {
-        if self.showPlugins != showPlugins {
-            self.showPlugins = showPlugins
-        }
-
-        if self.status != status {
-            self.status = status
-        }
-
-        filterManga()
-    }
-
     private func resetFilters() {
-        tempShowPlugins = pluginService.plugins.map { $0.id }
-        tempStatus = .all
-        setFilters(showPlugins: pluginService.plugins.map { $0.id }, status: .all)
+        let allPlugins = pluginService.plugins.map { $0.id }
+        showPlugins = allPlugins
+        status = .all
+        filterManga()
     }
 
     private func performUpdate() async {
@@ -364,5 +398,67 @@ struct HomeTab: View {
         try? await UpdateService.shared.update()
 
         isRefreshing = false
+    }
+
+    private func reloadDownloads() async {
+        isLoadingDownloads = true
+        defer { isLoadingDownloads = false }
+
+        mangas = [:]
+        plugins = [:]
+        saveds = [:]
+        records = [:]
+        orders = []
+        filteredOrders = []
+        var downloadOrders: [String] = []
+
+        if let downloadedMangas = try? await DownloadPlugin.shared.getDownloadedMangas() {
+            for manga in downloadedMangas.compactMap({ $0.toManga() }) {
+                if let pluginId = manga.meta {
+                    let key = "\(pluginId)+\(manga.id)"
+
+                    mangas[key] = manga
+                    plugins[key] = pluginService.getPlugin(pluginId) ?? DummyPlugin(pluginId)
+                    downloadOrders.append(key)
+                }
+            }
+        }
+
+        orders = downloadOrders
+        updateDownloadRecords(for: downloadOrders)
+        filterManga()
+    }
+
+    private func updateDownloadRecords(for keys: [String]) {
+        guard !keys.isEmpty else { return }
+
+        let ids = keys.compactMap { key -> (mangaId: String, pluginId: String)? in
+            let parts = key.split(separator: "+", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return nil }
+            return (mangaId: parts[1], pluginId: parts[0])
+        }
+
+        let fetchedRecords = HistoryService.shared.get(ids: ids)
+
+        if keys == orders {
+            records = [:]
+        }
+
+        for record in fetchedRecords {
+            let key = "\(record.pluginId)+\(record.mangaId)"
+            records[key] = record
+        }
+    }
+
+    private func checkInternetAndPrompt() {
+        let reachability = Reach()
+        let status = reachability.connectionStatus()
+
+        switch status {
+        case .offline, .unknown:
+            showNoInternetAlert = true
+        default:
+            break
+        }
     }
 }

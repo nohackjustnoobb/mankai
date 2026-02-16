@@ -48,6 +48,7 @@ struct Manga: Identifiable, Codable {
     var cover: String?
     var status: Status?
     var latestChapter: Chapter?
+
     var meta: String?
 
     init?(from any: Any) {

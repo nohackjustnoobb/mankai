@@ -78,6 +78,11 @@ struct MangaCoverView: View {
                 self.image = UIImage(data: data)
                 self.isLoading = false
             } catch {
+                // try offline
+                if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
+                    self.image = UIImage(data: data)
+                }
+
                 self.isLoading = false
             }
         }

@@ -10,6 +10,7 @@ import SwiftUI
 struct ReaderScreen: View {
     let plugin: Plugin
     let manga: DetailedManga
+    let downloadManga: DetailedManga?
     let chaptersKey: String
     let chapter: Chapter
     var initialPage: Int? = nil
@@ -25,6 +26,7 @@ struct ReaderScreen: View {
                     ContinuousReaderScreen(
                         plugin: plugin,
                         manga: manga,
+                        downloadManga: downloadManga,
                         chaptersKey: chaptersKey,
                         chapter: chapter,
                         initialPage: initialPage
@@ -33,6 +35,7 @@ struct ReaderScreen: View {
                     PagedReaderScreen(
                         plugin: plugin,
                         manga: manga,
+                        downloadManga: downloadManga,
                         chaptersKey: chaptersKey,
                         chapter: chapter,
                         initialPage: initialPage

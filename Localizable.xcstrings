@@ -36,6 +36,25 @@
         }
       }
     },
+    "%lld selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selected"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選擇 %lld 話"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+      "shouldTranslate" : false
+    },
     "•" : {
       "shouldTranslate" : false
     },
@@ -345,22 +364,6 @@
         }
       }
     },
-    "anUnknownErrorOccurred" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "An Unknown Error Occurred"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發生未知錯誤"
-          }
-        }
-      }
-    },
     "any" : {
       "localizations" : {
         "en" : {
@@ -587,6 +590,54 @@
         }
       }
     },
+    "cancelDownload" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Download"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消下載"
+          }
+        }
+      }
+    },
+    "cancelDownloadConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to cancel this download?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您確定要取消此下載嗎？"
+          }
+        }
+      }
+    },
+    "cancelled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelled"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已取消"
+          }
+        }
+      }
+    },
     "changeCover" : {
       "localizations" : {
         "en" : {
@@ -680,6 +731,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "章節分組"
+          }
+        }
+      }
+    },
+    "chapterNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter Not Found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到章節"
           }
         }
       }
@@ -809,6 +876,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搞笑"
+          }
+        }
+      }
+    },
+    "completed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完成"
           }
         }
       }
@@ -1133,6 +1216,134 @@
         }
       }
     },
+    "download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
+          }
+        }
+      }
+    },
+    "downloadCompletedMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Download Completed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 下載完成"
+          }
+        }
+      }
+    },
+    "downloadDatabaseNotAvailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline Database Not Available"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "離線資料庫不可用"
+          }
+        }
+      }
+    },
+    "downloaded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已下載"
+          }
+        }
+      }
+    },
+    "downloadQueuedMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Queued"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已加入佇列"
+          }
+        }
+      }
+    },
+    "downloadQueueIsEmpty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Queue Is Empty"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載佇列為空"
+          }
+        }
+      }
+    },
+    "downloads" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下載"
+          }
+        }
+      }
+    },
+    "dummyPluginCannotBeUsed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dummy Plugin Cannot Be Used"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法使用虛擬插件"
+          }
+        }
+      }
+    },
     "editable" : {
       "localizations" : {
         "en" : {
@@ -1338,6 +1549,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "番外"
+          }
+        }
+      }
+    },
+    "failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "失敗"
           }
         }
       }
@@ -1835,6 +2062,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同人"
+          }
+        }
+      }
+    },
+    "favourites" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favourites"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
           }
         }
       }
@@ -2891,6 +3134,22 @@
         }
       }
     },
+    "mangaMetaMissing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga Meta Missing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到漫畫元數據"
+          }
+        }
+      }
+    },
     "mangaNotFound" : {
       "localizations" : {
         "en" : {
@@ -3165,6 +3424,22 @@
         }
       }
     },
+    "no" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "否"
+          }
+        }
+      }
+    },
     "noAccessTokenInResponse" : {
       "localizations" : {
         "en" : {
@@ -3177,6 +3452,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "回應中沒有存取令牌"
+          }
+        }
+      }
+    },
+    "noActiveDownloads" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Active Downloads"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有進行中的下載"
           }
         }
       }
@@ -3273,6 +3564,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有歷史紀錄"
+          }
+        }
+      }
+    },
+    "noInternetConnection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Internet Connection"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有網路連線"
+          }
+        }
+      }
+    },
+    "noInternetConnectionMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do you want to switch to downloads?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您要切換到下載嗎？"
           }
         }
       }
@@ -3696,6 +4019,22 @@
         }
       }
     },
+    "pluginNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugin Not Found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到插件"
+          }
+        }
+      }
+    },
     "plugins" : {
       "localizations" : {
         "en" : {
@@ -3820,6 +4159,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上拉載入上一話"
+          }
+        }
+      }
+    },
+    "queued" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queued"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待中"
           }
         }
       }
@@ -4258,6 +4613,22 @@
         }
       }
     },
+    "searchDownloadedManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Downloaded Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋已下載漫畫"
+          }
+        }
+      }
+    },
     "searchManga" : {
       "localizations" : {
         "en" : {
@@ -4303,6 +4674,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選取"
+          }
+        }
+      }
+    },
+    "selectChapters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Chapters"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇章節"
           }
         }
       }
@@ -4516,6 +4903,22 @@
         }
       }
     },
+    "source" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "來源"
+          }
+        }
+      }
+    },
     "speculativeFiction" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4663,6 +5066,38 @@
         }
       }
     },
+    "swipeToDelete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe left to delete downloaded manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向左滑動以刪除已下載的漫畫"
+          }
+        }
+      }
+    },
+    "switch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換"
+          }
+        }
+      }
+    },
     "sync" : {
       "localizations" : {
         "en" : {
@@ -4803,6 +5238,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "點擊重試"
+          }
+        }
+      }
+    },
+    "tasks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任務"
           }
         }
       }
@@ -5008,13 +5459,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Smart grouping uses deep learning to automatically organize pages based on content similarity. Results may vary, and enabling this feature could impact performance."
+            "value" : "Smart grouping uses deep learning to automatically organize pages based on content similarity. Results may vary, and enabling this feature could impact performance and battery life."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "智能分組利用深度學習技術，根據內容相似度自動對頁面進行分類。請注意，分組結果可能不盡完美，且可能會影響執行效能。"
+            "value" : "智能分組利用深度學習技術，根據內容相似度自動對頁面進行分類。請注意，分組結果可能不盡完美，且可能會影響執行效能和電池續航力。"
+          }
+        }
+      }
+    },
+    "usingDownloadMangaDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Using a downloaded snapshot. This may not be the latest version and shows only downloaded chapters."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用已下載的快照。這可能非最新版本，且僅顯示已下載的章節。"
           }
         }
       }
@@ -5100,6 +5567,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "WebView尚未初始化"
+          }
+        }
+      }
+    },
+    "yes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是"
           }
         }
       }

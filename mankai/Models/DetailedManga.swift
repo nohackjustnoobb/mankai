@@ -166,4 +166,39 @@ struct DetailedManga: Identifiable, Codable {
         try container.encodeIfPresent(meta, forKey: .meta)
         try container.encodeIfPresent(remarks, forKey: .remarks)
     }
+
+    func toManga() -> Manga? {
+        var mangaDict: [String: Any] = [
+            "id": id,
+        ]
+
+        if let title = title {
+            mangaDict["title"] = title
+        }
+
+        if let cover = cover {
+            mangaDict["cover"] = cover
+        }
+
+        if let status = status {
+            mangaDict["status"] = status.rawValue
+        }
+
+        if let latestChapter = latestChapter {
+            var chapterDict: [String: Any] = ["id": latestChapter.id]
+            if let title = latestChapter.title {
+                chapterDict["title"] = title
+            }
+            if let locked = latestChapter.locked {
+                chapterDict["locked"] = locked
+            }
+            mangaDict["latestChapter"] = chapterDict
+        }
+
+        if let meta = meta {
+            mangaDict["meta"] = meta
+        }
+
+        return Manga(from: mangaDict)
+    }
 }

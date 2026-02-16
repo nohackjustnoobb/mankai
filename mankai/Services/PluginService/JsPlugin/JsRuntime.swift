@@ -70,7 +70,7 @@ class JsRuntime: NSObject {
         guard let webview else {
             Logger.jsRuntime.error("WebView not initialized")
             throw NSError(
-                domain: "JsRuntime", code: 1,
+                domain: "JsRuntime", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "webViewNotInitialized")]
             )
         }
@@ -138,14 +138,14 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
         guard let url = params["url"] as? String else {
             throw NSError(
-                domain: "JsRuntime", code: 1,
+                domain: "JsRuntime", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "missingUrlParameter")]
             )
         }
 
         guard let requestURL = URL(string: url) else {
             throw NSError(
-                domain: "JsRuntime", code: 1,
+                domain: "JsRuntime", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
             )
         }
@@ -169,7 +169,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NSError(
-                domain: "JsRuntime", code: 1,
+                domain: "JsRuntime", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponseType")]
             )
         }

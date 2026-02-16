@@ -12,6 +12,7 @@ struct ChaptersModal: View {
     let manga: DetailedManga
     let chaptersKey: String
     let record: RecordModel?
+    let downloadChapters: Set<String>?
     let onNavigateToChapter: (Chapter, Int?, String?) -> Void
 
     private let chapters: [Chapter]
@@ -19,12 +20,14 @@ struct ChaptersModal: View {
     init(
         plugin: Plugin, manga: DetailedManga, chaptersKey: String,
         record: RecordModel? = nil,
+        downloadChapters: Set<String>? = nil,
         onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void
     ) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
         self.record = record
+        self.downloadChapters = downloadChapters
         self.onNavigateToChapter = onNavigateToChapter
         chapters = manga.chapters[chaptersKey] ?? []
     }
@@ -48,6 +51,13 @@ struct ChaptersModal: View {
                                     HStack {
                                         Text(chapter.title ?? chapter.id)
                                             .foregroundColor(.primary)
+
+                                        if let downloadChapters = downloadChapters,
+                                           downloadChapters.contains(chapter.id)
+                                        {
+                                            Image(systemName: "network.slash")
+                                                .foregroundColor(.secondary)
+                                        }
 
                                         if let record = record, record.chapterId == chapter.id {
                                             Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")

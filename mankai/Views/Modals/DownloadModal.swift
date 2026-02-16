@@ -1,0 +1,262 @@
+//
+//  DownloadModal.swift
+//  mankai
+//
+//  Created by Travis XU on 14/2/2026.
+//
+
+import SwiftUI
+
+struct DownloadModal: View {
+    @ObservedObject var downloadService = DownloadService.shared
+    @ObservedObject var downloadPlugin = DownloadPlugin.shared
+    @Environment(\.dismiss) var dismiss
+
+    let navigate: (Plugin, Manga) -> Void
+
+    @State private var downloadedMangas: [DetailedManga] = []
+    @State private var mangaToDelete: DetailedManga?
+    @State private var showDeleteConfirmation = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if activeTasks.isEmpty && downloadedMangas.isEmpty {
+                    ContentUnavailableView(
+                        "noActiveDownloads",
+                        systemImage: "arrow.down.circle",
+                        description: Text("downloadQueueIsEmpty")
+                    )
+                } else {
+                    List {
+                        if !activeTasks.isEmpty {
+                            Section("tasks") {
+                                ForEach(activeTasks) { task in
+                                    DownloadTaskRow(task: task)
+                                }
+                            }
+                        }
+
+                        if !downloadedMangas.isEmpty {
+                            Section {
+                                ForEach(downloadedMangas) { manga in
+                                    DownloadedMangaRow(manga: manga, navigate: navigate)
+                                        .swipeActions {
+                                            Button("delete", role: .destructive) {
+                                                mangaToDelete = manga
+                                                showDeleteConfirmation = true
+                                            }
+                                        }
+                                }
+                            } header: {
+                                Text("downloaded")
+                            } footer: {
+                                Text("swipeToDelete")
+                            }
+                        }
+                    }
+                    .confirmationDialog("deleteManga", isPresented: $showDeleteConfirmation, titleVisibility: .visible, presenting: mangaToDelete) { manga in
+                        Button("delete", role: .destructive) {
+                            deleteManga(manga)
+                        }
+                        Button("cancel", role: .cancel) {}
+                    } message: { _ in
+                        Text("deleteMangaConfirmation")
+                    }
+                }
+            }
+            .navigationTitle("downloads")
+            .navigationBarTitleDisplayMode(.inline)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.hidden)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("close") {
+                        dismiss()
+                    }
+                }
+            }
+            .task {
+                await loadDownloadedMangas()
+            }
+            .onReceive(downloadPlugin.objectWillChange) { _ in
+                Task {
+                    await loadDownloadedMangas()
+                }
+            }
+        }
+    }
+
+    var activeTasks: [DownloadTask] {
+        downloadService.tasks.values.filter {
+            if case .cancelled = $0.status { return false }
+            if case .completed = $0.status { return false }
+            return true
+        }
+        .sorted { ($0.manga.title ?? "") < ($1.manga.title ?? "") }
+    }
+
+    func loadDownloadedMangas() async {
+        do {
+            downloadedMangas = try await downloadPlugin.getDownloadedMangas()
+        } catch {
+            print("Failed to load downloaded mangas: \(error)")
+        }
+    }
+
+    func deleteManga(_ manga: DetailedManga) {
+        Task {
+            try? await downloadPlugin.deleteManga(manga)
+        }
+    }
+}
+
+struct DownloadedMangaRow: View {
+    let manga: DetailedManga
+    let navigate: (Plugin, Manga) -> Void
+
+    var body: some View {
+        Button(action: handleTap) {
+            HStack(spacing: 12) {
+                MangaCoverView(
+                    coverUrl: manga.cover,
+                    plugin: DownloadPlugin.shared
+                )
+                .frame(width: 75, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(manga.title ?? manga.id)
+                        .font(.headline)
+                        .lineLimit(1)
+
+                    if let chapterCount = totalChapterCount {
+                        Text("\(chapterCount) chapters")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func handleTap() {
+        guard let pluginId = manga.meta,
+              let plugin = PluginService.shared.getPlugin(pluginId),
+              let simpleManga = manga.toManga()
+        else {
+            return
+        }
+
+        navigate(plugin, simpleManga)
+    }
+
+    private var totalChapterCount: Int? {
+        let count = manga.chapters.values.flatMap { $0 }.count
+        return count > 0 ? count : nil
+    }
+}
+
+struct DownloadTaskRow: View {
+    @ObservedObject var task: DownloadTask
+    @State private var showCancelConfirmation = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            MangaCoverView(
+                coverUrl: task.manga.cover,
+                plugin: PluginService.shared.getPlugin(task.manga.pluginId)
+            )
+            .frame(width: 75, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.manga.title ?? task.manga.id)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                switch task.status {
+                case .queued:
+                    Text("queued")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                case let .downloading(progress):
+                    VStack(alignment: .leading, spacing: 4) {
+                        ProgressView(value: progress)
+                            .progressViewStyle(.linear)
+
+                        Text("\(Int(progress * 100))%")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                case .completed:
+                    Text("completed")
+                        .font(.subheadline)
+                        .foregroundStyle(.green)
+                case let .failed(error):
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("failed")
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+
+                        Text(error.localizedDescription)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                case .cancelled:
+                    Text("cancelled")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Action Buttons
+            if case .failed = task.status {
+                Button {
+                    Task {
+                        try? await DownloadService.shared.retryTask(id: task.id)
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(.primary)
+                }
+            } else if case .downloading = task.status {
+                Button {
+                    showCancelConfirmation = true
+                } label: {
+                    Image(systemName: "stop.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(.red)
+                }
+            } else if case .queued = task.status {
+                Button {
+                    showCancelConfirmation = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(.gray)
+                }
+            }
+        }
+        .confirmationDialog("cancelDownload", isPresented: $showCancelConfirmation, titleVisibility: .visible) {
+            Button("yes", role: .destructive) {
+                Task {
+                    try? await DownloadService.shared.cancelTask(id: task.id)
+                }
+            }
+            Button("no", role: .cancel) {}
+        } message: {
+            Text("cancelDownloadConfirmation")
+        }
+    }
+}

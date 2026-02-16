@@ -37,6 +37,7 @@ class ReaderSession: ObservableObject {
 
     private let plugin: Plugin
     private let manga: DetailedManga
+    private let downloadManga: DetailedManga?
     @Published var imageLayout: ImageLayout {
         didSet {
             groupImages()
@@ -70,11 +71,12 @@ class ReaderSession: ObservableObject {
     private var useSmartGrouping: Bool
     private var smartGroupingSensitivity: Double
 
-    init(plugin: Plugin, manga: DetailedManga, readingDirection: ReadingDirection? = nil) {
+    init(plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, readingDirection: ReadingDirection? = nil) {
         self.plugin = plugin
         self.manga = manga
+        self.downloadManga = downloadManga
         self.readingDirection = readingDirection
-        Logger.readerSession.debug("Initializing ReaderSession for manga: \(manga.title ?? "Unknown")")
+        Logger.readerSession.debug("Initializing ReaderSession for manga: \(manga.title ?? manga.id)")
 
         // Initialize from UserDefaults
         let rawValue = UserDefaults.standard.integer(forKey: SettingsKey.imageLayout.rawValue)
@@ -135,7 +137,7 @@ class ReaderSession: ObservableObject {
     }
 
     func getChapter(chapter: Chapter) async throws {
-        Logger.readerSession.info("Loading chapter: \(chapter.title ?? "Unknown")")
+        Logger.readerSession.info("Loading chapter: \(chapter.title ?? chapter.id)")
         // Cancel all existing tasks
         loadingTasks.values.forEach { $0.cancel() }
         loadingTasks.removeAll()
@@ -150,18 +152,30 @@ class ReaderSession: ObservableObject {
         checkedPairs = []
         adjacencyScores = [:]
 
-        let urls = try await plugin.getChapter(manga: manga, chapter: chapter)
-        self.urls = urls
+        var urls: [String]?
+        if let downloadManga = downloadManga {
+            do {
+                urls = try await DownloadPlugin.shared.getChapter(manga: downloadManga, chapter: chapter)
+            } catch {
+                Logger.readerSession.warning("Failed to load chapter from download: \(error)")
+            }
+        }
+
+        if let urls = urls, !urls.isEmpty {
+            self.urls = urls
+        } else {
+            self.urls = try await plugin.getChapter(manga: manga, chapter: chapter)
+        }
 
         // Initialize images with loading state
-        for url in urls {
+        for url in self.urls {
             images[url] = ReaderImage(url: url, state: .loading)
         }
 
         // Initial grouping
         groupImages()
 
-        loadImages(urls: urls)
+        loadImages(urls: self.urls)
     }
 
     private func loadImages(urls: [String]) {
@@ -176,7 +190,13 @@ class ReaderSession: ObservableObject {
             let currentRetry = self.retryCount[url] ?? 0
 
             do {
-                let imageData = try await plugin.getImage(url)
+                let imageData: Data
+                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
+                    imageData = try await DownloadPlugin.shared.getImage(url)
+                } else {
+                    imageData = try await plugin.getImage(url)
+                }
+
                 if let image = UIImage(data: imageData) {
                     Logger.readerSession.debug("Successfully loaded image: \(url)")
                     self.images[url] = ReaderImage(url: url, state: .success(image))

@@ -86,7 +86,7 @@ struct UpdateChaptersModal: View {
             do {
                 guard let groupId = chapterGroupId else {
                     throw NSError(
-                        domain: "UpdateChaptersModal", code: 1,
+                        domain: "UpdateChaptersModal", code: 0,
                         userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
                     )
                 }
@@ -178,7 +178,7 @@ struct UpdateChaptersModal: View {
                         do {
                             guard let groupId = chapterGroupId else {
                                 throw NSError(
-                                    domain: "UpdateChaptersModal", code: 1,
+                                    domain: "UpdateChaptersModal", code: 0,
                                     userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"]
                                 )
                             }

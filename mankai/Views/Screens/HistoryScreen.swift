@@ -105,10 +105,14 @@ struct HistoryItemView: View {
                     {
                         MangaDetailsScreen(plugin: plugin, manga: manga)
                     } else {
-                        ErrorScreen(errorMessage: String(localized: "failedToLoadMangaDetails"))
+                        ContentUnavailableView {
+                            Label("somethingWentWrong", systemImage: "exclamationmark.circle")
+                        } description: {
+                            Text("failedToLoadMangaDetails")
+                        }
                     }
                 }) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 12) {
                         MangaCoverView(coverUrl: manga?.cover, plugin: plugin)
                             .aspectRatio(3 / 4, contentMode: .fit)
                             .clipShape(RoundedRectangle(cornerRadius: 8))

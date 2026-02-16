@@ -61,7 +61,7 @@ class EditableHttpPlugin: HttpPlugin, Editable {
 
         guard group.mangaId != nil, group.title != nil else {
             throw NSError(
-                domain: "EditableHttpPlugin", code: 1,
+                domain: "EditableHttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
             )
         }
@@ -112,7 +112,7 @@ class EditableHttpPlugin: HttpPlugin, Editable {
 
         guard chapter.title != nil, chapter.chapterGroupId != nil else {
             throw NSError(
-                domain: "EditableHttpPlugin", code: 1,
+                domain: "EditableHttpPlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
             )
         }

@@ -47,6 +47,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
 - **Library & History**: Manage your collection and track reading progress.
 - **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
+- **Download Manager**: Save manga chapters for offline access.
 
 ## Plugins
 
