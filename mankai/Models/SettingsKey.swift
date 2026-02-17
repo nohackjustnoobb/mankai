@@ -18,6 +18,7 @@ enum SettingsKey: String {
     // Shared Reader Settings
     case readerType
     case imageLayout
+    case respectMangaReadingDirection
     case useSmartGrouping
     case smartGroupingSensitivity
 
@@ -45,9 +46,10 @@ enum ImageLayout: Int {
     case twoPerRow = 3
 }
 
-enum ReadingDirection: Int {
+enum ReadingDirection: Int, Codable {
     case leftToRight = 1
     case rightToLeft = 2
+    case vertical = 3
 }
 
 enum TapBehavior: Int {

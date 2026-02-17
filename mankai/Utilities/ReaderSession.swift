@@ -55,6 +55,7 @@ class ReaderSession: ObservableObject {
                 checkedPairs = []
                 adjacencyScores = [:]
 
+                groupImages()
                 triggerAdjacencyChecks()
             }
         }
@@ -69,7 +70,8 @@ class ReaderSession: ObservableObject {
     private var checkedPairs: Set<String> = []
     private var adjacencyScores: [String: Double] = [:]
     private var useSmartGrouping: Bool {
-        UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
+        if readingDirection == .vertical { return false }
+        return UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
             ?? SettingsDefaults.useSmartGrouping
     }
 
@@ -233,14 +235,18 @@ class ReaderSession: ObservableObject {
         var newGroups: [ReaderGroup] = []
         let groupSize: Int
 
-        switch imageLayout {
-        case .auto:
-            let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
-            groupSize = isLandscape ? 2 : 1
-        case .onePerRow:
+        if readingDirection == .vertical {
             groupSize = 1
-        case .twoPerRow:
-            groupSize = 2
+        } else {
+            switch imageLayout {
+            case .auto:
+                let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
+                groupSize = isLandscape ? 2 : 1
+            case .onePerRow:
+                groupSize = 1
+            case .twoPerRow:
+                groupSize = 2
+            }
         }
 
         var i = 0

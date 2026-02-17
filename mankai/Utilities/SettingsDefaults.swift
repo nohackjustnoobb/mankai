@@ -16,14 +16,16 @@ enum SettingsDefaults {
     static let inMemoryCacheExpiryDuration: CacheDuration = .oneHour
     static let diskCacheSizeLimit: DiskCacheLimit = .oneGB
 
+    // Shared Reader Settings
+    static let imageLayout: ImageLayout = .auto
+    static let respectMangaReadingDirection: Bool = true
+    static let useSmartGrouping: Bool = false
+    static let smartGroupingSensitivity: Double = 0.5
+
     /// Default Reader
     static var readerType: ReaderType {
         UIDevice.isIPad ? .paged : .continuous
     }
-
-    static let imageLayout: ImageLayout = .auto
-    static let useSmartGrouping: Bool = false
-    static let smartGroupingSensitivity: Double = 0.5
 
     // Continuous Reader Defaults
     static let CR_readingDirection: ReadingDirection = .rightToLeft

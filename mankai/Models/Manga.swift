@@ -30,7 +30,7 @@ enum Genre: String, Codable, CaseIterable {
     case mecha
 }
 
-enum Status: UInt, Codable {
+enum Status: Int, Codable {
     case any = 0
     case onGoing = 1
     case ended = 2
@@ -64,12 +64,12 @@ struct Manga: Identifiable, Codable {
         meta = dict["meta"] as? String
 
         if let statusValue = dict["status"] {
-            if let statusUInt = statusValue as? UInt {
-                status = Status(rawValue: statusUInt)
+            if let statusInt = statusValue as? Int {
+                status = Status(rawValue: statusInt)
             } else if let statusString = statusValue as? String,
-                      let statusUInt = UInt(statusString)
+                      let statusInt = Int(statusString)
             {
-                status = Status(rawValue: statusUInt)
+                status = Status(rawValue: statusInt)
             } else {
                 status = nil
             }

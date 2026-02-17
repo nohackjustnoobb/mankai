@@ -18,9 +18,20 @@ struct ReaderScreen: View {
     @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
         SettingsDefaults.readerType.rawValue
 
+    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private var respectMangaReadingDirection: Bool =
+        SettingsDefaults.respectMangaReadingDirection
+
+    private var currentReaderType: ReaderType? {
+        if respectMangaReadingDirection, let direction = manga.readingDirection, direction == .vertical {
+            return .continuous
+        }
+
+        return ReaderType(rawValue: readerTypeRawValue)
+    }
+
     var body: some View {
         Group {
-            if let readerType = ReaderType(rawValue: readerTypeRawValue) {
+            if let readerType = currentReaderType {
                 switch readerType {
                 case .continuous:
                     ContinuousReaderScreen(

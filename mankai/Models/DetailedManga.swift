@@ -12,6 +12,7 @@ struct DetailedManga: Identifiable, Codable {
     var title: String?
     var cover: String?
     var status: Status?
+    var readingDirection: ReadingDirection?
     var latestChapter: Chapter?
     var description: String?
     var updatedAt: Date?
@@ -41,8 +42,8 @@ struct DetailedManga: Identifiable, Codable {
             switch statusValue {
             case let status as Status:
                 self.status = status
-            case let statusUInt as UInt:
-                status = Status(rawValue: statusUInt)
+            case let statusInt as Int:
+                status = Status(rawValue: statusInt)
             default:
                 status = nil
             }
@@ -59,9 +60,21 @@ struct DetailedManga: Identifiable, Codable {
             latestChapter = nil
         }
 
+        if let readingDirectionValue = dict["readingDirection"] {
+            switch readingDirectionValue {
+            case let readingDirection as ReadingDirection:
+                self.readingDirection = readingDirection
+            case let readingDirectionInt as Int:
+                readingDirection = ReadingDirection(rawValue: readingDirectionInt)
+            default:
+                readingDirection = nil
+            }
+        }
+
         if let updatedAtMilliseconds = dict["updatedAt"] as? Int64 {
             updatedAt = Date(
-                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0)
+                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0
+            )
         } else {
             updatedAt = nil
         }
@@ -114,7 +127,7 @@ struct DetailedManga: Identifiable, Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, title, cover, status, latestChapter, description, updatedAt, authors, genres,
+        case id, title, cover, status, readingDirection, latestChapter, description, updatedAt, authors, genres,
              chapters, meta, remarks
     }
 
@@ -125,12 +138,14 @@ struct DetailedManga: Identifiable, Codable {
         title = try container.decodeIfPresent(String.self, forKey: .title)
         cover = try container.decodeIfPresent(String.self, forKey: .cover)
         status = try container.decodeIfPresent(Status.self, forKey: .status)
+        readingDirection = try container.decodeIfPresent(ReadingDirection.self, forKey: .readingDirection)
         latestChapter = try container.decodeIfPresent(Chapter.self, forKey: .latestChapter)
         description = try container.decodeIfPresent(String.self, forKey: .description)
 
         if let updatedAtMilliseconds = try container.decodeIfPresent(Int64.self, forKey: .updatedAt) {
             updatedAt = Date(
-                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0)
+                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0
+            )
         } else {
             updatedAt = nil
         }
@@ -151,6 +166,7 @@ struct DetailedManga: Identifiable, Codable {
         try container.encodeIfPresent(title, forKey: .title)
         try container.encodeIfPresent(cover, forKey: .cover)
         try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(readingDirection, forKey: .readingDirection)
         try container.encodeIfPresent(latestChapter, forKey: .latestChapter)
         try container.encodeIfPresent(description, forKey: .description)
 

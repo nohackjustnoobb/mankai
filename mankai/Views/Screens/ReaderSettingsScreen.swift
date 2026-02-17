@@ -12,6 +12,8 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
+    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private var respectMangaReadingDirection: Bool =
+        SettingsDefaults.respectMangaReadingDirection
     @AppStorage(SettingsKey.useSmartGrouping.rawValue) private var useSmartGrouping: Bool =
         SettingsDefaults.useSmartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity: Double =
@@ -65,6 +67,16 @@ struct ReaderSettingsScreen: View {
             }
 
             Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle(
+                        String(localized: "respectMangaReadingDirection"),
+                        isOn: $respectMangaReadingDirection
+                    )
+                    Text(String(localized: "respectMangaReadingDirectionDescription"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 Picker(
                     String(localized: "readerType"),
                     selection: Binding(

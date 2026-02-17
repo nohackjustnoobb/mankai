@@ -4614,6 +4614,38 @@
         }
       }
     },
+    "respectMangaReadingDirection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Respect Manga's Reading Direction"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依循漫畫閱讀方向"
+          }
+        }
+      }
+    },
+    "respectMangaReadingDirectionDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically use the manga's official reading direction when available. This will override your default reading settings."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "若漫畫有指定閱讀方向，將自動採用該方向，並覆蓋您的預設設定。"
+          }
+        }
+      }
+    },
     "rightToLeft" : {
       "localizations" : {
         "en" : {

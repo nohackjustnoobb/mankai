@@ -248,8 +248,17 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     var isNavigationBarAnimating = false
 
     /// Settings (Directly from UserDefaults)
+    private var respectMangaReadingDirection: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.respectMangaReadingDirection.rawValue) as? Bool
+            ?? SettingsDefaults.respectMangaReadingDirection
+    }
+
     private var readingDirection: ReadingDirection {
-        ReadingDirection(
+        if respectMangaReadingDirection, let direction = manga.readingDirection {
+            return direction
+        }
+
+        return ReadingDirection(
             rawValue: UserDefaults.standard.integer(forKey: SettingsKey.PR_readingDirection.rawValue)
         )
             ?? SettingsDefaults.PR_readingDirection
@@ -326,6 +335,13 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         UserDefaults.standard.addObserver(
             self,
+            forKeyPath: SettingsKey.respectMangaReadingDirection.rawValue,
+            options: [.new],
+            context: nil
+        )
+
+        UserDefaults.standard.addObserver(
+            self,
             forKeyPath: SettingsKey.PR_navigationOrientation.rawValue,
             options: [.new],
             context: nil
@@ -345,6 +361,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         NotificationCenter.default.removeObserver(self)
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.PR_readingDirection.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.respectMangaReadingDirection.rawValue
         )
 
         UserDefaults.standard.removeObserver(
@@ -381,7 +400,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         change _: [NSKeyValueChangeKey: Any]?,
         context _: UnsafeMutableRawPointer?
     ) {
-        if keyPath == SettingsKey.PR_readingDirection.rawValue {
+        if keyPath == SettingsKey.PR_readingDirection.rawValue
+            || keyPath == SettingsKey.respectMangaReadingDirection.rawValue
+        {
             readerSession.readingDirection = readingDirection
             navigateToGroup(currentGroup, animated: false)
         } else if keyPath == SettingsKey.PR_navigationOrientation.rawValue {

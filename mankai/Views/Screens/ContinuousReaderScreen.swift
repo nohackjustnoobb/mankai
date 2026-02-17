@@ -67,6 +67,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var startY: CGFloat = 0.0
 
     private var defaultGroupSize: Int {
+        if readingDirection == .vertical { return 1 }
+
         switch imageLayout {
         case .auto:
             return UIScreen.main.bounds.width > UIScreen.main.bounds.height ? 2 : 1
@@ -106,8 +108,17 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             ?? SettingsDefaults.imageLayout
     }
 
+    private var respectMangaReadingDirection: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.respectMangaReadingDirection.rawValue) as? Bool
+            ?? SettingsDefaults.respectMangaReadingDirection
+    }
+
     private var readingDirection: ReadingDirection {
-        ReadingDirection(
+        if respectMangaReadingDirection, let direction = manga.readingDirection {
+            return direction
+        }
+
+        return ReadingDirection(
             rawValue: UserDefaults.standard.integer(forKey: SettingsKey.CR_readingDirection.rawValue)
         )
             ?? SettingsDefaults.CR_readingDirection
@@ -192,6 +203,13 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             context: nil
         )
 
+        UserDefaults.standard.addObserver(
+            self,
+            forKeyPath: SettingsKey.respectMangaReadingDirection.rawValue,
+            options: [.new],
+            context: nil
+        )
+
         // Initialize settings
         readerSession.readingDirection = readingDirection
 
@@ -210,6 +228,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.imageLayout.rawValue)
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.CR_readingDirection.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.respectMangaReadingDirection.rawValue
         )
 
         saveTimer?.invalidate()
@@ -255,6 +276,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     ) {
         if keyPath == SettingsKey.imageLayout.rawValue
             || keyPath == SettingsKey.CR_readingDirection.rawValue
+            || keyPath == SettingsKey.respectMangaReadingDirection.rawValue
         {
             updateGrouping()
         }
