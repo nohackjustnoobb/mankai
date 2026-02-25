@@ -51,16 +51,16 @@ class AdjacencyModelWrapper {
             throw NSError(domain: "AdjacencyModel", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidInputImage")])
         }
 
-        // Preprocess: crop then resize
-        let processed1 = try preprocessLeftPatch(ci1, targetWidth: targetW, targetHeight: targetH)
-        let processed2 = try preprocessRightPatch(ci2, targetWidth: targetW, targetHeight: targetH)
+        // Merge the right edge of image1 and left edge of image2 side-by-side,
+        // then resize the combined image to 224×224.
+        let merged = mergePatches(left: ci1, right: ci2)
+        let resized = resizeToTarget(merged, targetWidth: targetW, targetHeight: targetH)
 
         // Convert to CVPixelBuffer
-        let buffer1 = try createPixelBuffer(from: processed1, width: targetW, height: targetH)
-        let buffer2 = try createPixelBuffer(from: processed2, width: targetW, height: targetH)
+        let buffer = try createPixelBuffer(from: resized, width: targetW, height: targetH)
 
         // Build input
-        let input = AdjacencyModelInput(image1: buffer1, image2: buffer2)
+        let input = AdjacencyModelInput(image: buffer)
 
         // Run inference
         Logger.adjacencyModel.debug("Predicting adjacency for image pair")
@@ -73,63 +73,48 @@ class AdjacencyModelWrapper {
 
     // MARK: - Preprocessing
 
-    private func preprocessLeftPatch(
-        _ image: CIImage, targetWidth: Int, targetHeight: Int
-    ) throws -> CIImage {
-        var ciImage = image
-        let originalWidth = Int(ciImage.extent.width)
+    /// Merge the rightmost 224 px of `left` and the leftmost 224 px of `right`
+    /// side-by-side into a single 448-wide `CIImage` whose origin is at (0, 0).
+    private func mergePatches(left: CIImage, right: CIImage) -> CIImage {
+        let stripWidth = CGFloat(Int(Self.inputSize.width)) // 224
 
-        // Crop: keep the rightmost `targetWidth` pixels
-        if originalWidth > targetWidth {
-            let cropX = originalWidth - targetWidth
-            ciImage = ciImage.cropped(
-                to: CGRect(
-                    x: CGFloat(cropX),
-                    y: 0,
-                    width: CGFloat(targetWidth),
-                    height: ciImage.extent.height
-                )
-            )
-        }
+        // Normalise both images to origin (0, 0)
+        let normLeft = left.transformed(
+            by: CGAffineTransform(translationX: -left.extent.origin.x, y: -left.extent.origin.y)
+        )
+        let normRight = right.transformed(
+            by: CGAffineTransform(translationX: -right.extent.origin.x, y: -right.extent.origin.y)
+        )
 
-        let translation = CGAffineTransform(translationX: -ciImage.extent.origin.x, y: -ciImage.extent.origin.y)
-        ciImage = ciImage.transformed(by: translation)
+        let height = max(normLeft.extent.height, normRight.extent.height)
 
-        return try resizeToTarget(ciImage, targetWidth: targetWidth, targetHeight: targetHeight)
-    }
+        // Crop: rightmost 224 px of the left image, translated so its origin is at x=0
+        let cropLeftX = max(0, normLeft.extent.width - stripWidth)
+        let leftStrip = normLeft.cropped(
+            to: CGRect(x: cropLeftX, y: 0, width: min(stripWidth, normLeft.extent.width), height: normLeft.extent.height)
+        ).transformed(by: CGAffineTransform(translationX: -cropLeftX, y: 0))
 
-    private func preprocessRightPatch(
-        _ image: CIImage, targetWidth: Int, targetHeight: Int
-    ) throws -> CIImage {
-        var ciImage = image
-        let originalWidth = Int(ciImage.extent.width)
+        // Crop: leftmost 224 px of the right image, placed immediately to the right of leftStrip
+        let rightStrip = normRight.cropped(
+            to: CGRect(x: 0, y: 0, width: min(stripWidth, normRight.extent.width), height: normRight.extent.height)
+        ).transformed(by: CGAffineTransform(translationX: stripWidth, y: 0))
 
-        // Crop: keep the leftmost `targetWidth` pixels
-        if originalWidth > targetWidth {
-            ciImage = ciImage.cropped(
-                to: CGRect(
-                    x: 0,
-                    y: 0,
-                    width: CGFloat(targetWidth),
-                    height: ciImage.extent.height
-                )
-            )
-        }
+        // Composite rightStrip over leftStrip
+        let merged = rightStrip.composited(over: leftStrip)
 
-        let translation = CGAffineTransform(translationX: -ciImage.extent.origin.x, y: -ciImage.extent.origin.y)
-        ciImage = ciImage.transformed(by: translation)
-
-        return try resizeToTarget(ciImage, targetWidth: targetWidth, targetHeight: targetHeight)
+        // Translate so the merged image origin is exactly (0, 0)
+        return merged.transformed(
+            by: CGAffineTransform(translationX: -merged.extent.origin.x, y: -merged.extent.origin.y)
+        ).cropped(to: CGRect(x: 0, y: 0, width: stripWidth * 2, height: height))
     }
 
     private func resizeToTarget(
         _ ciImage: CIImage, targetWidth: Int, targetHeight: Int
-    ) throws -> CIImage {
+    ) -> CIImage {
         let scaleX = CGFloat(targetWidth) / ciImage.extent.width
         let scaleY = CGFloat(targetHeight) / ciImage.extent.height
 
-        let scaled = ciImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-        return scaled
+        return ciImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
     }
 
     // MARK: - Pixel Buffer

@@ -98,10 +98,10 @@ Mankai features an advanced **Smart Grouping** system that uses a deep learning 
 | Metric            | Value                   |
 | :---------------- | :---------------------- |
 | **Base Model**    | `mobilenetv3_large_100` |
-| **Test Accuracy** | 99.51%                  |
-| **Precision**     | 99.45%                  |
-| **Recall**        | 99.55%                  |
-| **F1 Score**      | 99.50%                  |
+| **Test Accuracy** | 99.88%                  |
+| **Precision**     | 99.90%                  |
+| **Recall**        | 99.86%                  |
+| **F1 Score**      | 99.88%                  |
 
 #### Inference
 
@@ -109,9 +109,10 @@ Performance benchmarks on **iPhone 15**:
 
 | Compute Units           | Prediction (Median) | Load (Median) | Compilation (Median) |
 | :---------------------- | :------------------ | :------------ | :------------------- |
-| **CPU Only**            | 5.81 ms             | 31.56 ms      | 109.14 ms            |
-| **CPU + GPU**           | 14.54 ms            | 69.52 ms      | 174.20 ms            |
-| **CPU + Neural Engine** | 1.60 ms             | 35.36 ms      | 107.57 ms            |
+| **All**                 | 0.94 ms             | 21.77 ms      | 65.11 ms             |
+| **CPU Only**            | 2.28 ms             | 17.94 ms      | 62.82 ms             |
+| **CPU + GPU**           | 8.15 ms             | 21.09 ms      | 81.25 ms             |
+| **CPU + Neural Engine** | 0.91 ms             | 45.80 ms      | 64.19 ms             |
 
 ## Syncing
 
