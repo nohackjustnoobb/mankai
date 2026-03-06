@@ -66,23 +66,13 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var currentGroup: ContinuousGroup?
     private var startY: CGFloat = 0.0
 
-    private var defaultGroupSize: Int {
-        if readingDirection == .vertical { return 1 }
-
-        switch imageLayout {
-        case .auto:
-            return UIScreen.main.bounds.width > UIScreen.main.bounds.height ? 2 : 1
-        case .onePerRow:
-            return 1
-        case .twoPerRow:
-            return 2
-        }
-    }
-
     // Haptic feedback state
     private var hasTriggeredTopHaptic = false
     private var hasTriggeredBottomHaptic = false
     private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+
+    /// Suppress scroll events during resize/rotation transitions
+    private var isResizing = false
 
     // State variables for tab bar visibility
     var isTabBarHidden = false
@@ -101,11 +91,6 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var snapToPage: Bool {
         UserDefaults.standard.object(forKey: SettingsKey.CR_snapToPage.rawValue) as? Bool
             ?? SettingsDefaults.CR_snapToPage
-    }
-
-    private var imageLayout: ImageLayout {
-        ImageLayout(rawValue: UserDefaults.standard.integer(forKey: SettingsKey.imageLayout.rawValue))
-            ?? SettingsDefaults.imageLayout
     }
 
     private var respectMangaReadingDirection: Bool {
@@ -181,21 +166,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         loadChapter()
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateGrouping),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
-
         // Observe specific UserDefaults keys that affect layout
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.imageLayout.rawValue,
-            options: [.new],
-            context: nil
-        )
-
         UserDefaults.standard.addObserver(
             self,
             forKeyPath: SettingsKey.CR_readingDirection.rawValue,
@@ -225,7 +196,6 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.imageLayout.rawValue)
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.CR_readingDirection.rawValue
         )
@@ -274,27 +244,49 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         change _: [NSKeyValueChangeKey: Any]?,
         context _: UnsafeMutableRawPointer?
     ) {
-        if keyPath == SettingsKey.imageLayout.rawValue
-            || keyPath == SettingsKey.CR_readingDirection.rawValue
+        if keyPath == SettingsKey.CR_readingDirection.rawValue
             || keyPath == SettingsKey.respectMangaReadingDirection.rawValue
         {
             updateGrouping()
         }
     }
 
-    @objc private func updateGrouping() {
+    private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.readerSession.imageLayout = self.imageLayout
             self.readerSession.readingDirection = self.readingDirection
             self.syncGroupsFromSession()
             self.navigateToPage(self.currentPage, animated: false)
+            self.isResizing = false
+        }
+    }
+
+    private func updateGroupingForSizeChange() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.readerSession.updateGrouping()
+            self.syncGroupsFromSession()
+            self.navigateToPage(self.currentPage, animated: false)
+            self.isResizing = false
+        }
+    }
+
+    override func viewWillTransition(
+        to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator
+    ) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        isResizing = true
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.updateGroupingForSizeChange()
         }
     }
 
     // MARK: - Scroll Event Monitoring
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard !isResizing else { return }
+
         updateCurrentPageFromScroll()
 
         let offsetY = scrollView.contentOffset.y
@@ -663,7 +655,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
                         x: tabBarControllerView.frame.origin.x,
                         y: tabBarControllerView.frame.origin.y,
                         width: tabBarControllerView.frame.width,
-                        height: UIScreen.main.bounds.height + tabBar.frame.height
+                        height: UIApplication.windowBounds.height + tabBar.frame.height
                     )
                 }
             }
@@ -671,7 +663,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             UIView.animate(
                 withDuration: 0.2, delay: 0, options: [.curveEaseIn],
                 animations: {
-                    tabBar.frame.origin.y = UIScreen.main.bounds.height
+                    tabBar.frame.origin.y = UIApplication.windowBounds.height
                     tabBar.alpha = 0.0
                     self.view.layoutIfNeeded()
                 }
@@ -698,7 +690,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
                 withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6,
                 initialSpringVelocity: 1.0, options: [.curveEaseOut],
                 animations: {
-                    tabBar.frame.origin.y = UIScreen.main.bounds.height - tabBar.frame.height
+                    tabBar.frame.origin.y = UIApplication.windowBounds.height - tabBar.frame.height
                     tabBar.alpha = 1.0
                     self.view.layoutIfNeeded()
                 }
@@ -1154,11 +1146,11 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             let groupUrls = groups[index].urls
 
             let isSinglePortrait =
-                defaultGroupSize != 1
+                readerSession.defaultGroupSize != 1
                     && groupUrls.count == 1
                     && ratios[groupUrls[0], default: mode] < 1
 
-            let effectiveWidth = isSinglePortrait ? width / CGFloat(defaultGroupSize) : width
+            let effectiveWidth = isSinglePortrait ? width / CGFloat(readerSession.defaultGroupSize) : width
             let ratiosSum = groupUrls.reduce(CGFloat(0)) { $0 + ratios[$1, default: mode] }
             let rowHeight = effectiveWidth / ratiosSum
 

@@ -38,7 +38,7 @@ class ReaderSession: ObservableObject {
     private let plugin: Plugin
     private let manga: DetailedManga
     private let downloadManga: DetailedManga?
-    @Published var imageLayout: ImageLayout {
+    @Published private(set) var imageLayout: ImageLayout {
         didSet {
             groupImages()
         }
@@ -69,6 +69,19 @@ class ReaderSession: ObservableObject {
     private var adjacencyTasks: [String: Task<Void, Never>] = [:]
     private var checkedPairs: Set<String> = []
     private var adjacencyScores: [String: Double] = [:]
+    var defaultGroupSize: Int {
+        if readingDirection == .vertical { return 1 }
+
+        switch imageLayout {
+        case .auto:
+            return UIApplication.windowBounds.width > UIApplication.windowBounds.height ? 2 : 1
+        case .onePerRow:
+            return 1
+        case .twoPerRow:
+            return 2
+        }
+    }
+
     private var useSmartGrouping: Bool {
         if readingDirection == .vertical { return false }
         return UserDefaults.standard.object(forKey: SettingsKey.useSmartGrouping.rawValue) as? Bool
@@ -124,7 +137,7 @@ class ReaderSession: ObservableObject {
         }
     }
 
-    @objc private func updateGrouping() {
+    @objc func updateGrouping() {
         Task { @MainActor in
             groupImages()
         }
@@ -233,21 +246,6 @@ class ReaderSession: ObservableObject {
     private func groupImages() {
         Logger.readerSession.debug("Grouping images with layout: \(imageLayout), smartGrouping: \(useSmartGrouping)")
         var newGroups: [ReaderGroup] = []
-        let groupSize: Int
-
-        if readingDirection == .vertical {
-            groupSize = 1
-        } else {
-            switch imageLayout {
-            case .auto:
-                let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
-                groupSize = isLandscape ? 2 : 1
-            case .onePerRow:
-                groupSize = 1
-            case .twoPerRow:
-                groupSize = 2
-            }
-        }
 
         var i = 0
         while i < urls.count {
@@ -277,7 +275,7 @@ class ReaderSession: ObservableObject {
                 var groupUrls: [String] = []
                 var j = i
 
-                while j < urls.count, groupUrls.count < groupSize {
+                while j < urls.count, groupUrls.count < defaultGroupSize {
                     let currentUrl = urls[j]
 
                     // If we encounter a wide image while building the group, stop here

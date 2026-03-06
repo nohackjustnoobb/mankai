@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MangasRowListView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let mangas: [Manga]?
     let plugin: Plugin
     var query: String? = nil
@@ -40,7 +42,7 @@ struct MangasRowListView: View {
                         .foregroundColor(.secondary)
                         .frame(
                             maxWidth: .infinity,
-                            minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200, alignment: .center
+                            minHeight: horizontalSizeClass == .regular ? 240 : 200, alignment: .center
                         )
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -55,12 +57,12 @@ struct MangasRowListView: View {
                             }
                         }
                     }
-                    .frame(minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200)
+                    .frame(minHeight: horizontalSizeClass == .regular ? 240 : 200)
                 }
             } else {
                 ProgressView()
                     .frame(
-                        maxWidth: .infinity, minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200,
+                        maxWidth: .infinity, minHeight: horizontalSizeClass == .regular ? 240 : 200,
                         alignment: .center
                     )
             }

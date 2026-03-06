@@ -60,7 +60,7 @@ struct ChaptersModal: View {
                                         }
 
                                         if let record = record, record.chapterId == chapter.id {
-                                            Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                            Image(systemName: "clock.arrow.circlepath")
                                                 .foregroundColor(.accentColor)
                                         }
 
@@ -87,7 +87,8 @@ struct ChaptersModal: View {
                                 Image(
                                     systemName: isReversed
                                         ? "arrow.up"
-                                        : "arrow.down")
+                                        : "arrow.down"
+                                )
                             }
 
                             if plugin is Editable {

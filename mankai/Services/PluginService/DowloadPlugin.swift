@@ -47,7 +47,7 @@ class DownloadPlugin: Plugin {
 
         let fileManager = FileManager.default
         downloadDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!.appendingPathComponent("download")
+            .first!.appendingPathComponent("downloads")
 
         if !fileManager.fileExists(atPath: downloadDir.path) {
             try! fileManager.createDirectory(at: downloadDir, withIntermediateDirectories: true)
@@ -56,10 +56,10 @@ class DownloadPlugin: Plugin {
         dbPath = downloadDir.appendingPathComponent("data.db").path(percentEncoded: false)
     }
 
-    // Built-in plugin, do nothing
+    /// Built-in plugin, do nothing
     override func savePlugin() throws {}
 
-    // Built-in plugin, do nothing
+    /// Built-in plugin, do nothing
     override func deletePlugin() throws {}
 
     override func isOnline() async throws -> Bool {
@@ -367,8 +367,7 @@ class DownloadPlugin: Plugin {
             }
 
             do {
-                let imageData = try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
-                return imageData
+                return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
             } catch {
                 Logger.downloadPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
                 throw NSError(

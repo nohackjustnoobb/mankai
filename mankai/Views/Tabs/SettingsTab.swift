@@ -32,7 +32,7 @@ struct SettingsTab: View {
                     NavigationLink(
                         destination: PluginSettingsScreen()
                     ) {
-                        Label("plugins", systemImage: "powerplug.portrait.fill")
+                        Label("plugins", systemImage: "puzzlepiece.extension.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
                     }
                 }
@@ -43,7 +43,7 @@ struct SettingsTab: View {
                     ) {
                         Label(
                             "history",
-                            systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90"
+                            systemImage: "clock.arrow.circlepath"
                         )
                         .labelStyle(ColorfulIconLabelStyle(color: .indigo))
                     }
@@ -53,7 +53,7 @@ struct SettingsTab: View {
                     ) {
                         Label(
                             "sync",
-                            systemImage: "arrow.trianglehead.2.clockwise.rotate.90"
+                            systemImage: "arrow.triangle.2.circlepath"
                         )
                         .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }

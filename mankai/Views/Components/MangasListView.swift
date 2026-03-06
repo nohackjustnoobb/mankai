@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MangasListView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let mangas: [Manga]?
     let plugin: Plugin?
     let mangasDict: [String: Manga]?
@@ -17,7 +19,7 @@ struct MangasListView: View {
     let saveds: [String: SavedModel]?
     let showNotRead: Bool
 
-    // Simple initializer for single plugin case
+    /// Simple initializer for single plugin case
     init(mangas: [Manga], plugin: Plugin) {
         self.mangas = mangas
         self.plugin = plugin
@@ -29,7 +31,7 @@ struct MangasListView: View {
         showNotRead = false
     }
 
-    // Complex initializer for multiple plugins with records and saved states
+    /// Complex initializer for multiple plugins with records and saved states
     init(
         mangas: [String: Manga],
         plugins: [String: Plugin],
@@ -52,7 +54,7 @@ struct MangasListView: View {
         LazyVGrid(
             columns: [
                 GridItem(
-                    .adaptive(minimum: UIDevice.current.userInterfaceIdiom == .pad ? 140 : 110), spacing: 12
+                    .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12
                 ),
             ], spacing: 12
         ) {

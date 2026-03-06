@@ -7,6 +7,14 @@
 
 import SwiftUI
 
+extension UIApplication {
+    static var windowBounds: CGRect {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.keyWindow?.bounds ?? UIScreen.main.bounds
+    }
+}
+
 func statusText(_ status: Status?) -> String {
     guard let status = status else { return String(localized: "nil") }
     switch status {
@@ -30,7 +38,9 @@ extension UIDevice {
 }
 
 extension View {
-    func apply<V: View>(@ViewBuilder _ block: (Self) -> V) -> V { block(self) }
+    func apply<V: View>(@ViewBuilder _ block: (Self) -> V) -> V {
+        block(self)
+    }
 }
 
 enum ImageFormat: String {

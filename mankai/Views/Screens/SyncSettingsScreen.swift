@@ -17,7 +17,7 @@ struct SyncSettingsScreen: View {
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90"), color: .blue,
+                image: Image(systemName: "arrow.triangle.2.circlepath"), color: .blue,
                 title: String(localized: "sync"),
                 description: String(localized: "syncDescription")
             )

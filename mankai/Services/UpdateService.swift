@@ -43,8 +43,10 @@ class UpdateService: ObservableObject {
             try await internalUpdate()
         } catch {
             Logger.updateService.error("Update failed", error: error)
-            let message = String(localized: "failedToUpdateLibrary")
-            NotificationService.shared.showError(String(format: message, error.localizedDescription))
+            if case .online = Reach().connectionStatus() {
+                let message = String(localized: "failedToUpdateLibrary")
+                NotificationService.shared.showError(String(format: message, error.localizedDescription))
+            }
             throw error
         }
     }
@@ -101,7 +103,8 @@ class UpdateService: ObservableObject {
 
         for (pluginId, pluginSaveds) in savedsByPlugin {
             Logger.updateService.debug(
-                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
+                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)"
+            )
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
@@ -115,7 +118,8 @@ class UpdateService: ObservableObject {
             do {
                 let updatedMangas = try await plugin.getMangas(mangaIds)
                 Logger.updateService.debug(
-                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
+                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)"
+                )
 
                 // Create a dictionary for quick lookup
                 var mangaDict: [String: Manga] = [:]
@@ -138,7 +142,8 @@ class UpdateService: ObservableObject {
 
                         if hasUpdate {
                             Logger.updateService.info(
-                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
+                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))"
+                            )
                             // Create updated saved model
                             var updatedSaved = saved
                             updatedSaved.latestChapter = newChapter.encode()
@@ -162,8 +167,12 @@ class UpdateService: ObservableObject {
                 }
             } catch {
                 Logger.updateService.error("Error checking updates for plugin \(pluginId)", error: error)
-                let message = String(localized: "failedToCheckUpdatesForPlugin")
-                NotificationService.shared.showWarning(String(format: message, pluginId))
+                if case .offline = Reach().connectionStatus() {
+                    Logger.updateService.debug("Skipping warning for plugin \(pluginId): device is offline")
+                } else {
+                    let message = String(localized: "failedToCheckUpdatesForPlugin")
+                    NotificationService.shared.showWarning(String(format: message, pluginId))
+                }
                 // Skip this plugin if there's an error
                 continue
             }

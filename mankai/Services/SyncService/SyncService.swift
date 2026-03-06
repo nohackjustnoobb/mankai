@@ -163,7 +163,7 @@ class SyncService: ObservableObject {
         } catch {
             Logger.syncService.error("Sync failed: \(error)")
 
-            if showError {
+            if showError, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToSync")
                 NotificationService.shared.showWarning(String(format: message, error.localizedDescription))
             }

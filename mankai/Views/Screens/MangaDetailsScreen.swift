@@ -34,17 +34,18 @@ struct MangaDetailsScreen: View {
     @State private var showPluginSearchScreen = false
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var record: RecordModel? = nil
     @State private var saved: SavedModel? = nil
 
-    // Offline access
+    /// Offline access
     private var downloadMangaId: String {
         return "\(plugin.id)+\(manga.id)"
     }
 
     @State private var downloadManga: DetailedManga?
-    // chaptersKey -> set of chapter ids
+    /// chaptersKey -> set of chapter ids
     @State private var downloadChapters: [String: Set<String>]?
 
     private var mangaData: DetailedManga? {
@@ -166,6 +167,7 @@ struct MangaDetailsScreen: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
+                        .textSelection(.enabled)
                         .padding(.top, 12)
                         .foregroundColor(.primary)
 
@@ -232,7 +234,8 @@ struct MangaDetailsScreen: View {
                             HStack {
                                 Image(
                                     systemName: saved != nil
-                                        ? "bookmark.slash.fill" : "bookmark.fill")
+                                        ? "bookmark.slash.fill" : "bookmark.fill"
+                                )
                                 Text(saved != nil ? "remove" : "bookmark")
                             }
                             .frame(maxWidth: .infinity)
@@ -309,7 +312,7 @@ struct MangaDetailsScreen: View {
                     ) { key, chapters in
                         Button(action: {
                             selectedChapterKey = key
-                            showingChaptersModal = UIDevice.isIPhone
+                            showingChaptersModal = horizontalSizeClass == .compact
                         }) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -354,7 +357,7 @@ struct MangaDetailsScreen: View {
 
     var body: some View {
         Group {
-            if UIDevice.isIPad {
+            if horizontalSizeClass == .regular {
                 HStack(spacing: 0) {
                     info
                         .frame(maxWidth: 400)
@@ -386,7 +389,7 @@ struct MangaDetailsScreen: View {
                                                     }
 
                                                     if let record = record, record.chapterId == chapter.id {
-                                                        Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                                        Image(systemName: "clock.arrow.circlepath")
                                                             .foregroundColor(.accentColor)
                                                     }
 
@@ -589,7 +592,7 @@ struct MangaDetailsScreen: View {
             updateRecord()
         }
         .apply {
-            if UIDevice.isIPad {
+            if horizontalSizeClass == .regular {
                 $0.toolbarBackground(.visible, for: .navigationBar)
             } else {
                 $0

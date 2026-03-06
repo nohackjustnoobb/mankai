@@ -16,7 +16,7 @@ private enum HomeMangaStatus: String, CaseIterable {
 }
 
 private enum HomeDataSource: String, CaseIterable {
-    case saved
+    case collections
     case downloads
 }
 
@@ -33,19 +33,18 @@ struct HomeTab: View {
     @State private var searchText: String = ""
     @State private var showPlugins: [String] = []
     @State private var status: HomeMangaStatus = .all
-    @State private var dataSource: HomeDataSource = .saved
+    @State private var dataSource: HomeDataSource = .collections
     @State private var filteredOrders: [String] = []
     @State private var showingFilters = false
     @State private var showingDownloads = false
 
-    // Downloads state
+    /// Downloads state
     @State private var isLoadingDownloads = false
 
-    // Update state
+    /// Update state
     @State private var isRefreshing = false
 
-    // First initialization and connectivity check
-    @State private var isFirstLoad = true
+    /// First initialization and connectivity check
     @State private var showNoInternetAlert = false
 
     // Navigation from download modal
@@ -127,7 +126,7 @@ struct HomeTab: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
                         Picker("source", selection: $dataSource) {
-                            Text("favourites").tag(HomeDataSource.saved)
+                            Text("collections").tag(HomeDataSource.collections)
                             Text("downloads").tag(HomeDataSource.downloads)
                         }
 
@@ -139,7 +138,7 @@ struct HomeTab: View {
                         }
                         .disabled(isDownloadsMode)
                     } label: {
-                        Text(LocalizedStringKey(isDownloadsMode ? dataSource.rawValue : status.rawValue))
+                        Text(LocalizedStringKey(isDownloadsMode || status == .all ? dataSource.rawValue : status.rawValue))
                     }
                 }
 
@@ -186,11 +185,6 @@ struct HomeTab: View {
             .onAppear {
                 initializeShowPlugins()
 
-                if isFirstLoad {
-                    isFirstLoad = false
-                    checkInternetAndPrompt()
-                }
-
                 if isDownloadsMode {
                     Task {
                         await reloadDownloads()
@@ -212,6 +206,9 @@ struct HomeTab: View {
             }
             .onReceive(HistoryService.shared.objectWillChange) {
                 updateRecord()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                checkInternetAndPrompt()
             }
             .sheet(isPresented: $showingFilters) {
                 HomeFilterModal(
@@ -451,6 +448,8 @@ struct HomeTab: View {
     }
 
     private func checkInternetAndPrompt() {
+        guard !isDownloadsMode else { return }
+
         let reachability = Reach()
         let status = reachability.connectionStatus()
 

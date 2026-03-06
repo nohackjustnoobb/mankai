@@ -392,6 +392,18 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         parent?.title = chapter.title ?? chapter.id
     }
 
+    // MARK: - Size Change
+
+    override func viewWillTransition(
+        to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator
+    ) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            self?.readerSession.updateGrouping()
+        }
+    }
+
     // MARK: - Observer
 
     override func observeValue(
@@ -590,7 +602,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                         x: tabBarControllerView.frame.origin.x,
                         y: tabBarControllerView.frame.origin.y,
                         width: tabBarControllerView.frame.width,
-                        height: UIScreen.main.bounds.height + tabBar.frame.height
+                        height: UIApplication.windowBounds.height + tabBar.frame.height
                     )
                 }
             }
@@ -598,7 +610,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             UIView.animate(
                 withDuration: 0.2, delay: 0, options: [.curveEaseIn],
                 animations: {
-                    tabBar.frame.origin.y = UIScreen.main.bounds.height
+                    tabBar.frame.origin.y = UIApplication.windowBounds.height
                     tabBar.alpha = 0.0
                     self.view.layoutIfNeeded()
                 }
@@ -625,7 +637,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                 withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6,
                 initialSpringVelocity: 1.0, options: [.curveEaseOut],
                 animations: {
-                    tabBar.frame.origin.y = UIScreen.main.bounds.height - tabBar.frame.height
+                    tabBar.frame.origin.y = UIApplication.windowBounds.height - tabBar.frame.height
                     tabBar.alpha = 1.0
                     self.view.layoutIfNeeded()
                 }
@@ -1512,7 +1524,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
 
             // Create width constraint based on image aspect ratio (will be updated when image loads)
             // Default to equal share of available width
-            let screenWidth = UIScreen.main.bounds.width
+            let screenWidth = UIApplication.windowBounds.width
             let defaultWidth = screenWidth / CGFloat(urls.count)
             let widthConstraint = containerView.widthAnchor.constraint(
                 equalToConstant: defaultWidth
@@ -1546,7 +1558,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
 
         // Update width constraints based on aspect ratios
         let availableHeight = view.bounds.height
-        let screenWidth = UIScreen.main.bounds.width
+        let screenWidth = UIApplication.windowBounds.width
 
         for url in urls {
             guard let imageView = imageViews[url],

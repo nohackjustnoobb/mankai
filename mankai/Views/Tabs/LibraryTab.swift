@@ -24,7 +24,7 @@ struct LibraryTab: View {
             Group {
                 if plugins.isEmpty {
                     VStack(spacing: 8) {
-                        Image(systemName: "powerplug.portrait.fill")
+                        Image(systemName: "puzzlepiece.extension.fill")
                             .font(.title)
                         Text("noPluginAvailable")
                             .font(.headline)

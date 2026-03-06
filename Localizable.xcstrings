@@ -975,6 +975,22 @@
         }
       }
     },
+    "collections" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collections"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收藏"
+          }
+        }
+      }
+    },
     "comedy" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2174,22 +2190,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同人"
-          }
-        }
-      }
-    },
-    "favourites" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favourites"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "收藏"
           }
         }
       }
@@ -3816,7 +3816,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Favourite Manga"
+            "value" : "No Manga in Collections"
           }
         },
         "zh-Hant" : {
@@ -4781,7 +4781,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search Favourite Manga"
+            "value" : "Search Manga in Collections"
           }
         },
         "zh-Hant" : {

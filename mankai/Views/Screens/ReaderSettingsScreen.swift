@@ -98,6 +98,8 @@ struct ReaderSettingsScreen: View {
                 }
             }
         }
+        .navigationTitle("reader")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

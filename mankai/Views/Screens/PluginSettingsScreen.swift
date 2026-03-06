@@ -14,7 +14,7 @@ struct PluginSettingsScreen: View {
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "powerplug.portrait.fill"), color: .red,
+                image: Image(systemName: "puzzlepiece.extension.fill"), color: .red,
                 title: String(localized: "plugins"),
                 description: String(localized: "pluginsDescription")
             )
@@ -68,6 +68,8 @@ struct PluginSettingsScreen: View {
                 }
             }
         }
+        .navigationTitle("plugins")
+        .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showModal) {
             AddPluginModal()
         }
