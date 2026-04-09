@@ -15,7 +15,9 @@ struct AddPluginModal: View {
         case fsPlugin
         case httpPlugin
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
     }
 
     @State private var selectedPluginType: PluginType = .jsPlugin
@@ -28,7 +30,7 @@ struct AddPluginModal: View {
     @State private var isReadOnly: Bool = true
     @State private var showFileImporter: Bool = false
 
-    // HttpPlugin States
+    /// HttpPlugin States
     @State private var isEditable: Bool = false
 
     @State private var showError: Bool = false
@@ -201,7 +203,8 @@ struct AddPluginModal: View {
                             || (selectedPluginType == .jsPlugin
                                 && (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
                             || (selectedPluginType == .fsPlugin && selectedFolder == nil)
-                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
+                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty)
+                    )
                 }
             }
             .fileImporter(

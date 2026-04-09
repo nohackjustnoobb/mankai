@@ -21,7 +21,8 @@ struct ColorfulIconLabelStyle: LabelStyle {
                 .background(
                     RoundedRectangle(cornerRadius: 7).frame(
                         width: 28, height: 28
-                    ).foregroundColor(self.color))
+                    ).foregroundColor(self.color)
+                )
         }
     }
 }

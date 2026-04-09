@@ -110,7 +110,8 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                         value: detailedManga.genres.isEmpty
                                             ? String(localized: "nil")
                                             : detailedManga.genres.map { $0.rawValue }.joined(
-                                                separator: ", ")
+                                                separator: ", "
+                                            )
                                     )
                                     InfoRow(
                                         label: String(localized: "latestChapter"),

@@ -25,12 +25,11 @@ class SavedService: ObservableObject {
     func get(mangaId: String, pluginId: String) -> SavedModel? {
         Logger.savedService.debug("Getting saved manga for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
-            let result = try DbService.shared.appDb?.read { db in
+            return try DbService.shared.appDb?.read { db in
                 try SavedModel
                     .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
                     .fetchOne(db)
             }
-            return result
         } catch {
             Logger.savedService.error("Failed to get saved manga", error: error)
             return nil
@@ -242,7 +241,7 @@ class SavedService: ObservableObject {
     func generateHash() -> String? {
         Logger.savedService.debug("Generating hash for saved mangas")
         do {
-            let result = try DbService.shared.appDb?.read { db in
+            return try DbService.shared.appDb?.read { db in
                 // Fetch all saved items, sorted by mangaId and pluginId
                 let saveds =
                     try SavedModel
@@ -263,7 +262,6 @@ class SavedService: ObservableObject {
                 // Convert hash to hex string
                 return hash.compactMap { String(format: "%02x", $0) }.joined()
             }
-            return result
         } catch {
             Logger.savedService.error("Failed to generate hash for saved mangas", error: error)
             return nil

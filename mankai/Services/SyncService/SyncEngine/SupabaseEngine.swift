@@ -8,11 +8,11 @@
 import Foundation
 import Supabase
 
-// Realtime is not used here because:
-// 1. Even with Realtime, fetching the state is still required to handle data changes that occurred while the app was closed.
-// 2. It is rare for users to use multiple devices to read at the exact same time.
-// 3. Realtime has a higher cost.
-// Therefore, it is not worth it to use Realtime for this use case.
+/// Realtime is not used here because:
+/// 1. Even with Realtime, fetching the state is still required to handle data changes that occurred while the app was closed.
+/// 2. It is rare for users to use multiple devices to read at the exact same time.
+/// 3. Realtime has a higher cost.
+/// Therefore, it is not worth it to use Realtime for this use case.
 class SupabaseEngine: SyncEngine {
     static let shared = SupabaseEngine()
 
@@ -235,7 +235,8 @@ class SupabaseEngine: SyncEngine {
         )
 
         Logger.supabaseEngine.debug(
-            "Uploading \(localSaveds.count) saveds and \(localRecords.count) records")
+            "Uploading \(localSaveds.count) saveds and \(localRecords.count) records"
+        )
         try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
 
         // Pull data from remote
@@ -458,7 +459,8 @@ class SupabaseEngine: SyncEngine {
         }
 
         Logger.supabaseEngine.debug(
-            "SupabaseEngine getting records since: \(String(describing: since))")
+            "SupabaseEngine getting records since: \(String(describing: since))"
+        )
 
         // Supabase/PostgREST uses ISO8601 strings for date comparison
         var query = supabase.from("Record")

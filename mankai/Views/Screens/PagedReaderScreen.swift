@@ -999,8 +999,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         guard currentGroup >= 0, currentGroup < currentGroups.count else { return }
 
         let group = currentGroups[currentGroup]
-        if let lastUrl = group.urls.last,
-           let pageIndex = currentUrls.lastIndex(of: lastUrl), currentPage != pageIndex
+        if let firstUrl = group.urls.first,
+           let pageIndex = currentUrls.firstIndex(of: firstUrl), currentPage != pageIndex
         {
             currentPage = pageIndex
             updateBottomBar()

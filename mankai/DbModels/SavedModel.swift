@@ -38,7 +38,7 @@ extension SavedModel: TableRecord {
 
 extension SavedModel: Codable, FetchableRecord, PersistableRecord {}
 
-// Encoding for latestChapter
+/// Encoding for latestChapter
 extension Chapter {
     func encode() -> String {
         let id = self.id

@@ -18,7 +18,7 @@ class DummyPlugin: Plugin {
         _id = id
     }
 
-    // DummyPlugin cannot be saved
+    /// DummyPlugin cannot be saved
     override func savePlugin() throws {}
 
     override func deletePlugin() throws {}

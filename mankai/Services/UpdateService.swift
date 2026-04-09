@@ -167,12 +167,11 @@ class UpdateService: ObservableObject {
                 }
             } catch {
                 Logger.updateService.error("Error checking updates for plugin \(pluginId)", error: error)
-                if case .offline = Reach().connectionStatus() {
-                    Logger.updateService.debug("Skipping warning for plugin \(pluginId): device is offline")
-                } else {
+                if case .online = Reach().connectionStatus() {
                     let message = String(localized: "failedToCheckUpdatesForPlugin")
                     NotificationService.shared.showWarning(String(format: message, pluginId))
                 }
+
                 // Skip this plugin if there's an error
                 continue
             }

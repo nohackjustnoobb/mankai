@@ -20,7 +20,8 @@ class AppDirPlugin: ReadWriteFsPlugin {
         }
 
         Logger.appDirPlugin.info(
-            "AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
+            "AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
+        )
 
         super.init(url: mangaDir, id: "mankai")
     }
@@ -45,9 +46,9 @@ class AppDirPlugin: ReadWriteFsPlugin {
         false
     }
 
-    // Built-in plugin, do nothing
+    /// Built-in plugin, do nothing
     override func savePlugin() throws {}
 
-    // Built-in plugin, do nothing
+    /// Built-in plugin, do nothing
     override func deletePlugin() throws {}
 }

@@ -32,7 +32,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
         if FileManager.default.fileExists(atPath: idFile.path) {
             id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
-                in: .whitespacesAndNewlines)
+                in: .whitespacesAndNewlines
+            )
         } else {
             id = UUID().uuidString
             try id.write(to: idFile, atomically: true, encoding: .utf8)
@@ -458,7 +459,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     func addImages(chapterId: String, images: [Data]) async throws {
         Logger.fsPlugin.debug(
-            "Adding \(images.count) images to chapter: \(chapterId)")
+            "Adding \(images.count) images to chapter: \(chapterId)"
+        )
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for addImages")
             throw NSError(

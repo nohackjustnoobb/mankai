@@ -24,12 +24,11 @@ class HistoryService: ObservableObject {
     func get(mangaId: String, pluginId: String) -> RecordModel? {
         Logger.historyService.debug("Getting history for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
-            let result = try DbService.shared.appDb?.read { db in
+            return try DbService.shared.appDb?.read { db in
                 try RecordModel
                     .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
                     .fetchOne(db)
             }
-            return result
         } catch {
             Logger.historyService.error("Failed to get history record", error: error)
             return nil
@@ -166,7 +165,8 @@ class HistoryService: ObservableObject {
     /// - Returns: A list of `RecordModel` objects.
     func getAll(limit: Int? = nil, offset: Int = 0, shouldSync: Bool? = nil) -> [RecordModel] {
         Logger.historyService.debug(
-            "Getting all history records, limit: \(String(describing: limit)), offset: \(offset)")
+            "Getting all history records, limit: \(String(describing: limit)), offset: \(offset)"
+        )
         do {
             let result = try DbService.shared.appDb?.read { db in
                 var request = RecordModel.order(Column("datetime").desc)

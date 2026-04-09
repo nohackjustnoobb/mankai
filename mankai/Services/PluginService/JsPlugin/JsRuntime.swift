@@ -29,9 +29,11 @@ class JsRuntime: NSObject {
     private lazy var jsStorage: String = loadScript("storage")
 
     private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
-        options: .traditionalize)
+        options: .traditionalize
+    )
     private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
-        options: .simplify)
+        options: .simplify
+    )
 
     private func loadScript(_ name: String) -> String {
         if let url = Bundle.main.url(forResource: name, withExtension: "js") {
@@ -203,7 +205,8 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         let start = Date()
         defer {
             Logger.jsRuntime.debug(
-                "\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms")
+                "\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms"
+            )
         }
 
         let method = Method(rawValue: body["method"] as! String)

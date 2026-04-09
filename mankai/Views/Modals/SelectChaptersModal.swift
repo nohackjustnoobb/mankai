@@ -9,7 +9,10 @@ import GRDB
 import SwiftUI
 
 private struct ChapterGroupEntry: Identifiable {
-    var id: String { key }
+    var id: String {
+        key
+    }
+
     let key: String
     let chapters: [Chapter]
 }

@@ -214,7 +214,8 @@ class AuthManager {
 
         guard httpResponse.statusCode == 200 else {
             Logger.authManager.error(
-                "AuthManager refresh failed with status code: \(httpResponse.statusCode)")
+                "AuthManager refresh failed with status code: \(httpResponse.statusCode)"
+            )
             throw NSError(
                 domain: "AuthManager", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "refreshFailed")]

@@ -31,7 +31,8 @@ struct DebugScreen: View {
                     LabeledContent("authors") {
                         Text(
                             plugin.authors.isEmpty
-                                ? String(localized: "nil") : plugin.authors.joined(separator: ", "))
+                                ? String(localized: "nil") : plugin.authors.joined(separator: ", ")
+                        )
                     }
                     LabeledContent("repository") {
                         Text(plugin.repository ?? String(localized: "nil"))

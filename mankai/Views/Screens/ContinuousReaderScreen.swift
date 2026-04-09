@@ -456,8 +456,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         currentGroup = closestGroup
 
         // Update current page to the last page in the closest group
-        if let closestGroup = closestGroup, let lastUrl = closestGroup.urls.last,
-           let pageIndex = urls.lastIndex(of: lastUrl), pageIndex != currentPage
+        if let closestGroup = closestGroup, let firstUrl = closestGroup.urls.first,
+           let pageIndex = urls.firstIndex(of: firstUrl), pageIndex != currentPage
         {
             currentPage = pageIndex
             updateBottomBar()

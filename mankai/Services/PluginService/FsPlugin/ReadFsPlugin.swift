@@ -43,7 +43,8 @@ class ReadFsPlugin: Plugin {
             _isAccessing = url.startAccessingSecurityScopedResource()
             if !_isAccessing {
                 Logger.fsPlugin.error(
-                    "Failed to start accessing security scoped resource for plugin: \(_id)")
+                    "Failed to start accessing security scoped resource for plugin: \(_id)"
+                )
             }
         }
     }
@@ -68,7 +69,8 @@ class ReadFsPlugin: Plugin {
         }
 
         let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
-            in: .whitespacesAndNewlines)
+            in: .whitespacesAndNewlines
+        )
         guard !id.isEmpty else {
             throw NSError(
                 domain: "ReadFsPlugin", code: 0,
@@ -127,14 +129,16 @@ class ReadFsPlugin: Plugin {
                         Logger.fsPlugin.info("Updated stale bookmark for plugin: \(model.id)")
                     } catch {
                         Logger.fsPlugin.error(
-                            "Failed to update stale bookmark for plugin \(model.id): \(error)")
+                            "Failed to update stale bookmark for plugin \(model.id): \(error)"
+                        )
                         continue
                     }
                 }
 
                 if !url.startAccessingSecurityScopedResource() {
                     Logger.fsPlugin.error(
-                        "Failed to start accessing security scoped resource for plugin: \(model.id)")
+                        "Failed to start accessing security scoped resource for plugin: \(model.id)"
+                    )
                     continue
                 }
 
@@ -507,8 +511,7 @@ class ReadFsPlugin: Plugin {
         }
 
         do {
-            let imageData = try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
-            return imageData
+            return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
         } catch {
             Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
             throw NSError(
