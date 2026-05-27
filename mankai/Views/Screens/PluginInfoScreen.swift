@@ -87,6 +87,8 @@ struct PluginInfoScreen: View {
                             switch config.type {
                             case .text:
                                 TextConfigView(plugin: plugin, config: config)
+                            case .password:
+                                TextConfigView(plugin: plugin, config: config, isPassword: true)
                             case .number:
                                 NumberConfigView(plugin: plugin, config: config)
                             case .boolean:
@@ -179,6 +181,7 @@ struct ConfigTextFieldStyle: TextFieldStyle {
 struct TextConfigView: View {
     let plugin: Plugin
     let config: Config
+    var isPassword: Bool = false
 
     @State private var textValue: String = ""
     @State private var showErrorAlert = false
@@ -196,23 +199,30 @@ struct TextConfigView: View {
                 }
             }
 
-            TextField(LocalizedStringKey(config.type.rawValue), text: $textValue)
-                .textFieldStyle(ConfigTextFieldStyle())
-                .autocapitalization(.none)
-                .onAppear {
-                    updateTextValue()
+            Group {
+                if isPassword {
+                    SecureField(LocalizedStringKey(config.type.rawValue), text: $textValue)
+                        .textContentType(.password)
+                } else {
+                    TextField(LocalizedStringKey(config.type.rawValue), text: $textValue)
                 }
-                .onReceive(plugin.objectWillChange) {
-                    updateTextValue()
+            }
+            .textFieldStyle(ConfigTextFieldStyle())
+            .autocapitalization(.none)
+            .onAppear {
+                updateTextValue()
+            }
+            .onReceive(plugin.objectWillChange) {
+                updateTextValue()
+            }
+            .onChange(of: textValue, initial: false) { _, newValue in
+                do {
+                    try plugin.setConfig(key: config.key, value: newValue)
+                } catch {
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
                 }
-                .onChange(of: textValue, initial: false) { _, newValue in
-                    do {
-                        try plugin.setConfig(key: config.key, value: newValue)
-                    } catch {
-                        errorMessage = error.localizedDescription
-                        showErrorAlert = true
-                    }
-                }
+            }
         }
         .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}

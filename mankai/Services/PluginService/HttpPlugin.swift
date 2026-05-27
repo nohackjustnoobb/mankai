@@ -48,7 +48,7 @@ class HttpPlugin: Plugin {
     override var configs: [Config] {
         [
             Config(key: "username", name: "username", type: .text, defaultValue: ""),
-            Config(key: "password", name: "password", type: .text, defaultValue: ""),
+            Config(key: "password", name: "password", type: .password, defaultValue: ""),
         ]
     }
 
@@ -139,7 +139,32 @@ class HttpPlugin: Plugin {
             return nil
         }
 
-        return fromJson(baseUrl: url.absoluteString, json)
+        var baseUrl = url.absoluteString
+        if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems = nil
+            components.fragment = nil
+            baseUrl = components.string ?? url.absoluteString
+        }
+
+        guard let plugin = fromJson(baseUrl: baseUrl, json) else {
+            return nil
+        }
+
+        let configMap = Dictionary(uniqueKeysWithValues: plugin.configs.map { ($0.key, $0) })
+        let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+        var matchedConfigValues: [ConfigValue] = []
+        for item in queryItems {
+            guard let config = configMap[item.name] else { continue }
+            let parsedValue = config.type.parseValue(item.value ?? "")
+            matchedConfigValues.append(ConfigValue(key: item.name, value: parsedValue))
+        }
+
+        if !matchedConfigValues.isEmpty {
+            plugin.setConfigValues(matchedConfigValues)
+        }
+
+        return plugin
     }
 
     static func fromDataModel(_ httpPluginModel: HttpPluginModel) -> HttpPlugin? {

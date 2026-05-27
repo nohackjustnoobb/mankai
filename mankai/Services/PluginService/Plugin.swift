@@ -9,9 +9,24 @@ import Foundation
 
 enum ConfigType: String {
     case text
+    case password
     case number
     case boolean
     case select
+
+    func parseValue(_ stringValue: String) -> Any {
+        switch self {
+        case .boolean:
+            return stringValue.lowercased() == "true" || stringValue == "1"
+        case .number:
+            if let intValue = Int(stringValue) {
+                return intValue
+            }
+            return Double(stringValue) ?? stringValue
+        case .text, .password, .select:
+            return stringValue
+        }
+    }
 }
 
 struct Config {

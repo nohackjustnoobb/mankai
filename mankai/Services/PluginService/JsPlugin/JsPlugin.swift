@@ -197,7 +197,25 @@ class JsPlugin: Plugin {
             return nil
         }
 
-        return fromJson(json)
+        guard let plugin = fromJson(json) else {
+            return nil
+        }
+
+        let configMap = Dictionary(uniqueKeysWithValues: plugin.configs.map { ($0.key, $0) })
+        let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+
+        var matchedConfigValues: [ConfigValue] = []
+        for item in queryItems {
+            guard let config = configMap[item.name] else { continue }
+            let parsedValue = config.type.parseValue(item.value ?? "")
+            matchedConfigValues.append(ConfigValue(key: item.name, value: parsedValue))
+        }
+
+        if !matchedConfigValues.isEmpty {
+            plugin.setConfigValues(matchedConfigValues)
+        }
+
+        return plugin
     }
 
     static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
