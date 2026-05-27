@@ -193,8 +193,8 @@ struct HttpEngineConfigView: View {
                         if var components = URLComponents(string: serverUrl),
                            let queryItems = components.queryItems
                         {
-                            loginUsername = queryItems.first(where: { $0.name == "username" })?.value
-                            loginPassword = queryItems.first(where: { $0.name == "password" })?.value
+                            loginUsername = queryItems.first(where: { $0.name == "username" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                            loginPassword = queryItems.first(where: { $0.name == "password" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
 
                             if loginUsername != nil || loginPassword != nil {
                                 components.queryItems = components.queryItems?.filter {
@@ -213,6 +213,7 @@ struct HttpEngineConfigView: View {
                         if let loginUsername = loginUsername, let loginPassword = loginPassword {
                             self.username = loginUsername
                             self.password = loginPassword
+
                             Task {
                                 await performLogin()
                             }

@@ -15,16 +15,17 @@ enum ConfigType: String {
     case select
 
     func parseValue(_ stringValue: String) -> Any {
+        let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         switch self {
         case .boolean:
-            return stringValue.lowercased() == "true" || stringValue == "1"
+            return trimmed.lowercased() == "true" || trimmed == "1"
         case .number:
-            if let intValue = Int(stringValue) {
+            if let intValue = Int(trimmed) {
                 return intValue
             }
-            return Double(stringValue) ?? stringValue
+            return Double(trimmed) ?? trimmed
         case .text, .password, .select:
-            return stringValue
+            return trimmed
         }
     }
 }
