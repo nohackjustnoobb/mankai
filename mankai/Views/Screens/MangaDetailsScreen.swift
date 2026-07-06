@@ -74,6 +74,22 @@ struct MangaDetailsScreen: View {
         showReaderScreen = true
     }
 
+    private func scrollToRecord(proxy: ScrollViewProxy) {
+        guard let record = record, let mangaData = mangaData else { return }
+
+        guard let targetKey = mangaData.chapters.first(where: { _, chapters in
+            chapters.contains { $0.id == record.chapterId }
+        })?.key else {
+            return
+        }
+
+        if selectedChapterKey == targetKey {
+            proxy.scrollTo(record.chapterId, anchor: .center)
+        } else {
+            selectedChapterKey = targetKey
+        }
+    }
+
     private func handleReadContinueAction() {
         if let record = record, let mangaData = mangaData {
             for (chaptersKey, chapters) in mangaData.chapters {
@@ -441,14 +457,10 @@ struct MangaDetailsScreen: View {
                             }
                             .frame(maxWidth: .infinity)
                             .onAppear {
-                                if let record = record {
-                                    proxy.scrollTo(record.chapterId, anchor: .center)
-                                }
+                                scrollToRecord(proxy: proxy)
                             }
-                            .onChange(of: record, initial: false) { _, newRecord in
-                                if let newRecord = newRecord {
-                                    proxy.scrollTo(newRecord.chapterId, anchor: .center)
-                                }
+                            .onChange(of: record, initial: false) { _, _ in
+                                scrollToRecord(proxy: proxy)
                             }
                             .onChange(of: selectedChapterKey) {
                                 if let record = record {
