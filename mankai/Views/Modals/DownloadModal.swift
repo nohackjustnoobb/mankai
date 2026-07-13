@@ -192,7 +192,7 @@ struct DownloadTaskRow: View {
                         ProgressView(value: progress)
                             .progressViewStyle(.linear)
 
-                        Text("\(Int(progress * 100))%")
+                        Text(progress, format: .percent.scale(100).precision(.integerLength(0)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

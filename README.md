@@ -1,6 +1,3 @@
-> [!WARNING]
-> This project is currently under active development. Many details are still being finalized.
-
 > [!IMPORTANT]
 > Mankai does not provide, host, or distribute any media content. Users are responsible for obtaining media through legal means and complying with their local laws. Any plugins used with the app are unaffiliated with Mankai, and we have no control over them.
 
