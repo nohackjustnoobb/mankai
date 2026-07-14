@@ -60,7 +60,7 @@ class ReadFsPlugin: Plugin {
             url.stopAccessingSecurityScopedResource()
         }
 
-        let idFile = url.appendingPathComponent("mankai.id")
+        let idFile = url.appendingPathComponent(".mankai")
         guard FileManager.default.fileExists(atPath: idFile.path) else {
             throw NSError(
                 domain: "ReadFsPlugin", code: 0,

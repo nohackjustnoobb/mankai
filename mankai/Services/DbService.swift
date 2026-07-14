@@ -47,6 +47,7 @@ class DbService {
 
                 try HttpPluginModel.createTable(db)
                 try FsPluginModel.createTable(db)
+                try BookPluginModel.createTable(db)
             }
 
             Logger.dbService.info("appDb initialized successfully")

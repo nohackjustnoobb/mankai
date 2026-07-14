@@ -42,7 +42,7 @@ class DownloadPlugin: Plugin {
         _db
     }
 
-    override init() {
+    override private init() {
         Logger.downloadPlugin.debug("Initializing DownloadPlugin")
 
         let fileManager = FileManager.default

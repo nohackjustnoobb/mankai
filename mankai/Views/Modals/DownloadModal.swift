@@ -149,13 +149,12 @@ struct DownloadedMangaRow: View {
 
     private func handleTap() {
         guard let pluginId = manga.meta,
-              let plugin = PluginService.shared.getPlugin(pluginId),
-              let simpleManga = manga.toManga()
+              let plugin = PluginService.shared.getPlugin(pluginId)
         else {
             return
         }
 
-        navigate(plugin, simpleManga)
+        navigate(plugin, manga.toManga())
     }
 
     private var totalChapterCount: Int? {

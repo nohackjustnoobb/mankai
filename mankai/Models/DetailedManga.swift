@@ -122,7 +122,7 @@ struct DetailedManga: Identifiable, Codable {
         id = UUID().uuidString
         authors = []
         genres = []
-        chapters = ["serial": [], "extra": [], "volume": []]
+        chapters = [String(localized: "serial"): [], String(localized: "extra"): [], String(localized: "volume"): []]
         status = .onGoing
     }
 
@@ -183,7 +183,7 @@ struct DetailedManga: Identifiable, Codable {
         try container.encodeIfPresent(remarks, forKey: .remarks)
     }
 
-    func toManga() -> Manga? {
+    func toManga() -> Manga {
         var mangaDict: [String: Any] = [
             "id": id,
         ]
@@ -215,6 +215,6 @@ struct DetailedManga: Identifiable, Codable {
             mangaDict["meta"] = meta
         }
 
-        return Manga(from: mangaDict)
+        return Manga(from: mangaDict)!
     }
 }

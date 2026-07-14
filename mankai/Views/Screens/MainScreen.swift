@@ -18,10 +18,15 @@ struct MainScreen: View {
                 .tabItem {
                     Label("library", systemImage: "books.vertical.fill")
                 }
+            BrowseTab()
+                .tabItem {
+                    Label("browse", systemImage: "folder.fill")
+                }
             SettingsTab()
                 .tabItem {
                     Label("settings", systemImage: "gearshape")
                 }
+          
         }
         .overlay(alignment: .bottom) {
             NotificationContainerView()

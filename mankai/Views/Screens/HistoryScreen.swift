@@ -19,14 +19,11 @@ struct HistoryScreen: View {
         NavigationStack {
             Group {
                 if records.isEmpty && !isLoading {
-                    VStack(spacing: 8) {
-                        Image(systemName: "clock.badge.xmark")
-                            .font(.title)
-                        Text("noHistory")
-                            .font(.headline)
-                    }
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ContentUnavailableView(
+                        "noHistory",
+                        systemImage: "clock.badge.xmark",
+                        description: Text("noHistoryDescription")
+                    )
                 } else {
                     List {
                         Section {
@@ -152,7 +149,7 @@ struct HistoryItemView: View {
     }
 
     private func loadMangaData() {
-        plugin = PluginService.shared.getPlugin(record.pluginId)
+        plugin = PluginService.shared.getPlugin(record.pluginId) ?? BrowseService.shared.getPlugin(record.pluginId)
 
         // Try to get manga from DbService
         if let mangaModel = getMangaModel(mangaId: record.mangaId, pluginId: record.pluginId),
@@ -178,6 +175,10 @@ struct HistoryItemView: View {
             }
         } else {
             isLoading = false
+        }
+
+        if manga == nil {
+            Logger.ui.warning("Failed to load manga for record: \(record)")
         }
     }
 

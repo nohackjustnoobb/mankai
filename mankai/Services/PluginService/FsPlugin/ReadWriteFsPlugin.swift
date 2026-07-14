@@ -27,7 +27,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             url.stopAccessingSecurityScopedResource()
         }
 
-        let idFile = url.appendingPathComponent("mankai.id")
+        let idFile = url.appendingPathComponent(".mankai")
         let id: String
 
         if FileManager.default.fileExists(atPath: idFile.path) {
@@ -477,7 +477,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             else {
                 throw NSError(
                     domain: "ReadWriteFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: "Chapter not found"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterNotFound")]
                 )
             }
             return group.mangaId

@@ -12,6 +12,7 @@
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
+		E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E4CAEFFB3006797500208FB4 /* ZIPFoundation */; };
 		E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
@@ -51,6 +52,7 @@
 				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
+				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +109,7 @@
 				E42E15022E2A9951006F8B98 /* GRDB */,
 				E4033BA22F1BC53D00A7B886 /* OpenCC */,
 				E4958E0F2F2FABE1004F2F4D /* Supabase */,
+				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -142,6 +145,7 @@
 				E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
 				E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -429,6 +433,14 @@
 				minimumVersion = 2.2.11;
 			};
 		};
+		E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.9.20;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -451,6 +463,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */;
 			productName = WrappingHStack;
+		};
+		E4CAEFFB3006797500208FB4 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

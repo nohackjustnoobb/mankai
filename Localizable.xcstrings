@@ -603,6 +603,22 @@
         }
       }
     },
+    "browse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽"
+          }
+        }
+      }
+    },
     "builtin" : {
       "localizations" : {
         "en" : {
@@ -2729,6 +2745,22 @@
         }
       }
     },
+    "invalidMangaMeta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Manga Meta"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫元數據無效"
+          }
+        }
+      }
+    },
     "invalidMangaOrChapterFormat" : {
       "localizations" : {
         "en" : {
@@ -3133,6 +3165,22 @@
         }
       }
     },
+    "localDir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Directory"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地目錄"
+          }
+        }
+      }
+    },
     "login" : {
       "localizations" : {
         "en" : {
@@ -3274,6 +3322,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到漫畫"
+          }
+        }
+      }
+    },
+    "mangaNotInCache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga not in cache"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫不在快取中"
           }
         }
       }
@@ -3616,6 +3680,38 @@
         }
       }
     },
+    "noEntities" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing Here"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這裡沒有東西"
+          }
+        }
+      }
+    },
+    "noEntitiesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder is empty"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個資料夾是空的"
+          }
+        }
+      }
+    },
     "noFolderSelected" : {
       "localizations" : {
         "en" : {
@@ -3660,6 +3756,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有歷史紀錄"
+          }
+        }
+      }
+    },
+    "noHistoryDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga you read will appear here"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您閱讀過的漫畫會顯示在這裡"
+          }
+        }
+      }
+    },
+    "noImagesFoundInArchive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Images Found In Archive"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有找到圖片在歸檔中"
           }
         }
       }
@@ -3760,6 +3888,22 @@
         }
       }
     },
+    "noPluginAvailableDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install a plugin to browse manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安裝插件以瀏覽漫畫"
+          }
+        }
+      }
+    },
     "noPreviousChapter" : {
       "localizations" : {
         "en" : {
@@ -3808,6 +3952,22 @@
         }
       }
     },
+    "noResultsFoundDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a different search"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請嘗試其他搜尋條件"
+          }
+        }
+      }
+    },
     "noSavedManga" : {
       "localizations" : {
         "en" : {
@@ -3820,6 +3980,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有已收藏的漫畫"
+          }
+        }
+      }
+    },
+    "noSavedMangaDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save manga to find them here later"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存漫畫後會在這裡顯示"
           }
         }
       }
@@ -4047,6 +4223,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解析"
+          }
+        }
+      }
+    },
+    "parserNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parser not found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析器未找到"
           }
         }
       }

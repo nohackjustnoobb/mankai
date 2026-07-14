@@ -1,0 +1,355 @@
+//
+//  CbzParser.swift
+//  mankai
+//
+//  Created by Travis Xu on 14/7/2026.
+//
+
+// This follows the RFC-CBZ specification by hyugogirubato (https://github.com/hyugogirubato/cbz/blob/main/docs/RFC-CBZ.md),
+// which itself derives from the ComicInfo schema originally introduced by ComicRack and now governed by the anansi-project (https://github.com/anansi-project/comicinfo).
+// Since this is an independent implementation, it may differ from the reference ComicRack/anansi-project implementation.
+// Both referenced projects (RFC-CBZ and comicinfo) are released under the MIT License.
+
+import CryptoKit
+import Foundation
+import ZIPFoundation
+
+class CbzParser: Parser {
+    override var id: String {
+        "cbz"
+    }
+
+    override var supportedExtensions: [String] {
+        ["cbz"]
+    }
+
+    override func parse(path: String) async throws -> DetailedManga {
+        Logger.cbzParser.debug("Parsing archive: \(path)")
+        let archive = try Archive(url: URL(fileURLWithPath: path), accessMode: .read)
+
+        // Build the reading-order list of image entries
+        let imageEntries = archive
+            .compactMap { entry -> Entry? in
+                guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
+                return entry
+            }
+            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+
+        guard !imageEntries.isEmpty else {
+            Logger.cbzParser.error("No supported images found in archive: \(path)")
+            throw NSError(
+                domain: "CbzParser", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noImagesFoundInArchive")]
+            )
+        }
+
+        let hashedId = try Self.hashFile(at: path)
+        Logger.cbzParser.debug("Computed id (\(imageEntries.count) images): \(hashedId)")
+        var manga = DetailedManga()
+        manga.id = hashedId
+        // It allows `parseChapter`/`parseImage` to reopen the archive later.
+        manga.meta = path
+
+        // Parse ComicInfo.xml if it exists
+        var info: ComicInfo? = nil
+        if let infoEntry = archive["ComicInfo.xml"],
+           let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
+        {
+            Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
+            info = ComicInfoParser.parse(data: infoData)
+            if info == nil {
+                Logger.cbzParser.warning("ComicInfo.xml exists but could not be parsed, proceeding with image-only mode")
+            }
+        } else {
+            Logger.cbzParser.debug("No ComicInfo.xml found, using filename and static chapter name")
+        }
+
+        if let info {
+            let series = info.series?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let titleField = info.title?.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Manga title: prefer Series, fall back to the issue Title, then to the filename.
+            if let series, !series.isEmpty {
+                manga.title = series
+            } else if let titleField, !titleField.isEmpty {
+                manga.title = titleField
+            } else {
+                manga.title = (path as NSString).deletingPathExtension as String
+            }
+
+            // Chapter title: the issue Title, or a static name if absent.
+            let chapterTitle: String? = (titleField?.isEmpty == false) ? titleField : String(localized: "volume")
+
+            let summary = info.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
+            manga.description = (summary?.isEmpty == false) ? summary : nil
+
+            // Authors: aggregate the credit fields, which are comma-separated.
+            let creditFields = [
+                info.writer, info.penciller, info.inker, info.colorist,
+                info.letterer, info.coverArtist, info.editor, info.translator,
+            ]
+            var authors: [String] = []
+            for field in creditFields {
+                guard let field, !field.isEmpty else { continue }
+                authors.append(
+                    contentsOf: field
+                        .split(separator: ",")
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                )
+            }
+            manga.authors = Self.uniqueStrings(authors)
+
+            // Reading direction mapped from the <Manga> element.
+            if let mangaTag = info.manga?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !mangaTag.isEmpty
+            {
+                switch mangaTag {
+                case "No":
+                    manga.readingDirection = .leftToRight
+                case "Yes", "YesAndRightToLeft":
+                    manga.readingDirection = .rightToLeft
+                default:
+                    break
+                }
+            }
+
+            // Cover: the FrontCover page if declared, otherwise the first image.
+            let coverEntry = info.frontCoverIndex.flatMap { idx -> Entry? in
+                guard idx >= 0, idx < imageEntries.count else { return nil }
+                return imageEntries[idx]
+            } ?? imageEntries.first
+            if let cover = coverEntry {
+                manga.cover = "\(path):\(cover.path)"
+            }
+
+            let chapter = Chapter(id: hashedId, title: chapterTitle)
+            manga.chapters = ["volume": [chapter]]
+            manga.latestChapter = chapter
+        } else {
+            // No ComicInfo.xml: use the filename as the title and a static chapter name.
+            manga.title = (path as NSString).deletingPathExtension as String
+            if let cover = imageEntries.first {
+                manga.cover = "\(path):\(cover.path)"
+            }
+            let chapter = Chapter(id: hashedId, title: String(localized: "volume"))
+            manga.chapters = ["volume": [chapter]]
+            manga.latestChapter = chapter
+        }
+
+        return manga
+    }
+
+    override func parseChapter(manga: DetailedManga, chapter _: Chapter) async throws -> [String] {
+        Logger.cbzParser.debug("Parsing chapter images for manga: \(manga.id)")
+        guard let archivePath = manga.meta else {
+            Logger.cbzParser.error("Missing archive path in manga meta")
+            throw NSError(
+                domain: "CbzParser", code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "missing archive path in manga meta"]
+            )
+        }
+
+        let archive = try Archive(url: URL(fileURLWithPath: archivePath), accessMode: .read)
+        let imageEntries = archive
+            .compactMap { entry -> Entry? in
+                guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
+                return entry
+            }
+            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+
+        Logger.cbzParser.debug("Found \(imageEntries.count) images for chapter of \(manga.id)")
+        return imageEntries.map { "\(archivePath):\($0.path)" }
+    }
+
+    override func parseImage(path: String) async throws -> Data {
+        Logger.cbzParser.debug("Reading image: \(path)")
+        // The path is encoded as `<archive_path>:<entry_path>`.
+        guard let separator = path.range(of: ":") else {
+            Logger.cbzParser.error("Invalid image path (missing ':' separator): \(path)")
+            throw NSError(
+                domain: "CbzParser", code: 3,
+                userInfo: [NSLocalizedDescriptionKey: "invalid image path: \(path)"]
+            )
+        }
+
+        let archivePath = String(path[..<separator.lowerBound])
+        let entryPath = String(path[separator.upperBound...])
+
+        let archive = try Archive(url: URL(fileURLWithPath: archivePath), accessMode: .read)
+        guard let entry = archive[entryPath] else {
+            Logger.cbzParser.error("Entry not found in archive: \(entryPath)")
+            throw NSError(
+                domain: "CbzParser", code: 4,
+                userInfo: [NSLocalizedDescriptionKey: "entry not found: \(entryPath)"]
+            )
+        }
+
+        return try Self.entryData(archive: archive, entry: entry)
+    }
+
+    // MARK: - Helpers
+
+    /// Image extensions supported by the parser (see RFC-CBZ §5).
+    private static let imageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff", "tif",
+    ]
+
+    private static func isImageEntry(_ entry: Entry) -> Bool {
+        let name = (entry.path as NSString).lastPathComponent
+
+        // Ignore hidden files and macOS metadata folders.
+        if name.hasPrefix(".") || entry.path.contains("__MACOSX/") { return false }
+
+        let ext = (name as NSString).pathExtension.lowercased()
+        return imageExtensions.contains(ext)
+    }
+
+    private static func entryData(archive: Archive, entry: Entry) throws -> Data {
+        var data = Data()
+        _ = try archive.extract(entry, consumer: { chunk in
+            data.append(chunk)
+        })
+        return data
+    }
+
+    private static func hashFile(at path: String) throws -> String {
+        // SHA256 of the file contents, streamed in chunks to avoid loading the whole archive into memory.
+        guard let handle = FileHandle(forReadingAtPath: path) else {
+            throw NSError(
+                domain: "CbzParser", code: 5,
+                userInfo: [NSLocalizedDescriptionKey: "unable to open file for hashing: \(path)"]
+            )
+        }
+        defer { try? handle.close() }
+
+        var hasher = SHA256()
+        let chunkSize = 1 << 16
+        while true {
+            let chunk = handle.readData(ofLength: chunkSize)
+            if chunk.isEmpty { break }
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func uniqueStrings(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for value in values where !seen.contains(value) {
+            seen.insert(value)
+            result.append(value)
+        }
+        return result
+    }
+}
+
+// MARK: - ComicInfo.xml parsing
+
+private struct ComicInfo {
+    var title: String?
+    var series: String?
+    var summary: String?
+    var writer: String?
+    var penciller: String?
+    var inker: String?
+    var colorist: String?
+    var letterer: String?
+    var coverArtist: String?
+    var editor: String?
+    var translator: String?
+    var manga: String?
+    /// Zero-based index of the FrontCover page in the sorted image list (if any).
+    var frontCoverIndex: Int?
+}
+
+/// A lenient SAX parser for `ComicInfo.xml`. Only the elements relevant to this parser are collected.
+private class ComicInfoParser: NSObject, XMLParserDelegate {
+    private var info = ComicInfo()
+    private var text = ""
+    private var currentElement: String?
+    private var inPages = false
+    private var frontCoverIndex: Int?
+
+    static func parse(data: Data) -> ComicInfo? {
+        let parser = XMLParser(data: data)
+        let delegate = ComicInfoParser()
+        parser.delegate = delegate
+        parser.shouldProcessNamespaces = false
+        guard parser.parse() else { return nil }
+        var info = delegate.info
+        info.frontCoverIndex = delegate.frontCoverIndex
+        return info
+    }
+
+    func parser(
+        _: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI _: String?,
+        qualifiedName _: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
+        currentElement = elementName
+        text = ""
+
+        if elementName == "Pages" {
+            inPages = true
+            return
+        }
+
+        if inPages, elementName == "Page" {
+            let type = attributeDict["Type"] ?? "Story"
+            if type == "FrontCover", let image = attributeDict["Image"], let index = Int(image) {
+                frontCoverIndex = index
+            }
+        }
+    }
+
+    func parser(_: XMLParser, foundCharacters string: String) {
+        text += string
+    }
+
+    func parser(
+        _: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI _: String?,
+        qualifiedName _: String?
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if elementName == "Pages" {
+            inPages = false
+        } else if !inPages, let current = currentElement, elementName == current {
+            switch current {
+            case "Title":
+                info.title = trimmed
+            case "Series":
+                info.series = trimmed
+            case "Summary":
+                info.summary = trimmed
+            case "Writer":
+                info.writer = trimmed
+            case "Penciller":
+                info.penciller = trimmed
+            case "Inker":
+                info.inker = trimmed
+            case "Colorist":
+                info.colorist = trimmed
+            case "Letterer":
+                info.letterer = trimmed
+            case "CoverArtist":
+                info.coverArtist = trimmed
+            case "Editor":
+                info.editor = trimmed
+            case "Translator":
+                info.translator = trimmed
+            case "Manga":
+                info.manga = trimmed
+            default:
+                break
+            }
+        }
+
+        currentElement = nil
+        text = ""
+    }
+}
