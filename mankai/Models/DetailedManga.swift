@@ -122,7 +122,7 @@ struct DetailedManga: Identifiable, Codable {
         id = UUID().uuidString
         authors = []
         genres = []
-        chapters = [String(localized: "serial"): [], String(localized: "extra"): [], String(localized: "volume"): []]
+        chapters = ["serial": [], "extra": [], "volume": []]
         status = .onGoing
     }
 

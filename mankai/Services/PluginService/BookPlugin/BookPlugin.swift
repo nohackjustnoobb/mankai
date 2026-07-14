@@ -429,6 +429,10 @@ private final class DualKeyLRUCache<KeyA: Hashable, KeyB: Hashable, Value> {
     private var values: [KeyA: Value] = [:]
     /// Maps the secondary key (e.g. manga id) to the primary key.
     private var keyBToKeyA: [KeyB: KeyA] = [:]
+    /// Reverse index of `keyBToKeyA`, kept in sync so stale secondary keys can be
+    /// dropped in O(1) when a primary key is re-parsed with a new secondary key
+    /// or evicted from the cache.
+    private var keyAToKeyB: [KeyA: KeyB] = [:]
     /// LRU order tracked by the primary key.
     private var order: [KeyA] = []
     private let lock = NSLock()
@@ -467,13 +471,22 @@ private final class DualKeyLRUCache<KeyA: Hashable, KeyB: Hashable, Value> {
             order.append(keyA)
         }
         values[keyA] = value
+
+        // Drop the previous secondary key (if any) for this primary key, otherwise
+        // old keyB lookups would resolve to the new (different) value.
+        if let oldKeyB = keyAToKeyB[keyA], oldKeyB != keyB {
+            keyBToKeyA.removeValue(forKey: oldKeyB)
+        }
+        keyAToKeyB[keyA] = keyB
         keyBToKeyA[keyB] = keyA
 
         while order.count > maxSize {
             let oldest = order.removeFirst()
             values.removeValue(forKey: oldest)
-            // Remove any secondary keys that pointed to the evicted primary key.
-            keyBToKeyA = keyBToKeyA.filter { $0.value != oldest }
+            // Remove the secondary key that pointed to the evicted primary key.
+            if let oldKeyB = keyAToKeyB.removeValue(forKey: oldest) {
+                keyBToKeyA.removeValue(forKey: oldKeyB)
+            }
         }
     }
 

@@ -41,9 +41,9 @@ class BrowseService: ObservableObject {
     }
 
     private func loadBookPlugins() {
-        Logger.pluginService.debug("Loading book plugins")
+        Logger.browseService.debug("Loading book plugins")
         let bookPlugins = BookPlugin.loadPlugins()
-        Logger.pluginService.info("Loaded \(bookPlugins.count) book plugins")
+        Logger.browseService.info("Loaded \(bookPlugins.count) book plugins")
 
         for bookPlugin in bookPlugins {
             _plugins[bookPlugin.id] = bookPlugin

@@ -189,7 +189,7 @@ class CbzParser: Parser {
 
     // MARK: - Helpers
 
-    /// Image extensions supported by the parser (see RFC-CBZ §5).
+    /// Image extensions supported by the parser
     private static let imageExtensions: Set<String> = [
         "jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff", "tif",
     ]

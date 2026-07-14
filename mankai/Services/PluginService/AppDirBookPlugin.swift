@@ -16,7 +16,11 @@ class AppDirBookPlugin: BookPlugin {
             .first!.appendingPathComponent("books")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {
-            try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
+            do {
+                try fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
+            } catch {
+                Logger.appDirBookPlugin.error("Failed to create directory \(mangaDir.path): \(error)")
+            }
         }
 
         Logger.appDirBookPlugin.info(
