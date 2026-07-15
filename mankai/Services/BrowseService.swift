@@ -86,7 +86,7 @@ class BrowseService: ObservableObject {
     /// A list of all available plugins, with `AppDirBookPlugin` always placed first.
     var plugins: [BrowsablePlugin] {
         let appDir = AppDirBookPlugin.shared
-        let others = _plugins.values.filter { $0.id != appDir.id }
+        let others = _plugins.values.filter { $0.id != appDir.id }.sorted { $0.id < $1.id }
         return [appDir] + others
     }
 

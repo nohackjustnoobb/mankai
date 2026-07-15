@@ -1693,6 +1693,22 @@
         }
       }
     },
+    "entryNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry not found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到條目"
+          }
+        }
+      }
+    },
     "error" : {
       "localizations" : {
         "en" : {
@@ -2841,6 +2857,22 @@
         }
       }
     },
+    "invalidImagePath" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Image Path"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片路徑無效"
+          }
+        }
+      }
+    },
     "invalidInputImage" : {
       "localizations" : {
         "en" : {
@@ -3536,6 +3568,22 @@
         }
       }
     },
+    "missingArchivePath" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing Archive Path"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少歸檔路徑"
+          }
+        }
+      }
+    },
     "missingChapterId" : {
       "localizations" : {
         "en" : {
@@ -3596,6 +3644,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缺少更新令牌或伺服器網址"
+          }
+        }
+      }
+    },
+    "missingRequiredFields" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing Required Fields"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少必填欄位"
           }
         }
       }
@@ -5831,6 +5895,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每行二頁"
+          }
+        }
+      }
+    },
+    "unableToOpenFileForHashing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to open file for hashing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法打開檔案進行雜湊"
           }
         }
       }

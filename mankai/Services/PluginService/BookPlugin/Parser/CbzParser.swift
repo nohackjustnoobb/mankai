@@ -100,7 +100,7 @@ class CbzParser: Parser {
             guard !imageEntries.isEmpty else {
                 Logger.cbzParser.error("No supported images found in archive: \(path)")
                 throw NSError(
-                    domain: "CbzParser", code: 1,
+                    domain: "CbzParser", code: 0,
                     userInfo: [NSLocalizedDescriptionKey: String(localized: "noImagesFoundInArchive")]
                 )
             }
@@ -204,8 +204,8 @@ class CbzParser: Parser {
         guard let archivePath = manga.meta else {
             Logger.cbzParser.error("Missing archive path in manga meta")
             throw NSError(
-                domain: "CbzParser", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "missing archive path in manga meta"]
+                domain: "CbzParser", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingArchivePath")]
             )
         }
 
@@ -228,8 +228,8 @@ class CbzParser: Parser {
         guard let separator = path.range(of: ":") else {
             Logger.cbzParser.error("Invalid image path (missing ':' separator): \(path)")
             throw NSError(
-                domain: "CbzParser", code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "invalid image path: \(path)"]
+                domain: "CbzParser", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidImagePath")]
             )
         }
 
@@ -240,8 +240,8 @@ class CbzParser: Parser {
             guard let entry = archive[entryPath] else {
                 Logger.cbzParser.error("Entry not found in archive: \(entryPath)")
                 throw NSError(
-                    domain: "CbzParser", code: 4,
-                    userInfo: [NSLocalizedDescriptionKey: "entry not found: \(entryPath)"]
+                    domain: "CbzParser", code: 0,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
                 )
             }
 
@@ -278,8 +278,8 @@ class CbzParser: Parser {
         // SHA256 of the file contents, streamed in chunks to avoid loading the whole archive into memory.
         guard let handle = FileHandle(forReadingAtPath: path) else {
             throw NSError(
-                domain: "CbzParser", code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "unable to open file for hashing: \(path)"]
+                domain: "CbzParser", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
             )
         }
         defer { try? handle.close() }
