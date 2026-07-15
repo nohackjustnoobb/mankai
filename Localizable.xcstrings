@@ -4289,6 +4289,22 @@
         }
       }
     },
+    "openInFiles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Files"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「檔案」中打開"
+          }
+        }
+      }
+    },
     "option" : {
       "localizations" : {
         "en" : {

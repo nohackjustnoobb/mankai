@@ -55,6 +55,12 @@ protocol Browsable {
     /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [EntityType]
 
+    /// Returns the absolute filesystem URL for the given relative path, if the
+    /// plugin is backed by a local filesystem directory. Returns `nil` for
+    /// non-filesystem plugins.
+    /// - Parameter path: A path relative to the plugin's root, or `nil` for the root.
+    func absoluteURL(for path: String?) -> URL?
+
     /// Imports a file from the given URL into the plugin's `importsDir`.
     ///
     /// The caller is responsible for ensuring the source resource is accessible

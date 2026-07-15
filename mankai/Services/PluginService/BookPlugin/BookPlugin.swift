@@ -450,6 +450,13 @@ class BookPlugin: Plugin, Browsable {
         return entities
     }
 
+    func absoluteURL(for path: String?) -> URL? {
+        if let path, !path.isEmpty {
+            return url.appendingPathComponent(path)
+        }
+        return url
+    }
+
     @discardableResult
     func importFile(from source: URL) throws -> URL {
         let fileManager = FileManager.default

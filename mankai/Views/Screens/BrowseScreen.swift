@@ -12,6 +12,8 @@ struct BrowseScreen: View {
     let path: String?
     let systemImageColor: Color?
 
+    @Environment(\.openURL) private var openURL
+
     @State private var entities: [EntityType] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
@@ -72,6 +74,17 @@ struct BrowseScreen: View {
         }
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if folderURL != nil {
+                    Button {
+                        openInFilesApp()
+                    } label: {
+                        Label("openInFiles", systemImage: "folder")
+                    }
+                }
+            }
+        }
         .overlay {
             if isLoading && entities.isEmpty {
                 ProgressView()
@@ -141,6 +154,19 @@ struct BrowseScreen: View {
             return (path as NSString).lastPathComponent
         }
         return plugin.name ?? plugin.id
+    }
+
+    private var folderURL: URL? {
+        plugin.absoluteURL(for: path)
+    }
+
+    private func openInFilesApp() {
+        guard let folderURL else { return }
+        let path = folderURL.standardizedFileURL.path
+        let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
+        if let url = URL(string: "shareddocuments://\(encoded)") {
+            openURL(url)
+        }
     }
 
     private func loadEntities() {
