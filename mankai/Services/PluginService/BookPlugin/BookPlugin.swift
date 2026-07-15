@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 
 class BookPlugin: Plugin, Browsable {
     override var id: String {
@@ -21,8 +22,39 @@ class BookPlugin: Plugin, Browsable {
         Genre.allCases
     }
 
-    var systemImageName: String? {
-        nil
+    var systemImageName: String {
+        "folder.fill"
+    }
+
+    private static let systemImagePalette: [Color] = [
+        .red, .orange, .yellow, .green, .mint,
+        .teal, .cyan, .blue, .indigo, .purple,
+        .pink, .brown,
+    ]
+
+    private lazy var _systemImageColor: Color = {
+        var hash: UInt64 = 5381
+        for byte in _id.utf8 {
+            hash = (hash &<< 5) &+ hash &+ UInt64(byte)
+        }
+        let index = Int(hash % UInt64(BookPlugin.systemImagePalette.count))
+        return BookPlugin.systemImagePalette[index]
+    }()
+
+    var systemImageColor: Color {
+        _systemImageColor
+    }
+
+    var supportedExtensions: [String] {
+        extensionsIndex.keys.map { $0 }
+    }
+
+    var importsPath: String {
+        "imports"
+    }
+
+    private var importsDir: URL {
+        url.appendingPathComponent(importsPath)
     }
 
     let url: URL
@@ -51,11 +83,13 @@ class BookPlugin: Plugin, Browsable {
 
         super.init()
 
-        _isAccessing = url.startAccessingSecurityScopedResource()
-        if !_isAccessing {
-            Logger.bookPlugin.error(
-                "Failed to start accessing security scoped resource for plugin: \(_id)"
-            )
+        if !(self is AppDirBookPlugin) {
+            _isAccessing = url.startAccessingSecurityScopedResource()
+            if !_isAccessing {
+                Logger.bookPlugin.error(
+                    "Failed to start accessing security scoped resource for plugin: \(_id)"
+                )
+            }
         }
     }
 
@@ -250,7 +284,7 @@ class BookPlugin: Plugin, Browsable {
         return (parserId, path)
     }
 
-    // MARK: - Override Methods
+    // MARK: - Plugin Methods
 
     /// SHOULD NOT BE CALLED
     override func getSuggestions(_ query: String) async throws -> [String] {
@@ -336,7 +370,7 @@ class BookPlugin: Plugin, Browsable {
         return true
     }
 
-    // MARK: - Browsable
+    // MARK: - Browsable Methods
 
     func getEntities(path: String? = "") async throws -> [EntityType] {
         Logger.bookPlugin.debug("Getting entities for path: \(path ?? "root")")
@@ -409,11 +443,60 @@ class BookPlugin: Plugin, Browsable {
                     )
                 }
 
-                entities.append(.book(manga: detailed))
+                entities.append(.book(manga: detailed, path: runtimePath))
             }
         }
 
         return entities
+    }
+
+    @discardableResult
+    func importFile(from source: URL) throws -> URL {
+        let fileManager = FileManager.default
+
+        // Ensure the imports directory exists.
+        if !fileManager.fileExists(atPath: importsDir.path) {
+            try fileManager.createDirectory(
+                at: importsDir, withIntermediateDirectories: true
+            )
+        }
+
+        // Resolve a unique destination URL to avoid overwriting existing files.
+        let baseName = source.lastPathComponent
+        var destination = importsDir.appendingPathComponent(baseName)
+        if fileManager.fileExists(atPath: destination.path) {
+            let stem = source.deletingPathExtension().lastPathComponent
+            let ext = source.pathExtension
+            var counter = 1
+            repeat {
+                let candidate = ext.isEmpty
+                    ? "\(stem) (\(counter))"
+                    : "\(stem) (\(counter)).\(ext)"
+                destination = importsDir.appendingPathComponent(candidate)
+                counter += 1
+            } while fileManager.fileExists(atPath: destination.path)
+        }
+
+        // Access security-scoped resource if the source originates outside the app sandbox.
+        let needsScopeAccess = source.startAccessingSecurityScopedResource()
+        defer {
+            if needsScopeAccess {
+                source.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            if fileManager.fileExists(atPath: destination.path) {
+                try fileManager.removeItem(at: destination)
+            }
+            try fileManager.copyItem(at: source, to: destination)
+        } catch {
+            Logger.bookPlugin.error("Failed to import file \(source.path): \(error)")
+            throw error
+        }
+
+        Logger.bookPlugin.info("Imported file to \(destination.path(percentEncoded: false))")
+        return destination
     }
 }
 

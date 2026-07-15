@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */ = {isa = PBXBuildFile; productRef = E4033BA22F1BC53D00A7B886 /* OpenCC */; };
+		E427B77D3007F96E003649A2 /* QuickLookThumbnailing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */; };
+		E427B7843007F96E003649A2 /* mankaiThumbnail.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E427B8733007F9E2003649A2 /* ZIPFoundation */; };
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
@@ -16,13 +19,46 @@
 		E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		E427B7823007F96E003649A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E40C6B2C2E05A95700AF2FC9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E427B77A3007F96E003649A2;
+			remoteInfo = mankaiThumbnail;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E427B7853007F96E003649A2 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E427B7843007F96E003649A2 /* mankaiThumbnail.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		E40C6B342E05A95700AF2FC9 /* mankai.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mankai.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = mankaiThumbnail.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookThumbnailing.framework; path = System/Library/Frameworks/QuickLookThumbnailing.framework; sourceTree = SDKROOT; };
 		E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E427B7893007F96E003649A2 /* Exceptions for "mankaiThumbnail" folder in "mankaiThumbnail" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E427B77A3007F96E003649A2 /* mankaiThumbnail */;
+		};
 		E4C616AF2E153A1400AC484A /* Exceptions for "mankai" folder in "mankai" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -41,6 +77,14 @@
 			path = mankai;
 			sourceTree = "<group>";
 		};
+		E427B77E3007F96E003649A2 /* mankaiThumbnail */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E427B7893007F96E003649A2 /* Exceptions for "mankaiThumbnail" folder in "mankaiThumbnail" target */,
+			);
+			path = mankaiThumbnail;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +100,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E427B7783007F96E003649A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E427B77D3007F96E003649A2 /* QuickLookThumbnailing.framework in Frameworks */,
+				E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -65,6 +118,7 @@
 				E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */,
 				E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */,
 				E40C6B902E06869400AF2FC9 /* mankai */,
+				E427B77E3007F96E003649A2 /* mankaiThumbnail */,
 				E4958E132F2FB386004F2F4D /* Frameworks */,
 				E40C6B352E05A95700AF2FC9 /* Products */,
 			);
@@ -74,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				E40C6B342E05A95700AF2FC9 /* mankai.app */,
+				E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,6 +136,7 @@
 		E4958E132F2FB386004F2F4D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -95,10 +151,12 @@
 				E40C6B302E05A95700AF2FC9 /* Sources */,
 				E40C6B312E05A95700AF2FC9 /* Frameworks */,
 				E40C6B322E05A95700AF2FC9 /* Resources */,
+				E427B7853007F96E003649A2 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E427B7833007F96E003649A2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E40C6B902E06869400AF2FC9 /* mankai */,
@@ -115,6 +173,29 @@
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E427B77A3007F96E003649A2 /* mankaiThumbnail */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E427B7883007F96E003649A2 /* Build configuration list for PBXNativeTarget "mankaiThumbnail" */;
+			buildPhases = (
+				E427B7773007F96E003649A2 /* Sources */,
+				E427B7783007F96E003649A2 /* Frameworks */,
+				E427B7793007F96E003649A2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E427B77E3007F96E003649A2 /* mankaiThumbnail */,
+			);
+			name = mankaiThumbnail;
+			packageProductDependencies = (
+				E427B8733007F9E2003649A2 /* ZIPFoundation */,
+			);
+			productName = mankaiThumbnail;
+			productReference = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -122,11 +203,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					E40C6B332E05A95700AF2FC9 = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					E427B77A3007F96E003649A2 = {
+						CreatedOnToolsVersion = 26.6;
 					};
 				};
 			};
@@ -153,6 +237,7 @@
 			projectRoot = "";
 			targets = (
 				E40C6B332E05A95700AF2FC9 /* mankai */,
+				E427B77A3007F96E003649A2 /* mankaiThumbnail */,
 			);
 		};
 /* End PBXProject section */
@@ -167,6 +252,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E427B7793007F96E003649A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -177,7 +269,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E427B7773007F96E003649A2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E427B7833007F96E003649A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E427B77A3007F96E003649A2 /* mankaiThumbnail */;
+			targetProxy = E427B7823007F96E003649A2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		E40C6B402E05A95900AF2FC9 /* Debug */ = {
@@ -377,6 +484,62 @@
 			};
 			name = Release;
 		};
+		E427B7863007F96E003649A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = mankaiThumbnail;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.mankaiThumbnail;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E427B7873007F96E003649A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = mankaiThumbnail;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.mankaiThumbnail;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -394,6 +557,15 @@
 			buildConfigurations = (
 				E40C6B432E05A95900AF2FC9 /* Debug */,
 				E40C6B442E05A95900AF2FC9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E427B7883007F96E003649A2 /* Build configuration list for PBXNativeTarget "mankaiThumbnail" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E427B7863007F96E003649A2 /* Debug */,
+				E427B7873007F96E003649A2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -448,6 +620,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */;
 			productName = OpenCC;
+		};
+		E427B8733007F9E2003649A2 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		E42E15022E2A9951006F8B98 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;

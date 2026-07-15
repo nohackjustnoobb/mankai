@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 class AppDirBookPlugin: BookPlugin {
     static var shared = AppDirBookPlugin()
@@ -38,8 +39,12 @@ class AppDirBookPlugin: BookPlugin {
         String(localized: "localDir")
     }
 
-    override var systemImageName: String? {
+    override var systemImageName: String {
         "iphone"
+    }
+
+    override var systemImageColor: Color {
+        .accentColor
     }
 
     /// Built-in plugin, do nothing

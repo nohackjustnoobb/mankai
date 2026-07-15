@@ -15,6 +15,65 @@ import Foundation
 import ZIPFoundation
 
 class CbzParser: Parser {
+    /// Single-entry cache of the most recently opened `Archive`.
+    /// Reopening the same CBZ would otherwise re-index it across the typical `parse` → `parseChapter` → `parseImage` sequence, so the last archive is kept in memory and reused on a path match.
+    private static var cachedArchivePath: String?
+    private static var cachedArchive: Archive?
+    private static let cacheLock = NSLock()
+
+    /// `Archive` (ZIPFoundation) is not thread-safe: concurrent reads on the same instance can corrupt state.
+    /// We serialize reads per *path* with a dedicated lock, so unrelated archives still run in parallel.
+    private static var archiveReadLocks: [String: NSLock] = [:]
+    private static let archiveReadLocksGuard = NSLock()
+
+    /// Returns the per-archive lock for `path`, creating it on first use.
+    private static func archiveReadLock(for path: String) -> NSLock {
+        archiveReadLocksGuard.lock()
+        defer { archiveReadLocksGuard.unlock() }
+        if let lock = archiveReadLocks[path] {
+            Logger.cbzParser.debug("Using existing read lock for: \(path)")
+            return lock
+        }
+        Logger.cbzParser.debug("Creating new read lock for: \(path)")
+        let lock = NSLock()
+        archiveReadLocks[path] = lock
+        return lock
+    }
+
+    /// Returns the `Archive` for `path`, reusing the cached instance on a path match.
+    /// Opening a different path evicts the previous cached archive.
+    private static func archive(for path: String) throws -> Archive {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
+        if let cached = cachedArchive, cachedArchivePath == path {
+            Logger.cbzParser.debug("Reusing cached archive: \(path)")
+            return cached
+        }
+
+        Logger.cbzParser.debug("Opening new archive: \(path)")
+        let archive = try Archive(url: URL(fileURLWithPath: path), accessMode: .read)
+        cachedArchive = archive
+        cachedArchivePath = path
+        return archive
+    }
+
+    /// Resolves the (cached) `Archive` for `path` and runs `body` under the per-archive read lock.
+    /// The path-keyed lock serializes only readers of the *same* archive.
+    /// Readers on different archives proceed in parallel.
+    /// An in-flight reader holds a valid `Archive` reference even if the cache entry is later evicted, and the path-keyed lock keeps concurrent readers of the same path consistent.
+    private static func withReadLock<T>(
+        for path: String,
+        body: (Archive) throws -> T
+    ) throws -> T {
+        Logger.cbzParser.debug("Acquiring read lock for: \(path)")
+        let lock = archiveReadLock(for: path)
+        lock.lock()
+        defer { lock.unlock() }
+        let archive = try Self.archive(for: path)
+        return try body(archive)
+    }
+
     override var id: String {
         "cbz"
     }
@@ -25,44 +84,45 @@ class CbzParser: Parser {
 
     override func parse(path: String) async throws -> DetailedManga {
         Logger.cbzParser.debug("Parsing archive: \(path)")
-        let archive = try Archive(url: URL(fileURLWithPath: path), accessMode: .read)
-
-        // Build the reading-order list of image entries
-        let imageEntries = archive
-            .compactMap { entry -> Entry? in
-                guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
-                return entry
-            }
-            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
-
-        guard !imageEntries.isEmpty else {
-            Logger.cbzParser.error("No supported images found in archive: \(path)")
-            throw NSError(
-                domain: "CbzParser", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noImagesFoundInArchive")]
-            )
-        }
 
         let hashedId = try Self.hashFile(at: path)
+
+        var imageEntries: [Entry] = []
+        var info: ComicInfo? = nil
+        try Self.withReadLock(for: path) { archive in
+            imageEntries = archive
+                .compactMap { entry -> Entry? in
+                    guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
+                    return entry
+                }
+                .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+
+            guard !imageEntries.isEmpty else {
+                Logger.cbzParser.error("No supported images found in archive: \(path)")
+                throw NSError(
+                    domain: "CbzParser", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "noImagesFoundInArchive")]
+                )
+            }
+
+            if let infoEntry = archive["ComicInfo.xml"],
+               let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
+            {
+                Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
+                info = ComicInfoParser.parse(data: infoData)
+                if info == nil {
+                    Logger.cbzParser.warning("ComicInfo.xml exists but could not be parsed, proceeding with image-only mode")
+                }
+            } else {
+                Logger.cbzParser.debug("No ComicInfo.xml found, using filename and static chapter name")
+            }
+        }
+
         Logger.cbzParser.debug("Computed id (\(imageEntries.count) images): \(hashedId)")
         var manga = DetailedManga()
         manga.id = hashedId
         // It allows `parseChapter`/`parseImage` to reopen the archive later.
         manga.meta = path
-
-        // Parse ComicInfo.xml if it exists
-        var info: ComicInfo? = nil
-        if let infoEntry = archive["ComicInfo.xml"],
-           let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
-        {
-            Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
-            info = ComicInfoParser.parse(data: infoData)
-            if info == nil {
-                Logger.cbzParser.warning("ComicInfo.xml exists but could not be parsed, proceeding with image-only mode")
-            }
-        } else {
-            Logger.cbzParser.debug("No ComicInfo.xml found, using filename and static chapter name")
-        }
 
         if let info {
             let series = info.series?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -77,7 +137,7 @@ class CbzParser: Parser {
             }
 
             // Chapter title: the issue Title, or a static name if absent.
-            let chapterTitle: String? = (titleField?.isEmpty == false) ? titleField : String(localized: "volume")
+            let chapterTitle: String? = (titleField?.isEmpty == false) ? titleField : manga.title
 
             let summary = info.summary?.trimmingCharacters(in: .whitespacesAndNewlines)
             manga.description = (summary?.isEmpty == false) ? summary : nil
@@ -131,7 +191,7 @@ class CbzParser: Parser {
             if let cover = imageEntries.first {
                 manga.cover = "\(path):\(cover.path)"
             }
-            let chapter = Chapter(id: hashedId, title: String(localized: "volume"))
+            let chapter = Chapter(id: hashedId, title: manga.title)
             manga.chapters = ["volume": [chapter]]
             manga.latestChapter = chapter
         }
@@ -149,13 +209,14 @@ class CbzParser: Parser {
             )
         }
 
-        let archive = try Archive(url: URL(fileURLWithPath: archivePath), accessMode: .read)
-        let imageEntries = archive
-            .compactMap { entry -> Entry? in
-                guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
-                return entry
-            }
-            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+        let imageEntries: [Entry] = try Self.withReadLock(for: archivePath) { archive in
+            archive
+                .compactMap { entry -> Entry? in
+                    guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
+                    return entry
+                }
+                .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+        }
 
         Logger.cbzParser.debug("Found \(imageEntries.count) images for chapter of \(manga.id)")
         return imageEntries.map { "\(archivePath):\($0.path)" }
@@ -175,16 +236,17 @@ class CbzParser: Parser {
         let archivePath = String(path[..<separator.lowerBound])
         let entryPath = String(path[separator.upperBound...])
 
-        let archive = try Archive(url: URL(fileURLWithPath: archivePath), accessMode: .read)
-        guard let entry = archive[entryPath] else {
-            Logger.cbzParser.error("Entry not found in archive: \(entryPath)")
-            throw NSError(
-                domain: "CbzParser", code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "entry not found: \(entryPath)"]
-            )
-        }
+        return try Self.withReadLock(for: archivePath) { archive in
+            guard let entry = archive[entryPath] else {
+                Logger.cbzParser.error("Entry not found in archive: \(entryPath)")
+                throw NSError(
+                    domain: "CbzParser", code: 4,
+                    userInfo: [NSLocalizedDescriptionKey: "entry not found: \(entryPath)"]
+                )
+            }
 
-        return try Self.entryData(archive: archive, entry: entry)
+            return try Self.entryData(archive: archive, entry: entry)
+        }
     }
 
     // MARK: - Helpers

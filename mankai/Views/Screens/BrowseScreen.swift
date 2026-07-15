@@ -10,23 +10,31 @@ import SwiftUI
 struct BrowseScreen: View {
     let plugin: BrowsablePlugin
     let path: String?
+    let systemImageColor: Color?
 
     @State private var entities: [EntityType] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
 
-    init(plugin: BrowsablePlugin, path: String? = nil) {
+    @State private var showReaderScreen = false
+    @State private var readerManga: DetailedManga? = nil
+    @State private var readerChapter: Chapter? = nil
+    @State private var readerChapterKey: String? = nil
+    @State private var readerPage: Int? = nil
+
+    init(plugin: BrowsablePlugin, path: String? = nil, systemImageColor: Color? = nil) {
         self.plugin = plugin
         self.path = path
+        self.systemImageColor = systemImageColor ?? plugin.systemImageColor
     }
 
     var body: some View {
         ScrollView {
             LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 100), spacing: 12),
+                    GridItem(.adaptive(minimum: 100), spacing: 20),
                 ],
-                spacing: 10
+                spacing: 20
             ) {
                 ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
                     switch entity {
@@ -34,19 +42,29 @@ struct BrowseScreen: View {
                         NavigationLink(
                             destination: BrowseScreen(plugin: plugin, path: dirPath)
                         ) {
-                            directoryView(path: dirPath)
+                            directoryView(entity: entity)
                         }
                         .buttonStyle(.plain)
-                    case let .book(manga):
-                        NavigationLink(
-                            destination: MangaDetailsScreen(
-                                plugin: plugin,
-                                manga: manga.toManga()
-                            )
-                        ) {
-                            mangaView(manga: manga)
+                    case let .book(manga, _):
+                        let allChapters = manga.chapters.values.flatMap { $0 }
+                        if allChapters.count == 1 {
+                            Button {
+                                navigateToReader(manga: manga)
+                            } label: {
+                                mangaView(manga: manga, entity: entity)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(
+                                destination: MangaDetailsScreen(
+                                    plugin: plugin,
+                                    manga: manga.toManga()
+                                )
+                            ) {
+                                mangaView(manga: manga, entity: entity)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -74,6 +92,48 @@ struct BrowseScreen: View {
         .onAppear {
             loadEntities()
         }
+        .navigationDestination(isPresented: $showReaderScreen) {
+            if let readerManga = readerManga,
+               let readerChapter = readerChapter,
+               let readerChapterKey = readerChapterKey
+            {
+                ReaderScreen(
+                    plugin: plugin,
+                    manga: readerManga,
+                    downloadManga: nil,
+                    chaptersKey: readerChapterKey,
+                    chapter: readerChapter,
+                    initialPage: readerPage
+                )
+            }
+        }
+    }
+
+    /// If the manga has only a single chapter, skip the details screen and
+    /// open the reader directly. The reading history is looked up so the
+    /// reader can resume on the last-read page when available.
+    private func navigateToReader(manga: DetailedManga) {
+        let allChapters = manga.chapters.values.flatMap { $0 }
+        guard let chapter = allChapters.first,
+              let chaptersKey = manga.chapters.first(where: { _, chapters in
+                  chapters.contains { $0.id == chapter.id }
+              })?.key
+        else { return }
+
+        let page: Int?
+        if let record = HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id),
+           record.chapterId == chapter.id
+        {
+            page = record.page
+        } else {
+            page = nil
+        }
+
+        readerManga = manga
+        readerChapter = chapter
+        readerChapterKey = chaptersKey
+        readerPage = page
+        showReaderScreen = true
     }
 
     private var navigationTitle: String {
@@ -92,8 +152,16 @@ struct BrowseScreen: View {
         Task {
             do {
                 let result = try await plugin.getEntities(path: path)
+                let sorted = result.sorted { lhs, rhs in
+                    switch (lhs, rhs) {
+                    case (.directory, .book): return true
+                    case (.book, .directory): return false
+                    default:
+                        return lhs.fileName.localizedStandardCompare(rhs.fileName) == .orderedAscending
+                    }
+                }
                 await MainActor.run {
-                    self.entities = result
+                    self.entities = sorted
                     self.isLoading = false
                 }
             } catch {
@@ -105,18 +173,15 @@ struct BrowseScreen: View {
         }
     }
 
-    @ViewBuilder
-    private func directoryView(path: String) -> some View {
-        let name = (path as NSString).lastPathComponent
-
+    private func directoryView(entity: EntityType) -> some View {
         VStack(spacing: 8) {
             Image(systemName: "folder.fill")
                 .resizable()
                 .scaledToFit()
-                .foregroundStyle(.tint)
+                .foregroundStyle(systemImageColor ?? .accentColor)
                 .aspectRatio(1, contentMode: .fit)
 
-            Text(name)
+            Text(entity.name)
                 .font(.caption)
                 .foregroundColor(.primary)
                 .lineLimit(2)
@@ -125,13 +190,13 @@ struct BrowseScreen: View {
         }
     }
 
-    private func mangaView(manga: DetailedManga) -> some View {
+    private func mangaView(manga: DetailedManga, entity: EntityType) -> some View {
         VStack(spacing: 8) {
             MangaCoverView(coverUrl: manga.cover, plugin: plugin)
                 .aspectRatio(1, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            Text(manga.title ?? manga.id)
+            Text(entity.name)
                 .font(.caption)
                 .foregroundColor(.primary)
                 .lineLimit(2)

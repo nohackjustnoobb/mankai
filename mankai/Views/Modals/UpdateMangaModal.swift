@@ -328,10 +328,11 @@ struct UpdateMangaContent: View {
                             }
                         }
                         .swipeActions(edge: .trailing) {
-                            Button("remove") {
+                            Button(role: .destructive) {
                                 manga.authors.removeAll { $0 == author }
+                            } label: {
+                                Label("remove", systemImage: "trash")
                             }
-                            .tint(.red)
                         }
                     }
                 }
@@ -361,10 +362,11 @@ struct UpdateMangaContent: View {
                             }
                         }
                         .swipeActions(edge: .trailing) {
-                            Button("remove") {
+                            Button(role: .destructive) {
                                 manga.genres.removeAll { $0 == genre }
+                            } label: {
+                                Label("remove", systemImage: "trash")
                             }
-                            .tint(.red)
                         }
                     }
                 }
@@ -407,11 +409,12 @@ struct UpdateMangaContent: View {
                                 }
                             }
                             .swipeActions(edge: .trailing) {
-                                Button("remove") {
+                                Button(role: .destructive) {
                                     chapterKeyToRemove = chapterKey
                                     showingRemoveChapterGroupAlert = true
+                                } label: {
+                                    Label("remove", systemImage: "trash")
                                 }
-                                .tint(.red)
                             }
                         }
                     }

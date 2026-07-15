@@ -6,16 +6,64 @@
 //
 
 import Foundation
+import SwiftUI
 
 enum EntityType {
-    case book(manga: DetailedManga)
+    case book(manga: DetailedManga, path: String)
     case directory(path: String)
+
+    /// Name of the entity in the browse view.
+    var name: String {
+        switch self {
+        case let .book(manga, _):
+            let allChapters = manga.chapters.values.flatMap { $0 }
+            if allChapters.count == 1,
+               let chapterTitle = allChapters.first?.title
+            {
+                return chapterTitle
+            }
+            return manga.title ?? manga.id
+        case let .directory(path):
+            return (path as NSString).lastPathComponent
+        }
+    }
+
+    /// The actual file name of the entity.
+    var fileName: String {
+        switch self {
+        case let .book(_, path):
+            return (path as NSString).lastPathComponent
+        case let .directory(path):
+            return (path as NSString).lastPathComponent
+        }
+    }
 }
 
 protocol Browsable {
+    /// The name of the system image used to represent this plugin.
+    var systemImageName: String { get }
+
+    /// The color of the system image used to represent this plugin.
+    var systemImageColor: Color { get }
+
+    /// The file extensions supported by this plugin.
+    var supportedExtensions: [String] { get }
+
+    /// The directory inside the plugin used for files imported via the file importer.
+    var importsPath: String { get }
+
+    /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [EntityType]
 
-    var systemImageName: String? { get }
+    /// Imports a file from the given URL into the plugin's `importsDir`.
+    ///
+    /// The caller is responsible for ensuring the source resource is accessible
+    /// (e.g. by starting security-scoped access if needed).
+    ///
+    /// - Parameter source: The URL of the file to import.
+    /// - Returns: The URL of the imported file inside the plugin directory.
+    @discardableResult
+    func importFile(from source: URL) throws -> URL
 }
 
 typealias BrowsablePlugin = Browsable & Plugin
@@ -35,9 +83,11 @@ class BrowseService: ObservableObject {
 
     private var _plugins: [String: BrowsablePlugin] = [:]
 
-    /// A list of all available plugins.
+    /// A list of all available plugins, with `AppDirBookPlugin` always placed first.
     var plugins: [BrowsablePlugin] {
-        return Array(_plugins.values)
+        let appDir = AppDirBookPlugin.shared
+        let others = _plugins.values.filter { $0.id != appDir.id }
+        return [appDir] + others
     }
 
     private func loadBookPlugins() {
