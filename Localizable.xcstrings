@@ -36,6 +36,22 @@
         }
       }
     },
+    "%lld files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld files"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 檔案"
+          }
+        }
+      }
+    },
     "%lld selected" : {
       "localizations" : {
         "en" : {
@@ -392,6 +408,22 @@
         }
       }
     },
+    "addFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入資料夾"
+          }
+        }
+      }
+    },
     "addPlugin" : {
       "localizations" : {
         "en" : {
@@ -599,6 +631,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "耽美"
+          }
+        }
+      }
+    },
+    "browse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browse"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽"
           }
         }
       }
@@ -1645,6 +1693,22 @@
         }
       }
     },
+    "entryNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry not found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到條目"
+          }
+        }
+      }
+    },
     "error" : {
       "localizations" : {
         "en" : {
@@ -1722,6 +1786,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增章節分組失敗"
+          }
+        }
+      }
+    },
+    "failedToAddFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Add Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增資料夾失敗"
           }
         }
       }
@@ -1866,6 +1946,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "編碼元數據失敗"
+          }
+        }
+      }
+    },
+    "failedToImport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Import"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入失敗"
           }
         }
       }
@@ -2203,6 +2299,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "篩選"
+          }
+        }
+      }
+    },
+    "folder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾"
           }
         }
       }
@@ -2601,6 +2713,54 @@
         }
       }
     },
+    "import" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入"
+          }
+        }
+      }
+    },
+    "imports" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imports"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入"
+          }
+        }
+      }
+    },
+    "importTo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import To"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入至"
+          }
+        }
+      }
+    },
     "inactive" : {
       "localizations" : {
         "en" : {
@@ -2697,6 +2857,22 @@
         }
       }
     },
+    "invalidImagePath" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Image Path"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片路徑無效"
+          }
+        }
+      }
+    },
     "invalidInputImage" : {
       "localizations" : {
         "en" : {
@@ -2725,6 +2901,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JSON回應無效"
+          }
+        }
+      }
+    },
+    "invalidMangaMeta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Manga Meta"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫元數據無效"
           }
         }
       }
@@ -3133,6 +3325,22 @@
         }
       }
     },
+    "localDir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Directory"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本地目錄"
+          }
+        }
+      }
+    },
     "login" : {
       "localizations" : {
         "en" : {
@@ -3278,6 +3486,22 @@
         }
       }
     },
+    "mangaNotInCache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga not in cache"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫不在快取中"
+          }
+        }
+      }
+    },
     "mangas" : {
       "localizations" : {
         "en" : {
@@ -3344,6 +3568,22 @@
         }
       }
     },
+    "missingArchivePath" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing Archive Path"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少歸檔路徑"
+          }
+        }
+      }
+    },
     "missingChapterId" : {
       "localizations" : {
         "en" : {
@@ -3404,6 +3644,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "缺少更新令牌或伺服器網址"
+          }
+        }
+      }
+    },
+    "missingRequiredFields" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing Required Fields"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少必填欄位"
           }
         }
       }
@@ -3616,6 +3872,38 @@
         }
       }
     },
+    "noEntities" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing Here"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這裡沒有東西"
+          }
+        }
+      }
+    },
+    "noEntitiesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder is empty"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個資料夾是空的"
+          }
+        }
+      }
+    },
     "noFolderSelected" : {
       "localizations" : {
         "en" : {
@@ -3660,6 +3948,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有歷史紀錄"
+          }
+        }
+      }
+    },
+    "noHistoryDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga you read will appear here"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您閱讀過的漫畫會顯示在這裡"
+          }
+        }
+      }
+    },
+    "noImagesFoundInArchive" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Images Found In Archive"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有找到圖片在歸檔中"
           }
         }
       }
@@ -3760,6 +4080,22 @@
         }
       }
     },
+    "noPluginAvailableDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install a plugin to browse manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "安裝插件以瀏覽漫畫"
+          }
+        }
+      }
+    },
     "noPreviousChapter" : {
       "localizations" : {
         "en" : {
@@ -3808,6 +4144,22 @@
         }
       }
     },
+    "noResultsFoundDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a different search"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請嘗試其他搜尋條件"
+          }
+        }
+      }
+    },
     "noSavedManga" : {
       "localizations" : {
         "en" : {
@@ -3820,6 +4172,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有已收藏的漫畫"
+          }
+        }
+      }
+    },
+    "noSavedMangaDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save manga to find them here later"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存漫畫後會在這裡顯示"
           }
         }
       }
@@ -3917,6 +4285,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "連載中"
+          }
+        }
+      }
+    },
+    "openInFiles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Files"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「檔案」中打開"
           }
         }
       }
@@ -4047,6 +4431,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解析"
+          }
+        }
+      }
+    },
+    "parserNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parser not found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析器未找到"
           }
         }
       }
@@ -4483,6 +4883,38 @@
         }
       }
     },
+    "removeFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除資料夾"
+          }
+        }
+      }
+    },
+    "removeFolderConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove this folder?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您確定要移除這個資料夾嗎？"
+          }
+        }
+      }
+    },
     "removePlugin" : {
       "localizations" : {
         "en" : {
@@ -4834,6 +5266,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到所選插件"
+          }
+        }
+      }
+    },
+    "selectFiles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Files"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇檔案"
           }
         }
       }
@@ -5463,6 +5911,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "每行二頁"
+          }
+        }
+      }
+    },
+    "unableToOpenFileForHashing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to open file for hashing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法打開檔案進行雜湊"
           }
         }
       }

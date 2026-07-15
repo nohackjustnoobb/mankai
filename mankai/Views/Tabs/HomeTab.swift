@@ -78,26 +78,20 @@ struct HomeTab: View {
         NavigationStack {
             Group {
                 if !isDownloadsMode && orders.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "bookmark.slash.fill")
-                            .font(.title)
-                        Text("noSavedManga")
-                            .font(.headline)
-                    }
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ContentUnavailableView(
+                        "noSavedManga",
+                        systemImage: "bookmark.slash",
+                        description: Text("noSavedMangaDescription")
+                    )
                 } else if isDownloadsMode && orders.isEmpty && isLoadingDownloads {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if filteredOrders.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.title)
-                        Text("noResultsFound")
-                            .font(.headline)
-                    }
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ContentUnavailableView(
+                        "noResultsFound",
+                        systemImage: "magnifyingglass",
+                        description: Text("noResultsFoundDescription")
+                    )
                 } else {
                     ScrollView {
                         VStack(spacing: 12) {

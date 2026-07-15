@@ -16,7 +16,11 @@ class AppDirPlugin: ReadWriteFsPlugin {
             .first!.appendingPathComponent("mangas")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {
-            try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
+            do {
+                try fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
+            } catch {
+                Logger.appDirPlugin.error("Failed to create directory \(mangaDir.path): \(error)")
+            }
         }
 
         Logger.appDirPlugin.info(

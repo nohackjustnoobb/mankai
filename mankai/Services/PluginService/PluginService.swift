@@ -5,7 +5,6 @@
 //  Created by Travis XU on 21/6/2025.
 //
 
-import CoreData
 import Foundation
 
 class PluginService: ObservableObject {

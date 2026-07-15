@@ -10,8 +10,6 @@ import SwiftUI
 struct GeneralSettingsScreen: View {
     @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue: Double = SettingsDefaults.inMemoryCacheExpiryDuration.rawValue
     @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue: Int = SettingsDefaults.diskCacheSizeLimit.rawValue
-    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
-        SettingsDefaults.hideBuiltInPlugins
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
     @ObservedObject private var updateService = UpdateService.shared
@@ -21,8 +19,6 @@ struct GeneralSettingsScreen: View {
     var body: some View {
         List {
             Section {
-                Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins)
-
                 LabeledContent("lastUpdateTime") {
                     if let lastUpdateTime = updateService.lastUpdateTime {
                         Text(lastUpdateTime, style: .relative)

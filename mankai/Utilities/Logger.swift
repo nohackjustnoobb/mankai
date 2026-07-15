@@ -18,6 +18,7 @@ enum LogCategory: String {
     case pluginService = "PluginService"
     case syncService = "SyncService"
     case downloadService = "DownloadService"
+    case browseService = "BrowseService"
 
     // UI
     case ui = "UI"
@@ -30,6 +31,9 @@ enum LogCategory: String {
     case appDirPlugin = "AppDirPlugin"
     case httpPlugin = "HttpPlugin"
     case downloadPlugin = "DownloadPlugin"
+    case bookPlugin = "BookPlugin"
+    case appDirBookPlugin = "AppDirBookPlugin"
+    case cbzParser = "CbzParser"
 
     /// Runtime
     case jsRuntime = "JsRuntime"
@@ -172,6 +176,7 @@ extension Logger {
     static let pluginService = Logger(category: .pluginService)
     static let syncService = Logger(category: .syncService)
     static let downloadService = Logger(category: .downloadService)
+    static let browseService = Logger(category: .browseService)
 
     // UI
     static let ui = Logger(category: .ui)
@@ -184,6 +189,9 @@ extension Logger {
     static let httpPlugin = Logger(category: .httpPlugin)
     static let appDirPlugin = Logger(category: .appDirPlugin)
     static let downloadPlugin = Logger(category: .downloadPlugin)
+    static let bookPlugin = Logger(category: .bookPlugin)
+    static let appDirBookPlugin = Logger(category: .appDirBookPlugin)
+    static let cbzParser = Logger(category: .cbzParser)
 
     /// Runtime
     static let jsRuntime = Logger(category: .jsRuntime)

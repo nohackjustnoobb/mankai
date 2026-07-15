@@ -27,7 +27,7 @@ struct AddPluginModal: View {
 
     // FsPlugin States
     @State private var selectedFolder: URL?
-    @State private var isReadOnly: Bool = true
+    @State private var isReadOnly: Bool = false
     @State private var showFileImporter: Bool = false
 
     /// HttpPlugin States

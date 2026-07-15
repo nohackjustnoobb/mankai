@@ -85,6 +85,7 @@ class Plugin: Identifiable, ObservableObject {
         []
     }
 
+    /// Whether manga sourced from this plugin should be synced across devices.
     var shouldSync: Bool {
         true
     }

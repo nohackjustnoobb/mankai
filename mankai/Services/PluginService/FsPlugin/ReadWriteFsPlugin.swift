@@ -27,7 +27,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             url.stopAccessingSecurityScopedResource()
         }
 
-        let idFile = url.appendingPathComponent("mankai.id")
+        let idFile = url.appendingPathComponent(".mankai")
         let id: String
 
         if FileManager.default.fileExists(atPath: idFile.path) {
@@ -212,7 +212,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         guard let mangaId = group.mangaId, let title = group.title else {
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
             )
         }
 
@@ -254,7 +254,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             guard let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intId) else {
                 throw NSError(
                     domain: "ReadWriteFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
                 )
             }
 
@@ -330,7 +330,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         guard let title = chapter.title, let chapterGroupId = chapter.chapterGroupId else {
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
             )
         }
 
@@ -477,7 +477,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             else {
                 throw NSError(
                     domain: "ReadWriteFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: "Chapter not found"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterNotFound")]
                 )
             }
             return group.mangaId

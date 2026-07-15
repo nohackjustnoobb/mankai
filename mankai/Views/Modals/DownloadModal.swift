@@ -42,9 +42,11 @@ struct DownloadModal: View {
                                 ForEach(downloadedMangas) { manga in
                                     DownloadedMangaRow(manga: manga, navigate: navigate)
                                         .swipeActions {
-                                            Button("delete", role: .destructive) {
+                                            Button(role: .destructive) {
                                                 mangaToDelete = manga
                                                 showDeleteConfirmation = true
+                                            } label: {
+                                                Label("remove", systemImage: "trash")
                                             }
                                         }
                                 }
@@ -56,7 +58,7 @@ struct DownloadModal: View {
                         }
                     }
                     .confirmationDialog("deleteManga", isPresented: $showDeleteConfirmation, titleVisibility: .visible, presenting: mangaToDelete) { manga in
-                        Button("delete", role: .destructive) {
+                        Button("remove", role: .destructive) {
                             deleteManga(manga)
                         }
                         Button("cancel", role: .cancel) {}
@@ -149,13 +151,12 @@ struct DownloadedMangaRow: View {
 
     private func handleTap() {
         guard let pluginId = manga.meta,
-              let plugin = PluginService.shared.getPlugin(pluginId),
-              let simpleManga = manga.toManga()
+              let plugin = PluginService.shared.getPlugin(pluginId)
         else {
             return
         }
 
-        navigate(plugin, simpleManga)
+        navigate(plugin, manga.toManga())
     }
 
     private var totalChapterCount: Int? {

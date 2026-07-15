@@ -23,14 +23,11 @@ struct LibraryTab: View {
         NavigationStack {
             Group {
                 if plugins.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "puzzlepiece.extension.fill")
-                            .font(.title)
-                        Text("noPluginAvailable")
-                            .font(.headline)
-                    }
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ContentUnavailableView(
+                        "noPluginAvailable",
+                        systemImage: "puzzlepiece.extension",
+                        description: Text("noPluginAvailableDescription")
+                    )
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
