@@ -121,25 +121,25 @@ class DbService {
         }
     }
 
-    private var cbzParserDb: DatabasePool?
+    private var bookPluginDb: DatabasePool?
 
-    func openCbzParserDb() -> DatabasePool? {
-        if let db = cbzParserDb {
+    func openBookPluginDb() -> DatabasePool? {
+        if let db = bookPluginDb {
             return db
         }
 
         guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
-        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("cbzparser")
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("bookplugin")
         let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            Logger.dbService.error("Failed to create CbzParserDb directory at \(dir.path(percentEncoded: false))", error: error)
+            Logger.dbService.error("Failed to create BookPluginDb directory at \(dir.path(percentEncoded: false))", error: error)
             return nil
         }
 
-        Logger.dbService.debug("Opening CbzParserDb at \(path)")
+        Logger.dbService.debug("Opening BookPluginDb at \(path)")
         var config = Configuration()
         config.busyMode = .timeout(5.0)
 
@@ -147,20 +147,20 @@ class DbService {
             let pool = try DatabasePool(path: path, configuration: config)
 
             try pool.write { db in
-                try CbzParserModel.createTable(db)
+                try BookPluginMangaModel.createTable(db)
             }
 
-            cbzParserDb = pool
-            Logger.dbService.info("CbzParserDb opened successfully at \(path)")
+            bookPluginDb = pool
+            Logger.dbService.info("BookPluginDb opened successfully at \(path)")
             return pool
         } catch {
-            Logger.dbService.error("Failed to open CbzParserDb at \(path)", error: error)
+            Logger.dbService.error("Failed to open BookPluginDb at \(path)", error: error)
             return nil
         }
     }
 
-    func closeCbzParserDb() {
-        cbzParserDb = nil
-        Logger.dbService.debug("Closed CbzParserDb pool")
+    func closeBookPluginDb() {
+        bookPluginDb = nil
+        Logger.dbService.debug("Closed BookPluginDb pool")
     }
 }

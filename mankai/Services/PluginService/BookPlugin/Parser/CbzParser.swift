@@ -10,9 +10,7 @@
 // Since this is an independent implementation, it may differ from the reference ComicRack/anansi-project implementation.
 // Both referenced projects (RFC-CBZ and comicinfo) are released under the MIT License.
 
-import CryptoKit
 import Foundation
-import GRDB
 import ZIPFoundation
 
 class CbzParser: Parser {
@@ -76,21 +74,10 @@ class CbzParser: Parser {
         return try body(archive)
     }
 
-    private var db: DatabasePool? {
-        DbService.shared.openCbzParserDb()
-    }
-
-    private let cacheDir: URL
-
     override init(baseURL: URL, pluginId: String) {
-        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-        cacheDir = (cachesDir ?? URL(fileURLWithPath: NSTemporaryDirectory()))
-            .appendingPathComponent(CacheDirectory.index)
-            .appendingPathComponent("cbzparser")
-
         super.init(baseURL: baseURL, pluginId: pluginId)
 
-        Logger.cbzParser.debug("Initialized CbzParser for plugin: \(pluginId), cacheDir: \(cacheDir.path(percentEncoded: false))")
+        Logger.cbzParser.debug("Initialized CbzParser for plugin: \(pluginId)")
     }
 
     override var id: String {
@@ -101,66 +88,16 @@ class CbzParser: Parser {
         ["cbz"]
     }
 
-    override func parse(path relativePath: String) async throws -> DetailedManga {
+    override func getMangaId(path _: String, hash: String) -> String {
+        hash
+    }
+
+    override func parse(path relativePath: String, hash: String) async throws -> DetailedManga {
         let path = resolveAbsolutePath(relativePath)
         Logger.cbzParser.debug("Parsing archive: \(path)")
 
-        let hashedId = try Self.hashFile(at: path)
-
-        if let db {
-            let rows: [CbzParserModel] = (try? await db.read { db in
-                try CbzParserModel
-                    .filter(Column("mangaId") == hashedId)
-                    .fetchAll(db)
-            }) ?? []
-
-            let existing = rows.first(where: { $0.pluginId == pluginId }) ?? rows.first
-
-            if let existing,
-               let infoData = existing.info.data(using: .utf8),
-               let stored = try? JSONDecoder().decode(DetailedManga.self, from: infoData)
-            {
-                let samePlugin = existing.pluginId == pluginId
-                var updated = stored
-                var needsPersist = false
-
-                if !samePlugin || stored.meta != relativePath {
-                    updated.meta = relativePath
-                    needsPersist = true
-                }
-
-                if coverCacheFileExists(for: updated.cover) {
-                    if needsPersist {
-                        if let encoded = try? JSONEncoder().encode(updated),
-                           let infoString = String(data: encoded, encoding: .utf8)
-                        {
-                            let model = CbzParserModel(
-                                mangaId: hashedId,
-                                pluginId: pluginId,
-                                info: infoString
-                            )
-                            try? await db.write { db in
-                                try model.upsert(db)
-                            }
-
-                            if !samePlugin {
-                                Logger.cbzParser.debug("Copied cached parse from plugin \(existing.pluginId) to \(pluginId) for \(hashedId)")
-                            } else {
-                                Logger.cbzParser.debug("Refreshed stored path for \(hashedId) (plugin: \(pluginId))")
-                            }
-                        }
-                    } else {
-                        Logger.cbzParser.debug("Using cached parse for \(hashedId) (plugin: \(pluginId))")
-                    }
-                    return updated
-                }
-                Logger.cbzParser.warning("Cached cover missing for \(hashedId), re-parsing to re-extract")
-            }
-        }
-
         var imageEntries: [Entry] = []
         var info: ComicInfo? = nil
-        var coverData: Data? = nil
         var coverEntryPath: String? = nil
         try Self.withReadLock(for: path) { archive in
             imageEntries = archive
@@ -197,14 +134,12 @@ class CbzParser: Parser {
 
             if let coverEntry {
                 coverEntryPath = coverEntry.path
-                coverData = try? Self.entryData(archive: archive, entry: coverEntry)
             }
         }
 
-        Logger.cbzParser.debug("Computed id (\(imageEntries.count) images): \(hashedId)")
+        Logger.cbzParser.debug("Parsed \(imageEntries.count) images, id: \(hash)")
         var manga = DetailedManga()
-        manga.id = hashedId
-        manga.meta = relativePath
+        manga.id = hash
 
         if let info {
             let series = info.series?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -255,37 +190,21 @@ class CbzParser: Parser {
                 }
             }
 
-            let chapter = Chapter(id: hashedId, title: chapterTitle)
+            let chapter = Chapter(id: hash, title: chapterTitle)
             manga.chapters = ["volume": [chapter]]
             manga.latestChapter = chapter
         } else {
             // No ComicInfo.xml: use the filename as the title and a static chapter name.
             manga.title = (path as NSString).deletingPathExtension as String
-            let chapter = Chapter(id: hashedId, title: manga.title)
+            let chapter = Chapter(id: hash, title: manga.title)
             manga.chapters = ["volume": [chapter]]
             manga.latestChapter = chapter
         }
 
-        // Cache the cover image to disk and reference it via a stable `cbz-cover:` id so later lookups don't need to reopen the archive.
-        if let coverData, let coverEntryPath {
-            manga.cover = cacheCover(
-                data: coverData, entryPath: coverEntryPath, hashedId: hashedId
-            )
-        }
-
-        if let db,
-           let infoData = try? JSONEncoder().encode(manga),
-           let infoString = String(data: infoData, encoding: .utf8)
-        {
-            let model = CbzParserModel(
-                mangaId: hashedId,
-                pluginId: pluginId,
-                info: infoString
-            )
-            try? await db.write { db in
-                try model.upsert(db)
-            }
-            Logger.cbzParser.debug("Stored parsed manga for \(hashedId) (plugin: \(pluginId))")
+        // The cover is referenced as an entry inside the archive (`<archivePath>:<entryPath>`).
+        // BookPlugin fetches the bytes via `parseImage` and caches them to disk, so the parser only needs to point at the source entry here.
+        if let coverEntryPath {
+            manga.cover = "\(relativePath):\(coverEntryPath)"
         }
 
         return manga
@@ -316,21 +235,6 @@ class CbzParser: Parser {
     }
 
     override func parseImage(path: String) async throws -> Data {
-        // Cached cover shortcut: `cbz-cover:<filename>` points at a file in `cacheDir`, so the archive doesn't need to be opened.
-        if path.hasPrefix(Self.coverCachePrefix) {
-            let filename = String(path.dropFirst(Self.coverCachePrefix.count))
-            let coverURL = cacheDir.appendingPathComponent(filename)
-            Logger.cbzParser.debug("Reading cached cover: \(coverURL.path(percentEncoded: false))")
-            if let data = try? Data(contentsOf: coverURL) {
-                return data
-            }
-            Logger.cbzParser.error("Cached cover not found on disk: \(filename)")
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
-            )
-        }
-
         Logger.cbzParser.debug("Reading image: \(path)")
         // The path is encoded as `<archive_path>:<entry_path>`.
         guard let separator = path.range(of: ":") else {
@@ -358,85 +262,12 @@ class CbzParser: Parser {
         }
     }
 
-    override func getMangas(_ ids: [String]) async throws -> [Manga] {
-        Logger.cbzParser.debug("Getting \(ids.count) mangas (plugin: \(pluginId))")
-        guard db != nil else {
-            Logger.cbzParser.error("Database not available for getMangas")
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
-        }
-
-        var mangas: [Manga] = []
-        for id in ids {
-            do {
-                let detailed = try await getDetailedManga(id)
-                mangas.append(detailed.toManga())
-            } catch {
-                Logger.cbzParser.warning("Skipping manga \(id) in getMangas: \(error)")
-            }
-        }
-        return mangas
-    }
-
-    override func getDetailedManga(_ id: String) async throws -> DetailedManga {
-        Logger.cbzParser.debug("Getting detailed manga: \(id) (plugin: \(pluginId))")
-        guard let db else {
-            Logger.cbzParser.error("Database not available for getDetailedManga")
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
-        }
-
-        let row = try await db.read { db in
-            try CbzParserModel
-                .filter(Column("mangaId") == id && Column("pluginId") == pluginId)
-                .fetchOne(db)
-        }
-
-        guard let row = row else {
-            Logger.cbzParser.warning("Manga not found in DB: \(id)")
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
-            )
-        }
-
-        guard let data = row.info.data(using: .utf8),
-              let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
-        else {
-            Logger.cbzParser.error("Failed to decode stored manga for \(id)")
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
-            )
-        }
-
-        // A cache hit is only valid when the cover ref points at a cached file that still exists.
-        // A missing cover falls through to a full re-parse (via the stored path) to re-extract it.
-        if coverCacheFileExists(for: stored.cover) {
-            return stored
-        }
-
-        Logger.cbzParser.warning("Cached cover missing for \(id), re-parsing to re-extract")
-        guard let relativePath = stored.meta else {
-            return stored
-        }
-        return try await parse(path: relativePath)
-    }
-
     // MARK: - Helpers
 
     private func resolveAbsolutePath(_ path: String) -> String {
         URL(fileURLWithPath: path, relativeTo: baseURL)
             .absoluteURL.standardizedFileURL.path
     }
-
-    /// Prefix used for cover references that point at a cached cover file rather than an entry inside an archive (`<archivePath>:<entryPath>`).
-    /// The remainder is the filename within `cacheDir`.
-    private static let coverCachePrefix = "cbz-cover:"
 
     /// Image extensions supported by the parser
     private static let imageExtensions: Set<String> = [
@@ -459,56 +290,6 @@ class CbzParser: Parser {
             data.append(chunk)
         })
         return data
-    }
-
-    private func coverCacheFileExists(for cover: String?) -> Bool {
-        guard let cover else { return true }
-        guard cover.hasPrefix(Self.coverCachePrefix) else { return false }
-
-        let filename = String(cover.dropFirst(Self.coverCachePrefix.count))
-        let url = cacheDir.appendingPathComponent(filename)
-
-        return FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
-    }
-
-    private func cacheCover(
-        data: Data, entryPath: String, hashedId: String
-    ) -> String? {
-        let ext = (entryPath as NSString).pathExtension.lowercased()
-        let filename = ext.isEmpty ? hashedId : "\(hashedId).\(ext)"
-        let coverURL = cacheDir.appendingPathComponent(filename)
-
-        do {
-            try FileManager.default.createDirectory(
-                at: cacheDir, withIntermediateDirectories: true, attributes: nil
-            )
-            try data.write(to: coverURL, options: .atomic)
-            Logger.cbzParser.debug("Cached cover for \(hashedId) at \(coverURL.path(percentEncoded: false))")
-            return "\(Self.coverCachePrefix)\(filename)"
-        } catch {
-            Logger.cbzParser.warning("Failed to cache cover for \(hashedId): \(error)")
-            return nil
-        }
-    }
-
-    private static func hashFile(at path: String) throws -> String {
-        // SHA256 of the file contents, streamed in chunks to avoid loading the whole archive into memory.
-        guard let handle = FileHandle(forReadingAtPath: path) else {
-            throw NSError(
-                domain: "CbzParser", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
-            )
-        }
-        defer { try? handle.close() }
-
-        var hasher = SHA256()
-        let chunkSize = 1 << 16
-        while true {
-            let chunk = handle.readData(ofLength: chunkSize)
-            if chunk.isEmpty { break }
-            hasher.update(data: chunk)
-        }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     private static func uniqueStrings(_ values: [String]) -> [String] {

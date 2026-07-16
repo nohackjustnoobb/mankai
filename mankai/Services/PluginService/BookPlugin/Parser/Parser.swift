@@ -30,12 +30,33 @@ class Parser {
         fatalError("Not Implemented")
     }
 
+    /// Returns the manga id for the file at `path`, given its content `hash`.
+    ///
+    /// The hash is computed by the caller (`BookPlugin`) so this is cheap and
+    /// does not re-read the file. Each parser derives its own id scheme from
+    /// the path and hash; for content-addressed formats the id is simply the
+    /// hash. Used to look up the cache before triggering a full `parse`.
+    /// - Parameters:
+    ///   - path: The path to the manga file, relative to `baseURL`.
+    ///   - hash: The content hash of the file, computed by the caller.
+    /// - Returns: The manga id.
+    func getMangaId(path _: String, hash _: String) -> String {
+        fatalError("Not Implemented")
+    }
+
     /// Parses the manga at the given path and returns a DetailedManga object.
-    /// - Parameter path: The path to the manga file, relative to `baseURL`.
-    ///   Implementations resolve it to an absolute URL via `absoluteURL`.
+    ///
+    /// This performs the actual parse only: it does not hash the file, consult
+    /// any cache, persist a cover to disk, or set the manga `meta`. The caller
+    /// (`BookPlugin`) owns hashing, caching, and the `meta` path, and passes the
+    /// content `hash` so the parser can use it as the manga id.
+    /// - Parameters:
+    ///   - path: The path to the manga file, relative to `baseURL`.
+    ///     Implementations resolve it to an absolute URL via `absoluteURL`.
+    ///   - hash: The content hash of the file, to use as the manga id.
     /// - Returns: A DetailedManga object.
     /// - Throws: An error if the request fails.
-    func parse(path _: String) async throws -> DetailedManga {
+    func parse(path _: String, hash _: String) async throws -> DetailedManga {
         fatalError("Not Implemented")
     }
 
@@ -54,22 +75,6 @@ class Parser {
     /// - Returns: The image data.
     /// - Throws: An error if the request fails.
     func parseImage(path _: String) async throws -> Data {
-        fatalError("Not Implemented")
-    }
-
-    /// Retrieves a list of mangas from the given list of IDs.
-    /// - Parameter ids: The list of manga IDs.
-    /// - Returns: A list of Manga objects.
-    /// - Throws: An error if the request fails.
-    func getMangas(_: [String]) async throws -> [Manga] {
-        fatalError("Not Implemented")
-    }
-
-    /// Retrieves a detailed manga from the given ID.
-    /// - Parameter id: The manga ID.
-    /// - Returns: A DetailedManga object.
-    /// - Throws: An error if the request fails.
-    func getDetailedManga(_: String) async throws -> DetailedManga {
         fatalError("Not Implemented")
     }
 }

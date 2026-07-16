@@ -5,6 +5,7 @@
 //  Created by Travis XU on 13/7/2026.
 //
 
+import CryptoKit
 import Foundation
 import GRDB
 import SwiftUI
@@ -62,6 +63,24 @@ class BookPlugin: Plugin, Browsable {
     private var _isAccessing: Bool = false
     private lazy var dirName: String = url.lastPathComponent
     private let parsers: [String: Parser]
+
+    /// On-disk cache of parsed manga (JSON-encoded `DetailedManga`), keyed by
+    /// content hash. Lives above the parsers so the caching layer is shared.
+    private var db: DatabasePool? {
+        DbService.shared.openBookPluginDb()
+    }
+
+    /// Directory holding the cached cover images and the cache database.
+    private let cacheDir: URL = {
+        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        return (cachesDir ?? URL(fileURLWithPath: NSTemporaryDirectory()))
+            .appendingPathComponent(CacheDirectory.index)
+            .appendingPathComponent("bookplugin")
+    }()
+
+    /// Prefix for cover references that point at a cached cover file in `cacheDir`
+    /// rather than an entry inside an archive. Handled directly by `getImage`.
+    private static let coverCachePrefix = "book-cover:"
 
     init(url: URL, id: String) {
         Logger.bookPlugin.debug("Initializing BookPlugin with url: \(url.path)")
@@ -278,10 +297,13 @@ class BookPlugin: Plugin, Browsable {
     /// Prefixes the `id`, `meta`, and `cover` of a parser-returned manga with
     /// `<parserId>://` so that subsequent calls can route back to the parser
     /// that produced it. Works for both `Manga` and `DetailedManga`.
+    ///
+    /// Covers that already point at a BookPlugin-managed cached file (`book-cover:`)
+    /// are left untouched, since `getImage` resolves them directly.
     private func prefixManga<T: MangaMetaPrefixable>(_ manga: T, parserId: String) -> T {
         var prefixed = manga
         prefixed.meta = "\(parserId)://\(prefixed.meta ?? "")"
-        if let cover = prefixed.cover, !cover.isEmpty {
+        if let cover = prefixed.cover, !cover.isEmpty, !cover.hasPrefix(Self.coverCachePrefix) {
             prefixed.cover = "\(parserId)://\(cover)"
         }
         prefixed.id = "\(parserId)://\(prefixed.id)"
@@ -313,26 +335,24 @@ class BookPlugin: Plugin, Browsable {
 
         var mangas: [Manga] = []
         for id in ids {
-            let (parserId, originalId) = try parseMetaPrefix(id)
-            guard let parser = getParser(id: parserId) else {
-                Logger.bookPlugin.error("No parser found for id: \(parserId)")
-                throw NSError(
-                    domain: "BookPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
-                )
+            do {
+                let detailed = try await detailedManga(forPrefixedId: id)
+                mangas.append(detailed.toManga())
+            } catch {
+                Logger.bookPlugin.warning("Skipping manga \(id) in getMangas: \(error)")
             }
-
-            let parsed = try await parser.getMangas([originalId])
-            mangas.append(contentsOf: parsed.map { prefixManga($0, parserId: parserId) })
         }
         return mangas
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         Logger.bookPlugin.debug("Getting detailed manga: \(id)")
+        return try await detailedManga(forPrefixedId: id)
+    }
 
+    private func detailedManga(forPrefixedId id: String) async throws -> DetailedManga {
         let (parserId, originalId) = try parseMetaPrefix(id)
-        guard let parser = getParser(id: parserId) else {
+        guard getParser(id: parserId) != nil else {
             Logger.bookPlugin.error("No parser found for id: \(parserId)")
             throw NSError(
                 domain: "BookPlugin", code: 0,
@@ -340,8 +360,19 @@ class BookPlugin: Plugin, Browsable {
             )
         }
 
-        let detailed = try await parser.getDetailedManga(originalId)
-        return prefixManga(detailed, parserId: parserId)
+        guard let stored = try? await fetchCachedManga(mangaId: originalId, parserId: parserId) else {
+            Logger.bookPlugin.warning("Manga not found in cache: \(id)")
+            throw NSError(
+                domain: "BookPlugin", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
+            )
+        }
+
+        var transformed = stored
+        transformed.cover = await ensureCachedCover(
+            for: stored.cover, mangaId: originalId, parserId: parserId
+        )
+        return prefixManga(transformed, parserId: parserId)
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
@@ -369,6 +400,20 @@ class BookPlugin: Plugin, Browsable {
     override func getImage(_ path: String) async throws -> Data {
         Logger.bookPlugin.debug("Getting image: \(path)")
 
+        if path.hasPrefix(Self.coverCachePrefix) {
+            let filename = String(path.dropFirst(Self.coverCachePrefix.count))
+            let coverURL = cacheDir.appendingPathComponent(filename)
+            Logger.bookPlugin.debug("Reading cached cover: \(coverURL.path(percentEncoded: false))")
+            if let data = try? Data(contentsOf: coverURL) {
+                return data
+            }
+            Logger.bookPlugin.error("Cached cover not found on disk: \(filename)")
+            throw NSError(
+                domain: "BookPlugin", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
+            )
+        }
+
         let (parserId, imagePath) = try parseMetaPrefix(path)
         guard let parser = getParser(id: parserId) else {
             Logger.bookPlugin.error("No parser found for id: \(parserId)")
@@ -383,6 +428,143 @@ class BookPlugin: Plugin, Browsable {
 
     override func isOnline() async throws -> Bool {
         return true
+    }
+
+    // MARK: - Caching
+
+    private func parseAndCache(
+        parser: Parser, relativePath: String, fullPath: String
+    ) async throws -> DetailedManga {
+        let hash = try Self.hashFile(at: fullPath)
+        let mangaId = parser.getMangaId(path: relativePath, hash: hash)
+
+        if let stored = try? await fetchCachedManga(mangaId: mangaId, parserId: parser.id) {
+            // Refresh the stored path if the file moved but its content is unchanged.
+            if stored.meta != relativePath {
+                var updated = stored
+                updated.cover = replaceCoverArchivePath(
+                    updated.cover, from: stored.meta ?? "", to: relativePath
+                )
+                updated.meta = relativePath
+                await storeManga(updated, mangaId: mangaId, parserId: parser.id)
+                updated.cover = await ensureCachedCover(
+                    for: updated.cover, mangaId: mangaId, parserId: parser.id
+                )
+                return updated
+            }
+
+            var cached = stored
+            cached.cover = await ensureCachedCover(
+                for: stored.cover, mangaId: mangaId, parserId: parser.id
+            )
+            return cached
+        }
+
+        var manga = try await parser.parse(path: relativePath, hash: mangaId)
+        manga.meta = relativePath
+        await storeManga(manga, mangaId: mangaId, parserId: parser.id)
+        manga.cover = await ensureCachedCover(
+            for: manga.cover, mangaId: mangaId, parserId: parser.id
+        )
+
+        return manga
+    }
+
+    private func fetchCachedManga(mangaId: String, parserId: String) async throws -> DetailedManga? {
+        guard let db else { return nil }
+        let pluginId = id
+        let row = try await db.read { db in
+            try BookPluginMangaModel
+                .filter(
+                    Column("mangaId") == mangaId
+                        && Column("parserId") == parserId
+                        && Column("pluginId") == pluginId
+                )
+                .fetchOne(db)
+        }
+        guard let row,
+              let data = row.info.data(using: .utf8),
+              let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
+        else { return nil }
+        return stored
+    }
+
+    private func storeManga(_ manga: DetailedManga, mangaId: String, parserId: String) async {
+        guard let db,
+              let infoData = try? JSONEncoder().encode(manga),
+              let infoString = String(data: infoData, encoding: .utf8)
+        else { return }
+        let model = BookPluginMangaModel(
+            mangaId: mangaId, parserId: parserId, pluginId: id, info: infoString
+        )
+        try? await db.write { db in
+            try model.upsert(db)
+        }
+        Logger.bookPlugin.debug("Stored parsed manga for \(mangaId) (parser: \(parserId))")
+    }
+
+    private func ensureCachedCover(
+        for cover: String?, mangaId: String, parserId: String
+    ) async -> String? {
+        guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
+
+        let ext = (cover as NSString).pathExtension.lowercased()
+        let filename = ext.isEmpty ? mangaId : "\(mangaId).\(ext)"
+        let url = cacheDir.appendingPathComponent(filename)
+
+        if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
+            Logger.bookPlugin.debug("Using cached cover for \(mangaId) at \(url.path(percentEncoded: false))")
+            return "\(Self.coverCachePrefix)\(filename)"
+        }
+
+        guard let parser = getParser(id: parserId) else {
+            Logger.bookPlugin.warning("No parser \(parserId) to re-cache cover for \(mangaId)")
+            return cover
+        }
+
+        do {
+            let coverData = try await parser.parseImage(path: cover)
+            try FileManager.default.createDirectory(
+                at: cacheDir, withIntermediateDirectories: true, attributes: nil
+            )
+            try coverData.write(to: url, options: .atomic)
+            Logger.bookPlugin.debug(
+                "Re-cached missing cover for \(mangaId) at \(url.path(percentEncoded: false))"
+            )
+            return "\(Self.coverCachePrefix)\(filename)"
+        } catch {
+            Logger.bookPlugin.warning("Failed to re-cache cover for \(mangaId): \(error)")
+            return cover
+        }
+    }
+
+    private func replaceCoverArchivePath(
+        _ cover: String?, from oldPath: String, to newPath: String
+    ) -> String? {
+        guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
+        let prefix = "\(oldPath):"
+        guard cover.hasPrefix(prefix) else { return cover }
+        let entryPath = String(cover.dropFirst(prefix.count))
+        return "\(newPath):\(entryPath)"
+    }
+
+    private static func hashFile(at path: String) throws -> String {
+        guard let handle = FileHandle(forReadingAtPath: path) else {
+            throw NSError(
+                domain: "BookPlugin", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
+            )
+        }
+        defer { try? handle.close() }
+
+        var hasher = SHA256()
+        let chunkSize = 1 << 16
+        while true {
+            let chunk = handle.readData(ofLength: chunkSize)
+            if chunk.isEmpty { break }
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     // MARK: - Browsable Methods
@@ -435,7 +617,9 @@ class BookPlugin: Plugin, Browsable {
 
                 let detailed: DetailedManga
                 do {
-                    detailed = try await parser.parse(path: runtimePath)
+                    detailed = try await parseAndCache(
+                        parser: parser, relativePath: runtimePath, fullPath: fullPath
+                    )
                 } catch {
                     Logger.bookPlugin.warning(
                         "Parser '\(parser.id)' failed to parse '\(fullPath)': \(error), skipping"

@@ -238,7 +238,7 @@ struct GeneralSettingsScreen: View {
 
             let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
 
-            DbService.shared.closeCbzParserDb()
+            DbService.shared.closeBookPluginDb()
 
             if fileManager.fileExists(atPath: indexCacheDir.path) {
                 do {

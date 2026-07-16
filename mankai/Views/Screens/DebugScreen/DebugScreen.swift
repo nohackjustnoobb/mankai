@@ -253,7 +253,7 @@ struct DebugScreen: View {
                 return
             }
 
-            DbService.shared.closeCbzParserDb()
+            DbService.shared.closeBookPluginDb()
 
             do {
                 let contents = try fileManager.contentsOfDirectory(
