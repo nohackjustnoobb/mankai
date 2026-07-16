@@ -42,31 +42,41 @@ struct PluginLibraryScreen: View {
         return sortedKeys.flatMap { mangas[$0] ?? [] }
     }
 
+    private var hasLoadedCurrentFilter: Bool {
+        let key = "\(selectedGenre.rawValue)_\(selectedStatus.rawValue)"
+        return mangasList[key] != nil
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
+                LazyVStack {
+                    MangasListView(mangas: allMangas, plugin: plugin)
+                        .id("mangasList")
+
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding()
+                    }
+
+                    Color.clear
+                        .frame(height: 1)
+                        .onAppear {
+                            loadList()
+                        }
+                }
+                .padding()
+            }
+            .overlay {
                 if allMangas.isEmpty && isLoading {
                     ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding()
-                } else {
-                    LazyVStack {
-                        MangasListView(mangas: allMangas, plugin: plugin)
-                            .id("mangasList")
-
-                        if isLoading {
-                            ProgressView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .padding()
-                        }
-
-                        Color.clear
-                            .frame(height: 1)
-                            .onAppear {
-                                loadList()
-                            }
-                    }
-                    .padding()
+                } else if allMangas.isEmpty && hasLoadedCurrentFilter {
+                    ContentUnavailableView(
+                        "noEntities",
+                        systemImage: "tray",
+                        description: Text("noEntitiesDescription")
+                    )
                 }
             }
             .onChange(of: selectedGenre, initial: false) { _, _ in

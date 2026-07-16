@@ -24,26 +24,32 @@ struct PluginSearchScreen: View {
 
     var body: some View {
         ScrollView {
+            LazyVStack {
+                MangasListView(mangas: allMangas, plugin: plugin)
+
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                }
+
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        search()
+                    }
+            }
+            .padding()
+        }
+        .overlay {
             if allMangas.isEmpty && isLoading {
                 ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                LazyVStack {
-                    MangasListView(mangas: allMangas, plugin: plugin)
-
-                    if isLoading {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    }
-
-                    Color.clear
-                        .frame(height: 1)
-                        .onAppear {
-                            search()
-                        }
-                }
-                .padding()
+            } else if allMangas.isEmpty && !mangas.isEmpty {
+                ContentUnavailableView(
+                    "noResultsFound",
+                    systemImage: "magnifyingglass",
+                    description: Text("noResultsFoundDescription")
+                )
             }
         }
         .navigationTitle("search")
