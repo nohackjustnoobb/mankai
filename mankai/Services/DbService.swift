@@ -92,10 +92,12 @@ class DbService {
 
     private var downloadDb: DatabasePool?
 
-    func openDownloadDb(_ path: String) -> DatabasePool? {
+    func openDownloadDb() -> DatabasePool? {
         if let db = downloadDb {
             return db
         }
+
+        let path = DownloadPlugin.shared.downloadDir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         Logger.dbService.debug("Opening DownloadDb at \(path)")
         var config = Configuration()
@@ -117,5 +119,48 @@ class DbService {
             Logger.dbService.error("Failed to open DownloadDb at \(path)", error: error)
             return nil
         }
+    }
+
+    private var cbzParserDb: DatabasePool?
+
+    func openCbzParserDb() -> DatabasePool? {
+        if let db = cbzParserDb {
+            return db
+        }
+
+        guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("cbzparser")
+        let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
+
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            Logger.dbService.error("Failed to create CbzParserDb directory at \(dir.path(percentEncoded: false))", error: error)
+            return nil
+        }
+
+        Logger.dbService.debug("Opening CbzParserDb at \(path)")
+        var config = Configuration()
+        config.busyMode = .timeout(5.0)
+
+        do {
+            let pool = try DatabasePool(path: path, configuration: config)
+
+            try pool.write { db in
+                try CbzParserModel.createTable(db)
+            }
+
+            cbzParserDb = pool
+            Logger.dbService.info("CbzParserDb opened successfully at \(path)")
+            return pool
+        } catch {
+            Logger.dbService.error("Failed to open CbzParserDb at \(path)", error: error)
+            return nil
+        }
+    }
+
+    func closeCbzParserDb() {
+        cbzParserDb = nil
+        Logger.dbService.debug("Closed CbzParserDb pool")
     }
 }

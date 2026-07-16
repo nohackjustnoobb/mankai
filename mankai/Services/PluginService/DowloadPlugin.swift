@@ -35,11 +35,9 @@ class DownloadPlugin: Plugin {
         Genre.allCases
     }
 
-    private let downloadDir: URL
-    private let dbPath: String
-    private lazy var _db: DatabasePool? = DbService.shared.openDownloadDb(dbPath)
+    let downloadDir: URL
     var db: DatabasePool? {
-        _db
+        DbService.shared.openDownloadDb()
     }
 
     override private init() {
@@ -52,8 +50,6 @@ class DownloadPlugin: Plugin {
         if !fileManager.fileExists(atPath: downloadDir.path) {
             try! fileManager.createDirectory(at: downloadDir, withIntermediateDirectories: true)
         }
-
-        dbPath = downloadDir.appendingPathComponent("data.db").path(percentEncoded: false)
     }
 
     /// Built-in plugin, do nothing

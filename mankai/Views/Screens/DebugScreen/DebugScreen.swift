@@ -11,6 +11,7 @@ struct DebugScreen: View {
     @State var plugin: JsPlugin?
     @State private var jsonInput: String = ""
     @State private var isError: Bool = false
+    @State private var showClearCacheDirAlert = false
 
     var body: some View {
         List {
@@ -220,9 +221,51 @@ struct DebugScreen: View {
                     }
                 }
             }
+
+            Section("cache") {
+                Button(role: .destructive) {
+                    showClearCacheDirAlert = true
+                } label: {
+                    Label("clearCacheDir", systemImage: "trash")
+                }
+                .confirmationDialog(
+                    "clearCacheDir",
+                    isPresented: $showClearCacheDirAlert,
+                    titleVisibility: .visible
+                ) {
+                    Button("clear", role: .destructive) {
+                        clearCacheDir()
+                    }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearCacheDirMessage")
+                }
+            }
         }
         .navigationTitle("debug")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func clearCacheDir() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fileManager = FileManager.default
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+                return
+            }
+
+            DbService.shared.closeCbzParserDb()
+
+            do {
+                let contents = try fileManager.contentsOfDirectory(
+                    at: cacheDir, includingPropertiesForKeys: nil
+                )
+                for url in contents {
+                    try fileManager.removeItem(at: url)
+                }
+            } catch {
+                Logger.ui.error("Failed to clear cache directory: \(error)")
+            }
+        }
     }
 }
 

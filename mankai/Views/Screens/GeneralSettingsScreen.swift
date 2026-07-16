@@ -14,7 +14,9 @@ struct GeneralSettingsScreen: View {
         SettingsDefaults.showDebugScreen
     @ObservedObject private var updateService = UpdateService.shared
     @State private var cacheSize: String = ""
+    @State private var indexCacheSize: String = ""
     @State private var showClearCacheAlert = false
+    @State private var showClearIndexCacheAlert = false
 
     var body: some View {
         List {
@@ -91,6 +93,35 @@ struct GeneralSettingsScreen: View {
                 Text("cacheDescription")
             }
 
+            Section {
+                LabeledContent("indexSize") {
+                    Button(role: .destructive) {
+                        showClearIndexCacheAlert = true
+                    } label: {
+                        if indexCacheSize.isEmpty {
+                            ProgressView()
+                        } else {
+                            HStack(spacing: 4) {
+                                Text(indexCacheSize)
+                                Image(systemName: "trash")
+                            }
+                        }
+                    }
+                }
+                .confirmationDialog(
+                    "clearIndex", isPresented: $showClearIndexCacheAlert, titleVisibility: .visible
+                ) {
+                    Button("clear", role: .destructive) {
+                        clearIndexCache()
+                    }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearIndexMessage")
+                }
+            } header: {
+                Text("index")
+            }
+
             Section("about") {
                 LabeledContent("version") {
                     Text(appVersion)
@@ -109,6 +140,7 @@ struct GeneralSettingsScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             updateCacheSize()
+            updateIndexCacheSize()
         }
     }
 
@@ -131,26 +163,39 @@ struct GeneralSettingsScreen: View {
                 return
             }
 
-            var size: Int64 = 0
-            if let enumerator = fileManager.enumerator(
-                at: cacheDir, includingPropertiesForKeys: [.fileSizeKey]
-            ) {
-                for case let url as URL in enumerator {
-                    if let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey]),
-                       let fileSize = resourceValues.fileSize
-                    {
-                        size += Int64(fileSize)
-                    }
-                }
-            }
+            // Only report the size of the clearable regular cache; index cache is
+            // intentionally excluded since the user cannot clear it from here.
+            let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
+            let size = (try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir)) ?? 0
 
             let formatter = ByteCountFormatter()
             formatter.allowedUnits = [.useAll]
             formatter.countStyle = .file
-            let formattedSize = formatter.string(fromByteCount: size)
+            let formattedSize = formatter.string(fromByteCount: Int64(size))
 
             DispatchQueue.main.async {
                 self.cacheSize = formattedSize
+            }
+        }
+    }
+
+    private func updateIndexCacheSize() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fileManager = FileManager.default
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+                return
+            }
+
+            let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
+            let size = (try? fileManager.allocatedSizeOfDirectory(at: indexCacheDir)) ?? 0
+
+            let formatter = ByteCountFormatter()
+            formatter.allowedUnits = [.useAll]
+            formatter.countStyle = .file
+            let formattedSize = formatter.string(fromByteCount: Int64(size))
+
+            DispatchQueue.main.async {
+                self.indexCacheSize = formattedSize
             }
         }
     }
@@ -162,20 +207,54 @@ struct GeneralSettingsScreen: View {
                 return
             }
 
-            do {
-                let contents = try fileManager.contentsOfDirectory(
-                    at: cacheDir, includingPropertiesForKeys: nil
-                )
-                for url in contents {
-                    try fileManager.removeItem(at: url)
+            // Only clear the regular cache; index cache must be preserved.
+            let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
+            if fileManager.fileExists(atPath: regularCacheDir.path) {
+                do {
+                    let contents = try fileManager.contentsOfDirectory(
+                        at: regularCacheDir, includingPropertiesForKeys: nil
+                    )
+                    for url in contents {
+                        try fileManager.removeItem(at: url)
+                    }
+                } catch {
+                    Logger.ui.error("Failed to clear cache: \(error)")
                 }
-            } catch {
-                Logger.ui.error("Failed to clear cache: \(error)")
             }
 
             DispatchQueue.main.async {
                 // Determine new size (should be small/zero)
                 self.updateCacheSize()
+            }
+        }
+    }
+
+    private func clearIndexCache() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fileManager = FileManager.default
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+                return
+            }
+
+            let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
+
+            DbService.shared.closeCbzParserDb()
+
+            if fileManager.fileExists(atPath: indexCacheDir.path) {
+                do {
+                    let contents = try fileManager.contentsOfDirectory(
+                        at: indexCacheDir, includingPropertiesForKeys: nil
+                    )
+                    for url in contents {
+                        try fileManager.removeItem(at: url)
+                    }
+                } catch {
+                    Logger.ui.error("Failed to clear index cache: \(error)")
+                }
+            }
+
+            DispatchQueue.main.async {
+                self.updateIndexCacheSize()
             }
         }
     }

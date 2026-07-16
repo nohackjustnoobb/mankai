@@ -972,6 +972,38 @@
         }
       }
     },
+    "clearCacheDir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Cache Directory"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除快取目錄"
+          }
+        }
+      }
+    },
+    "clearCacheDirMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will remove all cached files, including the index cache. Are you sure you want to continue?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這將移除所有快取檔案，包含索引快取。您確定要繼續嗎？"
+          }
+        }
+      }
+    },
     "clearCacheMessage" : {
       "localizations" : {
         "en" : {
@@ -984,6 +1016,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "您確定要清除快取嗎？"
+          }
+        }
+      }
+    },
+    "clearIndex" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Index"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除索引"
+          }
+        }
+      }
+    },
+    "clearIndexMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The index speeds up browsing. Clearing it will force a rebuild and may temporarily slow things down. Are you sure you want to continue?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引可加快瀏覽速度。清除後將需要重新建立，可能會暫時減慢速度。您確定要繼續嗎？"
           }
         }
       }
@@ -2777,6 +2841,38 @@
         }
       }
     },
+    "index" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Index"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引"
+          }
+        }
+      }
+    },
+    "indexSize" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Index Size"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "索引大小"
+          }
+        }
+      }
+    },
     "info" : {
       "localizations" : {
         "en" : {
@@ -3482,22 +3578,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到漫畫"
-          }
-        }
-      }
-    },
-    "mangaNotInCache" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manga not in cache"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "漫畫不在快取中"
           }
         }
       }

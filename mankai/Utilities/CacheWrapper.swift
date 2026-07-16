@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum CacheDirectory {
+    static let regular = "regular"
+    static let index = "index"
+}
+
 private enum CacheMethod: String {
     case getSuggestion
     case search
@@ -155,57 +160,60 @@ class CacheWrapper: Plugin {
         let fileManager = FileManager.default
         guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
 
+        // Only manage the regular cache; index cache must not be pruned.
+        let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
+
         let limit = getDiskCacheSizeLimit()
 
-        do {
-            let resourceKeys: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey, .fileSizeKey]
-            let enumerator = fileManager.enumerator(
-                at: cacheDir,
-                includingPropertiesForKeys: resourceKeys,
-                options: [.skipsHiddenFiles]
-            )!
+        // Fast path: compute the total allocated size without collecting file URLs.
+        // This avoids the full enumeration when the cache is within its limit.
+        guard let totalSizeRaw = try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir) else { return }
+        let totalSize = Int64(totalSizeRaw)
 
-            var fileURLs: [URL] = []
-            var totalSize: Int64 = 0
+        guard totalSize > limit else { return }
 
-            for case let fileURL as URL in enumerator {
-                guard let resourceValues = try? fileURL.resourceValues(forKeys: Set(resourceKeys)),
-                      let isDirectory = resourceValues.isDirectory,
-                      !isDirectory,
-                      let fileSize = resourceValues.fileSize
-                else { continue }
+        // Slow path: over the limit, so enumerate to collect file URLs for pruning.
+        let resourceKeys: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey, .fileSizeKey]
+        let enumerator = fileManager.enumerator(
+            at: regularCacheDir,
+            includingPropertiesForKeys: resourceKeys,
+            options: [.skipsHiddenFiles]
+        )!
 
-                totalSize += Int64(fileSize)
-                if let _ = resourceValues.contentModificationDate {
-                    fileURLs.append(fileURL)
-                }
-            }
+        var fileURLs: [URL] = []
 
-            if totalSize > limit {
-                // Sort by modification date (oldest first)
-                fileURLs.sort { url1, url2 in
-                    let d1 = (try? url1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
-                    let d2 = (try? url2.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
-                    return d1 < d2
-                }
+        for case let fileURL as URL in enumerator {
+            guard let resourceValues = try? fileURL.resourceValues(forKeys: Set(resourceKeys)),
+                  let isDirectory = resourceValues.isDirectory,
+                  !isDirectory,
+                  resourceValues.contentModificationDate != nil
+            else { continue }
 
-                var currentSize = totalSize
-                let targetSize = Int64(Double(limit) * 0.5)
+            fileURLs.append(fileURL)
+        }
 
-                for fileURL in fileURLs {
-                    if currentSize <= targetSize { break }
+        // Sort by modification date (oldest first)
+        fileURLs.sort { url1, url2 in
+            let d1 = (try? url1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
+            let d2 = (try? url2.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
+            return d1 < d2
+        }
 
-                    if let resources = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
-                       let fileSize = resources.fileSize
-                    {
-                        do {
-                            try fileManager.removeItem(at: fileURL)
-                            currentSize -= Int64(fileSize)
-                            Logger.cacheWrapper.debug("Pruned cache file: \(fileURL.lastPathComponent)")
-                        } catch {
-                            Logger.cacheWrapper.error("Failed to prune cache file: \(error)")
-                        }
-                    }
+        var currentSize = totalSize
+        let targetSize = Int64(Double(limit) * 0.5)
+
+        for fileURL in fileURLs {
+            if currentSize <= targetSize { break }
+
+            if let resources = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
+               let fileSize = resources.fileSize
+            {
+                do {
+                    try fileManager.removeItem(at: fileURL)
+                    currentSize -= Int64(fileSize)
+                    Logger.cacheWrapper.debug("Pruned cache file: \(fileURL.lastPathComponent)")
+                } catch {
+                    Logger.cacheWrapper.error("Failed to prune cache file: \(error)")
                 }
             }
         }
@@ -357,7 +365,7 @@ class CacheWrapper: Plugin {
         let fileManager = FileManager.default
         let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
 
-        let pluginCacheDir = cacheDir.appendingPathComponent(id)
+        let pluginCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular).appendingPathComponent(id)
         if !fileManager.fileExists(atPath: pluginCacheDir.path) {
             try? fileManager.createDirectory(
                 at: pluginCacheDir, withIntermediateDirectories: true, attributes: nil

@@ -63,20 +63,12 @@ class BookPlugin: Plugin, Browsable {
     private lazy var dirName: String = url.lastPathComponent
     private let parsers: [String: Parser]
 
-    /// Maximum number of parsed `DetailedManga` values to keep in the cache.
-    private static let detailedMangaCacheLimit = 50
-    /// LRU cache of parsed manga, addressable by either the manga id or the
-    /// file path the manga was parsed from.
-    private lazy var detailedMangaCache: DualKeyLRUCache<String, String, DetailedManga> =
-        DualKeyLRUCache(maxSize: BookPlugin.detailedMangaCacheLimit)
-
     init(url: URL, id: String) {
         Logger.bookPlugin.debug("Initializing BookPlugin with url: \(url.path)")
         self.url = url
         _id = id
 
-        // Initialize parsers
-        let cbzParser = CbzParser()
+        let cbzParser = CbzParser(baseURL: url, pluginId: id)
         parsers = [
             cbzParser.id: cbzParser,
         ]
@@ -258,8 +250,7 @@ class BookPlugin: Plugin, Browsable {
     }
 
     /// Splits a value prefixed with `<parserId>://` into the parser id and the
-    /// remaining path. Used to route `getChapter` / `getImage` calls to the
-    /// correct parser.
+    /// remaining path. Used to route calls to the correct parser.
     private func parseMetaPrefix(_ value: String?) throws -> (parserId: String, path: String) {
         guard let value, let range = value.range(of: "://") else {
             Logger.bookPlugin.error("Missing parser prefix in value: \(value ?? "nil")")
@@ -282,6 +273,19 @@ class BookPlugin: Plugin, Browsable {
         }
 
         return (parserId, path)
+    }
+
+    /// Prefixes the `id`, `meta`, and `cover` of a parser-returned manga with
+    /// `<parserId>://` so that subsequent calls can route back to the parser
+    /// that produced it. Works for both `Manga` and `DetailedManga`.
+    private func prefixManga<T: MangaMetaPrefixable>(_ manga: T, parserId: String) -> T {
+        var prefixed = manga
+        prefixed.meta = "\(parserId)://\(prefixed.meta ?? "")"
+        if let cover = prefixed.cover, !cover.isEmpty {
+            prefixed.cover = "\(parserId)://\(cover)"
+        }
+        prefixed.id = "\(parserId)://\(prefixed.id)"
+        return prefixed
     }
 
     // MARK: - Plugin Methods
@@ -309,12 +313,17 @@ class BookPlugin: Plugin, Browsable {
 
         var mangas: [Manga] = []
         for id in ids {
-            guard let detailed = detailedMangaCache.value(forKeyB: id)
-            else {
-                Logger.bookPlugin.warning("No cached manga for id: \(id), skipping")
-                continue
+            let (parserId, originalId) = try parseMetaPrefix(id)
+            guard let parser = getParser(id: parserId) else {
+                Logger.bookPlugin.error("No parser found for id: \(parserId)")
+                throw NSError(
+                    domain: "BookPlugin", code: 0,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
+                )
             }
-            mangas.append(detailed.toManga())
+
+            let parsed = try await parser.getMangas([originalId])
+            mangas.append(contentsOf: parsed.map { prefixManga($0, parserId: parserId) })
         }
         return mangas
     }
@@ -322,13 +331,17 @@ class BookPlugin: Plugin, Browsable {
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         Logger.bookPlugin.debug("Getting detailed manga: \(id)")
 
-        guard let detailed = detailedMangaCache.value(forKeyB: id) else {
+        let (parserId, originalId) = try parseMetaPrefix(id)
+        guard let parser = getParser(id: parserId) else {
+            Logger.bookPlugin.error("No parser found for id: \(parserId)")
             throw NSError(
                 domain: "BookPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotInCache")]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
             )
         }
-        return detailed
+
+        let detailed = try await parser.getDetailedManga(originalId)
+        return prefixManga(detailed, parserId: parserId)
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
@@ -345,6 +358,8 @@ class BookPlugin: Plugin, Browsable {
 
         var mangaForParser = manga
         mangaForParser.meta = originalMeta
+        let (_, originalId) = try parseMetaPrefix(manga.id)
+        mangaForParser.id = originalId
         let images = try await parser.parseChapter(manga: mangaForParser, chapter: chapter)
 
         // Prefix each returned image path with the parser id so that getImage can route to the correct parser.
@@ -418,32 +433,18 @@ class BookPlugin: Plugin, Browsable {
                     continue
                 }
 
-                var detailed: DetailedManga
-                if let cached = detailedMangaCache.value(forKeyA: runtimePath) {
-                    detailed = cached
-                } else {
-                    do {
-                        detailed = try await parser.parse(path: fullPath)
-                    } catch {
-                        Logger.bookPlugin.warning(
-                            "Parser '\(parser.id)' failed to parse '\(fullPath)': \(error), skipping"
-                        )
-                        continue
-                    }
-
-                    let originalMeta = detailed.meta ?? ""
-                    detailed.meta = "\(parser.id)://\(originalMeta)"
-
-                    if let originalCover = detailed.cover, !originalCover.isEmpty {
-                        detailed.cover = "\(parser.id)://\(originalCover)"
-                    }
-
-                    detailedMangaCache.setValue(
-                        detailed, forKeyA: runtimePath, forKeyB: detailed.id
+                let detailed: DetailedManga
+                do {
+                    detailed = try await parser.parse(path: runtimePath)
+                } catch {
+                    Logger.bookPlugin.warning(
+                        "Parser '\(parser.id)' failed to parse '\(fullPath)': \(error), skipping"
                     )
+                    continue
                 }
 
-                entities.append(.book(manga: detailed, path: runtimePath))
+                let prefixed = prefixManga(detailed, parserId: parser.id)
+                entities.append(.book(manga: prefixed, path: runtimePath))
             }
         }
 
@@ -507,83 +508,14 @@ class BookPlugin: Plugin, Browsable {
     }
 }
 
-// MARK: - DualKeyLRUCache
+// MARK: - MangaMetaPrefixable
 
-/// A thread-safe LRU cache where each value is addressable by two independent
-/// keys (a primary `KeyA` and a secondary `KeyB`). Both keys refer to the same
-/// cached value and share a single LRU slot, so an entry is only evicted once
-/// regardless of which key was used to access it.
-private final class DualKeyLRUCache<KeyA: Hashable, KeyB: Hashable, Value> {
-    private let maxSize: Int
-    /// The primary key (e.g. file path) maps directly to the value.
-    private var values: [KeyA: Value] = [:]
-    /// Maps the secondary key (e.g. manga id) to the primary key.
-    private var keyBToKeyA: [KeyB: KeyA] = [:]
-    /// Reverse index of `keyBToKeyA`, kept in sync so stale secondary keys can be
-    /// dropped in O(1) when a primary key is re-parsed with a new secondary key
-    /// or evicted from the cache.
-    private var keyAToKeyB: [KeyA: KeyB] = [:]
-    /// LRU order tracked by the primary key.
-    private var order: [KeyA] = []
-    private let lock = NSLock()
-
-    init(maxSize: Int) {
-        precondition(maxSize > 0)
-        self.maxSize = maxSize
-    }
-
-    func value(forKeyA keyA: KeyA) -> Value? {
-        lock.lock()
-        defer { lock.unlock() }
-
-        guard let value = values[keyA] else { return nil }
-        touch(keyA)
-        return value
-    }
-
-    func value(forKeyB keyB: KeyB) -> Value? {
-        lock.lock()
-        defer { lock.unlock() }
-
-        guard let keyA = keyBToKeyA[keyB], let value = values[keyA] else { return nil }
-        touch(keyA)
-        return value
-    }
-
-    func setValue(_ value: Value, forKeyA keyA: KeyA, forKeyB keyB: KeyB) {
-        lock.lock()
-        defer { lock.unlock() }
-
-        // If an entry with the same primary key already exists, just refresh it.
-        if values[keyA] != nil {
-            touch(keyA)
-        } else {
-            order.append(keyA)
-        }
-        values[keyA] = value
-
-        // Drop the previous secondary key (if any) for this primary key, otherwise
-        // old keyB lookups would resolve to the new (different) value.
-        if let oldKeyB = keyAToKeyB[keyA], oldKeyB != keyB {
-            keyBToKeyA.removeValue(forKey: oldKeyB)
-        }
-        keyAToKeyB[keyA] = keyB
-        keyBToKeyA[keyB] = keyA
-
-        while order.count > maxSize {
-            let oldest = order.removeFirst()
-            values.removeValue(forKey: oldest)
-            // Remove the secondary key that pointed to the evicted primary key.
-            if let oldKeyB = keyAToKeyB.removeValue(forKey: oldest) {
-                keyBToKeyA.removeValue(forKey: oldKeyB)
-            }
-        }
-    }
-
-    private func touch(_ keyA: KeyA) {
-        if let index = order.firstIndex(of: keyA) {
-            order.remove(at: index)
-        }
-        order.append(keyA)
-    }
+private protocol MangaMetaPrefixable {
+    var id: String { get set }
+    var meta: String? { get set }
+    var cover: String? { get set }
 }
+
+extension Manga: MangaMetaPrefixable {}
+
+extension DetailedManga: MangaMetaPrefixable {}
