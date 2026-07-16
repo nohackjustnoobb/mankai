@@ -87,7 +87,11 @@ struct BrowseScreen: View {
         }
         .overlay {
             if isLoading && entities.isEmpty {
-                ProgressView()
+                ProgressView {
+                    Text("browseScreenLoadingHint")
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
             } else if let errorMessage = errorMessage {
                 ContentUnavailableView(
                     "failedToLoadList",

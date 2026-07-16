@@ -651,6 +651,22 @@
         }
       }
     },
+    "browseScreenLoadingHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remote resources, such as those on iCloud, may take a while to load. To speed things up, download it first."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "遠端資源（如 iCloud）載入可能較慢，建議先下載以加快速度。"
+          }
+        }
+      }
+    },
     "builtin" : {
       "localizations" : {
         "en" : {
