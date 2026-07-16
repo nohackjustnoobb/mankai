@@ -47,6 +47,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
+- **Local Collections**: Read CBZ files and manage local collections stored on your device.
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).

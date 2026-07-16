@@ -489,6 +489,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = mankaiThumbnail;
@@ -500,7 +501,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.mankaiThumbnail;
+				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -517,6 +518,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = mankaiThumbnail;
@@ -528,7 +530,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.mankaiThumbnail;
+				PRODUCT_BUNDLE_IDENTIFIER = app.mankai.thumbnail;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
