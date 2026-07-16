@@ -22,6 +22,11 @@ struct PluginLibraryScreen: View {
     @State private var showErrorAlert: Bool = false
     @State private var errorMessage: String = ""
 
+    @State private var searchQuery: String = ""
+    @State private var searchSuggestions: [String] = []
+    @State private var searchTask: Task<Void, Never>? = nil
+    @State private var navigateToSearch: Bool = false
+
     private var hasActiveFilters: Bool {
         selectedGenre != .all || selectedStatus != .any
     }
@@ -73,6 +78,25 @@ struct PluginLibraryScreen: View {
         }
         .navigationTitle("library")
         .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchQuery, prompt: "searchManga") {
+            ForEach(searchSuggestions, id: \.self) { suggestion in
+                Label(suggestion, systemImage: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                    .searchCompletion(suggestion)
+            }
+        }
+        .onSubmit(of: .search) {
+            performSearch()
+        }
+        .onChange(of: searchQuery, initial: false) { _, newQuery in
+            getSearchSuggestions(for: newQuery)
+        }
+        .onDisappear {
+            searchTask?.cancel()
+        }
+        .navigationDestination(isPresented: $navigateToSearch) {
+            PluginSearchScreen(plugin: plugin, query: searchQuery)
+        }
         .sheet(isPresented: $showingFilters) {
             NavigationView {
                 List {
@@ -244,5 +268,33 @@ struct PluginLibraryScreen: View {
         tempSelectedGenre = .all
         tempSelectedStatus = .any
         setFilters(genre: .all, status: .any)
+    }
+
+    private func getSearchSuggestions(for query: String) {
+        searchTask?.cancel()
+
+        guard !query.isEmpty else {
+            searchSuggestions = []
+            return
+        }
+
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+
+            guard !Task.isCancelled else { return }
+
+            do {
+                let suggestions = try await plugin.getSuggestions(query)
+                guard !Task.isCancelled else { return }
+                searchSuggestions = suggestions
+            } catch {
+                searchSuggestions = []
+            }
+        }
+    }
+
+    private func performSearch() {
+        guard !searchQuery.isEmpty else { return }
+        navigateToSearch = true
     }
 }
