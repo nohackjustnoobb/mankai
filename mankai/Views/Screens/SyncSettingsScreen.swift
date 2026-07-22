@@ -186,11 +186,12 @@ struct HttpEngineConfigView: View {
                         .autocapitalization(.none)
 
                     Button {
-                        var cleanedUrl = serverUrl
+                        let trimmedServerUrl = serverUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                        var cleanedUrl = trimmedServerUrl
                         var loginUsername: String?
                         var loginPassword: String?
 
-                        if var components = URLComponents(string: serverUrl),
+                        if var components = URLComponents(string: trimmedServerUrl),
                            let queryItems = components.queryItems
                         {
                             loginUsername = queryItems.first(where: { $0.name == "username" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -203,7 +204,7 @@ struct HttpEngineConfigView: View {
                                 if components.queryItems?.isEmpty ?? true {
                                     components.query = nil
                                 }
-                                cleanedUrl = components.string ?? serverUrl
+                                cleanedUrl = components.string ?? trimmedServerUrl
                             }
                         }
 

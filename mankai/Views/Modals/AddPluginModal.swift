@@ -244,7 +244,8 @@ private func parsePluginFromJson(_ input: String) -> JsPlugin? {
 }
 
 private func parsePluginFromUrl(_ urlString: String) async -> JsPlugin? {
-    guard let url = URL(string: urlString) else {
+    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let url = URL(string: trimmed) else {
         return nil
     }
 
@@ -252,7 +253,8 @@ private func parsePluginFromUrl(_ urlString: String) async -> JsPlugin? {
 }
 
 private func parseHttpPluginFromUrl(_ urlString: String) async -> HttpPlugin? {
-    guard let url = URL(string: urlString) else {
+    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let url = URL(string: trimmed) else {
         return nil
     }
 
@@ -260,7 +262,8 @@ private func parseHttpPluginFromUrl(_ urlString: String) async -> HttpPlugin? {
 }
 
 private func parseEditableHttpPluginFromUrl(_ urlString: String) async -> EditableHttpPlugin? {
-    guard let url = URL(string: urlString) else {
+    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let url = URL(string: trimmed) else {
         return nil
     }
 
