@@ -47,7 +47,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local Collections**: Read CBZ files and manage local collections stored on your device.
+- **Local Collections**: Read [CBZ files](#parsers) and manage local collections stored on your device.
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
@@ -75,8 +75,8 @@ This plugin manages manga stored as local files stored on your device or a conne
 
 This plugin is designed for external providers to use Mankai as a reader and, optionally, an editor. It connects to servers implementing the standard API and supports authentication.
 
-- **Specification**: [Mankai API Specification](https://github.com/nohackjustnoobb/mankai-server/blob/master/doc/api.md)
-- **Reference Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server)
+- **Specification**: [Mankai API Specification](docs/httpplugin/api.md) (see also the [Mankai Editor API Specification](docs/httpplugin/editor-api.md) for optional editor support)
+- **Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server) - a manga management and sync server implementing the API.
 
 ## Reader
 
@@ -118,7 +118,10 @@ Mankai supports syncing your library and reading history across devices using th
 
 ### HttpEngine
 
-The **HttpEngine** requires a self-hosted server to function. You can host the server yourself using the [mankai-sync](https://github.com/nohackjustnoobb/mankai-sync) repository.
+The **HttpEngine** requires a self-hosted server to function. You can use either of the following:
+
+- **[mankai-server](https://github.com/nohackjustnoobb/mankai-server)** - A manga management and sync server, which can also serve as an [HttpPlugin](#http-plugin-httpplugin) source.
+- **[mankai-sync](https://github.com/nohackjustnoobb/mankai-sync)** - A lightweight server dedicated solely to syncing.
 
 Once hosted, you can configure the server URL in the app settings to enable syncing.
 
@@ -131,6 +134,21 @@ Once configured, you can enter your Supabase URL and Key in the app settings to 
 ### Planned Sync Engines
 
 - **iCloud** - Pending availability of resources (aka. I have no money)
+
+## Parsers
+
+Mankai ships with built-in parsers that read local book files (e.g., CBZ) and extract their metadata and images. Each parser targets a specific file format.
+
+| Parser        | Extensions | Description                                                                                                                              |
+| :------------ | :--------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| **CbzParser** | `.cbz`     | Parses CBZ (Comic Book Zip) archives, extracting metadata from `ComicInfo.xml` and images from the archive.                             |
+
+### Planned Parsers
+
+- **EPUB** - Digital book format.
+- **PDF** - Portable Document Format.
+- **CBR** - Comic Book RAR archive.
+- **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
 
 ## Development Notes
 

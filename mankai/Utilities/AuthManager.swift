@@ -205,7 +205,7 @@ class AuthManager {
             )
         }
 
-        if httpResponse.statusCode == 401 {
+        if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
             // maybe the refresh token is expired, try to get a new one
             Logger.authManager.warning("AuthManager refresh token expired, trying to re-login")
             try await getRefreshToken()
@@ -319,8 +319,8 @@ class AuthManager {
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
         if let httpResponse = response as? HTTPURLResponse {
-            if httpResponse.statusCode == 401, retry {
-                Logger.authManager.warning("AuthManager request 401, retrying with token refresh")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403, retry {
+                Logger.authManager.warning("AuthManager request 401/403, retrying with token refresh")
                 try await refreshAccessToken()
                 return try await request(method: method, path: path, query: query, body: body, retry: false)
             }
