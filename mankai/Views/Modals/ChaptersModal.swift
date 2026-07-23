@@ -91,7 +91,7 @@ struct ChaptersModal: View {
                                 )
                             }
 
-                            if plugin is Editable {
+                            if plugin is Editable, manga.editable ?? true {
                                 NavigationLink(destination: {
                                     UpdateChaptersModal(
                                         plugin: plugin as! any Editable, manga: manga, chaptersKey: chaptersKey

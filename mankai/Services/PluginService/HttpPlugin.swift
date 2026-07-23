@@ -114,6 +114,14 @@ class HttpPlugin: Plugin {
         let availableGenres =
             (json["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
 
+        if editorEnabled, !(self is EditableHttpPlugin.Type) {
+            return EditableHttpPlugin(
+                id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name,
+                version: version, description: description, authors: authors,
+                repository: repository, availableGenres: availableGenres
+            )
+        }
+
         if !editorEnabled, self is EditableHttpPlugin.Type {
             Logger.httpPlugin.warning(
                 "Plugin \(id) is not editable but EditableHttpPlugin is being used. This may cause issues."
@@ -217,14 +225,8 @@ class HttpPlugin: Plugin {
                 let httpPluginModels = try HttpPluginModel.fetchAll(db)
 
                 for httpPluginModel in httpPluginModels {
-                    if httpPluginModel.editable {
-                        if let httpPlugin = EditableHttpPlugin.fromDataModel(httpPluginModel) {
-                            results.append(httpPlugin)
-                        }
-                    } else {
-                        if let httpPlugin = HttpPlugin.fromDataModel(httpPluginModel) {
-                            results.append(httpPlugin)
-                        }
+                    if let httpPlugin = HttpPlugin.fromDataModel(httpPluginModel) {
+                        results.append(httpPlugin)
                     }
                 }
             }
@@ -371,7 +373,6 @@ class HttpPlugin: Plugin {
                 id: id,
                 baseUrl: baseUrl,
                 meta: metaString,
-                editable: self is EditableHttpPlugin,
                 configValues: configValuesString
             )
             try httpPluginModel.save(db)

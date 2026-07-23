@@ -442,7 +442,9 @@ struct MangaDetailsScreen: View {
                                             }
                                             .buttonStyle(.plain)
 
-                                            if plugin is Editable, detailedManga != nil {
+                                            if plugin is Editable,
+                                               detailedManga?.editable ?? true
+                                            {
                                                 Button(action: {
                                                     isUpdateChaptersModalPresented = true
                                                 }) {
@@ -497,6 +499,7 @@ struct MangaDetailsScreen: View {
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga,
+               detailedManga.editable ?? true,
                let editablePlugin = plugin as? any Editable
             {
                 UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
@@ -505,6 +508,7 @@ struct MangaDetailsScreen: View {
         .sheet(isPresented: $isUpdateChaptersModalPresented) {
             [detailedManga, selectedChapterKey] in
             if let detailedManga = detailedManga,
+               detailedManga.editable ?? true,
                let selectedChapterKey = selectedChapterKey,
                let editablePlugin = plugin as? any Editable
             {
@@ -579,7 +583,7 @@ struct MangaDetailsScreen: View {
                     }
                 }
 
-                if plugin is Editable, detailedManga != nil {
+                if plugin is Editable, detailedManga?.editable ?? true {
                     Button(action: { isUpdateMangaModalPresented = true }) {
                         Image(systemName: "pencil.circle")
                     }

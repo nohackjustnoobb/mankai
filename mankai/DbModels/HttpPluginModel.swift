@@ -11,7 +11,6 @@ struct HttpPluginModel {
     var id: String
     var baseUrl: String
     var meta: String
-    var editable: Bool
     var configValues: String
 
     static func createTable(_ db: Database) throws {
@@ -20,7 +19,6 @@ struct HttpPluginModel {
 
             $0.column("baseUrl", .text).notNull()
             $0.column("meta", .text).notNull()
-            $0.column("editable", .boolean).notNull()
             $0.column("configValues", .text).notNull()
         }
     }

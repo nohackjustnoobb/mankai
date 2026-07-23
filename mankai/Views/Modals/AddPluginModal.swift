@@ -30,9 +30,6 @@ struct AddPluginModal: View {
     @State private var isReadOnly: Bool = false
     @State private var showFileImporter: Bool = false
 
-    /// HttpPlugin States
-    @State private var isEditable: Bool = false
-
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @State private var isProcessing: Bool = false
@@ -91,7 +88,6 @@ struct AddPluginModal: View {
                         TextField("url", text: $urlInput)
                             .keyboardType(.URL)
                             .textInputAutocapitalization(.never)
-                        Toggle("editable", isOn: $isEditable)
                     } header: {
                         Text("httpPluginSettings")
                     }
@@ -167,15 +163,7 @@ struct AddPluginModal: View {
                                         showError = true
                                     }
                                 case .httpPlugin:
-                                    let plugin: HttpPlugin?
-
-                                    if isEditable {
-                                        plugin = await parseEditableHttpPluginFromUrl(urlInput)
-                                    } else {
-                                        plugin = await parseHttpPluginFromUrl(urlInput)
-                                    }
-
-                                    guard let plugin = plugin else {
+                                    guard let plugin = await parseHttpPluginFromUrl(urlInput) else {
                                         errorMessage = String(localized: "failedToParsePlugin")
                                         showError = true
                                         return
@@ -259,13 +247,4 @@ private func parseHttpPluginFromUrl(_ urlString: String) async -> HttpPlugin? {
     }
 
     return await HttpPlugin.fromUrl(url)
-}
-
-private func parseEditableHttpPluginFromUrl(_ urlString: String) async -> EditableHttpPlugin? {
-    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let url = URL(string: trimmed) else {
-        return nil
-    }
-
-    return await EditableHttpPlugin.fromUrl(url) as? EditableHttpPlugin
 }

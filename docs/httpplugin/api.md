@@ -179,6 +179,7 @@ interface MangaResponse {
   genres: Genre[];
   chapters: Record<string, Chapter[]>;   // Keyed by chapter group ID
   remarks?: string;
+  editable?: boolean;     // Whether this manga can be edited; defaults to true
 }
 
 enum Genre {
