@@ -32,7 +32,7 @@ class Parser {
 
     /// Returns the manga id for the file at `path`, given its content `hash`.
     ///
-    /// The hash is computed by the caller (`BookPlugin`) so this is cheap and
+    /// The hash is computed by the caller (`FsBrowsablePlugin`) so this is cheap and
     /// does not re-read the file. Each parser derives its own id scheme from
     /// the path and hash; for content-addressed formats the id is simply the
     /// hash. Used to look up the cache before triggering a full `parse`.
@@ -48,7 +48,7 @@ class Parser {
     ///
     /// This performs the actual parse only: it does not hash the file, consult
     /// any cache, persist a cover to disk, or set the manga `meta`. The caller
-    /// (`BookPlugin`) owns hashing, caching, and the `meta` path, and passes the
+    /// (`FsBrowsablePlugin`) owns hashing, caching, and the `meta` path, and passes the
     /// content `hash` so the parser can use it as the manga id.
     /// - Parameters:
     ///   - path: The path to the manga file, relative to `baseURL`.

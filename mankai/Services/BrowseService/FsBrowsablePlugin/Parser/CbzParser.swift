@@ -202,7 +202,7 @@ class CbzParser: Parser {
         }
 
         // The cover is referenced as an entry inside the archive (`<archivePath>:<entryPath>`).
-        // BookPlugin fetches the bytes via `parseImage` and caches them to disk, so the parser only needs to point at the source entry here.
+        // FsBrowsablePlugin fetches the bytes via `parseImage` and caches them to disk, so the parser only needs to point at the source entry here.
         if let coverEntryPath {
             manga.cover = "\(relativePath):\(coverEntryPath)"
         }

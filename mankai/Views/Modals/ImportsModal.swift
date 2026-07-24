@@ -16,7 +16,7 @@ struct ImportsModal: View {
     var initialFiles: [URL]
 
     @State private var selectedFiles: [URL]
-    @State private var selectedPluginId: String = AppDirBookPlugin.shared.id
+    @State private var selectedPluginId: String = AppDirBrowsablePlugin.shared.id
     @State private var showingFileImporter = false
     @State private var isImporting = false
     @State private var importError: String?
@@ -29,7 +29,7 @@ struct ImportsModal: View {
     }
 
     private var supportedContentTypes: [UTType] {
-        AppDirBookPlugin.shared.supportedExtensions.compactMap { UTType(filenameExtension: $0) }
+        AppDirBrowsablePlugin.shared.supportedExtensions.compactMap { UTType(filenameExtension: $0) }
     }
 
     private var selectedPlugin: BrowsablePlugin? {

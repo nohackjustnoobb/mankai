@@ -81,28 +81,28 @@ class BrowseService: ObservableObject {
         Logger.browseService.debug("Initializing BrowseService")
 
         // Add built-in plugins
-        _plugins[AppDirBookPlugin.shared.id] = AppDirBookPlugin.shared
+        _plugins[AppDirBrowsablePlugin.shared.id] = AppDirBrowsablePlugin.shared
 
         // Load plugins from db
-        loadBookPlugins()
+        loadFsBrowablePlugins()
     }
 
     private var _plugins: [String: BrowsablePlugin] = [:]
 
-    /// A list of all available plugins, with `AppDirBookPlugin` always placed first.
+    /// A list of all available plugins, with `AppDirBrowsablePlugin` always placed first.
     var plugins: [BrowsablePlugin] {
-        let appDir = AppDirBookPlugin.shared
+        let appDir = AppDirBrowsablePlugin.shared
         let others = _plugins.values.filter { $0.id != appDir.id }.sorted { $0.id < $1.id }
         return [appDir] + others
     }
 
-    private func loadBookPlugins() {
-        Logger.browseService.debug("Loading book plugins")
-        let bookPlugins = BookPlugin.loadPlugins()
-        Logger.browseService.info("Loaded \(bookPlugins.count) book plugins")
+    private func loadFsBrowablePlugins() {
+        Logger.browseService.debug("Loading fs browsable plugins")
+        let fsBrowsablePlugins = FsBrowsablePlugin.loadPlugins()
+        Logger.browseService.info("Loaded \(fsBrowsablePlugins.count) fs browsable plugins")
 
-        for bookPlugin in bookPlugins {
-            _plugins[bookPlugin.id] = bookPlugin
+        for plugin in fsBrowsablePlugins {
+            _plugins[plugin.id] = plugin
         }
     }
 

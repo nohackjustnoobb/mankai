@@ -1,5 +1,5 @@
 //
-//  BookPlugin.swift
+//  FsBrowsablePlugin.swift
 //  mankai
 //
 //  Created by Travis XU on 13/7/2026.
@@ -10,7 +10,7 @@ import Foundation
 import GRDB
 import SwiftUI
 
-class BookPlugin: Plugin, Browsable {
+class FsBrowsablePlugin: Plugin, Browsable {
     override var id: String {
         _id
     }
@@ -38,8 +38,8 @@ class BookPlugin: Plugin, Browsable {
         for byte in _id.utf8 {
             hash = (hash &<< 5) &+ hash &+ UInt64(byte)
         }
-        let index = Int(hash % UInt64(BookPlugin.systemImagePalette.count))
-        return BookPlugin.systemImagePalette[index]
+        let index = Int(hash % UInt64(FsBrowsablePlugin.systemImagePalette.count))
+        return FsBrowsablePlugin.systemImagePalette[index]
     }()
 
     var systemImageColor: Color {
@@ -67,7 +67,7 @@ class BookPlugin: Plugin, Browsable {
     /// On-disk cache of parsed manga (JSON-encoded `DetailedManga`), keyed by
     /// content hash. Lives above the parsers so the caching layer is shared.
     private var db: DatabasePool? {
-        DbService.shared.openBookPluginDb()
+        DbService.shared.openFsBrowsablePluginDb()
     }
 
     /// Directory holding the cached cover images and the cache database.
@@ -75,7 +75,7 @@ class BookPlugin: Plugin, Browsable {
         let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         return (cachesDir ?? URL(fileURLWithPath: NSTemporaryDirectory()))
             .appendingPathComponent(CacheDirectory.index)
-            .appendingPathComponent("bookplugin")
+            .appendingPathComponent("fsbrowsableplugin")
     }()
 
     /// Prefix for cover references that point at a cached cover file in `cacheDir`
@@ -83,7 +83,7 @@ class BookPlugin: Plugin, Browsable {
     private static let coverCachePrefix = "book-cover:"
 
     init(url: URL, id: String) {
-        Logger.bookPlugin.debug("Initializing BookPlugin with url: \(url.path)")
+        Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
         _id = id
 
@@ -94,10 +94,10 @@ class BookPlugin: Plugin, Browsable {
 
         super.init()
 
-        if !(self is AppDirBookPlugin) {
+        if !(self is AppDirBrowsablePlugin) {
             _isAccessing = url.startAccessingSecurityScopedResource()
             if !_isAccessing {
-                Logger.bookPlugin.error(
+                Logger.fsBrowsablePlugin.error(
                     "Failed to start accessing security scoped resource for plugin: \(_id)"
                 )
             }
@@ -107,7 +107,7 @@ class BookPlugin: Plugin, Browsable {
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
             )
         }
@@ -141,22 +141,22 @@ class BookPlugin: Plugin, Browsable {
         }
     }
 
-    static func loadPlugins() -> [BookPlugin] {
-        Logger.bookPlugin.debug("Loading book plugins")
+    static func loadPlugins() -> [FsBrowsablePlugin] {
+        Logger.fsBrowsablePlugin.debug("Loading book plugins")
         guard let dbPool = DbService.shared.appDb else {
-            Logger.bookPlugin.error("Database not available")
+            Logger.fsBrowsablePlugin.error("Database not available")
             return []
         }
 
-        var results: [BookPlugin] = []
+        var results: [FsBrowsablePlugin] = []
 
-        var models: [BookPluginModel] = []
+        var models: [FsBrowsablePluginModel] = []
         do {
             try dbPool.read { db in
-                models = try BookPluginModel.fetchAll(db)
+                models = try FsBrowsablePluginModel.fetchAll(db)
             }
         } catch {
-            Logger.bookPlugin.error("Failed to fetch BookPluginModels: \(error)")
+            Logger.fsBrowsablePlugin.error("Failed to fetch FsBrowsablePluginModels: \(error)")
             return []
         }
 
@@ -171,7 +171,7 @@ class BookPlugin: Plugin, Browsable {
                 )
 
                 if isStale {
-                    Logger.bookPlugin.warning("Bookmark data is stale for plugin: \(model.id)")
+                    Logger.fsBrowsablePlugin.warning("Bookmark data is stale for plugin: \(model.id)")
                     do {
                         let newBookmarkData = try url.bookmarkData(
                             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
@@ -180,9 +180,9 @@ class BookPlugin: Plugin, Browsable {
                         try dbPool.write { db in
                             try model.update(db)
                         }
-                        Logger.bookPlugin.info("Updated stale bookmark for plugin: \(model.id)")
+                        Logger.fsBrowsablePlugin.info("Updated stale bookmark for plugin: \(model.id)")
                     } catch {
-                        Logger.bookPlugin.error(
+                        Logger.fsBrowsablePlugin.error(
                             "Failed to update stale bookmark for plugin \(model.id): \(error)"
                         )
                         continue
@@ -190,7 +190,7 @@ class BookPlugin: Plugin, Browsable {
                 }
 
                 if !url.startAccessingSecurityScopedResource() {
-                    Logger.bookPlugin.error(
+                    Logger.fsBrowsablePlugin.error(
                         "Failed to start accessing security scoped resource for plugin: \(model.id)"
                     )
                     continue
@@ -200,11 +200,11 @@ class BookPlugin: Plugin, Browsable {
                     url.stopAccessingSecurityScopedResource()
                 }
 
-                let plugin = BookPlugin(url: url, id: model.id)
+                let plugin = FsBrowsablePlugin(url: url, id: model.id)
 
                 results.append(plugin)
             } catch {
-                Logger.bookPlugin.error("Failed to resolve bookmark for plugin \(model.id): \(error)")
+                Logger.fsBrowsablePlugin.error("Failed to resolve bookmark for plugin \(model.id): \(error)")
             }
         }
 
@@ -212,10 +212,10 @@ class BookPlugin: Plugin, Browsable {
     }
 
     override func savePlugin() throws {
-        Logger.bookPlugin.debug("Saving plugin: \(id)")
+        Logger.fsBrowsablePlugin.debug("Saving plugin: \(id)")
         guard let db = DbService.shared.appDb else {
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
@@ -224,7 +224,7 @@ class BookPlugin: Plugin, Browsable {
             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
         )
 
-        let pluginModel = BookPluginModel(
+        let pluginModel = FsBrowsablePluginModel(
             id: id,
             bookmarkData: bookmarkData
         )
@@ -235,16 +235,16 @@ class BookPlugin: Plugin, Browsable {
     }
 
     override func deletePlugin() throws {
-        Logger.bookPlugin.debug("Deleting plugin: \(id)")
+        Logger.fsBrowsablePlugin.debug("Deleting plugin: \(id)")
         guard let db = DbService.shared.appDb else {
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
         _ = try db.write { db in
-            try BookPluginModel.deleteOne(db, key: id)
+            try FsBrowsablePluginModel.deleteOne(db, key: id)
         }
     }
 
@@ -272,9 +272,9 @@ class BookPlugin: Plugin, Browsable {
     /// remaining path. Used to route calls to the correct parser.
     private func parseMetaPrefix(_ value: String?) throws -> (parserId: String, path: String) {
         guard let value, let range = value.range(of: "://") else {
-            Logger.bookPlugin.error("Missing parser prefix in value: \(value ?? "nil")")
+            Logger.fsBrowsablePlugin.error("Missing parser prefix in value: \(value ?? "nil")")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
             )
         }
@@ -284,9 +284,9 @@ class BookPlugin: Plugin, Browsable {
         // The path may legitimately be empty when the parser produced no
         // metadata of its own; only a missing parser id is invalid.
         guard !parserId.isEmpty else {
-            Logger.bookPlugin.error("Empty parser id in value: \(value)")
+            Logger.fsBrowsablePlugin.error("Empty parser id in value: \(value)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
             )
         }
@@ -298,7 +298,7 @@ class BookPlugin: Plugin, Browsable {
     /// `<parserId>://` so that subsequent calls can route back to the parser
     /// that produced it. Works for both `Manga` and `DetailedManga`.
     ///
-    /// Covers that already point at a BookPlugin-managed cached file (`book-cover:`)
+    /// Covers that already point at a FsBrowsablePlugin-managed cached file (`book-cover:`)
     /// are left untouched, since `getImage` resolves them directly.
     private func prefixManga<T: MangaMetaPrefixable>(_ manga: T, parserId: String) -> T {
         var prefixed = manga
@@ -314,24 +314,24 @@ class BookPlugin: Plugin, Browsable {
 
     /// SHOULD NOT BE CALLED
     override func getSuggestions(_ query: String) async throws -> [String] {
-        Logger.bookPlugin.debug("Getting suggestions for query: \(query)")
+        Logger.fsBrowsablePlugin.debug("Getting suggestions for query: \(query)")
         fatalError("Not Implemented")
     }
 
     /// SHOULD NOT BE CALLED
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
-        Logger.bookPlugin.debug("Searching for: \(query), page: \(page)")
+        Logger.fsBrowsablePlugin.debug("Searching for: \(query), page: \(page)")
         fatalError("Not Implemented")
     }
 
     /// SHOULD NOT BE CALLED
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        Logger.bookPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
+        Logger.fsBrowsablePlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
         fatalError("Not Implemented")
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
-        Logger.bookPlugin.debug("Getting \(ids.count) mangas")
+        Logger.fsBrowsablePlugin.debug("Getting \(ids.count) mangas")
 
         var mangas: [Manga] = []
         for id in ids {
@@ -339,31 +339,31 @@ class BookPlugin: Plugin, Browsable {
                 let detailed = try await detailedManga(forPrefixedId: id)
                 mangas.append(detailed.toManga())
             } catch {
-                Logger.bookPlugin.warning("Skipping manga \(id) in getMangas: \(error)")
+                Logger.fsBrowsablePlugin.warning("Skipping manga \(id) in getMangas: \(error)")
             }
         }
         return mangas
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
-        Logger.bookPlugin.debug("Getting detailed manga: \(id)")
+        Logger.fsBrowsablePlugin.debug("Getting detailed manga: \(id)")
         return try await detailedManga(forPrefixedId: id)
     }
 
     private func detailedManga(forPrefixedId id: String) async throws -> DetailedManga {
         let (parserId, originalId) = try parseMetaPrefix(id)
         guard getParser(id: parserId) != nil else {
-            Logger.bookPlugin.error("No parser found for id: \(parserId)")
+            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
             )
         }
 
         guard let stored = try? await fetchCachedManga(mangaId: originalId, parserId: parserId) else {
-            Logger.bookPlugin.warning("Manga not found in cache: \(id)")
+            Logger.fsBrowsablePlugin.warning("Manga not found in cache: \(id)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
             )
         }
@@ -376,13 +376,13 @@ class BookPlugin: Plugin, Browsable {
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
-        Logger.bookPlugin.debug("Getting chapter: \(chapter.id)")
+        Logger.fsBrowsablePlugin.debug("Getting chapter: \(chapter.id)")
 
         let (parserId, originalMeta) = try parseMetaPrefix(manga.meta)
         guard let parser = getParser(id: parserId) else {
-            Logger.bookPlugin.error("No parser found for id: \(parserId)")
+            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
             )
         }
@@ -398,27 +398,27 @@ class BookPlugin: Plugin, Browsable {
     }
 
     override func getImage(_ path: String) async throws -> Data {
-        Logger.bookPlugin.debug("Getting image: \(path)")
+        Logger.fsBrowsablePlugin.debug("Getting image: \(path)")
 
         if path.hasPrefix(Self.coverCachePrefix) {
             let filename = String(path.dropFirst(Self.coverCachePrefix.count))
             let coverURL = cacheDir.appendingPathComponent(filename)
-            Logger.bookPlugin.debug("Reading cached cover: \(coverURL.path(percentEncoded: false))")
+            Logger.fsBrowsablePlugin.debug("Reading cached cover: \(coverURL.path(percentEncoded: false))")
             if let data = try? Data(contentsOf: coverURL) {
                 return data
             }
-            Logger.bookPlugin.error("Cached cover not found on disk: \(filename)")
+            Logger.fsBrowsablePlugin.error("Cached cover not found on disk: \(filename)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
             )
         }
 
         let (parserId, imagePath) = try parseMetaPrefix(path)
         guard let parser = getParser(id: parserId) else {
-            Logger.bookPlugin.error("No parser found for id: \(parserId)")
+            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
             )
         }
@@ -474,7 +474,7 @@ class BookPlugin: Plugin, Browsable {
         guard let db else { return nil }
         let pluginId = id
         let row = try await db.read { db in
-            try BookPluginMangaModel
+            try FsBPMangaModel
                 .filter(
                     Column("mangaId") == mangaId
                         && Column("parserId") == parserId
@@ -494,13 +494,13 @@ class BookPlugin: Plugin, Browsable {
               let infoData = try? JSONEncoder().encode(manga),
               let infoString = String(data: infoData, encoding: .utf8)
         else { return }
-        let model = BookPluginMangaModel(
+        let model = FsBPMangaModel(
             mangaId: mangaId, parserId: parserId, pluginId: id, info: infoString
         )
         try? await db.write { db in
             try model.upsert(db)
         }
-        Logger.bookPlugin.debug("Stored parsed manga for \(mangaId) (parser: \(parserId))")
+        Logger.fsBrowsablePlugin.debug("Stored parsed manga for \(mangaId) (parser: \(parserId))")
     }
 
     private func ensureCachedCover(
@@ -513,12 +513,12 @@ class BookPlugin: Plugin, Browsable {
         let url = cacheDir.appendingPathComponent(filename)
 
         if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
-            Logger.bookPlugin.debug("Using cached cover for \(mangaId) at \(url.path(percentEncoded: false))")
+            Logger.fsBrowsablePlugin.debug("Using cached cover for \(mangaId) at \(url.path(percentEncoded: false))")
             return "\(Self.coverCachePrefix)\(filename)"
         }
 
         guard let parser = getParser(id: parserId) else {
-            Logger.bookPlugin.warning("No parser \(parserId) to re-cache cover for \(mangaId)")
+            Logger.fsBrowsablePlugin.warning("No parser \(parserId) to re-cache cover for \(mangaId)")
             return cover
         }
 
@@ -528,12 +528,12 @@ class BookPlugin: Plugin, Browsable {
                 at: cacheDir, withIntermediateDirectories: true, attributes: nil
             )
             try coverData.write(to: url, options: .atomic)
-            Logger.bookPlugin.debug(
+            Logger.fsBrowsablePlugin.debug(
                 "Re-cached missing cover for \(mangaId) at \(url.path(percentEncoded: false))"
             )
             return "\(Self.coverCachePrefix)\(filename)"
         } catch {
-            Logger.bookPlugin.warning("Failed to re-cache cover for \(mangaId): \(error)")
+            Logger.fsBrowsablePlugin.warning("Failed to re-cache cover for \(mangaId): \(error)")
             return cover
         }
     }
@@ -551,7 +551,7 @@ class BookPlugin: Plugin, Browsable {
     private static func hashFile(at path: String) throws -> String {
         guard let handle = FileHandle(forReadingAtPath: path) else {
             throw NSError(
-                domain: "BookPlugin", code: 0,
+                domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
             )
         }
@@ -570,7 +570,7 @@ class BookPlugin: Plugin, Browsable {
     // MARK: - Browsable Methods
 
     func getEntities(path: String? = "") async throws -> [EntityType] {
-        Logger.bookPlugin.debug("Getting entities for path: \(path ?? "root")")
+        Logger.fsBrowsablePlugin.debug("Getting entities for path: \(path ?? "root")")
 
         let target: URL
         if let path, !path.isEmpty {
@@ -609,7 +609,7 @@ class BookPlugin: Plugin, Browsable {
             } else if values.isRegularFile == true {
                 let ext = entry.pathExtension.lowercased()
                 guard let parser = getParser(ext: ext) else {
-                    Logger.bookPlugin.warning(
+                    Logger.fsBrowsablePlugin.warning(
                         "No parser supports extension '\(ext)', skipping: \(runtimePath)"
                     )
                     continue
@@ -621,7 +621,7 @@ class BookPlugin: Plugin, Browsable {
                         parser: parser, relativePath: runtimePath, fullPath: fullPath
                     )
                 } catch {
-                    Logger.bookPlugin.warning(
+                    Logger.fsBrowsablePlugin.warning(
                         "Parser '\(parser.id)' failed to parse '\(fullPath)': \(error), skipping"
                     )
                     continue
@@ -683,11 +683,11 @@ class BookPlugin: Plugin, Browsable {
             }
             try fileManager.copyItem(at: source, to: destination)
         } catch {
-            Logger.bookPlugin.error("Failed to import file \(source.path): \(error)")
+            Logger.fsBrowsablePlugin.error("Failed to import file \(source.path): \(error)")
             throw error
         }
 
-        Logger.bookPlugin.info("Imported file to \(destination.path(percentEncoded: false))")
+        Logger.fsBrowsablePlugin.info("Imported file to \(destination.path(percentEncoded: false))")
         return destination
     }
 }

@@ -31,8 +31,8 @@ enum LogCategory: String {
     case appDirPlugin = "AppDirPlugin"
     case httpPlugin = "HttpPlugin"
     case downloadPlugin = "DownloadPlugin"
-    case bookPlugin = "BookPlugin"
-    case appDirBookPlugin = "AppDirBookPlugin"
+    case fsBrowsablePlugin = "FsBrowsablePlugin"
+    case appDirBrowsablePlugin = "AppDirBrowsablePlugin"
     case cbzParser = "CbzParser"
 
     /// Runtime
@@ -189,8 +189,8 @@ extension Logger {
     static let httpPlugin = Logger(category: .httpPlugin)
     static let appDirPlugin = Logger(category: .appDirPlugin)
     static let downloadPlugin = Logger(category: .downloadPlugin)
-    static let bookPlugin = Logger(category: .bookPlugin)
-    static let appDirBookPlugin = Logger(category: .appDirBookPlugin)
+    static let fsBrowsablePlugin = Logger(category: .fsBrowsablePlugin)
+    static let appDirBrowsablePlugin = Logger(category: .appDirBrowsablePlugin)
     static let cbzParser = Logger(category: .cbzParser)
 
     /// Runtime

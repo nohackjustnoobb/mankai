@@ -1,5 +1,5 @@
 //
-//  AppDirBookPlugin.swift
+//  AppDirBrowsablePlugin.swift
 //  mankai
 //
 //  Created by Travis XU on 13/7/2026.
@@ -8,8 +8,8 @@
 import Foundation
 import SwiftUI
 
-class AppDirBookPlugin: BookPlugin {
-    static var shared = AppDirBookPlugin()
+class AppDirBrowsablePlugin: FsBrowsablePlugin {
+    static var shared = AppDirBrowsablePlugin()
 
     private init() {
         let fileManager = FileManager.default
@@ -20,12 +20,12 @@ class AppDirBookPlugin: BookPlugin {
             do {
                 try fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
             } catch {
-                Logger.appDirBookPlugin.error("Failed to create directory \(mangaDir.path): \(error)")
+                Logger.appDirBrowsablePlugin.error("Failed to create directory \(mangaDir.path): \(error)")
             }
         }
 
-        Logger.appDirBookPlugin.info(
-            "AppDirBookPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
+        Logger.appDirBrowsablePlugin.info(
+            "AppDirBrowsablePlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
         )
 
         super.init(url: mangaDir, id: "mankai.books")

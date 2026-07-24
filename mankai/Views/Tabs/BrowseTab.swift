@@ -35,7 +35,7 @@ struct BrowseTab: View {
                             .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
                         }
                         .swipeActions(edge: .trailing) {
-                            if !(plugin is AppDirBookPlugin) {
+                            if !(plugin is AppDirBrowsablePlugin) {
                                 Button(role: .destructive) {
                                     pluginPendingDeletion = plugin
                                 } label: {
@@ -75,7 +75,7 @@ struct BrowseTab: View {
                 case let .success(urls):
                     guard let url = urls.first else { return }
                     do {
-                        let plugin = try BookPlugin(url: url)
+                        let plugin = try FsBrowsablePlugin(url: url)
                         try browseService.addPlugin(plugin)
                     } catch {
                         importError = error.localizedDescription

@@ -253,7 +253,7 @@ struct DebugScreen: View {
                 return
             }
 
-            DbService.shared.closeBookPluginDb()
+            DbService.shared.closeFsBrowsablePluginDb()
 
             do {
                 let contents = try fileManager.contentsOfDirectory(

@@ -47,7 +47,7 @@ class DbService {
 
                 try HttpPluginModel.createTable(db)
                 try FsPluginModel.createTable(db)
-                try BookPluginModel.createTable(db)
+                try FsBrowsablePluginModel.createTable(db)
             }
 
             Logger.dbService.info("appDb initialized successfully")
@@ -121,25 +121,25 @@ class DbService {
         }
     }
 
-    private var bookPluginDb: DatabasePool?
+    private var fsBrowsablePluginDb: DatabasePool?
 
-    func openBookPluginDb() -> DatabasePool? {
-        if let db = bookPluginDb {
+    func openFsBrowsablePluginDb() -> DatabasePool? {
+        if let db = fsBrowsablePluginDb {
             return db
         }
 
         guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
-        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("bookplugin")
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("fsbrowsableplugin")
         let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            Logger.dbService.error("Failed to create BookPluginDb directory at \(dir.path(percentEncoded: false))", error: error)
+            Logger.dbService.error("Failed to create fsBrowsablePluginDb directory at \(dir.path(percentEncoded: false))", error: error)
             return nil
         }
 
-        Logger.dbService.debug("Opening BookPluginDb at \(path)")
+        Logger.dbService.debug("Opening fsBrowsablePluginDb at \(path)")
         var config = Configuration()
         config.busyMode = .timeout(5.0)
 
@@ -147,20 +147,20 @@ class DbService {
             let pool = try DatabasePool(path: path, configuration: config)
 
             try pool.write { db in
-                try BookPluginMangaModel.createTable(db)
+                try FsBPMangaModel.createTable(db)
             }
 
-            bookPluginDb = pool
-            Logger.dbService.info("BookPluginDb opened successfully at \(path)")
+            fsBrowsablePluginDb = pool
+            Logger.dbService.info("fsBrowsablePluginDb opened successfully at \(path)")
             return pool
         } catch {
-            Logger.dbService.error("Failed to open BookPluginDb at \(path)", error: error)
+            Logger.dbService.error("Failed to open fsBrowsablePluginDb at \(path)", error: error)
             return nil
         }
     }
 
-    func closeBookPluginDb() {
-        bookPluginDb = nil
-        Logger.dbService.debug("Closed BookPluginDb pool")
+    func closeFsBrowsablePluginDb() {
+        fsBrowsablePluginDb = nil
+        Logger.dbService.debug("Closed fsBrowsablePluginDb pool")
     }
 }
