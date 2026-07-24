@@ -41,7 +41,7 @@ class PluginService: ObservableObject {
 
         for jsPlugin in jsPlugins {
             if jsPlugin.shouldCache {
-                _plugins[jsPlugin.id] = CacheWrapper(plugin: jsPlugin)
+                _plugins[jsPlugin.id] = CacheWrapper.wrapping(jsPlugin)
             } else {
                 _plugins[jsPlugin.id] = jsPlugin
             }
@@ -61,7 +61,7 @@ class PluginService: ObservableObject {
 
         for fsPlugin in fsPlugins {
             if fsPlugin.shouldCache {
-                _plugins[fsPlugin.id] = CacheWrapper(plugin: fsPlugin)
+                _plugins[fsPlugin.id] = CacheWrapper.wrapping(fsPlugin)
             } else {
                 _plugins[fsPlugin.id] = fsPlugin
             }
@@ -75,7 +75,7 @@ class PluginService: ObservableObject {
 
         for httpPlugin in httpPlugins {
             if httpPlugin.shouldCache {
-                _plugins[httpPlugin.id] = CacheWrapper(plugin: httpPlugin)
+                _plugins[httpPlugin.id] = CacheWrapper.wrapping(httpPlugin)
             } else {
                 _plugins[httpPlugin.id] = httpPlugin
             }
@@ -95,7 +95,7 @@ class PluginService: ObservableObject {
     func addPlugin(_ plugin: Plugin) throws {
         Logger.pluginService.debug("Adding plugin: \(plugin.id)")
         if plugin.shouldCache {
-            _plugins[plugin.id] = CacheWrapper(plugin: plugin)
+            _plugins[plugin.id] = CacheWrapper.wrapping(plugin)
         } else {
             _plugins[plugin.id] = plugin
         }

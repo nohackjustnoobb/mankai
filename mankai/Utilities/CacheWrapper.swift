@@ -46,7 +46,15 @@ class CacheWrapper: Plugin {
 
     // MARK: - Init
 
-    init(plugin: Plugin) {
+    static func wrapping(_ plugin: Plugin) -> Plugin {
+        if let editablePlugin = plugin as? any Editable {
+            return EditableCacheWrapper(plugin: editablePlugin)
+        }
+
+        return CacheWrapper(plugin: plugin)
+    }
+
+    fileprivate init(plugin: Plugin) {
         // We set the wrapped plugin heavily relying on delegation
         self.plugin = plugin
         super.init()
@@ -297,6 +305,10 @@ class CacheWrapper: Plugin {
 
     func clearAllCache() {
         clearCache()
+
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
     }
 
     // MARK: - Methods (Cached)
@@ -395,5 +407,78 @@ class CacheWrapper: Plugin {
         }
 
         return data
+    }
+}
+
+private final class EditableCacheWrapper: CacheWrapper, Editable {
+    private let editablePlugin: any Editable
+
+    init(plugin: any Editable) {
+        editablePlugin = plugin
+        super.init(plugin: plugin)
+    }
+
+    func upsertManga(_ manga: EditableManga) async throws -> String {
+        let id = try await editablePlugin.upsertManga(manga)
+        clearAllCache()
+        return id
+    }
+
+    func deleteManga(_ mangaId: String) async throws {
+        try await editablePlugin.deleteManga(mangaId)
+        clearAllCache()
+    }
+
+    func upsertCover(mangaId: String, image: Data) async throws {
+        try await editablePlugin.upsertCover(mangaId: mangaId, image: image)
+        clearAllCache()
+    }
+
+    func upsertChapterGroup(_ group: EditableChapterGroup) async throws {
+        try await editablePlugin.upsertChapterGroup(group)
+        clearAllCache()
+    }
+
+    func deleteChapterGroup(id: String) async throws {
+        try await editablePlugin.deleteChapterGroup(id: id)
+        clearAllCache()
+    }
+
+    func getChapterGroupId(mangaId: String, title: String) async throws -> String? {
+        try await editablePlugin.getChapterGroupId(mangaId: mangaId, title: title)
+    }
+
+    func getChapters(groupId: String) async throws -> [Chapter] {
+        try await editablePlugin.getChapters(groupId: groupId)
+    }
+
+    func upsertChapter(_ chapter: EditableChapter) async throws {
+        try await editablePlugin.upsertChapter(chapter)
+        clearAllCache()
+    }
+
+    func deleteChapter(id: String) async throws {
+        try await editablePlugin.deleteChapter(id: id)
+        clearAllCache()
+    }
+
+    func arrangeChapterOrder(ids: [String]) async throws {
+        try await editablePlugin.arrangeChapterOrder(ids: ids)
+        clearAllCache()
+    }
+
+    func addImages(chapterId: String, images: [Data]) async throws {
+        try await editablePlugin.addImages(chapterId: chapterId, images: images)
+        clearAllCache()
+    }
+
+    func deleteImages(ids: [String]) async throws {
+        try await editablePlugin.deleteImages(ids: ids)
+        clearAllCache()
+    }
+
+    func arrangeImageOrder(ids: [String]) async throws {
+        try await editablePlugin.arrangeImageOrder(ids: ids)
+        clearAllCache()
     }
 }

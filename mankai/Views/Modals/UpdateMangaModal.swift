@@ -194,7 +194,7 @@ struct UpdateMangaContent: View {
             }
 
             let editableManga = EditableManga(
-                id: manga.id,
+                id: isCreatingManga ? nil : manga.id,
                 title: manga.title,
                 status: manga.status,
                 description: manga.description,

@@ -626,6 +626,8 @@ struct MangaDetailsScreen: View {
                     Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }
                         .first?.key
             } catch {
+                detailedManga = nil
+
                 // If the plugin is editable, there is a high chance that it is deleted
                 if !(plugin is Editable) {
                     Logger.ui.error("Failed to load detailed manga", error: error)

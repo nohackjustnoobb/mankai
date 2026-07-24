@@ -45,13 +45,21 @@ struct PluginSettingsScreen: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
+
+                            ForEach(plugin.tags, id: \.self) { tag in
+                                Text(tag)
+                                    .smallTagStyle()
+                            }
+
                             if let version = plugin.version {
                                 Text("v\(version)")
                                     .smallTagStyle()
                             }
 
-                            ForEach(plugin.tags, id: \.self) { tag in
-                                Text(tag)
+                            if plugin is Editable,
+                               !plugin.tags.contains(String(localized: "editable"))
+                            {
+                                Text("editable")
                                     .smallTagStyle()
                             }
                         }

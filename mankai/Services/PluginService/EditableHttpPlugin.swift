@@ -9,7 +9,7 @@ import Foundation
 
 class EditableHttpPlugin: HttpPlugin, Editable {
     override var tags: [String] {
-        [String(localized: "http"), String(localized: "editable")]
+        [String(localized: "http")]
     }
 
     // MARK: - Manga Management

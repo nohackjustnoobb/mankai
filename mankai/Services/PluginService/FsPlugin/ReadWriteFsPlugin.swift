@@ -45,7 +45,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
     // MARK: - Metadata
 
     override var tags: [String] {
-        [String(localized: "fs"), String(localized: "editable")]
+        [String(localized: "fs")]
     }
 
     // MARK: - Helper Methods
