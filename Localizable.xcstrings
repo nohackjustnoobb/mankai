@@ -2969,22 +2969,6 @@
         }
       }
     },
-    "invalidImagePath" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid Image Path"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖片路徑無效"
-          }
-        }
-      }
-    },
     "invalidInputImage" : {
       "localizations" : {
         "en" : {
@@ -3660,22 +3644,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "方法"
-          }
-        }
-      }
-    },
-    "missingArchivePath" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Missing Archive Path"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "缺少歸檔路徑"
           }
         }
       }

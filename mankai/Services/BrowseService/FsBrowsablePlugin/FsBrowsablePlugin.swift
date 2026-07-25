@@ -65,7 +65,8 @@ class FsBrowsablePlugin: Plugin, Browsable {
     private let parsers: [String: Parser]
 
     /// On-disk cache of parsed manga (JSON-encoded `DetailedManga`), keyed by
-    /// content hash. Lives above the parsers so the caching layer is shared.
+    /// content hash and relative path. Lives above the parsers so the caching
+    /// layer is shared.
     private var db: DatabasePool? {
         DbService.shared.openFsBrowsablePluginDb()
     }
@@ -87,7 +88,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         self.url = url
         _id = id
 
-        let cbzParser = CbzParser(baseURL: url, pluginId: id)
+        let cbzParser = CbzParser()
         parsers = [
             cbzParser.id: cbzParser,
         ]
@@ -264,50 +265,200 @@ class FsBrowsablePlugin: Plugin, Browsable {
         extensionsIndex[ext]
     }
 
-    private func getParser(id: String) -> Parser? {
-        parsers.first { $0.key == id }?.value
-    }
+    private struct MangaRoute {
+        let parserId: String
+        let hash: String
+        let relativePath: String
 
-    /// Splits a value prefixed with `<parserId>://` into the parser id and the
-    /// remaining path. Used to route calls to the correct parser.
-    private func parseMetaPrefix(_ value: String?) throws -> (parserId: String, path: String) {
-        guard let value, let range = value.range(of: "://") else {
-            Logger.fsBrowsablePlugin.error("Missing parser prefix in value: \(value ?? "nil")")
-            throw NSError(
+        var cacheId: String {
+            "\(hash):\(relativePath)"
+        }
+
+        var mangaId: String {
+            "\(parserId)://\(hash):\(Self.encode(relativePath)!)"
+        }
+
+        init(parserId: String, hash: String, relativePath: String) throws {
+            let isSHA256 = hash.count == 64 && hash.allSatisfy(\.isHexDigit)
+            guard !parserId.isEmpty,
+                  isSHA256,
+                  !relativePath.isEmpty,
+                  Self.encode(relativePath) != nil
+            else {
+                Logger.fsBrowsablePlugin.error(
+                    "Unable to create manga route for: \(relativePath)"
+                )
+                throw Self.invalidError()
+            }
+
+            self.parserId = parserId
+            self.hash = hash
+            self.relativePath = relativePath
+        }
+
+        init(mangaId: String) throws {
+            guard let parserSeparator = mangaId.range(of: "://") else {
+                Logger.fsBrowsablePlugin.error("Invalid manga route: \(mangaId)")
+                throw Self.invalidError()
+            }
+
+            let parserId = String(mangaId[..<parserSeparator.lowerBound])
+            let payload = mangaId[parserSeparator.upperBound...]
+            guard let hashSeparator = payload.firstIndex(of: ":") else {
+                Logger.fsBrowsablePlugin.error("Missing path in manga route: \(mangaId)")
+                throw Self.invalidError()
+            }
+
+            let hash = String(payload[..<hashSeparator])
+            let encodedRelativePath = String(payload[payload.index(after: hashSeparator)...])
+            guard let relativePath = Self.decode(encodedRelativePath) else {
+                Logger.fsBrowsablePlugin.error("Invalid encoded manga path: \(mangaId)")
+                throw Self.invalidError()
+            }
+
+            try self.init(
+                parserId: parserId,
+                hash: hash,
+                relativePath: relativePath
+            )
+        }
+
+        func sourceURL(relativeTo rootURL: URL) throws -> URL {
+            try Self.sourceURL(for: relativePath, relativeTo: rootURL)
+        }
+
+        static func sourceURL(
+            for relativePath: String, relativeTo rootURL: URL
+        ) throws -> URL {
+            let rootURL = rootURL.standardizedFileURL
+            let sourceURL = rootURL.appendingPathComponent(relativePath).standardizedFileURL
+            let rootPath = rootURL.path.hasSuffix("/") ? rootURL.path : "\(rootURL.path)/"
+            guard sourceURL.path.hasPrefix(rootPath) else {
+                Logger.fsBrowsablePlugin.error(
+                    "Manga route escapes plugin root: \(relativePath)"
+                )
+                throw Self.invalidError()
+            }
+            return sourceURL
+        }
+
+        func parser(in parsers: [String: Parser]) throws -> Parser {
+            guard let parser = parsers[parserId] else {
+                Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
+                throw NSError(
+                    domain: "FsBrowsablePlugin", code: 0,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
+                )
+            }
+            return parser
+        }
+
+        func applying(
+            to manga: DetailedManga, coverCachePrefix: String
+        ) throws -> DetailedManga {
+            var routed = manga
+            routed.id = mangaId
+            if let cover = routed.cover,
+               !cover.isEmpty,
+               !cover.hasPrefix(coverCachePrefix)
+            {
+                routed.cover = try ImageRoute(manga: self, parserURL: cover).imageId
+            }
+            return routed
+        }
+
+        private static let allowedCharacters: CharacterSet = {
+            var allowed = CharacterSet.alphanumerics
+            allowed.insert(charactersIn: "-._~/")
+            return allowed
+        }()
+
+        private static func encode(_ relativePath: String) -> String? {
+            relativePath.addingPercentEncoding(withAllowedCharacters: allowedCharacters)
+        }
+
+        private static func decode(_ relativePath: String) -> String? {
+            relativePath.removingPercentEncoding
+        }
+
+        private static func invalidError() -> NSError {
+            NSError(
                 domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
             )
         }
+    }
 
-        let parserId = String(value[..<range.lowerBound])
-        let path = String(value[range.upperBound...])
-        // The path may legitimately be empty when the parser produced no
-        // metadata of its own; only a missing parser id is invalid.
-        guard !parserId.isEmpty else {
-            Logger.fsBrowsablePlugin.error("Empty parser id in value: \(value)")
-            throw NSError(
+    private struct ImageRoute {
+        let manga: MangaRoute
+        let parserURL: String
+
+        var imageId: String {
+            "\(manga.mangaId)#\(Self.encode(parserURL)!)"
+        }
+
+        init(manga: MangaRoute, parserURL: String) throws {
+            guard !parserURL.isEmpty, Self.encode(parserURL) != nil else {
+                Logger.fsBrowsablePlugin.error(
+                    "Unable to encode parser image URL: \(parserURL)"
+                )
+                throw Self.invalidError()
+            }
+            self.manga = manga
+            self.parserURL = parserURL
+        }
+
+        init(imageId: String) throws {
+            guard let separator = imageId.range(of: "#", options: .backwards),
+                  separator.upperBound < imageId.endIndex
+            else {
+                Logger.fsBrowsablePlugin.error("Invalid image route: \(imageId)")
+                throw Self.invalidError()
+            }
+
+            let mangaId = String(imageId[..<separator.lowerBound])
+            let encodedParserURL = String(imageId[separator.upperBound...])
+            guard let parserURL = Self.decode(encodedParserURL) else {
+                Logger.fsBrowsablePlugin.error(
+                    "Invalid encoded parser image URL: \(imageId)"
+                )
+                throw Self.invalidError()
+            }
+
+            try self.init(
+                manga: MangaRoute(mangaId: mangaId),
+                parserURL: parserURL
+            )
+        }
+
+        func sourceURL(relativeTo rootURL: URL) throws -> URL {
+            try manga.sourceURL(relativeTo: rootURL)
+        }
+
+        func parser(in parsers: [String: Parser]) throws -> Parser {
+            try manga.parser(in: parsers)
+        }
+
+        private static let allowedCharacters: CharacterSet = {
+            var allowed = CharacterSet.alphanumerics
+            allowed.insert(charactersIn: "-._~/")
+            return allowed
+        }()
+
+        private static func encode(_ parserURL: String) -> String? {
+            parserURL.addingPercentEncoding(withAllowedCharacters: allowedCharacters)
+        }
+
+        private static func decode(_ parserURL: String) -> String? {
+            parserURL.removingPercentEncoding
+        }
+
+        private static func invalidError() -> NSError {
+            NSError(
                 domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
             )
         }
-
-        return (parserId, path)
-    }
-
-    /// Prefixes the `id`, `meta`, and `cover` of a parser-returned manga with
-    /// `<parserId>://` so that subsequent calls can route back to the parser
-    /// that produced it. Works for both `Manga` and `DetailedManga`.
-    ///
-    /// Covers that already point at a FsBrowsablePlugin-managed cached file (`book-cover:`)
-    /// are left untouched, since `getImage` resolves them directly.
-    private func prefixManga<T: MangaMetaPrefixable>(_ manga: T, parserId: String) -> T {
-        var prefixed = manga
-        prefixed.meta = "\(parserId)://\(prefixed.meta ?? "")"
-        if let cover = prefixed.cover, !cover.isEmpty, !cover.hasPrefix(Self.coverCachePrefix) {
-            prefixed.cover = "\(parserId)://\(cover)"
-        }
-        prefixed.id = "\(parserId)://\(prefixed.id)"
-        return prefixed
     }
 
     // MARK: - Plugin Methods
@@ -351,50 +502,58 @@ class FsBrowsablePlugin: Plugin, Browsable {
     }
 
     private func detailedManga(forPrefixedId id: String) async throws -> DetailedManga {
-        let (parserId, originalId) = try parseMetaPrefix(id)
-        guard getParser(id: parserId) != nil else {
-            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
-            )
-        }
+        let route = try MangaRoute(mangaId: id)
+        return try await loadManga(route: route)
+    }
 
-        guard let stored = try? await fetchCachedManga(mangaId: originalId, parserId: parserId) else {
-            Logger.fsBrowsablePlugin.warning("Manga not found in cache: \(id)")
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
+    private func loadManga(
+        route: MangaRoute
+    ) async throws -> DetailedManga {
+        let parser = try route.parser(in: parsers)
+        let sourceURL = try route.sourceURL(relativeTo: url)
+
+        let stored: DetailedManga
+        if let cached = try? await fetchCachedManga(
+            mangaId: route.cacheId, parserId: route.parserId
+        ) {
+            stored = cached
+        } else {
+            Logger.fsBrowsablePlugin.debug("Manga cache miss, parsing source: \(sourceURL.path)")
+
+            var parsed = try await parser.parse(path: sourceURL)
+            parsed.id = route.mangaId
+            await storeManga(
+                parsed, mangaId: route.cacheId, parserId: route.parserId
             )
+            stored = parsed
         }
 
         var transformed = stored
         transformed.cover = await ensureCachedCover(
-            for: stored.cover, mangaId: originalId, parserId: parserId
+            for: stored.cover,
+            route: route,
+            parser: parser,
+            sourceURL: sourceURL
         )
-        return prefixManga(transformed, parserId: parserId)
+        return try route.applying(
+            to: transformed,
+            coverCachePrefix: Self.coverCachePrefix
+        )
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         Logger.fsBrowsablePlugin.debug("Getting chapter: \(chapter.id)")
 
-        let (parserId, originalMeta) = try parseMetaPrefix(manga.meta)
-        guard let parser = getParser(id: parserId) else {
-            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
-            )
+        let route = try MangaRoute(mangaId: manga.id)
+        let parser = try route.parser(in: parsers)
+        let sourceURL = try route.sourceURL(relativeTo: url)
+        let images = try await parser.parseChapter(
+            manga: manga, chapter: chapter, path: sourceURL
+        )
+
+        return try images.map {
+            try ImageRoute(manga: route, parserURL: $0).imageId
         }
-
-        var mangaForParser = manga
-        mangaForParser.meta = originalMeta
-        let (_, originalId) = try parseMetaPrefix(manga.id)
-        mangaForParser.id = originalId
-        let images = try await parser.parseChapter(manga: mangaForParser, chapter: chapter)
-
-        // Prefix each returned image path with the parser id so that getImage can route to the correct parser.
-        return images.map { "\(parserId)://\($0)" }
     }
 
     override func getImage(_ path: String) async throws -> Data {
@@ -414,16 +573,10 @@ class FsBrowsablePlugin: Plugin, Browsable {
             )
         }
 
-        let (parserId, imagePath) = try parseMetaPrefix(path)
-        guard let parser = getParser(id: parserId) else {
-            Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
-            )
-        }
-
-        return try await parser.parseImage(path: imagePath)
+        let imageRoute = try ImageRoute(imageId: path)
+        let parser = try imageRoute.parser(in: parsers)
+        let sourceURL = try imageRoute.sourceURL(relativeTo: url)
+        return try await parser.parseImage(url: imageRoute.parserURL, path: sourceURL)
     }
 
     override func isOnline() async throws -> Bool {
@@ -433,41 +586,20 @@ class FsBrowsablePlugin: Plugin, Browsable {
     // MARK: - Caching
 
     private func parseAndCache(
-        parser: Parser, relativePath: String, fullPath: String
+        parser: Parser, relativePath: String
     ) async throws -> DetailedManga {
-        let hash = try Self.hashFile(at: fullPath)
-        let mangaId = parser.getMangaId(path: relativePath, hash: hash)
-
-        if let stored = try? await fetchCachedManga(mangaId: mangaId, parserId: parser.id) {
-            // Refresh the stored path if the file moved but its content is unchanged.
-            if stored.meta != relativePath {
-                var updated = stored
-                updated.cover = replaceCoverArchivePath(
-                    updated.cover, from: stored.meta ?? "", to: relativePath
-                )
-                updated.meta = relativePath
-                await storeManga(updated, mangaId: mangaId, parserId: parser.id)
-                updated.cover = await ensureCachedCover(
-                    for: updated.cover, mangaId: mangaId, parserId: parser.id
-                )
-                return updated
-            }
-
-            var cached = stored
-            cached.cover = await ensureCachedCover(
-                for: stored.cover, mangaId: mangaId, parserId: parser.id
-            )
-            return cached
-        }
-
-        var manga = try await parser.parse(path: relativePath, hash: mangaId)
-        manga.meta = relativePath
-        await storeManga(manga, mangaId: mangaId, parserId: parser.id)
-        manga.cover = await ensureCachedCover(
-            for: manga.cover, mangaId: mangaId, parserId: parser.id
+        let sourceURL = try MangaRoute.sourceURL(
+            for: relativePath,
+            relativeTo: url
+        )
+        let hash = try Self.hashFile(at: sourceURL)
+        let route = try MangaRoute(
+            parserId: parser.id,
+            hash: hash,
+            relativePath: relativePath
         )
 
-        return manga
+        return try await loadManga(route: route)
     }
 
     private func fetchCachedManga(mangaId: String, parserId: String) async throws -> DetailedManga? {
@@ -504,52 +636,44 @@ class FsBrowsablePlugin: Plugin, Browsable {
     }
 
     private func ensureCachedCover(
-        for cover: String?, mangaId: String, parserId: String
+        for cover: String?,
+        route: MangaRoute,
+        parser: Parser,
+        sourceURL: URL
     ) async -> String? {
         guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
 
         let ext = (cover as NSString).pathExtension.lowercased()
-        let filename = ext.isEmpty ? mangaId : "\(mangaId).\(ext)"
+        let filename = ext.isEmpty ? route.hash : "\(route.hash).\(ext)"
         let url = cacheDir.appendingPathComponent(filename)
 
         if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
-            Logger.fsBrowsablePlugin.debug("Using cached cover for \(mangaId) at \(url.path(percentEncoded: false))")
+            Logger.fsBrowsablePlugin.debug(
+                "Using cached cover for \(route.mangaId) at \(url.path(percentEncoded: false))"
+            )
             return "\(Self.coverCachePrefix)\(filename)"
         }
 
-        guard let parser = getParser(id: parserId) else {
-            Logger.fsBrowsablePlugin.warning("No parser \(parserId) to re-cache cover for \(mangaId)")
-            return cover
-        }
-
         do {
-            let coverData = try await parser.parseImage(path: cover)
+            let coverData = try await parser.parseImage(url: cover, path: sourceURL)
             try FileManager.default.createDirectory(
                 at: cacheDir, withIntermediateDirectories: true, attributes: nil
             )
             try coverData.write(to: url, options: .atomic)
             Logger.fsBrowsablePlugin.debug(
-                "Re-cached missing cover for \(mangaId) at \(url.path(percentEncoded: false))"
+                "Re-cached missing cover for \(route.mangaId) at \(url.path(percentEncoded: false))"
             )
             return "\(Self.coverCachePrefix)\(filename)"
         } catch {
-            Logger.fsBrowsablePlugin.warning("Failed to re-cache cover for \(mangaId): \(error)")
+            Logger.fsBrowsablePlugin.warning(
+                "Failed to re-cache cover for \(route.mangaId): \(error)"
+            )
             return cover
         }
     }
 
-    private func replaceCoverArchivePath(
-        _ cover: String?, from oldPath: String, to newPath: String
-    ) -> String? {
-        guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
-        let prefix = "\(oldPath):"
-        guard cover.hasPrefix(prefix) else { return cover }
-        let entryPath = String(cover.dropFirst(prefix.count))
-        return "\(newPath):\(entryPath)"
-    }
-
-    private static func hashFile(at path: String) throws -> String {
-        guard let handle = FileHandle(forReadingAtPath: path) else {
+    private static func hashFile(at url: URL) throws -> String {
+        guard let handle = try? FileHandle(forReadingFrom: url) else {
             throw NSError(
                 domain: "FsBrowsablePlugin", code: 0,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
@@ -602,8 +726,6 @@ class FsBrowsablePlugin: Plugin, Browsable {
             } else {
                 runtimePath = entry.lastPathComponent
             }
-            let fullPath = entry.standardizedFileURL.path
-
             if values.isDirectory == true {
                 entities.append(.directory(path: runtimePath))
             } else if values.isRegularFile == true {
@@ -618,17 +740,17 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 let detailed: DetailedManga
                 do {
                     detailed = try await parseAndCache(
-                        parser: parser, relativePath: runtimePath, fullPath: fullPath
+                        parser: parser,
+                        relativePath: runtimePath
                     )
                 } catch {
                     Logger.fsBrowsablePlugin.warning(
-                        "Parser '\(parser.id)' failed to parse '\(fullPath)': \(error), skipping"
+                        "Parser '\(parser.id)' failed to parse '\(entry.path)': \(error), skipping"
                     )
                     continue
                 }
 
-                let prefixed = prefixManga(detailed, parserId: parser.id)
-                entities.append(.book(manga: prefixed, path: runtimePath))
+                entities.append(.book(manga: detailed, path: runtimePath))
             }
         }
 
@@ -691,15 +813,3 @@ class FsBrowsablePlugin: Plugin, Browsable {
         return destination
     }
 }
-
-// MARK: - MangaMetaPrefixable
-
-private protocol MangaMetaPrefixable {
-    var id: String { get set }
-    var meta: String? { get set }
-    var cover: String? { get set }
-}
-
-extension Manga: MangaMetaPrefixable {}
-
-extension DetailedManga: MangaMetaPrefixable {}
