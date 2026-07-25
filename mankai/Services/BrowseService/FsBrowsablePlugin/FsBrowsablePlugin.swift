@@ -64,9 +64,9 @@ class FsBrowsablePlugin: Plugin, Browsable {
     private lazy var dirName: String = url.lastPathComponent
     private let parsers: [String: Parser]
 
-    /// On-disk cache of parsed manga (JSON-encoded `DetailedManga`), keyed by
-    /// content hash and relative path. Lives above the parsers so the caching
-    /// layer is shared.
+    /// On-disk cache of route-neutral parsed manga (JSON-encoded `DetailedManga`),
+    /// keyed by parser and content hash. A cheap file-system fingerprint provides
+    /// a best-effort lookup that avoids hashing unchanged files during browsing.
     private var db: DatabasePool? {
         DbService.shared.openFsBrowsablePluginDb()
     }
@@ -269,10 +269,6 @@ class FsBrowsablePlugin: Plugin, Browsable {
         let parserId: String
         let hash: String
         let relativePath: String
-
-        var cacheId: String {
-            "\(hash):\(relativePath)"
-        }
 
         var mangaId: String {
             "\(parserId)://\(hash):\(Self.encode(relativePath)!)"
@@ -507,30 +503,56 @@ class FsBrowsablePlugin: Plugin, Browsable {
     }
 
     private func loadManga(
-        route: MangaRoute
+        route: MangaRoute,
+        cacheKey: String? = nil
     ) async throws -> DetailedManga {
         let parser = try route.parser(in: parsers)
         let sourceURL = try route.sourceURL(relativeTo: url)
 
         let stored: DetailedManga
         if let cached = try? await fetchCachedManga(
-            mangaId: route.cacheId, parserId: route.parserId
+            mangaId: route.hash, parserId: route.parserId
         ) {
-            stored = cached
+            stored = cached.manga
+            if let cacheKey, cached.cacheKey != cacheKey {
+                await storeManga(
+                    cached.manga,
+                    mangaId: route.hash,
+                    parserId: route.parserId,
+                    cacheKey: cacheKey
+                )
+            }
         } else {
             Logger.fsBrowsablePlugin.debug("Manga cache miss, parsing source: \(sourceURL.path)")
 
             var parsed = try await parser.parse(path: sourceURL)
-            parsed.id = route.mangaId
+            parsed.id = route.hash
             await storeManga(
-                parsed, mangaId: route.cacheId, parserId: route.parserId
+                parsed,
+                mangaId: route.hash,
+                parserId: route.parserId,
+                cacheKey: cacheKey ?? "hash:\(route.hash)"
             )
             stored = parsed
         }
 
-        var transformed = stored
+        return try await prepareCachedManga(
+            stored,
+            route: route,
+            parser: parser,
+            sourceURL: sourceURL
+        )
+    }
+
+    private func prepareCachedManga(
+        _ stored: DetailedManga,
+        route: MangaRoute,
+        parser: Parser,
+        sourceURL: URL
+    ) async throws -> DetailedManga {
+        var transformed = parser.prepareForPresentation(stored, path: sourceURL)
         transformed.cover = await ensureCachedCover(
-            for: stored.cover,
+            for: transformed.cover,
             route: route,
             parser: parser,
             sourceURL: sourceURL
@@ -586,11 +608,40 @@ class FsBrowsablePlugin: Plugin, Browsable {
     // MARK: - Caching
 
     private func parseAndCache(
-        parser: Parser, relativePath: String
+        parser: Parser,
+        relativePath: String,
+        resourceValues: URLResourceValues
     ) async throws -> DetailedManga {
         let sourceURL = try MangaRoute.sourceURL(
             for: relativePath,
             relativeTo: url
+        )
+        let cacheKey = Self.cacheKey(for: resourceValues)
+
+        if let cacheKey,
+           let cached = try? await fetchCachedManga(
+               cacheKey: cacheKey,
+               parserId: parser.id
+           )
+        {
+            Logger.fsBrowsablePlugin.debug(
+                "Manga cache hit for filesystem key: \(cacheKey)"
+            )
+            let route = try MangaRoute(
+                parserId: parser.id,
+                hash: cached.mangaId,
+                relativePath: relativePath
+            )
+            return try await prepareCachedManga(
+                cached.manga,
+                route: route,
+                parser: parser,
+                sourceURL: sourceURL
+            )
+        }
+
+        Logger.fsBrowsablePlugin.debug(
+            "Filesystem cache miss, hashing source: \(sourceURL.path)"
         )
         let hash = try Self.hashFile(at: sourceURL)
         let route = try MangaRoute(
@@ -599,35 +650,74 @@ class FsBrowsablePlugin: Plugin, Browsable {
             relativePath: relativePath
         )
 
-        return try await loadManga(route: route)
+        return try await loadManga(route: route, cacheKey: cacheKey)
     }
 
-    private func fetchCachedManga(mangaId: String, parserId: String) async throws -> DetailedManga? {
+    private struct CachedManga {
+        let mangaId: String
+        let cacheKey: String
+        let manga: DetailedManga
+    }
+
+    private func fetchCachedManga(
+        mangaId: String,
+        parserId: String
+    ) async throws -> CachedManga? {
         guard let db else { return nil }
-        let pluginId = id
         let row = try await db.read { db in
             try FsBPMangaModel
                 .filter(
                     Column("mangaId") == mangaId
                         && Column("parserId") == parserId
-                        && Column("pluginId") == pluginId
                 )
                 .fetchOne(db)
         }
+        return Self.decodeCachedManga(row)
+    }
+
+    private func fetchCachedManga(
+        cacheKey: String,
+        parserId: String
+    ) async throws -> CachedManga? {
+        guard let db else { return nil }
+        let row = try await db.read { db in
+            try FsBPMangaModel
+                .filter(
+                    Column("cacheKey") == cacheKey
+                        && Column("parserId") == parserId
+                )
+                .fetchOne(db)
+        }
+        return Self.decodeCachedManga(row)
+    }
+
+    private static func decodeCachedManga(_ row: FsBPMangaModel?) -> CachedManga? {
         guard let row,
               let data = row.info.data(using: .utf8),
               let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
         else { return nil }
-        return stored
+        return CachedManga(
+            mangaId: row.mangaId,
+            cacheKey: row.cacheKey,
+            manga: stored
+        )
     }
 
-    private func storeManga(_ manga: DetailedManga, mangaId: String, parserId: String) async {
+    private func storeManga(
+        _ manga: DetailedManga,
+        mangaId: String,
+        parserId: String,
+        cacheKey: String
+    ) async {
         guard let db,
               let infoData = try? JSONEncoder().encode(manga),
               let infoString = String(data: infoData, encoding: .utf8)
         else { return }
         let model = FsBPMangaModel(
-            mangaId: mangaId, parserId: parserId, pluginId: id, info: infoString
+            mangaId: mangaId,
+            parserId: parserId,
+            cacheKey: cacheKey,
+            info: infoString
         )
         try? await db.write { db in
             try model.upsert(db)
@@ -691,6 +781,70 @@ class FsBrowsablePlugin: Plugin, Browsable {
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
+    private static func cacheKey(for values: URLResourceValues) -> String? {
+        let volumeIdentifier = encodedResourceIdentifier(values.volumeIdentifier) ?? "-"
+        let generationIdentifier = encodedResourceIdentifier(values.generationIdentifier)
+
+        if let fileContentIdentifier = values.fileContentIdentifier {
+            var components = [
+                "content",
+                volumeIdentifier,
+                String(fileContentIdentifier),
+            ]
+            if let generationIdentifier {
+                components.append(generationIdentifier)
+            }
+            return components.joined(separator: ":")
+        }
+
+        if let generationIdentifier {
+            return [
+                "generation",
+                volumeIdentifier,
+                generationIdentifier,
+            ].joined(separator: ":")
+        }
+
+        if let fileSize = values.fileSize,
+           let contentModificationDate = values.contentModificationDate
+        {
+            return [
+                "metadata",
+                volumeIdentifier,
+                String(fileSize),
+                String(
+                    contentModificationDate.timeIntervalSinceReferenceDate.bitPattern,
+                    radix: 16
+                ),
+            ].joined(separator: ":")
+        }
+
+        return nil
+    }
+
+    private static func encodedResourceIdentifier(
+        _ identifier: (any NSCopying & NSSecureCoding & NSObjectProtocol)?
+    ) -> String? {
+        guard let identifier else { return nil }
+
+        if let data = identifier as? Data {
+            return data.base64EncodedString()
+        }
+        if let number = identifier as? NSNumber {
+            return number.stringValue
+        }
+        if let string = identifier as? NSString {
+            return string as String
+        }
+        guard let data = try? NSKeyedArchiver.archivedData(
+            withRootObject: identifier,
+            requiringSecureCoding: true
+        ) else {
+            return nil
+        }
+        return data.base64EncodedString()
+    }
+
     // MARK: - Browsable Methods
 
     func getEntities(path: String? = "") async throws -> [EntityType] {
@@ -704,7 +858,15 @@ class FsBrowsablePlugin: Plugin, Browsable {
         }
 
         let fileManager = FileManager.default
-        let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey]
+        let resourceKeys: Set<URLResourceKey> = [
+            .isDirectoryKey,
+            .isRegularFileKey,
+            .volumeIdentifierKey,
+            .fileContentIdentifierKey,
+            .generationIdentifierKey,
+            .fileSizeKey,
+            .contentModificationDateKey,
+        ]
         let entries = try fileManager.contentsOfDirectory(
             at: target,
             includingPropertiesForKeys: Array(resourceKeys),
@@ -741,7 +903,8 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 do {
                     detailed = try await parseAndCache(
                         parser: parser,
-                        relativePath: runtimePath
+                        relativePath: runtimePath,
+                        resourceValues: values
                     )
                 } catch {
                     Logger.fsBrowsablePlugin.warning(

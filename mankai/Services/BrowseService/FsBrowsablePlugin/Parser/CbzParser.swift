@@ -115,7 +115,9 @@ class CbzParser: Parser {
                     Logger.cbzParser.warning("ComicInfo.xml exists but could not be parsed, proceeding with image-only mode")
                 }
             } else {
-                Logger.cbzParser.debug("No ComicInfo.xml found, using filename and static chapter name")
+                Logger.cbzParser.debug(
+                    "No ComicInfo.xml found, deferring filename metadata to presentation"
+                )
             }
 
             let coverEntry = info?.frontCoverIndex.flatMap { idx -> Entry? in
@@ -134,13 +136,11 @@ class CbzParser: Parser {
         if let info {
             let series = info.series?.trimmingCharacters(in: .whitespacesAndNewlines)
             let titleField = info.title?.trimmingCharacters(in: .whitespacesAndNewlines)
-            // Manga title: prefer Series, fall back to the issue Title, then to the filename.
+            // Manga title: prefer Series, then the issue Title.
             if let series, !series.isEmpty {
                 manga.title = series
             } else if let titleField, !titleField.isEmpty {
                 manga.title = titleField
-            } else {
-                manga.title = archiveURL.deletingPathExtension().lastPathComponent
             }
 
             // Chapter title: the issue Title, or a static name if absent.
@@ -184,9 +184,7 @@ class CbzParser: Parser {
             manga.chapters = ["volume": [chapter]]
             manga.latestChapter = chapter
         } else {
-            // No ComicInfo.xml: use the filename as the title and a static chapter name.
-            manga.title = archiveURL.deletingPathExtension().lastPathComponent
-            let chapter = Chapter(id: "0", title: manga.title)
+            let chapter = Chapter(id: "0", title: nil)
             manga.chapters = ["volume": [chapter]]
             manga.latestChapter = chapter
         }
@@ -194,6 +192,30 @@ class CbzParser: Parser {
         manga.cover = coverEntryPath
 
         return manga
+    }
+
+    override func prepareForPresentation(_ manga: DetailedManga, path: URL) -> DetailedManga {
+        guard manga.title == nil else { return manga }
+
+        var presented = manga
+        let filenameTitle = path.deletingPathExtension().lastPathComponent
+        presented.title = filenameTitle
+        presented.chapters = presented.chapters.mapValues { chapters in
+            chapters.map { chapter in
+                var presentedChapter = chapter
+                if presentedChapter.title == nil {
+                    presentedChapter.title = filenameTitle
+                }
+                return presentedChapter
+            }
+        }
+        if var latestChapter = presented.latestChapter,
+           latestChapter.title == nil
+        {
+            latestChapter.title = filenameTitle
+            presented.latestChapter = latestChapter
+        }
+        return presented
     }
 
     override func parseChapter(

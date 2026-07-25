@@ -10,18 +10,24 @@ import GRDB
 struct FsBPMangaModel {
     var mangaId: String
     var parserId: String
-    var pluginId: String
+    var cacheKey: String
     var info: String
 
     static func createTable(_ db: Database) throws {
         try db.create(table: FsBPMangaModel.databaseTableName, ifNotExists: true) {
-            $0.primaryKey(["mangaId", "parserId", "pluginId"])
+            $0.primaryKey(["mangaId", "parserId"])
 
             $0.column("mangaId", .text).notNull()
             $0.column("parserId", .text).notNull()
-            $0.column("pluginId", .text).notNull()
+            $0.column("cacheKey", .text).notNull()
             $0.column("info", .text).notNull()
         }
+        try db.create(
+            index: "fsbpmanga_on_cacheKey_parserId",
+            on: FsBPMangaModel.databaseTableName,
+            columns: ["cacheKey", "parserId"],
+            ifNotExists: true
+        )
     }
 }
 

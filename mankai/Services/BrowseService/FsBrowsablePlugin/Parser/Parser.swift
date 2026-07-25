@@ -30,6 +30,14 @@ class Parser {
         fatalError("Not Implemented")
     }
 
+    /// Applies path-dependent presentation metadata to a route-neutral cached manga.
+    ///
+    /// Parsers whose fallback metadata depends on the current filename can override
+    /// this hook without storing that path-dependent value in the shared cache.
+    func prepareForPresentation(_ manga: DetailedManga, path _: URL) -> DetailedManga {
+        manga
+    }
+
     /// Retrieves the list of image URLs for a specific chapter.
     /// - Parameters:
     ///   - manga: The manga containing the chapter.
