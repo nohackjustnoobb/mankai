@@ -100,10 +100,7 @@ class CbzParser: Parser {
 
             guard !imageEntries.isEmpty else {
                 Logger.cbzParser.error("No supported images found in archive: \(archiveURL.path)")
-                throw NSError(
-                    domain: "CbzParser", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "noImagesFoundInArchive")]
-                )
+                throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
             }
 
             if let infoEntry = archive["ComicInfo.xml"],
@@ -244,10 +241,7 @@ class CbzParser: Parser {
         return try Self.withReadLock(for: archiveURL) { archive in
             guard let entry = archive[url] else {
                 Logger.cbzParser.error("Entry not found in archive: \(url)")
-                throw NSError(
-                    domain: "CbzParser", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
-                )
+                throw MankaiErrorCode.browseArchiveEntryNotFound.makeError()
             }
 
             return try Self.entryData(archive: archive, entry: entry)

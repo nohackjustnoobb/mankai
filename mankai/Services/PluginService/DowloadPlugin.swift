@@ -154,10 +154,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting suggestions for query: \(query)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for suggestions")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -176,10 +173,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Searching for: \(query), page: \(page)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for search")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -203,10 +197,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for list")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -241,10 +232,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting \(ids.count) mangas")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for getMangas")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -263,27 +251,18 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting detailed manga: \(id)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for getDetailedManga")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
             guard let mangaModel = try DownloadMangaModel.fetchOne(db, key: id) else {
                 Logger.downloadPlugin.warning("Manga not found in DB: \(id)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
-                )
+                throw MankaiErrorCode.pluginDownloadMangaNotFound.makeError()
             }
 
             guard let detailedManga = self.convertToDetailedManga(mangaModel, db: db) else {
                 Logger.downloadPlugin.error("Failed to convert manga model to detailed manga: \(id)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadMangaDetails")]
-                )
+                throw MankaiErrorCode.pluginDownloadFailedToLoadMangaDetails.makeError()
             }
 
             return detailedManga
@@ -294,18 +273,12 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting chapter: \(chapter.id)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for getChapter")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         guard let pluginId = manga.meta else {
             Logger.downloadPlugin.error("Manga meta is missing for getChapter: \(manga.id)")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaMetaMissing")]
-            )
+            throw MankaiErrorCode.pluginDownloadMangaMetaMissing.makeError()
         }
 
         let mangaId = "\(pluginId)+\(manga.id)"
@@ -317,10 +290,7 @@ class DownloadPlugin: Plugin {
                 .fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Chapter not found: \(chapter.id)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterNotFound")]
-                )
+                throw MankaiErrorCode.pluginDownloadChapterNotFound.makeError()
             }
 
             return chapterModel.urls.split(separator: "|").map { String($0) }
@@ -331,10 +301,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting image: \(path)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for getImage")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -345,10 +312,7 @@ class DownloadPlugin: Plugin {
                 .fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Image not found in DB: \(path)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
-                )
+                throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError()
             }
 
             let fileManager = FileManager.default
@@ -356,20 +320,14 @@ class DownloadPlugin: Plugin {
 
             guard fileManager.fileExists(atPath: fullImagePath) else {
                 Logger.downloadPlugin.error("Image file not found: \(fullImagePath)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
-                )
+                throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError()
             }
 
             do {
                 return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
             } catch {
                 Logger.downloadPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
-                )
+                throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError(underlyingError: error)
             }
         }
     }
@@ -380,10 +338,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Getting downloaded mangas")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for getDownloadedMangas")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -400,10 +355,7 @@ class DownloadPlugin: Plugin {
     func isImageDownloaded(_ url: String) async throws -> Bool {
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for saveImage")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -450,10 +402,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Saving manga: \(manga.title ?? manga.id)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for saveManga")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in
@@ -469,10 +418,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Saving chapter: \(chapter.chapterId)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for saveChapter")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in
@@ -488,10 +434,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Saving image: \(image.url)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for saveImage")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in
@@ -510,10 +453,7 @@ class DownloadPlugin: Plugin {
         Logger.downloadPlugin.debug("Deleting manga: \(mangaId)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for deleteManga")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
         let fileManager = FileManager.default
@@ -533,10 +473,7 @@ class DownloadPlugin: Plugin {
         try await db.write { db in
             guard let mangaModel = try DownloadMangaModel.fetchOne(db, key: mangaId) else {
                 Logger.downloadPlugin.warning("Manga not found in database: \(mangaId)")
-                throw NSError(
-                    domain: "DownloadPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
-                )
+                throw MankaiErrorCode.pluginDownloadMangaNotFound.makeError()
             }
 
             try mangaModel.delete(db)
@@ -551,10 +488,7 @@ class DownloadPlugin: Plugin {
     func deleteManga(_ manga: DetailedManga) async throws {
         guard let pluginId = manga.meta else {
             Logger.downloadPlugin.error("Manga meta is missing for deleteManga: \(manga.id)")
-            throw NSError(
-                domain: "DownloadPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaMetaMissing")]
-            )
+            throw MankaiErrorCode.pluginDownloadMangaMetaMissing.makeError()
         }
 
         try await deleteManga("\(pluginId)+\(manga.id)")

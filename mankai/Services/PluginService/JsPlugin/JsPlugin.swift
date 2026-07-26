@@ -285,10 +285,7 @@ class JsPlugin: Plugin {
     override func savePlugin() throws {
         Logger.jsPlugin.debug("Saving plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
         // Create scripts dictionary
@@ -322,10 +319,7 @@ class JsPlugin: Plugin {
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
         guard let metaString = String(data: metaData, encoding: .utf8) else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeMetaData")]
-            )
+            throw MankaiErrorCode.pluginJavascriptFailedToEncodeMetaData.makeError()
         }
 
         // Create config values JSON
@@ -339,10 +333,7 @@ class JsPlugin: Plugin {
             withJSONObject: configValuesArray, options: []
         )
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeConfigValuesData")]
-            )
+            throw MankaiErrorCode.pluginJavascriptFailedToEncodeConfigValuesData.makeError()
         }
 
         // Save to database
@@ -359,10 +350,7 @@ class JsPlugin: Plugin {
     override func deletePlugin() throws {
         Logger.jsPlugin.debug("Deleting plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
         try dbPool.write { db in
@@ -383,12 +371,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let isOnline = result as? Bool else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForIsOnline"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForIsOnline.makeError()
         }
 
         return isOnline
@@ -406,12 +389,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let suggestions = result as? [String] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForSuggestions"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForSuggestions.makeError()
         }
 
         return suggestions
@@ -429,12 +407,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForMangas.makeError()
         }
 
         return mangas.compactMap { Manga(from: $0) }
@@ -454,12 +427,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForMangas.makeError()
         }
 
         return mangas.compactMap { Manga(from: $0) }
@@ -479,12 +447,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForMangas.makeError()
         }
 
         return mangas.compactMap { Manga(from: $0) }
@@ -502,23 +465,13 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let detailedManga = result as? [String: Any] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
 
         if let detailedMangaResult = DetailedManga(from: detailedManga) {
             return detailedMangaResult
         } else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
     }
 
@@ -535,12 +488,7 @@ class JsPlugin: Plugin {
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
               let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidMangaOrChapterFormat.makeError()
         }
 
         let script =
@@ -548,12 +496,7 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let images = result as? [String] else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImages"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImages.makeError()
         }
 
         return images
@@ -564,10 +507,7 @@ class JsPlugin: Plugin {
 
         if let headers = _getImageHeaders {
             guard let url = URL(string: url) else {
-                throw NSError(
-                    domain: "JsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
-                )
+                throw MankaiErrorCode.pluginJavascriptInvalidUrl.makeError()
             }
 
             var request = URLRequest(url: url)
@@ -589,21 +529,11 @@ class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let imageBase64Encoded = result as? String else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImage"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImage.makeError()
         }
 
         guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
-            throw NSError(
-                domain: "JsPlugin", code: 0,
-                userInfo: [
-                    NSLocalizedDescriptionKey: String(localized: "invalidBase64StringForImage"),
-                ]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidBase64StringForImage.makeError()
         }
 
         return imageData

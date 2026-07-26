@@ -281,6 +281,7 @@
     },
     "action" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -442,6 +443,7 @@
     },
     "adventure" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -603,6 +605,7 @@
     },
     "boolean" : {
       "extractionState" : "manual",
+      "comment" : "Used as a config type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -620,6 +623,7 @@
     },
     "boysLove" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -839,23 +843,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "第%@話"
-          }
-        }
-      }
-    },
-    "chapterDirectoryNotFound" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chapter Directory Not Found"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到章節目錄"
           }
         }
       }
@@ -1118,6 +1105,7 @@
     },
     "comedy" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1807,6 +1795,7 @@
     },
     "extra" : {
       "extractionState" : "manual",
+      "comment" : "Used as a chapter group label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2352,6 +2341,7 @@
     },
     "fanFiction" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2433,6 +2423,7 @@
     },
     "fsPlugin" : {
       "extractionState" : "manual",
+      "comment" : "Used as a plugin type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2535,6 +2526,7 @@
     },
     "harem" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2568,6 +2560,7 @@
     },
     "historical" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2633,6 +2626,7 @@
     },
     "horror" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2682,6 +2676,7 @@
     },
     "httpPlugin" : {
       "extractionState" : "manual",
+      "comment" : "Used as a plugin type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2709,6 +2704,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTTP 插件設定"
+          }
+        }
+      }
+    },
+    "httpRequestFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP request failed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTP 請求失敗"
           }
         }
       }
@@ -3230,6 +3241,7 @@
     },
     "jsPlugin" : {
       "extractionState" : "manual",
+      "comment" : "Used as a plugin type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3503,6 +3515,7 @@
     },
     "magic" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3600,6 +3613,7 @@
     },
     "mature" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3617,6 +3631,7 @@
     },
     "mecha" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4290,6 +4305,7 @@
     },
     "number" : {
       "extractionState" : "manual",
+      "comment" : "Used as a config type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4385,25 +4401,9 @@
         }
       }
     },
-    "ordersCountMismatch" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Orders Count Mismatch"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "排序數量不一致"
-          }
-        }
-      }
-    },
     "otokonoko" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5157,6 +5157,7 @@
     },
     "romance" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5206,6 +5207,7 @@
     },
     "schoolLife" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5287,6 +5289,7 @@
     },
     "select" : {
       "extractionState" : "manual",
+      "comment" : "Used as a config type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5368,6 +5371,7 @@
     },
     "serial" : {
       "extractionState" : "manual",
+      "comment" : "Used as a chapter group label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5561,6 +5565,7 @@
     },
     "speculativeFiction" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5578,6 +5583,7 @@
     },
     "sports" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5691,6 +5697,7 @@
     },
     "suspense" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5916,6 +5923,7 @@
     },
     "text" : {
       "extractionState" : "manual",
+      "comment" : "Used as a config type label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6179,6 +6187,7 @@
     },
     "volume" : {
       "extractionState" : "manual",
+      "comment" : "Used as a chapter group label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6196,6 +6205,7 @@
     },
     "war" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6245,6 +6255,7 @@
     },
     "yuri" : {
       "extractionState" : "manual",
+      "comment" : "Used as a manga genre label.",
       "localizations" : {
         "en" : {
           "stringUnit" : {

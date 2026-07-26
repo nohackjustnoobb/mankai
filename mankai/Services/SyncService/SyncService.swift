@@ -180,10 +180,7 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Starting sync")
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(
-                domain: "SyncService", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
-            )
+            throw MankaiErrorCode.syncNoEngine.makeError()
         }
 
         if UserDefaults.standard.bool(forKey: "SyncService.initialSync") {
@@ -205,10 +202,7 @@ class SyncService: ObservableObject {
     func addSaveds(_ saveds: [SavedModel]) async throws {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(
-                domain: "SyncService", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
-            )
+            throw MankaiErrorCode.syncNoEngine.makeError()
         }
 
         try await engine.addSaveds(saveds)
@@ -221,10 +215,7 @@ class SyncService: ObservableObject {
     func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(
-                domain: "SyncService", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
-            )
+            throw MankaiErrorCode.syncNoEngine.makeError()
         }
 
         try await engine.removeSaveds(saveds)

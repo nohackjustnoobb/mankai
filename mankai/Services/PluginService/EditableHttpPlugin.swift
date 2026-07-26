@@ -60,10 +60,7 @@ class EditableHttpPlugin: HttpPlugin, Editable {
         try await setup()
 
         guard group.mangaId != nil, group.title != nil else {
-            throw NSError(
-                domain: "EditableHttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
-            )
+            throw MankaiErrorCode.pluginHttpMissingRequiredFields.makeError()
         }
 
         let jsonData = try JSONEncoder().encode(group)
@@ -111,10 +108,7 @@ class EditableHttpPlugin: HttpPlugin, Editable {
         try await setup()
 
         guard chapter.title != nil, chapter.chapterGroupId != nil else {
-            throw NSError(
-                domain: "EditableHttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
-            )
+            throw MankaiErrorCode.pluginHttpMissingRequiredFields.makeError()
         }
 
         let jsonData = try JSONEncoder().encode(chapter)

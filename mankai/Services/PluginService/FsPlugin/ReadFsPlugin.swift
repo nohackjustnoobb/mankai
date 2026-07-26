@@ -51,10 +51,7 @@ class ReadFsPlugin: Plugin {
 
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
-            )
+            throw MankaiErrorCode.pluginFilesystemFailedToAccessFolder.makeError()
         }
         defer {
             url.stopAccessingSecurityScopedResource()
@@ -62,20 +59,14 @@ class ReadFsPlugin: Plugin {
 
         let idFile = url.appendingPathComponent(".mankai")
         guard FileManager.default.fileExists(atPath: idFile.path) else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdNotFound")]
-            )
+            throw MankaiErrorCode.pluginFilesystemPluginIdNotFound.makeError()
         }
 
         let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
             in: .whitespacesAndNewlines
         )
         guard !id.isEmpty else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdEmpty")]
-            )
+            throw MankaiErrorCode.pluginFilesystemPluginIdEmpty.makeError()
         }
 
         self.init(url: url, id: id)
@@ -186,10 +177,7 @@ class ReadFsPlugin: Plugin {
     override func savePlugin() throws {
         Logger.fsPlugin.debug("Saving plugin: \(id)")
         guard let db = DbService.shared.appDb else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         let bookmarkData = try url.bookmarkData(
@@ -212,10 +200,7 @@ class ReadFsPlugin: Plugin {
     override func deletePlugin() throws {
         Logger.fsPlugin.debug("Deleting plugin: \(id)")
         guard let db = DbService.shared.appDb else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         _ = try db.write { db in
@@ -330,10 +315,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Getting suggestions for query: \(query)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for suggestions")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -352,10 +334,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Searching for: \(query), page: \(page)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for search")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -379,10 +358,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for list")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -417,10 +393,7 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Getting \(ids.count) mangas")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getMangas")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
@@ -439,27 +412,18 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Getting detailed manga: \(id)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getDetailedManga")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         return try await db.read { db in
             guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
                 Logger.fsPlugin.warning("Manga not found in DB: \(id)")
-                throw NSError(
-                    domain: "ReadFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaDirectoryNotFound")]
-                )
+                throw MankaiErrorCode.pluginFilesystemMangaDirectoryNotFound.makeError()
             }
 
             guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
                 Logger.fsPlugin.error("Failed to convert manga model to detailed manga: \(id)")
-                throw NSError(
-                    domain: "ReadFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadMangaDetails")]
-                )
+                throw MankaiErrorCode.pluginFilesystemFailedToLoadMangaDetails.makeError()
             }
 
             return detailedManga
@@ -470,18 +434,12 @@ class ReadFsPlugin: Plugin {
         Logger.fsPlugin.debug("Getting chapter: \(chapter.id)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getChapter")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         guard let chapterIdInt = Int(chapter.id) else {
             Logger.fsPlugin.error("Invalid chapter ID: \(chapter.id)")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat")]
-            )
+            throw MankaiErrorCode.pluginFilesystemInvalidMangaOrChapterFormat.makeError()
         }
 
         return try await db.read { db in
@@ -504,20 +462,14 @@ class ReadFsPlugin: Plugin {
 
         guard fileManager.fileExists(atPath: fullImagePath) else {
             Logger.fsPlugin.error("Image file not found: \(fullImagePath)")
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
-            )
+            throw MankaiErrorCode.pluginFilesystemFailedToLoadImage.makeError()
         }
 
         do {
             return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
         } catch {
             Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
-            throw NSError(
-                domain: "ReadFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
-            )
+            throw MankaiErrorCode.pluginFilesystemFailedToLoadImage.makeError()
         }
     }
 }

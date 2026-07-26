@@ -264,10 +264,7 @@ class HttpPlugin: Plugin {
         if !isMetaUpdated {
             let metaUrl = URL(string: baseUrl)
             guard let metaUrl = metaUrl else {
-                throw NSError(
-                    domain: "HttpPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
-                )
+                throw MankaiErrorCode.pluginHttpInvalidUrl.makeError()
             }
             let (metaData, _) = try await URLSession.shared.data(from: metaUrl)
             let metaJson = try JSONSerialization.jsonObject(with: metaData) as? [String: Any]
@@ -293,10 +290,7 @@ class HttpPlugin: Plugin {
 
         guard let username = username, let password = password else {
             Logger.httpPlugin.error("Username or password not set")
-            throw NSError(
-                domain: "HttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
-            )
+            throw MankaiErrorCode.pluginHttpInvalidCredentials.makeError()
         }
 
         if authManager.serverUrl != baseUrl {
@@ -313,10 +307,7 @@ class HttpPlugin: Plugin {
     override func savePlugin() throws {
         Logger.httpPlugin.debug("Saving plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
-            throw NSError(
-                domain: "HttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
         // Create meta JSON
@@ -344,10 +335,7 @@ class HttpPlugin: Plugin {
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
         guard let metaString = String(data: metaData, encoding: .utf8) else {
-            throw NSError(
-                domain: "HttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeMetaData")]
-            )
+            throw MankaiErrorCode.pluginHttpFailedToEncodeMetaData.makeError()
         }
 
         // Create config values JSON
@@ -361,10 +349,7 @@ class HttpPlugin: Plugin {
             withJSONObject: configValuesArray, options: []
         )
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
-            throw NSError(
-                domain: "HttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeConfigValuesData")]
-            )
+            throw MankaiErrorCode.pluginHttpFailedToEncodeConfigValuesData.makeError()
         }
 
         // Save to database
@@ -382,10 +367,7 @@ class HttpPlugin: Plugin {
     override func deletePlugin() throws {
         Logger.httpPlugin.debug("Deleting plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
-            throw NSError(
-                domain: "HttpPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
         try dbPool.write { db in

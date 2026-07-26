@@ -71,10 +71,7 @@ class JsRuntime: NSObject {
 
         guard let webview else {
             Logger.jsRuntime.error("WebView not initialized")
-            throw NSError(
-                domain: "JsRuntime", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "webViewNotInitialized")]
-            )
+            throw MankaiErrorCode.pluginJavascriptWebViewNotInitialized.makeError()
         }
 
         // Inject functions
@@ -139,17 +136,11 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         Logger.jsRuntime.debug("Handling fetch request: \(url)")
 
         guard let url = params["url"] as? String else {
-            throw NSError(
-                domain: "JsRuntime", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingUrlParameter")]
-            )
+            throw MankaiErrorCode.pluginJavascriptMissingUrlParameter.makeError()
         }
 
         guard let requestURL = URL(string: url) else {
-            throw NSError(
-                domain: "JsRuntime", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidUrl.makeError()
         }
 
         var request = URLRequest(url: requestURL)
@@ -170,10 +161,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw NSError(
-                domain: "JsRuntime", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponseType")]
-            )
+            throw MankaiErrorCode.pluginJavascriptInvalidResponseType.makeError()
         }
 
         let responseTextBase64 = data.base64EncodedString()
@@ -247,12 +235,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, String(localized: "missingPluginId"))
+                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, String(localized: "databaseNotAvailable"))
+                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
             }
 
             do {
@@ -270,12 +258,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, String(localized: "missingPluginId"))
+                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, String(localized: "databaseNotAvailable"))
+                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
             }
 
             do {
@@ -293,12 +281,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, String(localized: "missingPluginId"))
+                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, String(localized: "databaseNotAvailable"))
+                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
             }
 
             do {

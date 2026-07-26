@@ -107,10 +107,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
 
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
-            )
+            throw MankaiErrorCode.browseFilesystemFailedToAccessFolder.makeError()
         }
         defer {
             url.stopAccessingSecurityScopedResource()
@@ -215,10 +212,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
     override func savePlugin() throws {
         Logger.fsBrowsablePlugin.debug("Saving plugin: \(id)")
         guard let db = DbService.shared.appDb else {
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
         let bookmarkData = try url.bookmarkData(
@@ -238,10 +232,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
     override func deletePlugin() throws {
         Logger.fsBrowsablePlugin.debug("Deleting plugin: \(id)")
         guard let db = DbService.shared.appDb else {
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
         _ = try db.write { db in
@@ -284,7 +275,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 Logger.fsBrowsablePlugin.error(
                     "Unable to create manga route for: \(relativePath)"
                 )
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             self.parserId = parserId
@@ -295,21 +286,21 @@ class FsBrowsablePlugin: Plugin, Browsable {
         init(mangaId: String) throws {
             guard let parserSeparator = mangaId.range(of: "://") else {
                 Logger.fsBrowsablePlugin.error("Invalid manga route: \(mangaId)")
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             let parserId = String(mangaId[..<parserSeparator.lowerBound])
             let payload = mangaId[parserSeparator.upperBound...]
             guard let hashSeparator = payload.firstIndex(of: ":") else {
                 Logger.fsBrowsablePlugin.error("Missing path in manga route: \(mangaId)")
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             let hash = String(payload[..<hashSeparator])
             let encodedRelativePath = String(payload[payload.index(after: hashSeparator)...])
             guard let relativePath = Self.decode(encodedRelativePath) else {
                 Logger.fsBrowsablePlugin.error("Invalid encoded manga path: \(mangaId)")
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             try self.init(
@@ -333,7 +324,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 Logger.fsBrowsablePlugin.error(
                     "Manga route escapes plugin root: \(relativePath)"
                 )
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
             return sourceURL
         }
@@ -341,10 +332,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         func parser(in parsers: [String: Parser]) throws -> Parser {
             guard let parser = parsers[parserId] else {
                 Logger.fsBrowsablePlugin.error("No parser found for id: \(parserId)")
-                throw NSError(
-                    domain: "FsBrowsablePlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "parserNotFound")]
-                )
+                throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
             }
             return parser
         }
@@ -376,13 +364,6 @@ class FsBrowsablePlugin: Plugin, Browsable {
         private static func decode(_ relativePath: String) -> String? {
             relativePath.removingPercentEncoding
         }
-
-        private static func invalidError() -> NSError {
-            NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
-            )
-        }
     }
 
     private struct ImageRoute {
@@ -398,7 +379,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 Logger.fsBrowsablePlugin.error(
                     "Unable to encode parser image URL: \(parserURL)"
                 )
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
             self.manga = manga
             self.parserURL = parserURL
@@ -409,7 +390,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                   separator.upperBound < imageId.endIndex
             else {
                 Logger.fsBrowsablePlugin.error("Invalid image route: \(imageId)")
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             let mangaId = String(imageId[..<separator.lowerBound])
@@ -418,7 +399,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 Logger.fsBrowsablePlugin.error(
                     "Invalid encoded parser image URL: \(imageId)"
                 )
-                throw Self.invalidError()
+                throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
             }
 
             try self.init(
@@ -447,13 +428,6 @@ class FsBrowsablePlugin: Plugin, Browsable {
 
         private static func decode(_ parserURL: String) -> String? {
             parserURL.removingPercentEncoding
-        }
-
-        private static func invalidError() -> NSError {
-            NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaMeta")]
-            )
         }
     }
 
@@ -589,10 +563,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 return data
             }
             Logger.fsBrowsablePlugin.error("Cached cover not found on disk: \(filename)")
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "entryNotFound")]
-            )
+            throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
         }
 
         let imageRoute = try ImageRoute(imageId: path)
@@ -764,10 +735,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
 
     private static func hashFile(at url: URL) throws -> String {
         guard let handle = try? FileHandle(forReadingFrom: url) else {
-            throw NSError(
-                domain: "FsBrowsablePlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "unableToOpenFileForHashing")]
-            )
+            throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
         }
         defer { try? handle.close() }
 

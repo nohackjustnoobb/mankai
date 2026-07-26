@@ -18,10 +18,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     convenience init(url: URL) throws {
         guard url.startAccessingSecurityScopedResource() else {
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
-            )
+            throw MankaiErrorCode.pluginFilesystemFailedToAccessFolder.makeError()
         }
         defer {
             url.stopAccessingSecurityScopedResource()
@@ -66,10 +63,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Upserting manga: \(manga.id ?? "new")")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertManga")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         let id = manga.id ?? UUID().uuidString
@@ -117,10 +111,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Deleting manga: \(mangaId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for deleteManga")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         _ = try await db.write { db in
@@ -145,10 +136,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Upserting cover for manga: \(mangaId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertCover")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         let fileManager = FileManager.default
@@ -210,19 +198,13 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     func upsertChapterGroup(_ group: EditableChapterGroup) async throws {
         guard let mangaId = group.mangaId, let title = group.title else {
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
-            )
+            throw MankaiErrorCode.pluginFilesystemMissingRequiredFields.makeError()
         }
 
         Logger.fsPlugin.debug("Upserting chapter group: \(title) for manga: \(mangaId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertChapterGroup")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in
@@ -243,19 +225,13 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Deleting chapter group: \(id)")
         guard let db = db, let intId = Int(id) else {
             Logger.fsPlugin.error("Database not available for deleteChapterGroup")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         // Fetch the chapter group and its chapters before deletion
         let (mangaId, chapterIds) = try await db.read { db in
             guard let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intId) else {
-                throw NSError(
-                    domain: "ReadWriteFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
-                )
+                throw MankaiErrorCode.pluginFilesystemChapterGroupNotFound.makeError()
             }
 
             let chapters =
@@ -328,10 +304,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     func upsertChapter(_ chapter: EditableChapter) async throws {
         guard let title = chapter.title, let chapterGroupId = chapter.chapterGroupId else {
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRequiredFields")]
-            )
+            throw MankaiErrorCode.pluginFilesystemMissingRequiredFields.makeError()
         }
 
         let intId = chapter.id.flatMap { Int($0) }
@@ -341,10 +314,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         )
         guard let db = db, let intChapterGroupId = intChapterGroupId else {
             Logger.fsPlugin.error("Database not available for upsertChapter")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in
@@ -391,10 +361,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Deleting chapter: \(id)")
         guard let db = db, let intId = Int(id) else {
             Logger.fsPlugin.error("Database not available for deleteChapter")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         // Look up mangaId from chapter -> chapterGroup
@@ -435,10 +402,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Arranging chapter order for chapter group")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for arrangeChapterOrder")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         let intIds = ids.compactMap { Int($0) }
@@ -463,10 +427,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         )
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for addImages")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         // Look up mangaId from chapter -> chapterGroup
@@ -475,10 +436,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
                   let chapter = try FsChapterModel.fetchOne(db, key: chapterIdInt),
                   let group = try FsChapterGroupModel.fetchOne(db, key: chapter.chapterGroupId)
             else {
-                throw NSError(
-                    domain: "ReadWriteFsPlugin", code: 0,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterNotFound")]
-                )
+                throw MankaiErrorCode.pluginFilesystemChapterNotFound.makeError()
             }
             return group.mangaId
         }
@@ -556,10 +514,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Deleting \(ids.count) images")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for deleteImages")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         let fileManager = FileManager.default
@@ -588,10 +543,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         Logger.fsPlugin.debug("Arranging image order for chapter")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for arrangeImageOrder")
-            throw NSError(
-                domain: "ReadWriteFsPlugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
-            )
+            throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
         try await db.write { db in

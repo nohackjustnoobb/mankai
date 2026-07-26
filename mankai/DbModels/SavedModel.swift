@@ -84,7 +84,7 @@ extension Chapter {
         }
 
         guard !parts.isEmpty, !parts[0].isEmpty else {
-            throw NSError(domain: "Chapter", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "missingChapterId")])
+            throw MankaiErrorCode.chapterMissingChapterId.makeError()
         }
 
         let id = unescape(parts[0])

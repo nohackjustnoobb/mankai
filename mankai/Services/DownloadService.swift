@@ -59,10 +59,7 @@ class DownloadTask: Identifiable, ObservableObject {
         // 1. Get Source Plugin
         guard let plugin = PluginService.shared.getPlugin(manga.pluginId) else {
             Logger.downloadService.error("Plugin not found: \(manga.pluginId)")
-            throw NSError(
-                domain: "DownloadTask", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginNotFound")]
-            )
+            throw MankaiErrorCode.downloadPluginNotFound.makeError()
         }
 
         // 2. Download Cover
@@ -247,7 +244,7 @@ class DownloadService: ObservableObject {
 
         guard let db = DownloadPlugin.shared.db else {
             Logger.downloadService.error("Download database not available")
-            throw NSError(domain: "DownloadService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "downloadDatabaseNotAvailable")])
+            throw MankaiErrorCode.downloadDatabaseNotAvailable.makeError()
         }
 
         // Create the combined ID (pluginId+mangaId)

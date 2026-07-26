@@ -109,18 +109,12 @@ class AuthManager {
         Logger.authManager.debug("AuthManager getting refresh token")
         guard let username = _username, let password = _password, let serverUrl = _serverUrl else {
             Logger.authManager.error("AuthManager missing credentials or server URL")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingCredentialsOrServerUrl")]
-            )
+            throw MankaiErrorCode.authMissingCredentialsOrServerUrl.makeError()
         }
 
         guard let url = URL(string: serverUrl + "/auth/login") else {
             Logger.authManager.error("AuthManager invalid server URL: \(serverUrl)")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
-            )
+            throw MankaiErrorCode.authInvalidServerUrl.makeError()
         }
 
         var request = URLRequest(url: url)
@@ -140,27 +134,18 @@ class AuthManager {
                 "AuthManager login failed with status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)"
             )
             logout()
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
-            )
+            throw MankaiErrorCode.authInvalidCredentials.makeError()
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
             Logger.authManager.error("AuthManager invalid JSON response during login")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
-            )
+            throw MankaiErrorCode.authInvalidJsonResponse.makeError()
         }
 
         guard let refreshToken = json["refreshToken"] as? String else {
             Logger.authManager.error("AuthManager no refresh token in response")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noRefreshTokenInResponse")]
-            )
+            throw MankaiErrorCode.authNoRefreshTokenInResponse.makeError()
         }
 
         _refreshToken = refreshToken
@@ -172,18 +157,12 @@ class AuthManager {
         Logger.authManager.debug("AuthManager refreshing access token")
         guard let refreshToken = _refreshToken, let serverUrl = _serverUrl else {
             Logger.authManager.error("AuthManager missing refresh token or server URL")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRefreshTokenOrServerUrl")]
-            )
+            throw MankaiErrorCode.authMissingRefreshTokenOrServerUrl.makeError()
         }
 
         guard let url = URL(string: serverUrl + "/auth/refresh") else {
             Logger.authManager.error("AuthManager invalid server URL: \(serverUrl)")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
-            )
+            throw MankaiErrorCode.authInvalidServerUrl.makeError()
         }
 
         var request = URLRequest(url: url)
@@ -199,10 +178,7 @@ class AuthManager {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             Logger.authManager.error("AuthManager invalid response during token refresh")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
-            )
+            throw MankaiErrorCode.authInvalidResponse.makeError()
         }
 
         if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
@@ -216,27 +192,18 @@ class AuthManager {
             Logger.authManager.error(
                 "AuthManager refresh failed with status code: \(httpResponse.statusCode)"
             )
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "refreshFailed")]
-            )
+            throw MankaiErrorCode.authRefreshFailed.makeError()
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
             Logger.authManager.error("AuthManager invalid JSON response during token refresh")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
-            )
+            throw MankaiErrorCode.authInvalidJsonResponse.makeError()
         }
 
         guard let accessToken = json["accessToken"] as? String else {
             Logger.authManager.error("AuthManager no access token in response")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "noAccessTokenInResponse")]
-            )
+            throw MankaiErrorCode.authNoAccessTokenInResponse.makeError()
         }
 
         _accessToken = accessToken
@@ -279,10 +246,7 @@ class AuthManager {
         Logger.authManager.debug("AuthManager request: \(method) \(path)")
         guard let serverUrl = _serverUrl else {
             Logger.authManager.error("AuthManager missing server URL")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingServerUrl")]
-            )
+            throw MankaiErrorCode.authMissingServerUrl.makeError()
         }
 
         var urlString = serverUrl + path
@@ -296,10 +260,7 @@ class AuthManager {
 
         guard let url = URL(string: urlString) else {
             Logger.authManager.error("AuthManager invalid URL: \(urlString)")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
-            )
+            throw MankaiErrorCode.authInvalidUrl.makeError()
         }
 
         Logger.authManager.debug("AuthManager request URL: \(url)")
@@ -331,17 +292,16 @@ class AuthManager {
                 let errorMsg =
                     String(data: data, encoding: .utf8) ?? "HTTP error \(httpResponse.statusCode)"
                 Logger.authManager.error("AuthManager request failed: \(errorMsg)")
-                throw NSError(
-                    domain: "AuthManager", code: httpResponse.statusCode,
-                    userInfo: [NSLocalizedDescriptionKey: errorMsg]
+                throw MankaiErrorCode.authRequestFailed.makeError(
+                    messageOverride: errorMsg,
+                    additionalUserInfo: [
+                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode
+                    ]
                 )
             }
         } else {
             Logger.authManager.error("AuthManager invalid response type")
-            throw NSError(
-                domain: "AuthManager", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
-            )
+            throw MankaiErrorCode.authInvalidResponse.makeError()
         }
     }
 }

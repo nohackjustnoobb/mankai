@@ -109,7 +109,7 @@ class HistoryService: ObservableObject {
 
         guard let result = result else {
             Logger.historyService.error("Failed to update history record")
-            throw NSError(domain: "HistoryService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateHistoryRecord")])
+            throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
         await MainActor.run {
@@ -148,7 +148,7 @@ class HistoryService: ObservableObject {
 
         guard let result = result else {
             Logger.historyService.error("Failed to batch update history records")
-            throw NSError(domain: "HistoryService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateHistoryRecord")])
+            throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
         await MainActor.run {

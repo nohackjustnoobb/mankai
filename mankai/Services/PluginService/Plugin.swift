@@ -236,10 +236,7 @@ extension Plugin {
         if let manga = mangas.first {
             return manga
         } else {
-            throw NSError(
-                domain: "Plugin", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
-            )
+            throw MankaiErrorCode.pluginMangaNotFound.makeError()
         }
     }
 }

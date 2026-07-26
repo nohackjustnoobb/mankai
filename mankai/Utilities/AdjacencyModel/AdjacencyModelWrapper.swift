@@ -48,7 +48,7 @@ class AdjacencyModelWrapper {
         guard let ci1 = image1.ciImage ?? image1.cgImage.map({ CIImage(cgImage: $0) }),
               let ci2 = image2.ciImage ?? image2.cgImage.map({ CIImage(cgImage: $0) })
         else {
-            throw NSError(domain: "AdjacencyModel", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidInputImage")])
+            throw MankaiErrorCode.readerAdjacencyInvalidInputImage.makeError()
         }
 
         // Merge the right edge of image1 and left edge of image2 side-by-side,
@@ -137,7 +137,7 @@ class AdjacencyModelWrapper {
         )
 
         guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
-            throw NSError(domain: "AdjacencyModel", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToCreatePixelBuffer")])
+            throw MankaiErrorCode.readerAdjacencyFailedToCreatePixelBuffer.makeError()
         }
 
         CVPixelBufferLockBaseAddress(buffer, [])

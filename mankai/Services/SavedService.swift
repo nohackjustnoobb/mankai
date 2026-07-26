@@ -102,7 +102,7 @@ class SavedService: ObservableObject {
 
         guard let result = result else {
             Logger.savedService.error("Failed to update saved manga")
-            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateSavedManga")])
+            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
         await MainActor.run {
@@ -141,7 +141,7 @@ class SavedService: ObservableObject {
 
         guard let result = result else {
             Logger.savedService.error("Failed to batch update saved mangas")
-            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateSavedManga")])
+            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
         await MainActor.run {
@@ -179,7 +179,7 @@ class SavedService: ObservableObject {
 
         guard let result = result else {
             Logger.savedService.error("Failed to delete saved manga")
-            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToDeleteSavedManga")])
+            throw MankaiErrorCode.libraryFailedToDeleteSavedManga.makeError()
         }
 
         await MainActor.run {

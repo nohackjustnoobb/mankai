@@ -24,34 +24,34 @@ class DummyPlugin: Plugin {
     override func deletePlugin() throws {}
 
     override func isOnline() async throws -> Bool {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getSuggestions(_: String) async throws -> [String] {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func search(_: String, page _: UInt) async throws -> [Manga] {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getMangas(_: [String]) async throws -> [Manga] {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getDetailedManga(_: String) async throws -> DetailedManga {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getChapter(manga _: DetailedManga, chapter _: Chapter) async throws -> [String] {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
     override func getImage(_: String) async throws -> Data {
-        throw NSError(domain: "DummyPlugin", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "dummyPluginCannotBeUsed")])
+        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 }

@@ -85,10 +85,7 @@ struct UpdateChaptersModal: View {
         Task {
             do {
                 guard let groupId = chapterGroupId else {
-                    throw NSError(
-                        domain: "UpdateChaptersModal", code: 0,
-                        userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
-                    )
+                    throw MankaiErrorCode.chapterGroupNotFound.makeError()
                 }
 
                 try await plugin.upsertChapter(
@@ -177,10 +174,7 @@ struct UpdateChaptersModal: View {
                     Task {
                         do {
                             guard let groupId = chapterGroupId else {
-                                throw NSError(
-                                    domain: "UpdateChaptersModal", code: 0,
-                                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
-                                )
+                                throw MankaiErrorCode.chapterGroupNotFound.makeError()
                             }
 
                             try await plugin.upsertChapter(

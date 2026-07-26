@@ -73,10 +73,7 @@ class SupabaseEngine: SyncEngine {
         resetClient()
 
         guard let validUrl = URL(string: url) else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
-            )
+            throw MankaiErrorCode.syncSupabaseInvalidUrl.makeError()
         }
 
         _url = url
@@ -115,10 +112,7 @@ class SupabaseEngine: SyncEngine {
 
     func login(provider: Provider) async throws {
         guard let supabase = supabase else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotConfigured.makeError()
         }
 
         Logger.supabaseEngine.info("Logging in with provider: \(provider)")
@@ -135,10 +129,7 @@ class SupabaseEngine: SyncEngine {
 
     func logout() async throws {
         guard let supabase = supabase else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotConfigured.makeError()
         }
 
         Logger.supabaseEngine.info("Logging out")
@@ -209,10 +200,7 @@ class SupabaseEngine: SyncEngine {
 
     override func sync() async throws {
         guard let supabase = supabase else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
         Logger.supabaseEngine.debug("Syncing")
@@ -252,10 +240,7 @@ class SupabaseEngine: SyncEngine {
 
     override func addSaveds(_ saveds: [SavedModel]) async throws {
         guard let supabase = supabase else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
         guard !saveds.isEmpty else { return }
@@ -274,10 +259,7 @@ class SupabaseEngine: SyncEngine {
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
         guard !saveds.isEmpty else { return }
@@ -388,10 +370,7 @@ class SupabaseEngine: SyncEngine {
 
     private func getSaveds(_ since: Date? = nil) async throws -> [SupabaseSaved] {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
         Logger.supabaseEngine.debug("SupabaseEngine getting saveds since: \(String(describing: since))")
@@ -452,10 +431,7 @@ class SupabaseEngine: SyncEngine {
 
     private func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(
-                domain: "SupabaseEngine", code: 0,
-                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
-            )
+            throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
         Logger.supabaseEngine.debug(

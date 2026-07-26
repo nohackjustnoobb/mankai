@@ -117,6 +117,11 @@ class Logger {
         osLogger.warning("[\(function):\(line)] \(message)")
     }
 
+    private func formattedError(_ error: Error) -> String {
+        let nsError = error as NSError
+        return "\(error.localizedDescription) [\(nsError.domain):\(nsError.code)]"
+    }
+
     /// Log an error message
     /// - Parameters:
     ///   - message: The message to log
@@ -129,7 +134,7 @@ class Logger {
         line: Int = #line
     ) {
         if let error = error {
-            osLogger.error("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
+            osLogger.error("[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
         } else {
             osLogger.error("[\(function):\(line)] \(message)")
         }
@@ -147,7 +152,7 @@ class Logger {
         line: Int = #line
     ) {
         if let error = error {
-            osLogger.critical("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
+            osLogger.critical("[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
         } else {
             osLogger.critical("[\(function):\(line)] \(message)")
         }

@@ -63,10 +63,7 @@ class UpdateService: ObservableObject {
                         try await SyncService.shared.sync(wait: true, showError: false)
                     } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
-                        throw NSError(
-                            domain: "UpdateService", code: 0,
-                            userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")]
-                        )
+                        throw MankaiErrorCode.updateSyncFailed.makeError(underlyingError: error)
                     }
                 }
             } else {
@@ -76,10 +73,7 @@ class UpdateService: ObservableObject {
                     try await SyncService.shared.sync(wait: true, showError: false)
                 } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
-                    throw NSError(
-                        domain: "UpdateService", code: 0,
-                        userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")]
-                    )
+                    throw MankaiErrorCode.updateSyncFailed.makeError(underlyingError: error)
                 }
             }
         }
