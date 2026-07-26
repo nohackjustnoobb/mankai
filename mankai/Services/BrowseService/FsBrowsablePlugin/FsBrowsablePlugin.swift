@@ -71,13 +71,18 @@ class FsBrowsablePlugin: Plugin, Browsable {
         DbService.shared.openFsBrowsablePluginDb()
     }
 
-    /// Directory holding the cached cover images and the cache database.
-    private let cacheDir: URL = {
+    /// Root directory holding the cached cover images and the cache database.
+    private let cacheRootDir: URL = {
         let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         return (cachesDir ?? URL(fileURLWithPath: NSTemporaryDirectory()))
             .appendingPathComponent(CacheDirectory.index)
             .appendingPathComponent("fsbrowsableplugin")
     }()
+
+    /// Directory holding this plugin's cached cover images.
+    private var cacheDir: URL {
+        cacheRootDir.appendingPathComponent(_id, isDirectory: true)
+    }
 
     /// Prefix for cover references that point at a cached cover file in `cacheDir`
     /// rather than an entry inside an archive. Handled directly by `getImage`.
@@ -238,6 +243,25 @@ class FsBrowsablePlugin: Plugin, Browsable {
         _ = try db.write { db in
             try FsBrowsablePluginModel.deleteOne(db, key: id)
         }
+
+        try clearCache()
+    }
+
+    private func clearCache() throws {
+        if let db = DbService.shared.openFsBrowsablePluginDb() {
+            _ = try db.write { db in
+                try FsBPMangaModel
+                    .filter(Column("pluginId") == id)
+                    .deleteAll(db)
+            }
+        }
+
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: cacheDir.path(percentEncoded: false)) {
+            try fileManager.removeItem(at: cacheDir)
+        }
+
+        Logger.fsBrowsablePlugin.info("Cleared cache for plugin: \(id)")
     }
 
     // MARK: - Helper Methods
@@ -640,6 +664,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 .filter(
                     Column("mangaId") == mangaId
                         && Column("parserId") == parserId
+                        && Column("pluginId") == id
                 )
                 .fetchOne(db)
         }
@@ -656,6 +681,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 .filter(
                     Column("cacheKey") == cacheKey
                         && Column("parserId") == parserId
+                        && Column("pluginId") == id
                 )
                 .fetchOne(db)
         }
@@ -687,6 +713,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         let model = FsBPMangaModel(
             mangaId: mangaId,
             parserId: parserId,
+            pluginId: id,
             cacheKey: cacheKey,
             info: infoString
         )
