@@ -506,18 +506,7 @@ class JsPlugin: Plugin {
         Logger.jsPlugin.debug("Getting image: \(url) (plugin: \(id))")
 
         if let headers = _getImageHeaders {
-            guard let url = URL(string: url) else {
-                throw MankaiErrorCode.pluginJavascriptInvalidUrl.makeError()
-            }
-
-            var request = URLRequest(url: url)
-            for (key, value) in headers {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
-
-            let (data, _) = try await URLSession.shared.data(for: request)
-
-            return data
+            return try await requestImage(url: url, headers: headers)
         }
 
         if _scripts[.getImage] == nil {
@@ -528,15 +517,37 @@ class JsPlugin: Plugin {
             "\(_scriptsNoExport[.getImage]!) return await \(_funcName[.getImage]!)(\"\(url)\");"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
-        guard let imageBase64Encoded = result as? String else {
+        if let imageBase64Encoded = result as? String {
+            guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
+                throw MankaiErrorCode.pluginJavascriptInvalidBase64StringForImage.makeError()
+            }
+
+            return imageData
+        }
+
+        guard let proxyRequest = result as? [String: Any],
+              let proxyUrl = proxyRequest["url"] as? String,
+              let headers = proxyRequest["headers"] as? [String: String]
+        else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImage.makeError()
         }
 
-        guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
-            throw MankaiErrorCode.pluginJavascriptInvalidBase64StringForImage.makeError()
+        return try await requestImage(url: proxyUrl, headers: headers)
+    }
+
+    private func requestImage(url: String, headers: [String: String]) async throws -> Data {
+        guard let url = URL(string: url) else {
+            throw MankaiErrorCode.pluginJavascriptInvalidUrl.makeError()
         }
 
-        return imageData
+        var request = URLRequest(url: url)
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        let (data, _) = try await URLSession.shared.data(for: request)
+
+        return data
     }
 
     func checkForUpdates() async {
