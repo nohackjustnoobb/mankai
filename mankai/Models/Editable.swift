@@ -62,13 +62,13 @@ protocol Editable: Plugin {
     /// - Throws: An error if the operation fails.
     func deleteChapterGroup(id: String) async throws
 
-    /// Gets the ID of a chapter group by manga ID and title.
+    /// Gets the ID of a chapter group by manga ID and index.
     /// - Parameters:
     ///   - mangaId: The ID of the manga.
-    ///   - title: The title of the chapter group.
+    ///   - index: The zero-based index of the chapter group.
     /// - Returns: The ID of the chapter group, or nil if not found.
     /// - Throws: An error if the operation fails.
-    func getChapterGroupId(mangaId: String, title: String) async throws -> String?
+    func getChapterGroupId(mangaId: String, index: Int) async throws -> String?
 
     /// Gets the chapters in a chapter group.
     /// - Parameter groupId: The ID of the chapter group.

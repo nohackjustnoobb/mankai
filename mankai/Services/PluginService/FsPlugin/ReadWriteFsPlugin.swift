@@ -268,14 +268,16 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         }
     }
 
-    func getChapterGroupId(mangaId: String, title: String) async throws -> String? {
-        guard let db = db else {
+    func getChapterGroupId(mangaId: String, index: Int) async throws -> String? {
+        guard let db = db, index >= 0 else {
             return nil
         }
 
         return try await db.read { db in
             if let id = try FsChapterGroupModel
-                .filter(Column("mangaId") == mangaId && Column("title") == title)
+                .filter(Column("mangaId") == mangaId)
+                .order(Column("id").asc)
+                .limit(1, offset: index)
                 .fetchOne(db)?.id
             {
                 return String(id)

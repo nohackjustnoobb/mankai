@@ -80,12 +80,12 @@ class EditableHttpPlugin: HttpPlugin, Editable {
         }
     }
 
-    func getChapterGroupId(mangaId: String, title: String) async throws -> String? {
+    func getChapterGroupId(mangaId: String, index: Int) async throws -> String? {
         try await setup()
 
         let (data, _) = try await authManager.get(
             path: "/edit/chapter-group/id",
-            query: ["mangaId": mangaId, "title": title]
+            query: ["mangaId": mangaId, "index": String(index)]
         )
 
         let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]

@@ -444,8 +444,8 @@ private final class EditableCacheWrapper: CacheWrapper, Editable {
         clearAllCache()
     }
 
-    func getChapterGroupId(mangaId: String, title: String) async throws -> String? {
-        try await editablePlugin.getChapterGroupId(mangaId: mangaId, title: title)
+    func getChapterGroupId(mangaId: String, index: Int) async throws -> String? {
+        try await editablePlugin.getChapterGroupId(mangaId: mangaId, index: index)
     }
 
     func getChapters(groupId: String) async throws -> [Chapter] {

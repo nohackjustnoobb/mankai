@@ -249,7 +249,9 @@ class ReadFsPlugin: Plugin {
     {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
-        let chapterGroupModels = try mangaModel.chapters.fetchAll(db)
+        let chapterGroupModels = try mangaModel.chapters
+            .order(Column("id").asc)
+            .fetchAll(db)
 
         var mangaDict: [String: Any] = [
             "id": mangaModel.id,

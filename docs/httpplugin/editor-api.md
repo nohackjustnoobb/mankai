@@ -105,14 +105,14 @@ Delete a chapter group and all of its chapters and images.
 
 ### `GET /edit/chapter-group/id`
 
-Look up the ID of a chapter group by its parent manga and title. Returns `null` if no group matches, which the editor uses to decide whether to create a new group or reuse an existing one.
+Look up the ID of a chapter group by its parent manga and zero-based index. The index refers to the group's position in the ordered `chapters` array returned by `GET /manga/:id`. Returns `null` if no group exists at that index.
 
 **Query Parameters**
 
-| Parameter | Type     | Required | Description                     |
-| :-------- | :------- | :------- | :------------------------------ |
-| `mangaId` | `string` | Yes      | The ID of the parent manga.     |
-| `title`   | `string` | Yes      | The title of the chapter group. |
+| Parameter | Type     | Required | Description                                      |
+| :-------- | :------- | :------- | :----------------------------------------------- |
+| `mangaId` | `string` | Yes      | The ID of the parent manga.                      |
+| `index`   | `number` | Yes      | The group's zero-based index in `chapters`.      |
 
 **Response — `200 OK`**
 

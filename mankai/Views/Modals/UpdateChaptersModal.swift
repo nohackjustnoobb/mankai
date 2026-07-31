@@ -223,13 +223,13 @@ struct UpdateChaptersModal: View {
         }
         .task {
             do {
-                guard let chapterGroupTitle else {
+                guard chapterGroupTitle != nil else {
                     dismiss()
                     return
                 }
 
                 if let groupId = try await plugin.getChapterGroupId(
-                    mangaId: manga.id, title: chapterGroupTitle
+                    mangaId: manga.id, index: chapterGroupIndex
                 ) {
                     self.chapterGroupId = groupId
                     fetchChapters()

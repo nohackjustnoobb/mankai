@@ -47,7 +47,7 @@ struct UpdateMangaContent: View {
     @State private var showingAddChapterGroupAlert = false
     @State private var newChapterGroup = ""
     @State private var showingRemoveChapterGroupAlert = false
-    @State private var chapterKeyToRemove = ""
+    @State private var chapterGroupIndexToRemove: Int?
 
     @State private var coverImageData: Data?
     @State private var isCoverChanged = false
@@ -154,7 +154,9 @@ struct UpdateMangaContent: View {
     }
 
     private func deleteChapterGroup() async {
-        guard !chapterKeyToRemove.isEmpty else { return }
+        guard let chapterGroupIndexToRemove,
+              manga.chapters.indices.contains(chapterGroupIndexToRemove)
+        else { return }
 
         isProcessing = true
 
@@ -167,13 +169,13 @@ struct UpdateMangaContent: View {
             }
 
             if let id = try await selectedPlugin.getChapterGroupId(
-                mangaId: manga.id, title: chapterKeyToRemove
+                mangaId: manga.id, index: chapterGroupIndexToRemove
             ) {
                 try await selectedPlugin.deleteChapterGroup(id: id)
             }
 
-            manga.chapters.removeAll { $0.title == chapterKeyToRemove }
-            chapterKeyToRemove = ""
+            manga.chapters.remove(at: chapterGroupIndexToRemove)
+            self.chapterGroupIndexToRemove = nil
             showingRemoveChapterGroupAlert = false
             isProcessing = false
         } catch {
@@ -397,13 +399,14 @@ struct UpdateMangaContent: View {
             if !isCreatingManga {
                 Section("chapterGroups") {
                     if !manga.chapters.isEmpty {
-                        ForEach(manga.chapters, id: \.title) { chapterGroup in
+                        ForEach(Array(manga.chapters.enumerated()), id: \.offset) {
+                            chapterGroupIndex, chapterGroup in
                             HStack {
                                 Text(LocalizedStringKey(chapterGroup.title))
                                 Spacer()
 
                                 Button(action: {
-                                    chapterKeyToRemove = chapterGroup.title
+                                    chapterGroupIndexToRemove = chapterGroupIndex
                                     showingRemoveChapterGroupAlert = true
                                 }) {
                                     Image(systemName: "minus.circle.fill")
@@ -412,7 +415,7 @@ struct UpdateMangaContent: View {
                             }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    chapterKeyToRemove = chapterGroup.title
+                                    chapterGroupIndexToRemove = chapterGroupIndex
                                     showingRemoveChapterGroupAlert = true
                                 } label: {
                                     Label("remove", systemImage: "trash")
@@ -507,7 +510,7 @@ struct UpdateMangaContent: View {
             }
 
             Button("cancel", role: .cancel) {
-                chapterKeyToRemove = ""
+                chapterGroupIndexToRemove = nil
             }
         } message: {
             Text("removeChapterGroupConfirmation")
