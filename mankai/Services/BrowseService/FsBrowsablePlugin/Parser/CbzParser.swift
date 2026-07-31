@@ -178,11 +178,11 @@ class CbzParser: Parser {
             }
 
             let chapter = Chapter(id: "0", title: chapterTitle)
-            manga.chapters = ["volume": [chapter]]
+            manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
             manga.latestChapter = chapter
         } else {
             let chapter = Chapter(id: "0", title: nil)
-            manga.chapters = ["volume": [chapter]]
+            manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
             manga.latestChapter = chapter
         }
 
@@ -197,14 +197,16 @@ class CbzParser: Parser {
         var presented = manga
         let filenameTitle = path.deletingPathExtension().lastPathComponent
         presented.title = filenameTitle
-        presented.chapters = presented.chapters.mapValues { chapters in
-            chapters.map { chapter in
+        presented.chapters = presented.chapters.map { group in
+            var presentedGroup = group
+            presentedGroup.chapters = group.chapters.map { chapter in
                 var presentedChapter = chapter
                 if presentedChapter.title == nil {
                     presentedChapter.title = filenameTitle
                 }
                 return presentedChapter
             }
+            return presentedGroup
         }
         if var latestChapter = presented.latestChapter,
            latestChapter.title == nil

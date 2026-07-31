@@ -43,7 +43,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     let chapter: Chapter
 
     private var chapters: [Chapter]
@@ -130,17 +130,19 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var contentHeightConstraint: NSLayoutConstraint!
 
     init(
-        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, chaptersKey: String, chapter: Chapter,
+        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, chapterGroupIndex: Int, chapter: Chapter,
         initialPage: Int?
     ) {
         self.plugin = plugin
         self.manga = manga
         self.downloadManga = downloadManga
-        self.chaptersKey = chaptersKey
+        self.chapterGroupIndex = chapterGroupIndex
         self.chapter = chapter
         self.initialPage = initialPage
 
-        chapters = manga.chapters[chaptersKey] ?? []
+        chapters = manga.chapters.indices.contains(chapterGroupIndex)
+            ? manga.chapters[chapterGroupIndex].chapters
+            : []
         currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
 
         readerSession = ReaderSession(
@@ -1393,7 +1395,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         let chaptersModal = ChaptersModal(
             plugin: plugin,
             manga: manga,
-            chaptersKey: chaptersKey
+            chapterGroupIndex: chapterGroupIndex
         ) { [weak self] chapter, _, _ in
             guard let self = self else { return }
 
@@ -1556,7 +1558,7 @@ private struct ContinuousReaderViewControllerWrapper: UIViewControllerRepresenta
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     let chapter: Chapter
     let initialPage: Int?
 
@@ -1565,7 +1567,7 @@ private struct ContinuousReaderViewControllerWrapper: UIViewControllerRepresenta
             plugin: plugin,
             manga: manga,
             downloadManga: downloadManga,
-            chaptersKey: chaptersKey,
+            chapterGroupIndex: chapterGroupIndex,
             chapter: chapter,
             initialPage: initialPage
         )
@@ -1582,7 +1584,7 @@ struct ContinuousReaderScreen: View {
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     let chapter: Chapter
     var initialPage: Int? = nil
 
@@ -1592,7 +1594,7 @@ struct ContinuousReaderScreen: View {
                 plugin: plugin,
                 manga: manga,
                 downloadManga: downloadManga,
-                chaptersKey: chaptersKey,
+                chapterGroupIndex: chapterGroupIndex,
                 chapter: chapter,
                 initialPage: initialPage
             )

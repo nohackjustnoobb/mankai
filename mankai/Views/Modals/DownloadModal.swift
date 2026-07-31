@@ -160,7 +160,7 @@ struct DownloadedMangaRow: View {
     }
 
     private var totalChapterCount: Int? {
-        let count = manga.chapters.values.flatMap { $0 }.count
+        let count = manga.chapters.flatMap(\.chapters).count
         return count > 0 ? count : nil
     }
 }

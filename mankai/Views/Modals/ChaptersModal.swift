@@ -10,26 +10,35 @@ import SwiftUI
 struct ChaptersModal: View {
     let plugin: Plugin
     let manga: DetailedManga
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     let record: RecordModel?
     let downloadChapters: Set<String>?
-    let onNavigateToChapter: (Chapter, Int?, String?) -> Void
+    let onNavigateToChapter: (Chapter, Int?, Int?) -> Void
 
+    private let chapterGroupTitle: String
     private let chapters: [Chapter]
 
     init(
-        plugin: Plugin, manga: DetailedManga, chaptersKey: String,
+        plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int,
         record: RecordModel? = nil,
         downloadChapters: Set<String>? = nil,
-        onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void
+        onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
     ) {
         self.plugin = plugin
         self.manga = manga
-        self.chaptersKey = chaptersKey
+        self.chapterGroupIndex = chapterGroupIndex
         self.record = record
         self.downloadChapters = downloadChapters
         self.onNavigateToChapter = onNavigateToChapter
-        chapters = manga.chapters[chaptersKey] ?? []
+
+        if manga.chapters.indices.contains(chapterGroupIndex) {
+            let chapterGroup = manga.chapters[chapterGroupIndex]
+            chapterGroupTitle = chapterGroup.title
+            chapters = chapterGroup.chapters
+        } else {
+            chapterGroupTitle = ""
+            chapters = []
+        }
     }
 
     @Environment(\.dismiss) var dismiss
@@ -46,7 +55,7 @@ struct ChaptersModal: View {
                         } else {
                             ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
                                 Button(action: {
-                                    onNavigateToChapter(chapter, nil, chaptersKey)
+                                    onNavigateToChapter(chapter, nil, chapterGroupIndex)
                                 }) {
                                     HStack {
                                         Text(chapter.title ?? chapter.id)
@@ -77,7 +86,7 @@ struct ChaptersModal: View {
                     }
                 }
                 .navigationBarTitleDisplayMode(.inline)
-                .navigationTitle(LocalizedStringKey(chaptersKey))
+                .navigationTitle(LocalizedStringKey(chapterGroupTitle))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         HStack {
@@ -94,7 +103,9 @@ struct ChaptersModal: View {
                             if plugin is Editable, manga.editable ?? true {
                                 NavigationLink(destination: {
                                     UpdateChaptersModal(
-                                        plugin: plugin as! any Editable, manga: manga, chaptersKey: chaptersKey
+                                        plugin: plugin as! any Editable,
+                                        manga: manga,
+                                        chapterGroupIndex: chapterGroupIndex
                                     )
                                 }) {
                                     Image(systemName: "pencil")
@@ -105,7 +116,7 @@ struct ChaptersModal: View {
 
                     ToolbarItem(placement: .principal) {
                         VStack {
-                            Text(LocalizedStringKey(chaptersKey))
+                            Text(LocalizedStringKey(chapterGroupTitle))
                                 .font(.headline)
                             Text("\(chapters.count) chapters")
                                 .font(.caption)

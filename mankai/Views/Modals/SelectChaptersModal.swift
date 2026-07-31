@@ -12,52 +12,59 @@ struct SelectChaptersModal: View {
     @Environment(\.dismiss) var dismiss
     let plugin: Plugin
     let detailedManga: DetailedManga
-    let alreadyDownloaded: [String: Set<String>]?
+    let alreadyDownloaded: Set<String>?
     let downloadChapters: (ChapterGroups) -> Void
 
-    // chaptersKey -> set of selected chapter ids
-    @State private var selectedChapters: [String: Set<String>] = [:]
-    @State private var expandedGroup: String? = nil
+    // Chapter-group index -> set of selected chapter IDs.
+    @State private var selectedChapters: [Int: Set<String>] = [:]
+    @State private var expandedGroupIndex: Int? = nil
 
     private var totalSelectedCount: Int {
         selectedChapters.values.reduce(0) { $0 + $1.count }
     }
 
-    private func isDownloaded(chapterId: String, groupKey: String) -> Bool {
-        alreadyDownloaded?[groupKey]?.contains(chapterId) == true
+    private func isDownloaded(chapterId: String) -> Bool {
+        alreadyDownloaded?.contains(chapterId) == true
     }
 
-    private func isSelected(chapterId: String, groupKey: String) -> Bool {
-        selectedChapters[groupKey]?.contains(chapterId) == true
+    private func isSelected(chapterId: String, groupIndex: Int) -> Bool {
+        selectedChapters[groupIndex]?.contains(chapterId) == true
     }
 
-    private func toggleChapter(_ chapter: Chapter, groupKey: String) {
-        var set = selectedChapters[groupKey] ?? []
+    private func toggleChapter(_ chapter: Chapter, groupIndex: Int) {
+        var set = selectedChapters[groupIndex] ?? []
         if set.contains(chapter.id) {
             set.remove(chapter.id)
         } else {
             set.insert(chapter.id)
         }
-        selectedChapters[groupKey] = set
+        selectedChapters[groupIndex] = set
     }
 
-    private func selectAllInGroup(_ groupKey: String, chapters: [Chapter]) {
-        let selectable = chapters.filter { !isDownloaded(chapterId: $0.id, groupKey: groupKey) }
+    private func selectAllInGroup(_ groupIndex: Int, chapters: [Chapter]) {
+        let selectable = chapters.filter { !isDownloaded(chapterId: $0.id) }
         let selectableIds = Set(selectable.map { $0.id })
-        let currentSelected = selectedChapters[groupKey] ?? []
+        let currentSelected = selectedChapters[groupIndex] ?? []
 
         if selectableIds.isSubset(of: currentSelected) {
-            selectedChapters[groupKey] = currentSelected.subtracting(selectableIds)
+            selectedChapters[groupIndex] = currentSelected.subtracting(selectableIds)
         } else {
-            selectedChapters[groupKey] = currentSelected.union(selectableIds)
+            selectedChapters[groupIndex] = currentSelected.union(selectableIds)
         }
     }
 
     private func buildDownloadPayload() -> ChapterGroups {
-        var result = ChapterGroups()
-        for (groupKey, chapters) in detailedManga.chapters {
-            guard let selectedIds = selectedChapters[groupKey], !selectedIds.isEmpty else { continue }
-            result[groupKey] = chapters.filter { selectedIds.contains($0.id) }
+        var result: ChapterGroups = []
+        for (groupIndex, group) in detailedManga.chapters.enumerated() {
+            guard let selectedIds = selectedChapters[groupIndex], !selectedIds.isEmpty else {
+                continue
+            }
+            result.append(
+                ChapterGroup(
+                    title: group.title,
+                    chapters: group.chapters.filter { selectedIds.contains($0.id) }
+                )
+            )
         }
         return result
     }
@@ -65,13 +72,16 @@ struct SelectChaptersModal: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(detailedManga.chapters.elements, id: \.key) { groupKey, chapters in
+                ForEach(Array(detailedManga.chapters.enumerated()), id: \.offset) {
+                    groupIndex, group in
                     Section {
-                        chapterGroupRow(groupKey: groupKey, chapters: chapters)
+                        chapterGroupRow(
+                            groupIndex: groupIndex, groupTitle: group.title, chapters: group.chapters
+                        )
 
-                        if expandedGroup == groupKey {
-                            ForEach(chapters, id: \.id) { chapter in
-                                chapterRow(chapter: chapter, groupKey: groupKey)
+                        if expandedGroupIndex == groupIndex {
+                            ForEach(group.chapters, id: \.id) { chapter in
+                                chapterRow(chapter: chapter, groupIndex: groupIndex)
                             }
                         }
                     }
@@ -112,14 +122,15 @@ struct SelectChaptersModal: View {
     }
 
     @ViewBuilder
-    private func chapterGroupRow(groupKey: String, chapters: [Chapter]) -> some View {
-        let downloadedSet = alreadyDownloaded?[groupKey] ?? []
+    private func chapterGroupRow(
+        groupIndex: Int, groupTitle: String, chapters: [Chapter]
+    ) -> some View {
         // calculate selectable chapters (those not already downloaded)
-        let selectableChapters = chapters.filter { !downloadedSet.contains($0.id) }
+        let selectableChapters = chapters.filter { !isDownloaded(chapterId: $0.id) }
         let selectableCount = selectableChapters.count
 
         // calculate currently selected count among selectable ones
-        let currentlySelectedIds = selectedChapters[groupKey] ?? []
+        let currentlySelectedIds = selectedChapters[groupIndex] ?? []
         let selectedSelectableCount = selectableChapters.filter { currentlySelectedIds.contains($0.id) }.count
 
         let isAllSelected = selectableCount > 0 && selectedSelectableCount == selectableCount
@@ -129,7 +140,7 @@ struct SelectChaptersModal: View {
             // Select All / Deselect All Checkbox
             if selectableCount > 0 {
                 Button(action: {
-                    selectAllInGroup(groupKey, chapters: chapters)
+                    selectAllInGroup(groupIndex, chapters: chapters)
                 }) {
                     Image(systemName: isAllSelected ? "checkmark.circle.fill" : (isPartiallySelected ? "minus.circle.fill" : "circle"))
                         .resizable()
@@ -149,7 +160,7 @@ struct SelectChaptersModal: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(LocalizedStringKey(groupKey))
+                        Text(LocalizedStringKey(groupTitle))
                             .foregroundColor(.primary)
 
                         Text("\(chapters.count) chapters")
@@ -166,15 +177,15 @@ struct SelectChaptersModal: View {
                 Image(systemName: "chevron.right")
                     .font(.footnote)
                     .foregroundColor(.secondary)
-                    .rotationEffect(.degrees(expandedGroup == groupKey ? 90 : 0))
+                    .rotationEffect(.degrees(expandedGroupIndex == groupIndex ? 90 : 0))
             }
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation {
-                    if expandedGroup == groupKey {
-                        expandedGroup = nil
+                    if expandedGroupIndex == groupIndex {
+                        expandedGroupIndex = nil
                     } else {
-                        expandedGroup = groupKey
+                        expandedGroupIndex = groupIndex
                     }
                 }
             }
@@ -183,12 +194,12 @@ struct SelectChaptersModal: View {
     }
 
     @ViewBuilder
-    private func chapterRow(chapter: Chapter, groupKey: String) -> some View {
-        let downloaded = isDownloaded(chapterId: chapter.id, groupKey: groupKey)
-        let selected = isSelected(chapterId: chapter.id, groupKey: groupKey)
+    private func chapterRow(chapter: Chapter, groupIndex: Int) -> some View {
+        let downloaded = isDownloaded(chapterId: chapter.id)
+        let selected = isSelected(chapterId: chapter.id, groupIndex: groupIndex)
 
         Button(action: {
-            toggleChapter(chapter, groupKey: groupKey)
+            toggleChapter(chapter, groupIndex: groupIndex)
         }) {
             HStack {
                 Image(

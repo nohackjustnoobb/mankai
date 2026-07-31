@@ -15,10 +15,10 @@ struct MangaDetailsScreen: View {
     @State private var detailedManga: DetailedManga? = nil
 
     @State private var showingChaptersModal = false
-    @State private var selectedChapterKey: String? = nil
+    @State private var selectedChapterGroupIndex: Int? = nil
     @State private var isReversed = true
 
-    @State private var readerChapterKey: String? = nil
+    @State private var readerChapterGroupIndex: Int? = nil
     @State private var readerChapter: Chapter? = nil
     @State private var readerPage: Int? = nil
     @State private var showReaderScreen = false
@@ -45,11 +45,21 @@ struct MangaDetailsScreen: View {
     }
 
     @State private var downloadManga: DetailedManga?
-    /// chaptersKey -> set of chapter ids
-    @State private var downloadChapters: [String: Set<String>]?
+    @State private var downloadedChapterIds: Set<String>?
 
     private var mangaData: DetailedManga? {
         return detailedManga ?? downloadManga
+    }
+
+    private var selectedChapterGroup: ChapterGroup? {
+        guard let mangaData,
+              let selectedChapterGroupIndex,
+              mangaData.chapters.indices.contains(selectedChapterGroupIndex)
+        else {
+            return nil
+        }
+
+        return mangaData.chapters[selectedChapterGroupIndex]
     }
 
     init(plugin: Plugin, manga: Manga) {
@@ -65,9 +75,11 @@ struct MangaDetailsScreen: View {
         saved = SavedService.shared.get(mangaId: manga.id, pluginId: plugin.id)
     }
 
-    private func navigateToChapter(_ chapter: Chapter, page: Int? = nil, chaptersKey: String? = nil) {
+    private func navigateToChapter(
+        _ chapter: Chapter, page: Int? = nil, chapterGroupIndex: Int? = nil
+    ) {
         readerChapter = chapter
-        readerChapterKey = chaptersKey ?? selectedChapterKey
+        readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
         readerPage = page
 
         showingChaptersModal = false
@@ -77,27 +89,27 @@ struct MangaDetailsScreen: View {
     private func scrollToRecord(proxy: ScrollViewProxy) {
         guard let record = record, let mangaData = mangaData else { return }
 
-        guard let targetKey = mangaData.chapters.first(where: { _, chapters in
-            chapters.contains { $0.id == record.chapterId }
-        })?.key else {
+        guard let targetIndex = mangaData.chapters.firstIndex(where: { group in
+            group.chapters.contains { $0.id == record.chapterId }
+        }) else {
             return
         }
 
-        if selectedChapterKey == targetKey {
+        if selectedChapterGroupIndex == targetIndex {
             proxy.scrollTo(record.chapterId, anchor: .center)
         } else {
-            selectedChapterKey = targetKey
+            selectedChapterGroupIndex = targetIndex
         }
     }
 
     private func handleReadContinueAction() {
         if let record = record, let mangaData = mangaData {
-            for (chaptersKey, chapters) in mangaData.chapters {
-                if let chapter = chapters.first(where: {
+            for (groupIndex, group) in mangaData.chapters.enumerated() {
+                if let chapter = group.chapters.first(where: {
                     $0.id == record.chapterId
                 }) {
                     navigateToChapter(
-                        chapter, page: record.page, chaptersKey: chaptersKey
+                        chapter, page: record.page, chapterGroupIndex: groupIndex
                     )
                     return
                 }
@@ -105,10 +117,10 @@ struct MangaDetailsScreen: View {
         }
 
         if let mangaData = mangaData {
-            if let chapters = mangaData.chapters.elements.first,
-               let chapter = chapters.value.first
+            if let group = mangaData.chapters.first,
+               let chapter = group.chapters.first
             {
-                navigateToChapter(chapter, chaptersKey: chapters.key)
+                navigateToChapter(chapter, chapterGroupIndex: 0)
             }
         }
     }
@@ -220,7 +232,7 @@ struct MangaDetailsScreen: View {
                         }
 
                         if let chapters = mangaData?.chapters {
-                            Text("\(chapters.values.flatMap { $0 }.count) chapters")
+                            Text("\(chapters.flatMap(\.chapters).count) chapters")
                         }
 
                         if let status = mangaData?.status {
@@ -318,25 +330,23 @@ struct MangaDetailsScreen: View {
                !mangaData.chapters.isEmpty
             {
                 Section {
-                    ForEach(
-                        mangaData.chapters.elements,
-                        id: \.key
-                    ) { key, chapters in
+                    ForEach(Array(mangaData.chapters.enumerated()), id: \.offset) {
+                        groupIndex, group in
                         Button(action: {
-                            selectedChapterKey = key
+                            selectedChapterGroupIndex = groupIndex
                             showingChaptersModal = horizontalSizeClass == .compact
                         }) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 8) {
-                                        Text(LocalizedStringKey(key))
+                                        Text(LocalizedStringKey(group.title))
                                             .foregroundColor(.primary)
 
-                                        Text("\(chapters.count) chapters")
+                                        Text("\(group.chapters.count) chapters")
                                             .smallTagStyle()
                                     }
 
-                                    if let latestChapter = chapters.last {
+                                    if let latestChapter = group.chapters.last {
                                         HStack(spacing: 4) {
                                             Text("latest")
                                                 .font(.caption)
@@ -374,9 +384,8 @@ struct MangaDetailsScreen: View {
                     info
                         .frame(maxWidth: 400)
 
-                    if let selectedChapterKey = selectedChapterKey,
-                       let chapters = mangaData?.chapters[selectedChapterKey]
-                    {
+                    if let selectedChapterGroup {
+                        let chapters = selectedChapterGroup.chapters
                         ScrollViewReader { proxy in
                             List {
                                 Section {
@@ -393,8 +402,7 @@ struct MangaDetailsScreen: View {
                                                     Text(chapter.title ?? chapter.id)
                                                         .foregroundColor(.primary)
 
-                                                    if let downloadChapters = downloadChapters?[selectedChapterKey],
-                                                       downloadChapters.contains(chapter.id)
+                                                    if downloadedChapterIds?.contains(chapter.id) == true
                                                     {
                                                         Image(systemName: "network.slash")
                                                             .foregroundColor(.secondary)
@@ -417,7 +425,7 @@ struct MangaDetailsScreen: View {
                                 } header: {
                                     HStack {
                                         VStack(alignment: .leading) {
-                                            Text(LocalizedStringKey(selectedChapterKey))
+                                            Text(LocalizedStringKey(selectedChapterGroup.title))
                                             Text("\(chapters.count) chapters")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
@@ -460,7 +468,7 @@ struct MangaDetailsScreen: View {
                             .onChange(of: record, initial: false) { _, _ in
                                 scrollToRecord(proxy: proxy)
                             }
-                            .onChange(of: selectedChapterKey) {
+                            .onChange(of: selectedChapterGroupIndex) {
                                 if let record = record {
                                     proxy.scrollTo(record.chapterId, anchor: .center)
                                 }
@@ -479,16 +487,17 @@ struct MangaDetailsScreen: View {
         .listSectionSpacing(0)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
-        .sheet(isPresented: $showingChaptersModal) { [mangaData, selectedChapterKey] in
+        .sheet(isPresented: $showingChaptersModal) {
+            [mangaData, selectedChapterGroupIndex] in
             if let mangaData = mangaData,
-               let selectedChapterKey = selectedChapterKey
+               let selectedChapterGroupIndex = selectedChapterGroupIndex
             {
                 ChaptersModal(
                     plugin: plugin,
                     manga: mangaData,
-                    chaptersKey: selectedChapterKey,
+                    chapterGroupIndex: selectedChapterGroupIndex,
                     record: record,
-                    downloadChapters: downloadChapters?[selectedChapterKey],
+                    downloadChapters: downloadedChapterIds,
                     onNavigateToChapter: navigateToChapter
                 )
             }
@@ -502,14 +511,16 @@ struct MangaDetailsScreen: View {
             }
         }
         .sheet(isPresented: $isUpdateChaptersModalPresented) {
-            [detailedManga, selectedChapterKey] in
+            [detailedManga, selectedChapterGroupIndex] in
             if let detailedManga = detailedManga,
                detailedManga.editable ?? true,
-               let selectedChapterKey = selectedChapterKey,
+               let selectedChapterGroupIndex = selectedChapterGroupIndex,
                let editablePlugin = plugin as? any Editable
             {
                 UpdateChaptersModal(
-                    plugin: editablePlugin, manga: detailedManga, chaptersKey: selectedChapterKey,
+                    plugin: editablePlugin,
+                    manga: detailedManga,
+                    chapterGroupIndex: selectedChapterGroupIndex,
                     isRootOfSheet: true
                 )
             }
@@ -519,7 +530,7 @@ struct MangaDetailsScreen: View {
                 SelectChaptersModal(
                     plugin: plugin,
                     detailedManga: detailedManga,
-                    alreadyDownloaded: downloadChapters,
+                    alreadyDownloaded: downloadedChapterIds,
                     downloadChapters: { chapters in
                         Task {
                             do {
@@ -538,14 +549,14 @@ struct MangaDetailsScreen: View {
         }
         .navigationDestination(isPresented: $showReaderScreen) {
             if let readerChapter = readerChapter,
-               let readerChapterKey = readerChapterKey,
+               let readerChapterGroupIndex = readerChapterGroupIndex,
                let mangaData = mangaData
             {
                 ReaderScreen(
                     plugin: plugin,
                     manga: mangaData,
                     downloadManga: downloadManga,
-                    chaptersKey: readerChapterKey,
+                    chapterGroupIndex: readerChapterGroupIndex,
                     chapter: readerChapter,
                     initialPage: readerPage
                 )
@@ -618,7 +629,7 @@ struct MangaDetailsScreen: View {
 
             do {
                 detailedManga = try await plugin.getDetailedManga(manga.id)
-                selectedChapterKey = detailedManga!.chapters.elements.first?.key
+                selectedChapterGroupIndex = detailedManga!.chapters.isEmpty ? nil : 0
             } catch {
                 detailedManga = nil
 
@@ -632,17 +643,14 @@ struct MangaDetailsScreen: View {
             do {
                 downloadManga = try await DownloadPlugin.shared.getDetailedManga(downloadMangaId)
                 if detailedManga == nil {
-                    selectedChapterKey = downloadManga!.chapters.elements.first?.key
+                    selectedChapterGroupIndex = downloadManga!.chapters.isEmpty ? nil : 0
                 }
 
-                var downloadChapters: [String: Set<String>] = [:]
-                for (chaptersKey, chapters) in downloadManga!.chapters {
-                    downloadChapters[chaptersKey] = Set(
-                        chapters.filter { !($0.locked ?? false) }
-                            .map { $0.id }
-                    )
-                }
-                self.downloadChapters = downloadChapters
+                downloadedChapterIds = Set(
+                    downloadManga!.chapters.flatMap { group in
+                        group.chapters.filter { !($0.locked ?? false) }.map(\.id)
+                    }
+                )
             } catch {
                 if detailedManga == nil {
                     Logger.ui.error("Failed to load detailed manga", error: error)

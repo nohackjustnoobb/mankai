@@ -139,7 +139,9 @@ struct UpdateMangaContent: View {
             try await selectedPlugin.upsertChapterGroup(
                 EditableChapterGroup(id: nil, title: trimmedKey, mangaId: manga.id)
             )
-            manga.chapters[trimmedKey] = []
+            if !manga.chapters.contains(where: { $0.title == trimmedKey }) {
+                manga.chapters.append(ChapterGroup(title: trimmedKey, chapters: []))
+            }
             newChapterGroup = ""
             showingAddChapterGroupAlert = false
             isProcessing = false
@@ -170,7 +172,7 @@ struct UpdateMangaContent: View {
                 try await selectedPlugin.deleteChapterGroup(id: id)
             }
 
-            manga.chapters.removeValue(forKey: chapterKeyToRemove)
+            manga.chapters.removeAll { $0.title == chapterKeyToRemove }
             chapterKeyToRemove = ""
             showingRemoveChapterGroupAlert = false
             isProcessing = false
@@ -395,13 +397,13 @@ struct UpdateMangaContent: View {
             if !isCreatingManga {
                 Section("chapterGroups") {
                     if !manga.chapters.isEmpty {
-                        ForEach(Array(manga.chapters.keys), id: \.self) { chapterKey in
+                        ForEach(manga.chapters, id: \.title) { chapterGroup in
                             HStack {
-                                Text(LocalizedStringKey(chapterKey))
+                                Text(LocalizedStringKey(chapterGroup.title))
                                 Spacer()
 
                                 Button(action: {
-                                    chapterKeyToRemove = chapterKey
+                                    chapterKeyToRemove = chapterGroup.title
                                     showingRemoveChapterGroupAlert = true
                                 }) {
                                     Image(systemName: "minus.circle.fill")
@@ -410,7 +412,7 @@ struct UpdateMangaContent: View {
                             }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    chapterKeyToRemove = chapterKey
+                                    chapterKeyToRemove = chapterGroup.title
                                     showingRemoveChapterGroupAlert = true
                                 } label: {
                                     Label("remove", systemImage: "trash")

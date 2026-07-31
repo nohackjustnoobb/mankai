@@ -23,7 +23,7 @@ struct DownloadMangaModel {
     var genres: String
 
     var latestChapter: String? // Chapter encoded in json
-    var chapters: String? // [String: Chapter] encoded in json
+    var chapters: String? // ChapterGroup[] encoded as JSON
 
     var downloaded: Bool // if true, the manga is fully downloaded
 

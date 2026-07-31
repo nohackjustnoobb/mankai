@@ -82,19 +82,9 @@ class DownloadTask: Identifiable, ObservableObject {
         var chaptersToDownload: [Chapter] = []
         if let chaptersJson = manga.chapters,
            let chaptersData = chaptersJson.data(using: .utf8),
-           let chaptersDict = try? JSONSerialization.jsonObject(with: chaptersData)
-           as? [String: Any]
+           let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
         {
-            for (_, chaptersValue) in chaptersDict {
-                if let chaptersArray = chaptersValue as? [[String: Any]] {
-                    for chapterDict in chaptersArray {
-                        if let id = chapterDict["id"] as? String {
-                            let title = chapterDict["title"] as? String
-                            chaptersToDownload.append(Chapter(id: id, title: title))
-                        }
-                    }
-                }
-            }
+            chaptersToDownload = chapterGroups.flatMap(\.chapters)
         }
 
         let totalChapters = Double(chaptersToDownload.count)
@@ -239,7 +229,7 @@ class DownloadService: ObservableObject {
     }
 
     func queue(plugin: Plugin, manga: DetailedManga, chapters: ChapterGroups) async throws -> DownloadTask {
-        let chaptersCount = chapters.values.flatMap { $0 }.count
+        let chaptersCount = chapters.flatMap(\.chapters).count
         Logger.downloadService.debug("Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
 
         guard let db = DownloadPlugin.shared.db else {
@@ -260,32 +250,37 @@ class DownloadService: ObservableObject {
             // Parse existing chapters
             if let existingChaptersJson = existingManga.chapters,
                let chaptersData = existingChaptersJson.data(using: .utf8),
-               let existingChapters = try? JSONDecoder().decode(
-                   OrderedChapterGroups.self, from: chaptersData
-               )
+               let existingChapters = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
             {
-                for (key, existingList) in existingChapters.value {
-                    if var currentList = finalChapters[key] {
-                        // Merge lists, avoiding duplicates
-                        for existingChapter in existingList {
-                            if !currentList.contains(where: { $0.id == existingChapter.id }) {
-                                currentList.append(existingChapter)
-                            }
+                for existingGroup in existingChapters {
+                    guard let currentIndex = finalChapters.firstIndex(where: {
+                        $0.title == existingGroup.title
+                    }) else {
+                        finalChapters.append(existingGroup)
+                        continue
+                    }
+
+                    // Merge lists, avoiding duplicates while retaining the selected order.
+                    for existingChapter in existingGroup.chapters {
+                        if !finalChapters[currentIndex].chapters.contains(where: {
+                            $0.id == existingChapter.id
+                        }) {
+                            finalChapters[currentIndex].chapters.append(existingChapter)
                         }
-                        finalChapters[key] = currentList
-                    } else {
-                        finalChapters[key] = existingList
                     }
                 }
             }
         }
 
-        let chaptersToPersist = finalChapters.mapValues { chapters in
-            chapters.map { Chapter(id: $0.id, title: $0.title) }
+        let chaptersToPersist = finalChapters.map { group in
+            ChapterGroup(
+                title: group.title,
+                chapters: group.chapters.map { chapter in
+                    Chapter(id: chapter.id, title: chapter.title)
+                }
+            )
         }
-        let chaptersJsonData = try JSONEncoder().encode(
-            OrderedChapterGroups(chaptersToPersist)
-        )
+        let chaptersJsonData = try JSONEncoder().encode(chaptersToPersist)
         let chaptersJson = String(data: chaptersJsonData, encoding: .utf8)
 
         var latestChapterJson: String?

@@ -145,7 +145,7 @@ Mankai ships with built-in parsers that read local book files (e.g., CBZ) and ex
 
 ### Planned Parsers
 
-- **EPUB** - Digital book format.
+- ~~**EPUB** - Digital book format.~~
 - **PDF** - Portable Document Format.
 - **CBR** - Comic Book RAR archive.
 - **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.

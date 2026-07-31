@@ -120,7 +120,7 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     InfoRow(
                                         label: String(localized: "totalChapters"),
                                         value:
-                                        "\(detailedManga.chapters.values.flatMap { $0 }.count)"
+                                        "\(detailedManga.chapters.flatMap(\.chapters).count)"
                                     )
                                 }
                             }
@@ -133,9 +133,9 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     .italic()
                             }
                         } else {
-                            ForEach(Array(detailedManga.chapters.keys), id: \.self) { key in
-                                Section(key) {
-                                    ForEach(detailedManga.chapters[key] ?? [], id: \.id) {
+                            ForEach(detailedManga.chapters, id: \.title) { group in
+                                Section(group.title) {
+                                    ForEach(group.chapters, id: \.id) {
                                         chapter in
                                         NavigationLink(
                                             destination: DebugGetChapter(

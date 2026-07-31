@@ -156,6 +156,7 @@ Returns the same `MangaListResponse` shape as [`GET /manga`](#get-manga).
 ### `GET /manga/:id`
 
 Retrieve full details for a single manga, including its description, authors, genres, and the complete list of chapters grouped by chapter group.
+The order of entries in `chapters` is the chapter group display order. Chapter group titles must be unique within a manga.
 
 **Path Parameters**
 
@@ -177,7 +178,7 @@ interface MangaResponse {
   updatedAt?: number;      // Unix timestamp in milliseconds
   authors: string[];
   genres: Genre[];
-  chapters: Record<string, Chapter[]>;   // Keyed by chapter group ID
+  chapters: ChapterGroup[]; // Ordered from first group to last group
   remarks?: string;
   editable?: boolean;     // Whether this manga can be edited; defaults to true
 }
@@ -221,6 +222,11 @@ interface Chapter {
   id: string;
   title?: string;
   locked?: boolean;
+}
+
+interface ChapterGroup {
+  title: string;           // Unique within this manga
+  chapters: Chapter[];     // Increasing order: oldest/lowest chapter first
 }
 ```
 

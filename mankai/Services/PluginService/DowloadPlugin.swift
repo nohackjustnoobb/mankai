@@ -112,11 +112,9 @@ class DownloadPlugin: Plugin {
 
         if let chapters = mangaModel.chapters,
            let chaptersData = chapters.data(using: .utf8),
-           let chaptersDict = try? JSONDecoder().decode(
-               OrderedChapterGroups.self, from: chaptersData
-           )
+           let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
         {
-            mangaDict["chapters"] = chaptersDict.value
+            mangaDict["chapters"] = chapterGroups
         }
 
         mangaDict["meta"] = mangaModel.pluginId
@@ -133,14 +131,16 @@ class DownloadPlugin: Plugin {
 
                 let downloadedChapterIds = Set(chapters.filter { $0.downloaded }.map { $0.chapterId })
 
-                for (category, chaptersList) in detailedManga.chapters {
-                    detailedManga.chapters[category] = chaptersList.map { chapter in
+                detailedManga.chapters = detailedManga.chapters.map { group in
+                    var updatedGroup = group
+                    updatedGroup.chapters = group.chapters.map { chapter in
                         var newChapter = chapter
                         if !downloadedChapterIds.contains(chapter.id) {
                             newChapter.locked = true
                         }
                         return newChapter
                     }
+                    return updatedGroup
                 }
             } catch {
                 Logger.downloadPlugin.error("Failed to fetch chapters for download status check: \(error)")

@@ -11,7 +11,7 @@ struct ReaderScreen: View {
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     let chapter: Chapter
     var initialPage: Int? = nil
 
@@ -38,7 +38,7 @@ struct ReaderScreen: View {
                         plugin: plugin,
                         manga: manga,
                         downloadManga: downloadManga,
-                        chaptersKey: chaptersKey,
+                        chapterGroupIndex: chapterGroupIndex,
                         chapter: chapter,
                         initialPage: initialPage
                     )
@@ -47,7 +47,7 @@ struct ReaderScreen: View {
                         plugin: plugin,
                         manga: manga,
                         downloadManga: downloadManga,
-                        chaptersKey: chaptersKey,
+                        chapterGroupIndex: chapterGroupIndex,
                         chapter: chapter,
                         initialPage: initialPage
                     )

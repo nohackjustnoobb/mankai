@@ -249,7 +249,7 @@ class ReadFsPlugin: Plugin {
     {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
-        let chapterGroups = try mangaModel.chapters.fetchAll(db)
+        let chapterGroupModels = try mangaModel.chapters.fetchAll(db)
 
         var mangaDict: [String: Any] = [
             "id": mangaModel.id,
@@ -292,8 +292,8 @@ class ReadFsPlugin: Plugin {
             ]
         }
 
-        var chaptersDict = ChapterGroups()
-        for group in chapterGroups {
+        var chapterGroups = ChapterGroups()
+        for group in chapterGroupModels {
             let chapters = try group.chapters.fetchAll(db)
             let chaptersArray =
                 chapters
@@ -301,9 +301,9 @@ class ReadFsPlugin: Plugin {
                     .map { chapter in
                         Chapter(id: String(chapter.id!), title: chapter.title)
                     }
-            chaptersDict[group.title] = chaptersArray
+            chapterGroups.append(ChapterGroup(title: group.title, chapters: chaptersArray))
         }
-        mangaDict["chapters"] = chaptersDict
+        mangaDict["chapters"] = chapterGroups
 
         return DetailedManga(from: mangaDict)
     }

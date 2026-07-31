@@ -6,52 +6,13 @@
 //
 
 import Foundation
-import OrderedCollections
 
-typealias ChapterGroups = OrderedDictionary<String, [Chapter]>
-
-private struct DynamicCodingKey: CodingKey {
-    let stringValue: String
-    let intValue: Int?
-
-    init?(stringValue: String) {
-        self.stringValue = stringValue
-        intValue = nil
-    }
-
-    init?(intValue: Int) {
-        stringValue = String(intValue)
-        self.intValue = intValue
-    }
+struct ChapterGroup: Codable {
+    var title: String
+    var chapters: [Chapter]
 }
 
-struct OrderedChapterGroups: Codable {
-    let value: ChapterGroups
-
-    init(_ value: ChapterGroups) {
-        self.value = value
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: DynamicCodingKey.self)
-        var value = ChapterGroups()
-
-        for key in container.allKeys {
-            value[key.stringValue] = try container.decode([Chapter].self, forKey: key)
-        }
-
-        self.value = value
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: DynamicCodingKey.self)
-
-        for (key, chapters) in value {
-            guard let codingKey = DynamicCodingKey(stringValue: key) else { continue }
-            try container.encode(chapters, forKey: codingKey)
-        }
-    }
-}
+typealias ChapterGroups = [ChapterGroup]
 
 struct DetailedManga: Identifiable, Codable {
     var id: String
@@ -143,28 +104,35 @@ struct DetailedManga: Identifiable, Codable {
             genres = []
         }
 
-        if let chaptersDict = dict["chapters"] as? ChapterGroups {
-            self.chapters = chaptersDict
-        } else if let chaptersDict = dict["chapters"] as? [String: Any] {
-            var chapters = ChapterGroups()
-
-            for (key, value) in chaptersDict {
-                chapters[key] = []
-
-                for value in value as? [Any] ?? [] {
-                    if let chapterDict = value as? [String: Any], let id = chapterDict["id"] as? String {
-                        let chapter = Chapter(
-                            id: id,
-                            title: chapterDict["title"] as? String
-                        )
-                        chapters[key]!.append(chapter)
-                    }
+        if let chapterGroups = dict["chapters"] as? ChapterGroups {
+            chapters = chapterGroups
+        } else if let chapterGroupValues = dict["chapters"] as? [Any] {
+            chapters = chapterGroupValues.compactMap { value in
+                guard let groupDict = value as? [String: Any],
+                      let title = groupDict["title"] as? String
+                else {
+                    return nil
                 }
-            }
 
-            self.chapters = chapters
+                let groupChapters = (groupDict["chapters"] as? [Any] ?? []).compactMap {
+                    value -> Chapter? in
+                    guard let chapterDict = value as? [String: Any],
+                          let id = chapterDict["id"] as? String
+                    else {
+                        return nil
+                    }
+
+                    return Chapter(
+                        id: id,
+                        title: chapterDict["title"] as? String,
+                        locked: chapterDict["locked"] as? Bool
+                    )
+                }
+
+                return ChapterGroup(title: title, chapters: groupChapters)
+            }
         } else {
-            chapters = ChapterGroups()
+            chapters = []
         }
     }
 
@@ -172,7 +140,11 @@ struct DetailedManga: Identifiable, Codable {
         id = UUID().uuidString
         authors = []
         genres = []
-        chapters = ["serial": [], "extra": [], "volume": []]
+        chapters = [
+            ChapterGroup(title: "serial", chapters: []),
+            ChapterGroup(title: "extra", chapters: []),
+            ChapterGroup(title: "volume", chapters: []),
+        ]
         status = .onGoing
     }
 
@@ -201,9 +173,7 @@ struct DetailedManga: Identifiable, Codable {
 
         authors = try container.decodeIfPresent([String].self, forKey: .authors) ?? []
         genres = try container.decodeIfPresent([Genre].self, forKey: .genres) ?? []
-        chapters =
-            try container.decodeIfPresent(OrderedChapterGroups.self, forKey: .chapters)?.value
-            ?? ChapterGroups()
+        chapters = try container.decodeIfPresent(ChapterGroups.self, forKey: .chapters) ?? []
 
         meta = try container.decodeIfPresent(String.self, forKey: .meta)
         remarks = try container.decodeIfPresent(String.self, forKey: .remarks)
@@ -228,7 +198,7 @@ struct DetailedManga: Identifiable, Codable {
 
         try container.encode(authors, forKey: .authors)
         try container.encode(genres, forKey: .genres)
-        try container.encode(OrderedChapterGroups(chapters), forKey: .chapters)
+        try container.encode(chapters, forKey: .chapters)
 
         try container.encodeIfPresent(meta, forKey: .meta)
         try container.encodeIfPresent(remarks, forKey: .remarks)

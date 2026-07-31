@@ -10,8 +10,10 @@ import SwiftUI
 struct UpdateChaptersModal: View {
     let plugin: any Editable
     let manga: DetailedManga
-    let chaptersKey: String
+    let chapterGroupIndex: Int
     var isRootOfSheet: Bool
+
+    private let chapterGroupTitle: String?
 
     @State private var chapters: [Chapter] = []
     @State private var showingAddAlert = false
@@ -24,13 +26,16 @@ struct UpdateChaptersModal: View {
     @Environment(\.dismiss) private var dismiss
 
     init(
-        plugin: any Editable, manga: DetailedManga, chaptersKey: String,
+        plugin: any Editable, manga: DetailedManga, chapterGroupIndex: Int,
         isRootOfSheet: Bool = false
     ) {
         self.plugin = plugin
         self.manga = manga
-        self.chaptersKey = chaptersKey
+        self.chapterGroupIndex = chapterGroupIndex
         self.isRootOfSheet = isRootOfSheet
+        chapterGroupTitle = manga.chapters.indices.contains(chapterGroupIndex)
+            ? manga.chapters[chapterGroupIndex].title
+            : nil
     }
 
     private func fetchChapters() {
@@ -143,13 +148,13 @@ struct UpdateChaptersModal: View {
             .apply {
                 if isRootOfSheet {
                     $0
-                        .navigationTitle(LocalizedStringKey(chaptersKey))
+                        .navigationTitle(LocalizedStringKey(chapterGroupTitle ?? ""))
                         .toolbar {
                             ToolbarItem(placement: .principal) {
                                 VStack {
                                     Text("editChapters")
                                         .font(.headline)
-                                    Text(LocalizedStringKey(chaptersKey))
+                                    Text(LocalizedStringKey(chapterGroupTitle ?? ""))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -204,13 +209,13 @@ struct UpdateChaptersModal: View {
             Text(errorMessage)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(LocalizedStringKey(chaptersKey))
+        .navigationTitle(LocalizedStringKey(chapterGroupTitle ?? ""))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack {
                     Text("editChapters")
                         .font(.headline)
-                    Text(LocalizedStringKey(chaptersKey))
+                    Text(LocalizedStringKey(chapterGroupTitle ?? ""))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -218,7 +223,14 @@ struct UpdateChaptersModal: View {
         }
         .task {
             do {
-                if let groupId = try await plugin.getChapterGroupId(mangaId: manga.id, title: chaptersKey) {
+                guard let chapterGroupTitle else {
+                    dismiss()
+                    return
+                }
+
+                if let groupId = try await plugin.getChapterGroupId(
+                    mangaId: manga.id, title: chapterGroupTitle
+                ) {
                     self.chapterGroupId = groupId
                     fetchChapters()
                 } else {

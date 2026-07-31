@@ -21,7 +21,7 @@ struct BrowseScreen: View {
     @State private var showReaderScreen = false
     @State private var readerManga: DetailedManga? = nil
     @State private var readerChapter: Chapter? = nil
-    @State private var readerChapterKey: String? = nil
+    @State private var readerChapterGroupIndex: Int? = nil
     @State private var readerPage: Int? = nil
 
     init(plugin: BrowsablePlugin, path: String? = nil, systemImageColor: Color? = nil) {
@@ -48,7 +48,7 @@ struct BrowseScreen: View {
                         }
                         .buttonStyle(.plain)
                     case let .book(manga, _):
-                        let allChapters = manga.chapters.values.flatMap { $0 }
+                        let allChapters = manga.chapters.flatMap(\.chapters)
                         if allChapters.count == 1 {
                             Button {
                                 navigateToReader(manga: manga)
@@ -112,13 +112,13 @@ struct BrowseScreen: View {
         .navigationDestination(isPresented: $showReaderScreen) {
             if let readerManga = readerManga,
                let readerChapter = readerChapter,
-               let readerChapterKey = readerChapterKey
+               let readerChapterGroupIndex = readerChapterGroupIndex
             {
                 ReaderScreen(
                     plugin: plugin,
                     manga: readerManga,
                     downloadManga: nil,
-                    chaptersKey: readerChapterKey,
+                    chapterGroupIndex: readerChapterGroupIndex,
                     chapter: readerChapter,
                     initialPage: readerPage
                 )
@@ -130,11 +130,11 @@ struct BrowseScreen: View {
     /// open the reader directly. The reading history is looked up so the
     /// reader can resume on the last-read page when available.
     private func navigateToReader(manga: DetailedManga) {
-        let allChapters = manga.chapters.values.flatMap { $0 }
+        let allChapters = manga.chapters.flatMap(\.chapters)
         guard let chapter = allChapters.first,
-              let chaptersKey = manga.chapters.first(where: { _, chapters in
-                  chapters.contains { $0.id == chapter.id }
-              })?.key
+              let chapterGroupIndex = manga.chapters.firstIndex(where: { group in
+                  group.chapters.contains { $0.id == chapter.id }
+              })
         else { return }
 
         let page: Int?
@@ -148,7 +148,7 @@ struct BrowseScreen: View {
 
         readerManga = manga
         readerChapter = chapter
-        readerChapterKey = chaptersKey
+        readerChapterGroupIndex = chapterGroupIndex
         readerPage = page
         showReaderScreen = true
     }

@@ -16,7 +16,7 @@ enum EntityType {
     var name: String {
         switch self {
         case let .book(manga, _):
-            let allChapters = manga.chapters.values.flatMap { $0 }
+            let allChapters = manga.chapters.flatMap(\.chapters)
             if allChapters.count == 1,
                let chapterTitle = allChapters.first?.title
             {
