@@ -238,7 +238,7 @@ class DownloadService: ObservableObject {
         }
     }
 
-    func queue(plugin: Plugin, manga: DetailedManga, chapters: [String: [Chapter]]) async throws -> DownloadTask {
+    func queue(plugin: Plugin, manga: DetailedManga, chapters: ChapterGroups) async throws -> DownloadTask {
         let chaptersCount = chapters.values.flatMap { $0 }.count
         Logger.downloadService.debug("Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
 
@@ -251,7 +251,7 @@ class DownloadService: ObservableObject {
         let combinedId = "\(plugin.id)+\(manga.id)"
 
         // Merge chapters: start with new chapters, then add old chapters if they exist
-        var finalChaptersDict = chapters
+        var finalChapters = chapters
 
         // Check if manga exists and get old chapters
         if let existingManga = try await db.read({ db in try DownloadMangaModel.fetchOne(db, key: combinedId) }) {
@@ -260,47 +260,31 @@ class DownloadService: ObservableObject {
             // Parse existing chapters
             if let existingChaptersJson = existingManga.chapters,
                let chaptersData = existingChaptersJson.data(using: .utf8),
-               let chaptersDict = try? JSONSerialization.jsonObject(with: chaptersData) as? [String: Any]
+               let existingChapters = try? JSONDecoder().decode(
+                   OrderedChapterGroups.self, from: chaptersData
+               )
             {
-                for (key, value) in chaptersDict {
-                    var existingList: [Chapter] = []
-                    for chapterValue in value as? [Any] ?? [] {
-                        if let chapterDict = chapterValue as? [String: Any],
-                           let id = chapterDict["id"] as? String
-                        {
-                            existingList.append(Chapter(
-                                id: id,
-                                title: chapterDict["title"] as? String
-                            ))
-                        }
-                    }
-
-                    if var currentList = finalChaptersDict[key] {
+                for (key, existingList) in existingChapters.value {
+                    if var currentList = finalChapters[key] {
                         // Merge lists, avoiding duplicates
                         for existingChapter in existingList {
                             if !currentList.contains(where: { $0.id == existingChapter.id }) {
                                 currentList.append(existingChapter)
                             }
                         }
-                        finalChaptersDict[key] = currentList
+                        finalChapters[key] = currentList
                     } else {
-                        finalChaptersDict[key] = existingList
+                        finalChapters[key] = existingList
                     }
                 }
             }
         }
 
-        let chaptersJsonData = try JSONSerialization.data(
-            withJSONObject: finalChaptersDict.mapValues { chapters in
-                chapters.map { chapter in
-                    var chapterDict: [String: Any] = ["id": chapter.id]
-                    if let title = chapter.title {
-                        chapterDict["title"] = title
-                    }
-                    return chapterDict
-                }
-            },
-            options: []
+        let chaptersToPersist = finalChapters.mapValues { chapters in
+            chapters.map { Chapter(id: $0.id, title: $0.title) }
+        }
+        let chaptersJsonData = try JSONEncoder().encode(
+            OrderedChapterGroups(chaptersToPersist)
         )
         let chaptersJson = String(data: chaptersJsonData, encoding: .utf8)
 

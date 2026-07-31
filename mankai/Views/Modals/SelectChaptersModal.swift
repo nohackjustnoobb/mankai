@@ -8,21 +8,12 @@
 import GRDB
 import SwiftUI
 
-private struct ChapterGroupEntry: Identifiable {
-    var id: String {
-        key
-    }
-
-    let key: String
-    let chapters: [Chapter]
-}
-
 struct SelectChaptersModal: View {
     @Environment(\.dismiss) var dismiss
     let plugin: Plugin
     let detailedManga: DetailedManga
     let alreadyDownloaded: [String: Set<String>]?
-    let downloadChapters: ([String: [Chapter]]) -> Void
+    let downloadChapters: (ChapterGroups) -> Void
 
     // chaptersKey -> set of selected chapter ids
     @State private var selectedChapters: [String: Set<String>] = [:]
@@ -30,11 +21,6 @@ struct SelectChaptersModal: View {
 
     private var totalSelectedCount: Int {
         selectedChapters.values.reduce(0) { $0 + $1.count }
-    }
-
-    private var sortedChapterGroups: [ChapterGroupEntry] {
-        detailedManga.chapters.map { ChapterGroupEntry(key: $0.key, chapters: $0.value) }
-            .sorted { $0.chapters.count > $1.chapters.count }
     }
 
     private func isDownloaded(chapterId: String, groupKey: String) -> Bool {
@@ -67,13 +53,11 @@ struct SelectChaptersModal: View {
         }
     }
 
-    private func buildDownloadPayload() -> [String: [Chapter]] {
-        var result: [String: [Chapter]] = [:]
-        for (groupKey, selectedIds) in selectedChapters {
-            guard !selectedIds.isEmpty else { continue }
-            if let chapters = detailedManga.chapters[groupKey] {
-                result[groupKey] = chapters.filter { selectedIds.contains($0.id) }
-            }
+    private func buildDownloadPayload() -> ChapterGroups {
+        var result = ChapterGroups()
+        for (groupKey, chapters) in detailedManga.chapters {
+            guard let selectedIds = selectedChapters[groupKey], !selectedIds.isEmpty else { continue }
+            result[groupKey] = chapters.filter { selectedIds.contains($0.id) }
         }
         return result
     }
@@ -81,13 +65,13 @@ struct SelectChaptersModal: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(sortedChapterGroups) { group in
+                ForEach(detailedManga.chapters.elements, id: \.key) { groupKey, chapters in
                     Section {
-                        chapterGroupRow(group: group)
+                        chapterGroupRow(groupKey: groupKey, chapters: chapters)
 
-                        if expandedGroup == group.key {
-                            ForEach(group.chapters, id: \.id) { chapter in
-                                chapterRow(chapter: chapter, groupKey: group.key)
+                        if expandedGroup == groupKey {
+                            ForEach(chapters, id: \.id) { chapter in
+                                chapterRow(chapter: chapter, groupKey: groupKey)
                             }
                         }
                     }
@@ -128,9 +112,7 @@ struct SelectChaptersModal: View {
     }
 
     @ViewBuilder
-    private func chapterGroupRow(group: ChapterGroupEntry) -> some View {
-        let chapters = group.chapters
-        let groupKey = group.key
+    private func chapterGroupRow(groupKey: String, chapters: [Chapter]) -> some View {
         let downloadedSet = alreadyDownloaded?[groupKey] ?? []
         // calculate selectable chapters (those not already downloaded)
         let selectableChapters = chapters.filter { !downloadedSet.contains($0.id) }

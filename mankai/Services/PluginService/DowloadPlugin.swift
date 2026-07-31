@@ -112,9 +112,11 @@ class DownloadPlugin: Plugin {
 
         if let chapters = mangaModel.chapters,
            let chaptersData = chapters.data(using: .utf8),
-           let chaptersDict = try? JSONSerialization.jsonObject(with: chaptersData) as? [String: Any]
+           let chaptersDict = try? JSONDecoder().decode(
+               OrderedChapterGroups.self, from: chaptersData
+           )
         {
-            mangaDict["chapters"] = chaptersDict
+            mangaDict["chapters"] = chaptersDict.value
         }
 
         mangaDict["meta"] = mangaModel.pluginId

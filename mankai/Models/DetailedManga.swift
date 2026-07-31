@@ -6,6 +6,52 @@
 //
 
 import Foundation
+import OrderedCollections
+
+typealias ChapterGroups = OrderedDictionary<String, [Chapter]>
+
+private struct DynamicCodingKey: CodingKey {
+    let stringValue: String
+    let intValue: Int?
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        intValue = nil
+    }
+
+    init?(intValue: Int) {
+        stringValue = String(intValue)
+        self.intValue = intValue
+    }
+}
+
+struct OrderedChapterGroups: Codable {
+    let value: ChapterGroups
+
+    init(_ value: ChapterGroups) {
+        self.value = value
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+        var value = ChapterGroups()
+
+        for key in container.allKeys {
+            value[key.stringValue] = try container.decode([Chapter].self, forKey: key)
+        }
+
+        self.value = value
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: DynamicCodingKey.self)
+
+        for (key, chapters) in value {
+            guard let codingKey = DynamicCodingKey(stringValue: key) else { continue }
+            try container.encode(chapters, forKey: codingKey)
+        }
+    }
+}
 
 struct DetailedManga: Identifiable, Codable {
     var id: String
@@ -18,7 +64,7 @@ struct DetailedManga: Identifiable, Codable {
     var updatedAt: Date?
     var authors: [String]
     var genres: [Genre]
-    var chapters: [String: [Chapter]]
+    var chapters: ChapterGroups
     var remarks: String?
     var editable: Bool?
 
@@ -97,8 +143,10 @@ struct DetailedManga: Identifiable, Codable {
             genres = []
         }
 
-        if let chaptersDict = dict["chapters"] as? [String: Any] {
-            var chapters: [String: [Chapter]] = [:]
+        if let chaptersDict = dict["chapters"] as? ChapterGroups {
+            self.chapters = chaptersDict
+        } else if let chaptersDict = dict["chapters"] as? [String: Any] {
+            var chapters = ChapterGroups()
 
             for (key, value) in chaptersDict {
                 chapters[key] = []
@@ -116,7 +164,7 @@ struct DetailedManga: Identifiable, Codable {
 
             self.chapters = chapters
         } else {
-            chapters = [:]
+            chapters = ChapterGroups()
         }
     }
 
@@ -154,7 +202,8 @@ struct DetailedManga: Identifiable, Codable {
         authors = try container.decodeIfPresent([String].self, forKey: .authors) ?? []
         genres = try container.decodeIfPresent([Genre].self, forKey: .genres) ?? []
         chapters =
-            try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
+            try container.decodeIfPresent(OrderedChapterGroups.self, forKey: .chapters)?.value
+            ?? ChapterGroups()
 
         meta = try container.decodeIfPresent(String.self, forKey: .meta)
         remarks = try container.decodeIfPresent(String.self, forKey: .remarks)
@@ -179,7 +228,7 @@ struct DetailedManga: Identifiable, Codable {
 
         try container.encode(authors, forKey: .authors)
         try container.encode(genres, forKey: .genres)
-        try container.encode(chapters, forKey: .chapters)
+        try container.encode(OrderedChapterGroups(chapters), forKey: .chapters)
 
         try container.encodeIfPresent(meta, forKey: .meta)
         try container.encodeIfPresent(remarks, forKey: .remarks)

@@ -105,11 +105,7 @@ struct MangaDetailsScreen: View {
         }
 
         if let mangaData = mangaData {
-            let sortedChapters = Array(mangaData.chapters).sorted {
-                $0.value.count > $1.value.count
-            }
-
-            if let chapters = sortedChapters.first,
+            if let chapters = mangaData.chapters.elements.first,
                let chapter = chapters.value.first
             {
                 navigateToChapter(chapter, chaptersKey: chapters.key)
@@ -323,7 +319,7 @@ struct MangaDetailsScreen: View {
             {
                 Section {
                     ForEach(
-                        Array(mangaData.chapters).sorted { $0.value.count > $1.value.count },
+                        mangaData.chapters.elements,
                         id: \.key
                     ) { key, chapters in
                         Button(action: {
@@ -622,9 +618,7 @@ struct MangaDetailsScreen: View {
 
             do {
                 detailedManga = try await plugin.getDetailedManga(manga.id)
-                selectedChapterKey =
-                    Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }
-                        .first?.key
+                selectedChapterKey = detailedManga!.chapters.elements.first?.key
             } catch {
                 detailedManga = nil
 
@@ -637,9 +631,9 @@ struct MangaDetailsScreen: View {
 
             do {
                 downloadManga = try await DownloadPlugin.shared.getDetailedManga(downloadMangaId)
-                selectedChapterKey =
-                    Array(downloadManga!.chapters).sorted { $0.value.count > $1.value.count }
-                        .first?.key
+                if detailedManga == nil {
+                    selectedChapterKey = downloadManga!.chapters.elements.first?.key
+                }
 
                 var downloadChapters: [String: Set<String>] = [:]
                 for (chaptersKey, chapters) in downloadManga!.chapters {

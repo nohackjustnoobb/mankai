@@ -292,17 +292,14 @@ class ReadFsPlugin: Plugin {
             ]
         }
 
-        var chaptersDict: [String: [[String: Any?]]] = [:]
+        var chaptersDict = ChapterGroups()
         for group in chapterGroups {
             let chapters = try group.chapters.fetchAll(db)
             let chaptersArray =
                 chapters
                     .sorted { $0.sequence < $1.sequence }
                     .map { chapter in
-                        [
-                            "id": String(chapter.id!),
-                            "title": chapter.title,
-                        ] as [String: Any?]
+                        Chapter(id: String(chapter.id!), title: chapter.title)
                     }
             chaptersDict[group.title] = chaptersArray
         }

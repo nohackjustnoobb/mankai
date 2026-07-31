@@ -12,6 +12,7 @@
 		E427B7843007F96E003649A2 /* mankaiThumbnail.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E427B8733007F9E2003649A2 /* ZIPFoundation */; };
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
+		E464200F301CB42A003786FA /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = E464200E301CB42A003786FA /* OrderedCollections */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
@@ -94,6 +95,7 @@
 			files = (
 				E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */,
 				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
+				E464200F301CB42A003786FA /* OrderedCollections in Frameworks */,
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
 				E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */,
@@ -168,6 +170,7 @@
 				E4033BA22F1BC53D00A7B886 /* OpenCC */,
 				E4958E0F2F2FABE1004F2F4D /* Supabase */,
 				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
+				E464200E301CB42A003786FA /* OrderedCollections */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -230,6 +233,7 @@
 				E4033BA12F1BC53D00A7B886 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
 				E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				E464200D301CB42A003786FA /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -591,6 +595,14 @@
 				revision = aa0079aeb82a4bf00324561a40bffe68c6fe1c26;
 			};
 		};
+		E464200D301CB42A003786FA /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 1.6.0;
+			};
+		};
 		E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -632,6 +644,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
+		};
+		E464200E301CB42A003786FA /* OrderedCollections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E464200D301CB42A003786FA /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = OrderedCollections;
 		};
 		E4958E0F2F2FABE1004F2F4D /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;

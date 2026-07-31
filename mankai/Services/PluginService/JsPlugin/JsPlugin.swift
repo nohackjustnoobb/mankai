@@ -461,18 +461,19 @@ class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.getDetailedManga]!) return await \(_funcName[.getDetailedManga]!)(\"\(id)\");"
+            "\(_scriptsNoExport[.getDetailedManga]!) return JSON.stringify(await \(_funcName[.getDetailedManga]!)(\"\(id)\"));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
-        guard let detailedManga = result as? [String: Any] else {
+        guard let detailedMangaJson = result as? String,
+              let detailedMangaData = detailedMangaJson.data(using: .utf8),
+              let detailedMangaResult = try? JSONDecoder().decode(
+                  DetailedManga.self, from: detailedMangaData
+              )
+        else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
 
-        if let detailedMangaResult = DetailedManga(from: detailedManga) {
-            return detailedMangaResult
-        } else {
-            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
-        }
+        return detailedMangaResult
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {

@@ -133,7 +133,7 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     .italic()
                             }
                         } else {
-                            ForEach(detailedManga.chapters.keys.sorted(), id: \.self) { key in
+                            ForEach(Array(detailedManga.chapters.keys), id: \.self) { key in
                                 Section(key) {
                                     ForEach(detailedManga.chapters[key] ?? [], id: \.id) {
                                         chapter in
