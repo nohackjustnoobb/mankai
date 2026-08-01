@@ -15,64 +15,96 @@ import ZIPFoundation
 
 class CbzParser: Parser {
     /// Single-entry cache of the most recently opened `Archive`.
-    /// Reopening the same CBZ would otherwise re-index it across the typical `parse` → `parseChapter` → `parseImage` sequence, so the last archive is kept in memory and reused on a path match.
-    private static var cachedArchiveURL: URL?
+    /// Reopening the same CBZ would otherwise re-index it across the typical `parse` → `parseChapter` → `parseImage` sequence, so the last archive is kept in memory and reused on a cache-key match.
+    private static var cachedArchiveKey: String?
     private static var cachedArchive: Archive?
     private static let cacheLock = NSLock()
 
     /// `Archive` (ZIPFoundation) is not thread-safe: concurrent reads on the same instance can corrupt state.
-    /// We serialize reads per *path* with a dedicated lock, so unrelated archives still run in parallel.
-    private static var archiveReadLocks: [URL: NSLock] = [:]
+    /// We serialize reads per cache key with a dedicated lock, so unrelated archives still run in parallel.
+    private static var archiveReadLocks: [String: NSLock] = [:]
     private static let archiveReadLocksGuard = NSLock()
 
-    /// Returns the per-archive lock for `url`, creating it on first use.
-    private static func archiveReadLock(for url: URL) -> NSLock {
+    /// Returns the per-archive lock for `cacheKey`, creating it on first use.
+    private static func archiveReadLock(for cacheKey: String) -> NSLock {
         archiveReadLocksGuard.lock()
         defer { archiveReadLocksGuard.unlock() }
-        if let lock = archiveReadLocks[url] {
-            Logger.cbzParser.debug("Using existing read lock for: \(url.path)")
+        if let lock = archiveReadLocks[cacheKey] {
+            Logger.cbzParser.debug("Using existing read lock for: \(cacheKey)")
             return lock
         }
-        Logger.cbzParser.debug("Creating new read lock for: \(url.path)")
+        Logger.cbzParser.debug("Creating new read lock for: \(cacheKey)")
         let lock = NSLock()
-        archiveReadLocks[url] = lock
+        archiveReadLocks[cacheKey] = lock
         return lock
     }
 
-    /// Returns the `Archive` for `url`, reusing the cached instance on a URL match.
-    /// Opening a different URL evicts the previous cached archive.
-    private static func archive(for url: URL) throws -> Archive {
+    private static func cachedArchive(for cacheKey: String) -> Archive? {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        guard cachedArchiveKey == cacheKey else { return nil }
+        return cachedArchive
+    }
+
+    /// Stores `archive` unless another request populated the same key while its
+    /// content was loading. Opening a different key evicts the previous archive.
+    private static func storeArchive(_ archive: Archive, for cacheKey: String) -> Archive {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
-        if let cached = cachedArchive, cachedArchiveURL == url {
-            Logger.cbzParser.debug("Reusing cached archive: \(url.path)")
-            return cached
+        if cachedArchiveKey == cacheKey, let cachedArchive {
+            return cachedArchive
         }
 
-        Logger.cbzParser.debug("Opening new archive: \(url.path)")
-        let archive = try Archive(url: url, accessMode: .read)
+        cachedArchiveKey = cacheKey
         cachedArchive = archive
-        cachedArchiveURL = url
         return archive
     }
 
-    /// Resolves the (cached) `Archive` for `url` and runs `body` under the per-archive read lock.
-    /// The path-keyed lock serializes only readers of the *same* archive.
-    /// Readers on different archives proceed in parallel.
-    /// An in-flight reader holds a valid `Archive` reference even if the cache entry is later evicted,
-    /// and the path-keyed lock keeps concurrent readers of the same path consistent.
-    private static func withReadLock<T>(
-        for url: URL,
+    /// Returns the `Archive` for `file`, loading its backend-neutral content only
+    /// when the parser cache does not already contain `file.cacheKey`.
+    private static func archive(for file: ParserFile) async throws -> Archive {
+        if let cached = cachedArchive(for: file.cacheKey) {
+            Logger.cbzParser.debug("Reusing cached archive: \(file.cacheKey)")
+            return cached
+        }
+
+        Logger.cbzParser.debug("Loading archive content: \(file.cacheKey)")
+        let data = try await file.getContent()
+        let archive = try Archive(data: data, accessMode: .read)
+        return storeArchive(archive, for: file.cacheKey)
+    }
+
+    /// Runs `body` under the per-archive read lock after asynchronously resolving
+    /// the archive. Keeping the lock operation in a synchronous helper avoids
+    /// suspending while an `NSLock` is held.
+    private static func performRead<T>(
+        archive: Archive,
+        cacheKey: String,
         body: (Archive) throws -> T
-    ) throws -> T {
-        let standardizedURL = url.standardizedFileURL
-        Logger.cbzParser.debug("Acquiring read lock for: \(standardizedURL.path)")
-        let lock = archiveReadLock(for: standardizedURL)
+    ) rethrows -> T {
+        let lock = archiveReadLock(for: cacheKey)
         lock.lock()
         defer { lock.unlock() }
-        let archive = try Self.archive(for: standardizedURL)
         return try body(archive)
+    }
+
+    /// Resolves the (cached) `Archive` for `file` and runs `body` under its read lock.
+    /// The key-based lock serializes only readers of the *same* archive content.
+    /// Readers on different archives proceed in parallel.
+    /// An in-flight reader holds a valid `Archive` reference even if the cache entry is later evicted,
+    /// and the key-based lock keeps concurrent readers of the same content consistent.
+    private static func withReadLock<T>(
+        for file: ParserFile,
+        body: (Archive) throws -> T
+    ) async throws -> T {
+        Logger.cbzParser.debug("Acquiring read lock for: \(file.cacheKey)")
+        let archive = try await archive(for: file)
+        return try performRead(
+            archive: archive,
+            cacheKey: file.cacheKey,
+            body: body
+        )
     }
 
     override var id: String {
@@ -83,14 +115,13 @@ class CbzParser: Parser {
         ["cbz"]
     }
 
-    override func parse(path: URL) async throws -> DetailedManga {
-        let archiveURL = path.standardizedFileURL
-        Logger.cbzParser.debug("Parsing archive: \(archiveURL.path)")
+    override func parse(file: ParserFile) async throws -> DetailedManga {
+        Logger.cbzParser.debug("Parsing archive: \(file.fileName)")
 
         var imageEntries: [Entry] = []
         var info: ComicInfo? = nil
         var coverEntryPath: String? = nil
-        try Self.withReadLock(for: archiveURL) { archive in
+        try await Self.withReadLock(for: file) { archive in
             imageEntries = archive
                 .compactMap { entry -> Entry? in
                     guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
@@ -99,7 +130,7 @@ class CbzParser: Parser {
                 .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
 
             guard !imageEntries.isEmpty else {
-                Logger.cbzParser.error("No supported images found in archive: \(archiveURL.path)")
+                Logger.cbzParser.error("No supported images found in archive: \(file.fileName)")
                 throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
             }
 
@@ -191,11 +222,11 @@ class CbzParser: Parser {
         return manga
     }
 
-    override func prepareForPresentation(_ manga: DetailedManga, path: URL) -> DetailedManga {
+    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
         guard manga.title == nil else { return manga }
 
         var presented = manga
-        let filenameTitle = path.deletingPathExtension().lastPathComponent
+        let filenameTitle = (file.fileName as NSString).deletingPathExtension
         presented.title = filenameTitle
         presented.chapters = presented.chapters.map { group in
             var presentedGroup = group
@@ -218,12 +249,11 @@ class CbzParser: Parser {
     }
 
     override func parseChapter(
-        manga: DetailedManga, chapter _: Chapter, path: URL
+        manga: DetailedManga, chapter _: Chapter, file: ParserFile
     ) async throws -> [String] {
         Logger.cbzParser.debug("Parsing chapter images for manga: \(manga.id)")
-        let archiveURL = path.standardizedFileURL
 
-        let imageEntries: [Entry] = try Self.withReadLock(for: archiveURL) { archive in
+        let imageEntries: [Entry] = try await Self.withReadLock(for: file) { archive in
             archive
                 .compactMap { entry -> Entry? in
                     guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
@@ -236,11 +266,10 @@ class CbzParser: Parser {
         return imageEntries.map(\.path)
     }
 
-    override func parseImage(url: String, path: URL) async throws -> Data {
+    override func parseImage(url: String, file: ParserFile) async throws -> Data {
         Logger.cbzParser.debug("Reading image: \(url)")
-        let archiveURL = path.standardizedFileURL
 
-        return try Self.withReadLock(for: archiveURL) { archive in
+        return try await Self.withReadLock(for: file) { archive in
             guard let entry = archive[url] else {
                 Logger.cbzParser.error("Entry not found in archive: \(url)")
                 throw MankaiErrorCode.browseArchiveEntryNotFound.makeError()

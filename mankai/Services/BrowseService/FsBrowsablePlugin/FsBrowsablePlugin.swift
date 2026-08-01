@@ -280,6 +280,16 @@ class FsBrowsablePlugin: Plugin, Browsable {
         extensionsIndex[ext]
     }
 
+    private func parserFile(for route: MangaRoute, sourceURL: URL) -> ParserFile {
+        ParserFile(
+            cacheKey: route.hash,
+            fileName: sourceURL.lastPathComponent,
+            getContent: {
+                try Data(contentsOf: sourceURL)
+            }
+        )
+    }
+
     private struct MangaRoute {
         let parserId: String
         let hash: String
@@ -506,6 +516,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
     ) async throws -> DetailedManga {
         let parser = try route.parser(in: parsers)
         let sourceURL = try route.sourceURL(relativeTo: url)
+        let file = parserFile(for: route, sourceURL: sourceURL)
 
         let stored: DetailedManga
         if let cached = try? await fetchCachedManga(
@@ -523,7 +534,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         } else {
             Logger.fsBrowsablePlugin.debug("Manga cache miss, parsing source: \(sourceURL.path)")
 
-            var parsed = try await parser.parse(path: sourceURL)
+            var parsed = try await parser.parse(file: file)
             parsed.id = route.hash
             await storeManga(
                 parsed,
@@ -538,7 +549,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
             stored,
             route: route,
             parser: parser,
-            sourceURL: sourceURL
+            file: file
         )
     }
 
@@ -546,14 +557,14 @@ class FsBrowsablePlugin: Plugin, Browsable {
         _ stored: DetailedManga,
         route: MangaRoute,
         parser: Parser,
-        sourceURL: URL
+        file: ParserFile
     ) async throws -> DetailedManga {
-        var transformed = parser.prepareForPresentation(stored, path: sourceURL)
+        var transformed = parser.prepareForPresentation(stored, file: file)
         transformed.cover = await ensureCachedCover(
             for: transformed.cover,
             route: route,
             parser: parser,
-            sourceURL: sourceURL
+            file: file
         )
         return try route.applying(
             to: transformed,
@@ -567,8 +578,9 @@ class FsBrowsablePlugin: Plugin, Browsable {
         let route = try MangaRoute(mangaId: manga.id)
         let parser = try route.parser(in: parsers)
         let sourceURL = try route.sourceURL(relativeTo: url)
+        let file = parserFile(for: route, sourceURL: sourceURL)
         let images = try await parser.parseChapter(
-            manga: manga, chapter: chapter, path: sourceURL
+            manga: manga, chapter: chapter, file: file
         )
 
         return try images.map {
@@ -593,7 +605,8 @@ class FsBrowsablePlugin: Plugin, Browsable {
         let imageRoute = try ImageRoute(imageId: path)
         let parser = try imageRoute.parser(in: parsers)
         let sourceURL = try imageRoute.sourceURL(relativeTo: url)
-        return try await parser.parseImage(url: imageRoute.parserURL, path: sourceURL)
+        let file = parserFile(for: imageRoute.manga, sourceURL: sourceURL)
+        return try await parser.parseImage(url: imageRoute.parserURL, file: file)
     }
 
     override func isOnline() async throws -> Bool {
@@ -627,11 +640,12 @@ class FsBrowsablePlugin: Plugin, Browsable {
                 hash: cached.mangaId,
                 relativePath: relativePath
             )
+            let file = parserFile(for: route, sourceURL: sourceURL)
             return try await prepareCachedManga(
                 cached.manga,
                 route: route,
                 parser: parser,
-                sourceURL: sourceURL
+                file: file
             )
         }
 
@@ -727,7 +741,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         for cover: String?,
         route: MangaRoute,
         parser: Parser,
-        sourceURL: URL
+        file: ParserFile
     ) async -> String? {
         guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
 
@@ -743,7 +757,7 @@ class FsBrowsablePlugin: Plugin, Browsable {
         }
 
         do {
-            let coverData = try await parser.parseImage(url: cover, path: sourceURL)
+            let coverData = try await parser.parseImage(url: cover, file: file)
             try FileManager.default.createDirectory(
                 at: cacheDir, withIntermediateDirectories: true, attributes: nil
             )
