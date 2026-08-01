@@ -2,8 +2,8 @@ name: Build IPA
 
 on:
   push:
-    branches: ["master"]
-  workflow_dispatch:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   build:
@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -38,7 +38,7 @@ jobs:
           zip -r mankai.ipa Payload/
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: mankai-unsigned
+          name: mankai-unsigned-${{ github.ref_name }}
           path: mankai.ipa

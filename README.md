@@ -131,10 +131,6 @@ The **SupabaseEngine** allows you to sync using Supabase as the backend. You can
 
 Once configured, you can enter your Supabase URL and Key in the app settings to enable syncing.
 
-### Planned Sync Engines
-
-- **iCloud** - Pending availability of resources (aka. I have no money)
-
 ## Parsers
 
 Mankai ships with built-in parsers that read local book files (e.g., CBZ) and extract their metadata and images. Each parser targets a specific file format.
@@ -142,13 +138,6 @@ Mankai ships with built-in parsers that read local book files (e.g., CBZ) and ex
 | Parser        | Extensions | Description                                                                                                                              |
 | :------------ | :--------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
 | **CbzParser** | `.cbz`     | Parses CBZ (Comic Book Zip) archives, extracting metadata from `ComicInfo.xml` and images from the archive.                             |
-
-### Planned Parsers
-
-- ~~**EPUB** - Digital book format.~~
-- **PDF** - Portable Document Format.
-- **CBR** - Comic Book RAR archive.
-- **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
 
 ## Development Notes
 
@@ -158,3 +147,20 @@ Mankai ships with built-in parsers that read local book files (e.g., CBZ) and ex
 - The app may temporarily freeze on the first scroll in the reader screen.
 
 These issues do not occur when running the app without a debugger attached.
+
+## Road to 1.0.0
+
+### Sync Engines
+
+- [ ] **iCloud** - Pending availability of resources (aka. I have no money)
+
+### Parsers
+
+- [ ] **EPUB** - Digital book format.
+- [ ] **PDF** - Portable Document Format.
+- [ ] **CBR** - Comic Book RAR archive.
+- [ ] **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
+
+### AI Features
+
+- [ ] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
