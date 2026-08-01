@@ -141,6 +141,18 @@ Mankai ships with built-in parsers that read local book files (e.g., CBZ) and ex
 
 ## Development Notes
 
+**Automatic Build Numbers**
+
+The repository includes a pre-commit hook that increments Xcode's `CURRENT_PROJECT_VERSION` once per commit and keeps the app and thumbnail extension build numbers synchronized.
+
+Enable the version-controlled hooks once after cloning:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+The hook stages the updated Xcode project file automatically. If that file has unstaged changes, the commit stops so unrelated Xcode settings are not staged silently, stage or stash those changes and retry the commit. A failed or retried commit reuses the same build number.
+
 **Performance with Debugger Attached (e.g., from Xcode):**
 
 - The startup time will be significantly slower than normal.

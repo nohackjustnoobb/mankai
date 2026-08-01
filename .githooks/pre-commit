@@ -1,0 +1,51 @@
+#!/bin/sh
+
+set -eu
+
+project="mankai.xcodeproj/project.pbxproj"
+
+if [ ! -f "$project" ]; then
+    echo "pre-commit: cannot find $project" >&2
+    exit 1
+fi
+
+# Staging the whole project file below must not sweep unrelated edits into the
+# commit. Ask the developer to make an explicit staging decision first.
+if ! git diff --quiet -- "$project"; then
+    echo "pre-commit: $project has unstaged changes." >&2
+    echo "Stage or stash them before committing." >&2
+    exit 1
+fi
+
+max_build_number() {
+    awk '
+        /CURRENT_PROJECT_VERSION = [0-9]+;/ {
+            value = $3
+            sub(/;/, "", value)
+            if (value > max) max = value
+        }
+        END { print max + 0 }
+    '
+}
+
+# Deriving the next number from HEAD makes retries idempotent: a failed commit
+# does not increment the build number again. For an initial commit, this is 0.
+committed_build="$({ git show "HEAD:$project" 2>/dev/null || true; } | max_build_number)"
+working_build="$(max_build_number < "$project")"
+next_build=$((committed_build + 1))
+
+# Respect a build number that was deliberately raised by hand.
+if [ "$working_build" -gt "$next_build" ]; then
+    next_build="$working_build"
+fi
+
+# This repository targets macOS/Xcode development, so use BSD sed syntax.
+sed -E -i '' \
+    "s/(CURRENT_PROJECT_VERSION = )[0-9]+;/\\1${next_build};/g" \
+    "$project"
+
+# The parent .xcodeproj directory is ignored, but project.pbxproj is already a
+# tracked file. Update tracked paths only so Git does not reject the ignored
+# parent directory.
+git add --update -- "$project"
+echo "pre-commit: build number $next_build"
