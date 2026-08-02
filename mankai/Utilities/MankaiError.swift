@@ -12,6 +12,7 @@ enum MankaiErrorDomain: String {
     case auth = "app.mankai.auth"
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
+    case browsePdf = "app.mankai.browse.pdf"
     case chapter = "app.mankai.chapter"
     case download = "app.mankai.download"
     case history = "app.mankai.history"
@@ -33,6 +34,7 @@ enum MankaiErrorDomain: String {
         case .auth: return 20
         case .browseArchive: return 30
         case .browseFilesystem: return 31
+        case .browsePdf: return 32
         case .chapter: return 40
         case .download: return 50
         case .history: return 60
@@ -86,6 +88,11 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseFilesystemInvalidMangaMeta
     case browseFilesystemEntryNotFound
     case browseFilesystemUnableToOpenFileForHashing
+    case browsePdfInvalidDocument
+    case browsePdfPasswordProtectedDocument
+    case browsePdfNoPagesFound
+    case browsePdfPageNotFound
+    case browsePdfFailedToRenderPage
 
     case chapterMissingChapterId
     case chapterGroupNotFound
@@ -173,6 +180,11 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .browseFilesystemInvalidMangaMeta: .init(domain: .browseFilesystem, code: 4, messageKey: "invalidMangaMeta"),
         .browseFilesystemEntryNotFound: .init(domain: .browseFilesystem, code: 5, messageKey: "entryNotFound"),
         .browseFilesystemUnableToOpenFileForHashing: .init(domain: .browseFilesystem, code: 6, messageKey: "unableToOpenFileForHashing"),
+        .browsePdfInvalidDocument: .init(domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
+        .browsePdfPasswordProtectedDocument: .init(domain: .browsePdf, code: 2, messageKey: "passwordProtectedPdfNotSupported"),
+        .browsePdfNoPagesFound: .init(domain: .browsePdf, code: 3, messageKey: "noPagesFoundInPdf"),
+        .browsePdfPageNotFound: .init(domain: .browsePdf, code: 4, messageKey: "pdfPageNotFound"),
+        .browsePdfFailedToRenderPage: .init(domain: .browsePdf, code: 5, messageKey: "failedToRenderPdfPage"),
 
         .chapterMissingChapterId: .init(domain: .chapter, code: 1, messageKey: "missingChapterId"),
         .chapterGroupNotFound: .init(domain: .chapter, code: 2, messageKey: "chapterGroupNotFound"),

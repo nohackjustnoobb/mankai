@@ -35,6 +35,7 @@ enum LogCategory: String {
     case appDirBrowsablePlugin = "AppDirBrowsablePlugin"
     case cbzParser = "CbzParser"
     case cbrParser = "CbrParser"
+    case pdfParser = "PdfParser"
 
     /// Runtime
     case jsRuntime = "JsRuntime"
@@ -199,6 +200,7 @@ extension Logger {
     static let appDirBrowsablePlugin = Logger(category: .appDirBrowsablePlugin)
     static let cbzParser = Logger(category: .cbzParser)
     static let cbrParser = Logger(category: .cbrParser)
+    static let pdfParser = Logger(category: .pdfParser)
 
     /// Runtime
     static let jsRuntime = Logger(category: .jsRuntime)
