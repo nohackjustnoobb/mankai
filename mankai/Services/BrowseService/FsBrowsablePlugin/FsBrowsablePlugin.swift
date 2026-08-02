@@ -94,8 +94,10 @@ class FsBrowsablePlugin: Plugin, Browsable {
         _id = id
 
         let cbzParser = CbzParser()
+        let cbrParser = CbrParser()
         parsers = [
             cbzParser.id: cbzParser,
+            cbrParser.id: cbrParser,
         ]
 
         super.init()

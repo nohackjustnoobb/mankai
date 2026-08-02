@@ -19,6 +19,7 @@ protocol ThumbnailHandler {
 enum ThumbnailHandlers {
     static let all: [ThumbnailHandler] = [
         CbzThumbnailHandler(),
+        CbrThumbnailHandler(),
     ]
 
     static func handler(forExtension ext: String) -> ThumbnailHandler? {

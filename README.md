@@ -47,7 +47,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local Collections**: Read [CBZ files](#parsers) and manage local collections stored on your device.
+- **Local Collections**: Read [CBZ and CBR files](#parsers) and manage local collections stored on your device.
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
@@ -133,11 +133,12 @@ Once configured, you can enter your Supabase URL and Key in the app settings to 
 
 ## Parsers
 
-Mankai ships with built-in parsers that read local book files (e.g., CBZ) and extract their metadata and images. Each parser targets a specific file format.
+Mankai ships with built-in parsers that read local book files (e.g., CBZ and CBR) and extract their metadata and images. Each parser targets a specific file format.
 
-| Parser        | Extensions | Description                                                                                                                              |
-| :------------ | :--------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| **CbzParser** | `.cbz`     | Parses CBZ (Comic Book Zip) archives, extracting metadata from `ComicInfo.xml` and images from the archive.                             |
+| Parser        | Extensions | Description                                                                                                  |
+| :------------ | :--------- | :----------------------------------------------------------------------------------------------------------- |
+| **CbzParser** | `.cbz`     | Parses Comic Book ZIP archives, extracting metadata from `ComicInfo.xml` and images from the archive.        |
+| **CbrParser** | `.cbr`     | Parses Comic Book RAR archives, extracting metadata from `ComicInfo.xml` and images from the archive.        |
 
 ## Development Notes
 
@@ -170,7 +171,7 @@ These issues do not occur when running the app without a debugger attached.
 
 - [ ] **EPUB** - Digital book format.
 - [ ] **PDF** - Portable Document Format.
-- [ ] **CBR** - Comic Book RAR archive.
+- [x] **CBR** - Comic Book RAR archive.
 - [ ] **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
 
 ### AI Features

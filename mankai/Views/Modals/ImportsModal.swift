@@ -29,7 +29,12 @@ struct ImportsModal: View {
     }
 
     private var supportedContentTypes: [UTType] {
-        AppDirBrowsablePlugin.shared.supportedExtensions.compactMap { UTType(filenameExtension: $0) }
+        AppDirBrowsablePlugin.shared.supportedExtensions.compactMap { ext in
+            if ext == "cbr" {
+                return UTType(importedAs: "public.cbr", conformingTo: .data)
+            }
+            return UTType(filenameExtension: ext)
+        }
     }
 
     private var selectedPlugin: BrowsablePlugin? {
