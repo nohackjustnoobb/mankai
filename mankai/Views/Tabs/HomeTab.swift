@@ -22,6 +22,7 @@ private enum HomeDataSource: String, CaseIterable {
 
 struct HomeTab: View {
     private let pluginService = PluginService.shared
+    private let browseService = BrowseService.shared
 
     @State private var mangas: [String: Manga] = [:]
     @State private var plugins: [String: Plugin] = [:]
@@ -57,7 +58,7 @@ struct HomeTab: View {
             return false
         }
 
-        let allPluginIds = Set(pluginService.plugins.map { $0.id })
+        let allPluginIds = Set(allPlugins.keys)
         let showSet = Set(showPlugins)
         return showSet != allPluginIds
     }
@@ -66,8 +67,20 @@ struct HomeTab: View {
         dataSource == .downloads
     }
 
+    private var allPlugins: [String: Plugin] {
+        var pluginsById = Dictionary(
+            uniqueKeysWithValues: pluginService.plugins.map { ($0.id, $0) }
+        )
+
+        for plugin in browseService.plugins where pluginsById[plugin.id] == nil {
+            pluginsById[plugin.id] = plugin
+        }
+
+        return pluginsById
+    }
+
     private var availablePlugins: [Plugin] {
-        return pluginService.plugins.sorted { plugin1, plugin2 in
+        return allPlugins.values.sorted { plugin1, plugin2 in
             let name1 = plugin1.name ?? plugin1.id
             let name2 = plugin2.name ?? plugin2.id
             return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
@@ -147,7 +160,7 @@ struct HomeTab: View {
                         showingFilters = true
                     }) {
                         ZStack {
-                            Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                            Image(systemName: "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
                                 Circle()
@@ -188,6 +201,12 @@ struct HomeTab: View {
                 }
             }
             .onReceive(pluginService.objectWillChange) {
+                initializeShowPlugins()
+                if !isDownloadsMode {
+                    updateSaved()
+                }
+            }
+            .onReceive(browseService.objectWillChange) {
                 initializeShowPlugins()
                 if !isDownloadsMode {
                     updateSaved()
@@ -248,7 +267,7 @@ struct HomeTab: View {
         for saved in savedList {
             let key = "\(saved.pluginId)+\(saved.mangaId)"
 
-            if let plugin = pluginService.getPlugin(saved.pluginId) {
+            if let plugin = allPlugins[saved.pluginId] {
                 plugins[key] = plugin
             }
 
@@ -372,12 +391,11 @@ struct HomeTab: View {
     }
 
     private func initializeShowPlugins() {
-        showPlugins = pluginService.plugins.map { $0.id }
+        showPlugins = Array(allPlugins.keys)
     }
 
     private func resetFilters() {
-        let allPlugins = pluginService.plugins.map { $0.id }
-        showPlugins = allPlugins
+        showPlugins = Array(allPlugins.keys)
         status = .all
         filterManga()
     }
@@ -409,7 +427,7 @@ struct HomeTab: View {
                     let key = "\(pluginId)+\(manga.id)"
 
                     mangas[key] = manga
-                    plugins[key] = pluginService.getPlugin(pluginId) ?? DummyPlugin(pluginId)
+                    plugins[key] = allPlugins[pluginId] ?? DummyPlugin(pluginId)
                     downloadOrders.append(key)
                 }
             }
