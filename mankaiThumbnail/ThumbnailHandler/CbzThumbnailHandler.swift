@@ -8,7 +8,7 @@
 import UIKit
 import ZIPFoundation
 
-/// Extracts the cover image (first page) of a CBZ comic archive.
+/// Extracts the cover image of a CBZ comic archive.
 final class CbzThumbnailHandler: ThumbnailHandler {
     let supportedExtensions: Set<String> = ["cbz"]
 
@@ -20,27 +20,45 @@ final class CbzThumbnailHandler: ThumbnailHandler {
     func coverImage(from url: URL) throws -> UIImage? {
         let archive = try Archive(url: url, accessMode: .read)
 
-        // Pick the first image entry, sorted by path so the cover is a stable
-        // "first page" regardless of zip ordering.
-        let firstImage = archive
+        let imageEntries = archive
             .compactMap { entry -> Entry? in
                 guard entry.type == .file, Self.isImageEntry(entry) else { return nil }
                 return entry
             }
             .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
-            .first
 
-        guard let entry = firstImage else { return nil }
+        guard let firstImage = imageEntries.first else { return nil }
 
+        let entry = Self.comicInfoEntry(in: archive).flatMap { infoEntry in
+            try? Self.entryData(archive: archive, entry: infoEntry)
+        }.flatMap { data in
+            ComicInfoCoverParser.frontCoverIndex(from: data)
+        }.flatMap { index in
+            imageEntries.indices.contains(index) ? imageEntries[index] : nil
+        } ?? firstImage
+
+        return try UIImage(data: Self.entryData(archive: archive, entry: entry))
+    }
+
+    // MARK: - Helpers
+
+    private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
         _ = try archive.extract(entry, consumer: { chunk in
             data.append(chunk)
         })
-
-        return UIImage(data: data)
+        return data
     }
 
-    // MARK: - Helpers
+    private static func comicInfoEntry(in archive: Archive) -> Entry? {
+        archive["ComicInfo.xml"] ?? archive.first { entry in
+            guard entry.type == .file else { return false }
+            let normalizedPath = entry.path.replacingOccurrences(of: "\\", with: "/")
+            let name = (normalizedPath as NSString).lastPathComponent
+            return !normalizedPath.contains("__MACOSX/")
+                && name.caseInsensitiveCompare("ComicInfo.xml") == .orderedSame
+        }
+    }
 
     private static func isImageEntry(_ entry: Entry) -> Bool {
         let name = (entry.path as NSString).lastPathComponent

@@ -69,8 +69,6 @@ This plugin scrapes content from third-party manga websites, allowing you to bro
 
 This plugin manages manga stored as local files stored on your device or a connected service.
 
-- **Syncing**: Point it to a folder in iCloud Drive or other remote storage solutions (e.g., SMB) to sync your library across devices.
-
 ### Http Plugin (HttpPlugin)
 
 This plugin is designed for external providers to use Mankai as a reader and, optionally, an editor. It connects to servers implementing the standard API and supports authentication.
@@ -166,6 +164,14 @@ These issues do not occur when running the app without a debugger attached.
 ### Sync Engines
 
 - [ ] **iCloud** - Pending availability of resources (aka. I have no money)
+
+### Network Protocols
+
+- [ ] **SMB** - Server Message Block support.
+- [ ] **WebDAV** - Web Distributed Authoring and Versioning support.
+- [ ] **NFS** - Network File System support.
+- [ ] **FTP** - File Transfer Protocol support.
+- [ ] **SFTP** - SSH File Transfer Protocol support.
 
 ### Parsers
 
