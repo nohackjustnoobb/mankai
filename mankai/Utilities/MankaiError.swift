@@ -13,6 +13,7 @@ enum MankaiErrorDomain: String {
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
     case browsePdf = "app.mankai.browse.pdf"
+    case browseEpub = "app.mankai.browse.epub"
     case chapter = "app.mankai.chapter"
     case download = "app.mankai.download"
     case history = "app.mankai.history"
@@ -35,6 +36,7 @@ enum MankaiErrorDomain: String {
         case .browseArchive: return 30
         case .browseFilesystem: return 31
         case .browsePdf: return 32
+        case .browseEpub: return 33
         case .chapter: return 40
         case .download: return 50
         case .history: return 60
@@ -93,6 +95,11 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browsePdfNoPagesFound
     case browsePdfPageNotFound
     case browsePdfFailedToRenderPage
+    case browseEpubInvalidContainer
+    case browseEpubInvalidPackage
+    case browseEpubProtectedContent
+    case browseEpubNoReadableImages
+    case browseEpubResourceNotFound
 
     case chapterMissingChapterId
     case chapterGroupNotFound
@@ -185,6 +192,11 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .browsePdfNoPagesFound: .init(domain: .browsePdf, code: 3, messageKey: "noPagesFoundInPdf"),
         .browsePdfPageNotFound: .init(domain: .browsePdf, code: 4, messageKey: "pdfPageNotFound"),
         .browsePdfFailedToRenderPage: .init(domain: .browsePdf, code: 5, messageKey: "failedToRenderPdfPage"),
+        .browseEpubInvalidContainer: .init(domain: .browseEpub, code: 1, messageKey: "invalidEpubContainer"),
+        .browseEpubInvalidPackage: .init(domain: .browseEpub, code: 2, messageKey: "invalidEpubPackage"),
+        .browseEpubProtectedContent: .init(domain: .browseEpub, code: 3, messageKey: "protectedEpubContentNotSupported"),
+        .browseEpubNoReadableImages: .init(domain: .browseEpub, code: 4, messageKey: "noReadableImagesInEpub"),
+        .browseEpubResourceNotFound: .init(domain: .browseEpub, code: 5, messageKey: "epubResourceNotFound"),
 
         .chapterMissingChapterId: .init(domain: .chapter, code: 1, messageKey: "missingChapterId"),
         .chapterGroupNotFound: .init(domain: .chapter, code: 2, messageKey: "chapterGroupNotFound"),

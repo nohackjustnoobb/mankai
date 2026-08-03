@@ -96,10 +96,12 @@ class FsBrowsablePlugin: Plugin, Browsable {
         let cbzParser = CbzParser()
         let cbrParser = CbrParser()
         let pdfParser = PdfParser()
+        let epubParser = EpubParser()
         parsers = [
             cbzParser.id: cbzParser,
             cbrParser.id: cbrParser,
             pdfParser.id: pdfParser,
+            epubParser.id: epubParser,
         ]
 
         super.init()

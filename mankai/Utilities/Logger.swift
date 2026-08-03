@@ -36,6 +36,7 @@ enum LogCategory: String {
     case cbzParser = "CbzParser"
     case cbrParser = "CbrParser"
     case pdfParser = "PdfParser"
+    case epubParser = "EpubParser"
 
     /// Runtime
     case jsRuntime = "JsRuntime"
@@ -201,6 +202,7 @@ extension Logger {
     static let cbzParser = Logger(category: .cbzParser)
     static let cbrParser = Logger(category: .cbrParser)
     static let pdfParser = Logger(category: .pdfParser)
+    static let epubParser = Logger(category: .epubParser)
 
     /// Runtime
     static let jsRuntime = Logger(category: .jsRuntime)
