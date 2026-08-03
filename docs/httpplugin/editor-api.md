@@ -13,7 +13,6 @@ This specification describes the endpoints your server must implement to support
 - [Chapter Group Management](#chapter-group-management)
   - [`POST /edit/chapter-group`](#post-editchapter-group)
   - [`DELETE /edit/chapter-group/:id`](#delete-editchapter-groupid)
-  - [`GET /edit/chapter-group/id`](#get-editchapter-groupid)
   - [`GET /edit/chapter-group/:id/chapters`](#get-editchapter-groupidchapters)
 - [Chapter Management](#chapter-management)
   - [`POST /edit/chapter`](#post-editchapter)
@@ -79,6 +78,8 @@ Raw image data (e.g. `image/png`, `image/jpeg`).
 
 A chapter group is a named container for a set of related chapters (for example, a "Season 1" group, or chapters belonging to the same scanlation team).
 
+For editable manga, every chapter group returned by `GET /manga/:id` must include its `id`. The app uses this ID for update and delete operations. Read-only implementations may omit chapter group IDs.
+
 ### `POST /edit/chapter-group`
 
 Insert or update a chapter group. Omit `id` to create a new group; otherwise, the existing group with that ID is updated.
@@ -102,25 +103,6 @@ Delete a chapter group and all of its chapters and images.
 | Parameter | Type     | Description              |
 | :-------- | :------- | :----------------------- |
 | `id`      | `string` | The chapter group's ID.  |
-
-### `GET /edit/chapter-group/id`
-
-Look up the ID of a chapter group by its parent manga and zero-based index. The index refers to the group's position in the ordered `chapters` array returned by `GET /manga/:id`. Returns `null` if no group exists at that index.
-
-**Query Parameters**
-
-| Parameter | Type     | Required | Description                                      |
-| :-------- | :------- | :------- | :----------------------------------------------- |
-| `mangaId` | `string` | Yes      | The ID of the parent manga.                      |
-| `index`   | `number` | Yes      | The group's zero-based index in `chapters`.      |
-
-**Response — `200 OK`**
-
-```ts
-interface ChapterGroupIdResponse {
-  id: string | null;
-}
-```
 
 ### `GET /edit/chapter-group/:id/chapters`
 

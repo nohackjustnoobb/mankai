@@ -168,11 +168,10 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            if let id = try await selectedPlugin.getChapterGroupId(
-                mangaId: manga.id, index: chapterGroupIndexToRemove
-            ) {
-                try await selectedPlugin.deleteChapterGroup(id: id)
+            guard let id = manga.chapters[chapterGroupIndexToRemove].id else {
+                throw MankaiErrorCode.chapterGroupNotFound.makeError()
             }
+            try await selectedPlugin.deleteChapterGroup(id: id)
 
             manga.chapters.remove(at: chapterGroupIndexToRemove)
             self.chapterGroupIndexToRemove = nil

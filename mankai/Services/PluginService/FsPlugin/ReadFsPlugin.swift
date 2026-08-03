@@ -307,7 +307,13 @@ class ReadFsPlugin: Plugin {
                     .map { chapter in
                         Chapter(id: String(chapter.id!), title: chapter.title)
                     }
-            chapterGroups.append(ChapterGroup(title: group.title, chapters: chaptersArray))
+            chapterGroups.append(
+                ChapterGroup(
+                    id: self is Editable ? group.id.map(String.init) : nil,
+                    title: group.title,
+                    chapters: chaptersArray
+                )
+            )
         }
         mangaDict["chapters"] = chapterGroups
 

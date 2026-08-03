@@ -225,6 +225,7 @@ interface Chapter {
 }
 
 interface ChapterGroup {
+  id?: string;             // Required for editable manga, Read-only plugins may omit it
   title: string;           // Unique within this manga
   chapters: Chapter[];     // Increasing order: oldest/lowest chapter first
 }

@@ -8,6 +8,7 @@
 import Foundation
 
 struct ChapterGroup: Codable {
+    var id: String? = nil
     var title: String
     var chapters: [Chapter]
 }
@@ -129,7 +130,11 @@ struct DetailedManga: Identifiable, Codable {
                     )
                 }
 
-                return ChapterGroup(title: title, chapters: groupChapters)
+                return ChapterGroup(
+                    id: groupDict["id"] as? String,
+                    title: title,
+                    chapters: groupChapters
+                )
             }
         } else {
             chapters = []

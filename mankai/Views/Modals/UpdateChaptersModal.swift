@@ -228,14 +228,11 @@ struct UpdateChaptersModal: View {
                     return
                 }
 
-                if let groupId = try await plugin.getChapterGroupId(
-                    mangaId: manga.id, index: chapterGroupIndex
-                ) {
-                    self.chapterGroupId = groupId
-                    fetchChapters()
-                } else {
-                    dismiss()
+                guard let groupId = manga.chapters[chapterGroupIndex].id else {
+                    throw MankaiErrorCode.chapterGroupNotFound.makeError()
                 }
+                self.chapterGroupId = groupId
+                fetchChapters()
             } catch {
                 errorMessage = error.localizedDescription
                 showingErrorAlert = true
