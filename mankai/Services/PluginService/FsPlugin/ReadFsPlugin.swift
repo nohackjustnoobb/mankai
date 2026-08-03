@@ -172,6 +172,10 @@ class ReadFsPlugin: Plugin {
         Genre.allCases
     }
 
+    override var canDownload: Bool {
+        false
+    }
+
     // MARK: - Override Methods
 
     override func savePlugin() throws {

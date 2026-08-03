@@ -23,6 +23,10 @@ class FsBrowsablePlugin: Plugin, Browsable {
         Genre.allCases
     }
 
+    override var canDownload: Bool {
+        false
+    }
+
     var systemImageName: String {
         "folder.fill"
     }

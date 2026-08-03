@@ -90,6 +90,11 @@ class Plugin: Identifiable, ObservableObject {
         true
     }
 
+    /// Whether manga sourced from this plugin can be downloaded for offline access.
+    var canDownload: Bool {
+        true
+    }
+
     var shouldCache: Bool {
         false
     }

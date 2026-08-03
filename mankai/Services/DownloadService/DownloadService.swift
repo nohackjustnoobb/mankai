@@ -62,6 +62,11 @@ final class DownloadTask: Identifiable, ObservableObject {
             throw MankaiErrorCode.downloadPluginNotFound.makeError()
         }
 
+        guard plugin.canDownload else {
+            Logger.downloadService.warning("Downloads are disabled for plugin: \(plugin.id)")
+            throw MankaiErrorCode.downloadDisabled.makeError()
+        }
+
         // 2. Download Cover
         if let coverUrl = manga.cover {
             do {
@@ -231,6 +236,11 @@ final class DownloadService: ObservableObject {
     func queue(plugin: Plugin, manga: DetailedManga, chapters: ChapterGroups) async throws -> DownloadTask {
         let chaptersCount = chapters.flatMap(\.chapters).count
         Logger.downloadService.debug("Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
+
+        guard plugin.canDownload else {
+            Logger.downloadService.warning("Downloads are disabled for plugin: \(plugin.id)")
+            throw MankaiErrorCode.downloadDisabled.makeError()
+        }
 
         guard let db = DownloadPlugin.shared.db else {
             Logger.downloadService.error("Download database not available")

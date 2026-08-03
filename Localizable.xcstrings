@@ -1569,6 +1569,22 @@
         }
       }
     },
+    "downloadDisabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads are disabled for this plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此插件已停用下載功能"
+          }
+        }
+      }
+    },
     "downloadDatabaseNotAvailable" : {
       "localizations" : {
         "en" : {

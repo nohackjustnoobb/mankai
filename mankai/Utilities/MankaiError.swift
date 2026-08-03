@@ -106,6 +106,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
     case downloadDatabaseNotAvailable
     case downloadPluginNotFound
+    case downloadDisabled
     case historyFailedToUpdateHistoryRecord
     case libraryFailedToUpdateSavedManga
     case libraryFailedToDeleteSavedManga
@@ -203,6 +204,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
         .downloadDatabaseNotAvailable: .init(domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
         .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "pluginNotFound"),
+        .downloadDisabled: .init(domain: .download, code: 3, messageKey: "downloadDisabled"),
         .historyFailedToUpdateHistoryRecord: .init(domain: .history, code: 1, messageKey: "failedToUpdateHistoryRecord"),
         .libraryFailedToUpdateSavedManga: .init(domain: .library, code: 1, messageKey: "failedToUpdateSavedManga"),
         .libraryFailedToDeleteSavedManga: .init(domain: .library, code: 2, messageKey: "failedToDeleteSavedManga"),

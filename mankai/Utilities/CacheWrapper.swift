@@ -103,6 +103,10 @@ class CacheWrapper: Plugin {
         plugin.shouldSync
     }
 
+    override var canDownload: Bool {
+        plugin.canDownload
+    }
+
     // MARK: - Configs Delegation
 
     override var configValues: [ConfigValue] {

@@ -584,7 +584,7 @@ struct MangaDetailsScreen: View {
             }
 
             ToolbarItemGroup(placement: .primaryAction) {
-                if mangaData == nil || detailedManga != nil {
+                if plugin.canDownload, mangaData == nil || detailedManga != nil {
                     Button(action: { isSelectChaptersModalPresented = true }) {
                         Image(systemName: "arrow.down.circle")
                     }
