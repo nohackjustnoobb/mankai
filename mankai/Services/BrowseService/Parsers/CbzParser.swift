@@ -144,8 +144,16 @@ final class CbzParser: Parser {
             }
         }
 
+        var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverEntryPath)
+        if let chapter = manga.latestChapter {
+            manga.meta = try ParserChapterMetadata(
+                chapterId: chapter.id,
+                pages: imageEntries.map(\.path)
+            ).encoded()
+        }
+
         Logger.cbzParser.debug("Parsed \(imageEntries.count) images")
-        return ComicArchiveSupport.detailedManga(info: info, coverPath: coverEntryPath)
+        return manga
     }
 
     override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
@@ -153,9 +161,20 @@ final class CbzParser: Parser {
     }
 
     override func parseChapter(
-        manga: DetailedManga, chapter _: Chapter, file: ParserFile
+        manga: DetailedManga, chapter: Chapter, file: ParserFile
     ) async throws -> [String] {
         Logger.cbzParser.debug("Parsing chapter images for manga: \(manga.id)")
+
+        if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
+            Logger.cbzParser.debug(
+                "Using \(pages.count) cached page references for chapter: \(chapter.id)"
+            )
+            return pages
+        }
+
+        Logger.cbzParser.debug(
+            "No compatible chapter metadata found; reparsing archive"
+        )
 
         let imageEntries: [Entry] = try await withReadLock(for: file) { archive in
             archive

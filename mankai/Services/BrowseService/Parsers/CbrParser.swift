@@ -131,8 +131,16 @@ final class CbrParser: Parser {
             } ?? imagePaths.first
         }
 
+        var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverPath)
+        if let chapter = manga.latestChapter {
+            manga.meta = try ParserChapterMetadata(
+                chapterId: chapter.id,
+                pages: imagePaths
+            ).encoded()
+        }
+
         Logger.cbrParser.debug("Parsed \(imagePaths.count) images")
-        return ComicArchiveSupport.detailedManga(info: info, coverPath: coverPath)
+        return manga
     }
 
     override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
@@ -141,10 +149,21 @@ final class CbrParser: Parser {
 
     override func parseChapter(
         manga: DetailedManga,
-        chapter _: Chapter,
+        chapter : Chapter,
         file: ParserFile
     ) async throws -> [String] {
         Logger.cbrParser.debug("Parsing chapter images for manga: \(manga.id)")
+
+        if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
+            Logger.cbrParser.debug(
+                "Using \(pages.count) cached page references for chapter: \(chapter.id)"
+            )
+            return pages
+        }
+
+        Logger.cbrParser.debug(
+            "No compatible chapter metadata found; reparsing archive"
+        )
 
         let imagePaths = try await withReadLock(for: file) { cachedArchive in
             Self.sortedImagePaths(in: cachedArchive.filenames)

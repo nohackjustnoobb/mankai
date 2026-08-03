@@ -7,6 +7,35 @@
 
 import Foundation
 
+/// Page references discovered while parsing a file, persisted with the cached manga.
+///
+/// Keeping these references in `DetailedManga.meta` lets `parseChapter` avoid
+/// inspecting the source file again.
+struct ParserChapterMetadata: Codable {
+    let chapters: [String: [String]]
+
+    init(chapterId: String, pages: [String]) {
+        chapters = [chapterId: pages]
+    }
+
+    func pages(for chapterId: String) -> [String]? {
+        guard let pages = chapters[chapterId], !pages.isEmpty else { return nil }
+        return pages
+    }
+
+    func encoded() throws -> String {
+        let data = try JSONEncoder().encode(self)
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    static func decode(_ value: String?) -> Self? {
+        guard let value,
+              let data = value.data(using: .utf8)
+        else { return nil }
+        return try? JSONDecoder().decode(Self.self, from: data)
+    }
+}
+
 /// A backend-neutral file supplied to a parser.
 ///
 /// `cacheKey` must identify the current content. Callers should provide a new key

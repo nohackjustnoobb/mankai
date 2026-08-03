@@ -108,9 +108,14 @@ final class PdfParser: Parser {
 
         var manga = DetailedManga()
         let chapter = Chapter(id: "0", title: nil)
+        let pages = (0 ..< pageCount).map { Self.pageReference(for: $0) }
         manga.cover = Self.pageReference(for: 0)
         manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
         manga.latestChapter = chapter
+        manga.meta = try ParserChapterMetadata(
+            chapterId: chapter.id,
+            pages: pages
+        ).encoded()
 
         Logger.pdfParser.debug("Parsed \(pageCount) pages")
         return manga
@@ -144,10 +149,21 @@ final class PdfParser: Parser {
 
     override func parseChapter(
         manga: DetailedManga,
-        chapter _: Chapter,
+        chapter: Chapter,
         file: ParserFile
     ) async throws -> [String] {
         Logger.pdfParser.debug("Parsing chapter pages for manga: \(manga.id)")
+
+        if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
+            Logger.pdfParser.debug(
+                "Using \(pages.count) cached page references for chapter: \(chapter.id)"
+            )
+            return pages
+        }
+
+        Logger.pdfParser.debug(
+            "No compatible chapter metadata found; reparsing document"
+        )
 
         let pageCount = try await withReadLock(for: file) { cachedDocument in
             cachedDocument.document.pageCount

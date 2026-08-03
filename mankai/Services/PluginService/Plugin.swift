@@ -95,6 +95,7 @@ class Plugin: Identifiable, ObservableObject {
         true
     }
 
+    /// Whether response data from this plugin should be cached.
     var shouldCache: Bool {
         false
     }

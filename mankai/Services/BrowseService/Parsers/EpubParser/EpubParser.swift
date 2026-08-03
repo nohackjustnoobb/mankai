@@ -9,17 +9,6 @@ import Foundation
 import ZIPFoundation
 
 final class EpubParser: Parser {
-    private struct Metadata: Codable {
-        let chapters: [String: [String]]
-
-        func pages(for chapterId: String) -> [String]? {
-            guard let pages = chapters[chapterId],
-                  !pages.isEmpty
-            else { return nil }
-            return pages
-        }
-    }
-
     private final class CachedArchive {
         let archive: Archive
         let readLock = NSLock()
@@ -117,9 +106,10 @@ final class EpubParser: Parser {
         let chapter = Chapter(id: "0", title: publication.title)
         manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
         manga.latestChapter = chapter
-        manga.meta = try Self.encodeMetadata(
-            Metadata(chapters: [chapter.id: publication.pagePaths])
-        )
+        manga.meta = try ParserChapterMetadata(
+            chapterId: chapter.id,
+            pages: publication.pagePaths
+        ).encoded()
 
         Logger.epubParser.debug("Parsed \(publication.pagePaths.count) EPUB image pages")
         return manga
@@ -160,7 +150,7 @@ final class EpubParser: Parser {
     ) async throws -> [String] {
         Logger.epubParser.debug("Parsing EPUB chapter images for manga: \(manga.id)")
 
-        if let pages = Self.decodeMetadata(manga.meta)?.pages(for: chapter.id) {
+        if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
             Logger.epubParser.debug(
                 "Using \(pages.count) cached EPUB page references for chapter: \(chapter.id)"
             )
@@ -215,18 +205,6 @@ final class EpubParser: Parser {
             data.append(chunk)
         })
         return data
-    }
-
-    private static func encodeMetadata(_ metadata: Metadata) throws -> String {
-        let data = try JSONEncoder().encode(metadata)
-        return String(decoding: data, as: UTF8.self)
-    }
-
-    private static func decodeMetadata(_ value: String?) -> Metadata? {
-        guard let value,
-              let data = value.data(using: .utf8)
-        else { return nil }
-        return try? JSONDecoder().decode(Metadata.self, from: data)
     }
 
     private static func genres(from subjects: [String]) -> [Genre] {
