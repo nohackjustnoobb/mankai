@@ -7,7 +7,7 @@
 
 import Foundation
 
-class PluginService: ObservableObject {
+final class PluginService: ObservableObject {
     /// The shared singleton instance of `PluginService`.
     static let shared = PluginService()
 

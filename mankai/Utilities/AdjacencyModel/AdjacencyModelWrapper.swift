@@ -13,7 +13,7 @@ import UIKit
 
 // MARK: - AdjacencyModelWrapper
 
-class AdjacencyModelWrapper {
+final class AdjacencyModelWrapper {
     /// The shared singleton instance.
     static let shared = try? AdjacencyModelWrapper()
 

@@ -28,7 +28,7 @@ struct AppNotification: Identifiable, Equatable {
     }
 }
 
-class NotificationService: ObservableObject {
+final class NotificationService: ObservableObject {
     /// The shared singleton instance of NotificationService.
     static let shared = NotificationService()
 

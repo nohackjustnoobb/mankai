@@ -8,8 +8,8 @@
 import Foundation
 import SwiftUI
 
-class AppDirBrowsablePlugin: FsBrowsablePlugin {
-    static var shared = AppDirBrowsablePlugin()
+final class AppDirBrowsablePlugin: FsBrowsablePlugin {
+    static let shared = AppDirBrowsablePlugin()
 
     private init() {
         let fileManager = FileManager.default

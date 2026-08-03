@@ -16,7 +16,7 @@ enum DownloadStatus {
     case cancelled
 }
 
-class DownloadTask: Identifiable, ObservableObject {
+final class DownloadTask: Identifiable, ObservableObject {
     let id: String
     let manga: DownloadMangaModel
 
@@ -203,7 +203,7 @@ class DownloadTask: Identifiable, ObservableObject {
     }
 }
 
-class DownloadService: ObservableObject {
+final class DownloadService: ObservableObject {
     /// The shared singleton instance of DownloadService.
     static let shared = DownloadService()
 

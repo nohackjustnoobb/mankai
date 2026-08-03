@@ -7,7 +7,7 @@
 
 import Foundation
 
-class HttpEngine: SyncEngine {
+final class HttpEngine: SyncEngine {
     static let shared = HttpEngine()
 
     private static let iso8601Formatter: ISO8601DateFormatter = {

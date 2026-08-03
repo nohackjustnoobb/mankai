@@ -7,7 +7,7 @@
 
 import Foundation
 
-class AuthManager {
+final class AuthManager {
     private var _serverUrl: String?
 
     private var _username: String?

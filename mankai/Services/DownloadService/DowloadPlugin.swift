@@ -16,8 +16,8 @@ enum DownloadPluginConstants {
     static let suggestionLimit: UInt = 5
 }
 
-class DownloadPlugin: Plugin {
-    static var shared = DownloadPlugin()
+final class DownloadPlugin: Plugin {
+    static let shared = DownloadPlugin()
 
     override var id: String {
         "download"

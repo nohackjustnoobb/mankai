@@ -7,7 +7,7 @@
 
 import Foundation
 
-class DummyPlugin: Plugin {
+final class DummyPlugin: Plugin {
     private let _id: String
 
     override var id: String {

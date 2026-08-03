@@ -7,7 +7,7 @@
 
 import Foundation
 
-class UpdateService: ObservableObject {
+final class UpdateService: ObservableObject {
     /// The shared singleton instance of UpdateService.
     static let shared = UpdateService()
 

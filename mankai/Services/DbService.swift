@@ -9,7 +9,7 @@ import CoreData
 import Foundation
 import GRDB
 
-class DbService {
+final class DbService {
     /// The shared singleton instance of DbService.
     static let shared = DbService()
 

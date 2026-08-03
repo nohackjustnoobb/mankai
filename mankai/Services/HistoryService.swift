@@ -8,7 +8,7 @@
 import Foundation
 import GRDB
 
-class HistoryService: ObservableObject {
+final class HistoryService: ObservableObject {
     /// The shared singleton instance of HistoryService.
     static let shared = HistoryService()
 

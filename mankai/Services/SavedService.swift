@@ -9,7 +9,7 @@ import CryptoKit
 import Foundation
 import GRDB
 
-class SavedService: ObservableObject {
+final class SavedService: ObservableObject {
     /// The shared singleton instance of SavedService.
     static let shared = SavedService()
 

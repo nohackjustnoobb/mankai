@@ -9,7 +9,7 @@ import Combine
 import Foundation
 import GRDB
 
-class SyncService: ObservableObject {
+final class SyncService: ObservableObject {
     /// The shared singleton instance of SyncService.
     static let shared = SyncService()
     /// The list of available synchronization engines.

@@ -7,8 +7,8 @@
 
 import Foundation
 
-class AppDirPlugin: ReadWriteFsPlugin {
-    static var shared = AppDirPlugin()
+final class AppDirPlugin: ReadWriteFsPlugin {
+    static let shared = AppDirPlugin()
 
     private init() {
         let fileManager = FileManager.default

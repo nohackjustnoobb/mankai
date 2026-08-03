@@ -7,7 +7,7 @@
 
 import QuickLookThumbnailing
 
-class ThumbnailProvider: QLThumbnailProvider {
+final class ThumbnailProvider: QLThumbnailProvider {
     override func provideThumbnail(
         for request: QLFileThumbnailRequest,
         _ completion: @escaping (QLThumbnailReply?, Error?) -> Void

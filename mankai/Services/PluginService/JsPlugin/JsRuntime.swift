@@ -20,7 +20,7 @@ enum Method: String {
     case removeValue
 }
 
-class JsRuntime: NSObject {
+final class JsRuntime: NSObject {
     static let shared = JsRuntime()
 
     private lazy var jsLog: String = loadScript("log")

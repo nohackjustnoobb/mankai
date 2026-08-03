@@ -30,7 +30,7 @@ struct ReaderGroup: Identifiable, Hashable {
 }
 
 @MainActor
-class ReaderSession: ObservableObject {
+final class ReaderSession: ObservableObject {
     @Published var images: [String: ReaderImage] = [:]
     @Published var groups: [ReaderGroup] = []
     private(set) var urls: [String] = []

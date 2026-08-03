@@ -16,7 +16,7 @@ private enum OverscrollType {
     case next
 }
 
-private class OverscrollViewController: UIViewController {
+private final class OverscrollViewController: UIViewController {
     let type: OverscrollType
     let orientation: NavigationOrientation
     let readingDirection: ReadingDirection
@@ -208,7 +208,7 @@ private class OverscrollViewController: UIViewController {
 
 // MARK: - PagedReaderViewController
 
-private class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
+private final class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
     UIPageViewControllerDelegate
 {
     let plugin: Plugin
@@ -1410,7 +1410,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
 // MARK: - PageContentViewController
 
-private class PageContentViewController: UIViewController, UIScrollViewDelegate {
+private final class PageContentViewController: UIViewController, UIScrollViewDelegate {
     let pageIndex: Int
     let urls: [String]
     let readingDirection: ReadingDirection

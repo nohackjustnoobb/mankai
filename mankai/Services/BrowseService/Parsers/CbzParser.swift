@@ -13,7 +13,7 @@
 import Foundation
 import ZIPFoundation
 
-class CbzParser: Parser {
+final class CbzParser: Parser {
     /// Couples each ZIPFoundation archive to the lock that serializes its reads.
     /// Retaining this wrapper for an operation keeps an evicted archive alive until that operation has finished.
     private final class CachedArchive {

@@ -74,7 +74,7 @@ protocol Browsable {
 
 typealias BrowsablePlugin = Browsable & Plugin
 
-class BrowseService: ObservableObject {
+final class BrowseService: ObservableObject {
     static let shared = BrowseService()
 
     private init() {

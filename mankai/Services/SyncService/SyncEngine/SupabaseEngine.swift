@@ -13,7 +13,7 @@ import Supabase
 /// 2. It is rare for users to use multiple devices to read at the exact same time.
 /// 3. Realtime has a higher cost.
 /// Therefore, it is not worth it to use Realtime for this use case.
-class SupabaseEngine: SyncEngine {
+final class SupabaseEngine: SyncEngine {
     static let shared = SupabaseEngine()
 
     private var supabase: SupabaseClient?

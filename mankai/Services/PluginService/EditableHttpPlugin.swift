@@ -7,7 +7,7 @@
 
 import Foundation
 
-class EditableHttpPlugin: HttpPlugin, Editable {
+final class EditableHttpPlugin: HttpPlugin, Editable {
     override var tags: [String] {
         [String(localized: "http")]
     }

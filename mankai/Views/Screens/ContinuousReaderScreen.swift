@@ -39,7 +39,7 @@ private struct ContinuousGroup: Identifiable, Hashable {
 
 // MARK: - ContinuousReaderViewController
 
-private class ContinuousReaderViewController: UIViewController, UIScrollViewDelegate {
+private final class ContinuousReaderViewController: UIViewController, UIScrollViewDelegate {
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?

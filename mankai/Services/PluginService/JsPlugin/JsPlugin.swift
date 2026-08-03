@@ -19,7 +19,7 @@ enum ScriptType: String {
     case getImage
 }
 
-class JsPlugin: Plugin {
+final class JsPlugin: Plugin {
     // MARK: - Metadata
 
     private var _id: String
