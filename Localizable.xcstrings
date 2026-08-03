@@ -3561,6 +3561,38 @@
         }
       }
     },
+    "licenseUnavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "License Unavailable"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入授權條款"
+          }
+        }
+      }
+    },
+    "thirdPartyLicenses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Third-Party Licenses"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第三方軟體授權"
+          }
+        }
+      }
+    },
     "localDir" : {
       "localizations" : {
         "en" : {

@@ -14,6 +14,8 @@
 		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
 		E4643183301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643182301F5A40003786FA /* UnrarKit */; };
 		E4643185301F5A40003786FA /* UnrarKit in Frameworks */ = {isa = PBXBuildFile; productRef = E4643184301F5A40003786FA /* UnrarKit */; };
+		E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */ = {isa = PBXBuildFile; productRef = E46452933020E344003786FA /* SwiftPackageListUI */; };
+		E46452A13020F123003786FA /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = E46452A03020F123003786FA /* LICENSE */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
 		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
@@ -49,6 +51,7 @@
 		E40C6B342E05A95700AF2FC9 /* mankai.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mankai.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = mankaiThumbnail.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E427B77C3007F96E003649A2 /* QuickLookThumbnailing.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookThumbnailing.framework; path = System/Library/Frameworks/QuickLookThumbnailing.framework; sourceTree = SDKROOT; };
+		E46452A03020F123003786FA /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -94,6 +97,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */,
 				E4643183301F5A40003786FA /* UnrarKit in Frameworks */,
 				E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */,
 				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
@@ -119,6 +123,7 @@
 		E40C6B2B2E05A95700AF2FC9 = {
 			isa = PBXGroup;
 			children = (
+				E46452A03020F123003786FA /* LICENSE */,
 				E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */,
 				E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */,
 				E40C6B902E06869400AF2FC9 /* mankai */,
@@ -160,6 +165,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				E46452963020E357003786FA /* PBXTargetDependency */,
 				E427B7833007F96E003649A2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
@@ -173,6 +179,7 @@
 				E4958E0F2F2FABE1004F2F4D /* Supabase */,
 				E4CAEFFB3006797500208FB4 /* ZIPFoundation */,
 				E4643182301F5A40003786FA /* UnrarKit */,
+				E46452933020E344003786FA /* SwiftPackageListUI */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -237,6 +244,7 @@
 				E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */,
+				E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -254,6 +262,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E46452A13020F123003786FA /* LICENSE in Resources */,
 				E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */,
 				E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */,
 			);
@@ -290,6 +299,10 @@
 			isa = PBXTargetDependency;
 			target = E427B77A3007F96E003649A2 /* mankaiThumbnail */;
 			targetProxy = E427B7823007F96E003649A2 /* PBXContainerItemProxy */;
+		};
+		E46452963020E357003786FA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = E46452953020E357003786FA /* SwiftPackageListPlugin */;
 		};
 /* End PBXTargetDependency section */
 
@@ -428,7 +441,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -467,7 +480,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -503,7 +516,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -536,7 +549,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -622,6 +635,14 @@
 				kind = branch;
 			};
 		};
+		E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/FelixHerrmann/swift-package-list";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 4.10.0;
+			};
+		};
 		E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -673,6 +694,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4643181301F5A40003786FA /* XCRemoteSwiftPackageReference "UnrarKit" */;
 			productName = UnrarKit;
+		};
+		E46452933020E344003786FA /* SwiftPackageListUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */;
+			productName = SwiftPackageListUI;
+		};
+		E46452953020E357003786FA /* SwiftPackageListPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */;
+			productName = "plugin:SwiftPackageListPlugin";
 		};
 		E4958E0F2F2FABE1004F2F4D /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;

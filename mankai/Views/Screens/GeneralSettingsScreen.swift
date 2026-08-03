@@ -127,8 +127,16 @@ struct GeneralSettingsScreen: View {
                     Text(appVersion)
                 }
 
-                LabeledContent("license") {
-                    Text("GNU GPLv3")
+                NavigationLink {
+                    AppLicenseScreen()
+                } label: {
+                    LabeledContent("license") {
+                        Text("GNU GPLv3")
+                    }
+                }
+
+                NavigationLink("thirdPartyLicenses") {
+                    ThirdPartyLicensesScreen()
                 }
             }
 
