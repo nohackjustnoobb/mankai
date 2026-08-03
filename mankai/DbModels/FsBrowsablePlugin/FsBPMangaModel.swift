@@ -11,7 +11,7 @@ struct FsBPMangaModel {
     var mangaId: String
     var parserId: String
     var pluginId: String
-    var cacheKey: String
+    var path: String
     var info: String
 
     static func createTable(_ db: Database) throws {
@@ -21,14 +21,14 @@ struct FsBPMangaModel {
             $0.column("mangaId", .text).notNull()
             $0.column("parserId", .text).notNull()
             $0.column("pluginId", .text).notNull()
-            $0.column("cacheKey", .text).notNull()
+            $0.column("path", .text).notNull()
             $0.column("info", .text).notNull()
         }
 
         try db.create(
-            index: "fsbpmanga_on_cacheKey_parserId_pluginId",
+            index: "fsbpmanga_on_path_parserId_pluginId",
             on: FsBPMangaModel.databaseTableName,
-            columns: ["cacheKey", "parserId", "pluginId"],
+            columns: ["path", "parserId", "pluginId"],
             ifNotExists: true
         )
     }
