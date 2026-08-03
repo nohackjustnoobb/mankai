@@ -9,56 +9,21 @@ import Foundation
 import UnrarKit
 
 final class CbrParser: Parser {
-    /// UnrarKit reads from a file URL, while `ParserFile` deliberately exposes
-    /// backend-neutral data. This wrapper keeps the temporary file alive for as
-    /// long as its archive can be used and removes it when the cache releases it.
+    /// Couples each UnrarKit archive to its filenames and the lock that serializes reads.
     private final class CachedArchive {
         let archive: URKArchive
         let filenames: [String]
         let readLock = NSLock()
-        private let fileURL: URL
 
-        init(archive: URKArchive, filenames: [String], fileURL: URL) {
+        init(archive: URKArchive, filenames: [String]) {
             self.archive = archive
             self.filenames = filenames
-            self.fileURL = fileURL
-        }
-
-        deinit {
-            try? FileManager.default.removeItem(at: fileURL)
         }
     }
 
     private var cachedArchiveKey: String?
     private var cachedArchive: CachedArchive?
     private let cacheLock = NSLock()
-
-    private static let temporaryDirectory: URL = {
-        let fileManager = FileManager.default
-        let directory = fileManager.temporaryDirectory
-            .appendingPathComponent("cbr", isDirectory: true)
-
-        if fileManager.fileExists(atPath: directory.path) {
-            do {
-                try fileManager.removeItem(at: directory)
-                Logger.cbrParser.debug("Cleared stale CBR temporary archives")
-            } catch {
-                // Cleanup must not prevent reading new archives. UUID filenames
-                // keep new files from colliding with anything left behind.
-                Logger.cbrParser.warning(
-                    "Failed to clear stale CBR temporary archives: \(error)"
-                )
-            }
-        }
-
-        return directory
-    }()
-
-    override init() {
-        super.init()
-        // Accessing the static directory performs one process-wide stale-file sweep.
-        _ = Self.temporaryDirectory
-    }
 
     private func cachedArchive(for cacheKey: String) -> CachedArchive? {
         cacheLock.lock()
@@ -89,33 +54,14 @@ final class CbrParser: Parser {
             return cached
         }
 
-        Logger.cbrParser.debug("Loading archive content: \(file.cacheKey)")
-        let data = try await file.getContent()
-        let fileManager = FileManager.default
-        try fileManager.createDirectory(
-            at: Self.temporaryDirectory,
-            withIntermediateDirectories: true
+        Logger.cbrParser.debug("Loading archive: \(file.cacheKey)")
+        let url = try await file.getUrl()
+        let archive = try URKArchive(url: url)
+        let filenames = try archive.listFilenames()
+        return storeArchive(
+            CachedArchive(archive: archive, filenames: filenames),
+            for: file.cacheKey
         )
-        let temporaryURL = Self.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("rar")
-
-        do {
-            try data.write(to: temporaryURL, options: .atomic)
-            let archive = try URKArchive(url: temporaryURL)
-            let filenames = try archive.listFilenames()
-            return storeArchive(
-                CachedArchive(
-                    archive: archive,
-                    filenames: filenames,
-                    fileURL: temporaryURL
-                ),
-                for: file.cacheKey
-            )
-        } catch {
-            try? fileManager.removeItem(at: temporaryURL)
-            throw error
-        }
     }
 
     private func performRead<T>(

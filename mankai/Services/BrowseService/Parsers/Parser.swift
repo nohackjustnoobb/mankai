@@ -11,25 +11,12 @@ import Foundation
 ///
 /// `cacheKey` must identify the current content. Callers should provide a new key
 /// whenever the content changes so parsers can safely reuse derived state.
-struct ParserFile {
-    let cacheKey: String
-    let fileName: String
+protocol ParserFile {
+    var cacheKey: String { get }
+    var fileName: String { get }
 
-    private let contentProvider: () async throws -> Data
-
-    init(
-        cacheKey: String,
-        fileName: String,
-        getContent: @escaping () async throws -> Data
-    ) {
-        self.cacheKey = cacheKey
-        self.fileName = fileName
-        contentProvider = getContent
-    }
-
-    func getContent() async throws -> Data {
-        try await contentProvider()
-    }
+    func getContent() async throws -> Data
+    func getUrl() async throws -> URL
 }
 
 class Parser {

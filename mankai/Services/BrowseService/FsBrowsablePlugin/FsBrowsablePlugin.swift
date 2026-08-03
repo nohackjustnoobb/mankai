@@ -285,12 +285,9 @@ class FsBrowsablePlugin: Plugin, Browsable {
     }
 
     private func parserFile(for route: MangaRoute, sourceURL: URL) -> ParserFile {
-        ParserFile(
+        FsParserFile(
             cacheKey: route.hash,
-            fileName: sourceURL.lastPathComponent,
-            getContent: {
-                try Data(contentsOf: sourceURL)
-            }
+            url: sourceURL
         )
     }
 
