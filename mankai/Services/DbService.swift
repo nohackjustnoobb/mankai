@@ -129,7 +129,7 @@ final class DbService {
         }
 
         guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
-        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("fsbrowsableplugin")
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("browsableplugin")
         let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         do {
