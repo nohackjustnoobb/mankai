@@ -1,5 +1,5 @@
 //
-//  FsBPMangaModel.swift
+//  BrowsablePluginMangaModel.swift
 //  mankai
 //
 //  Created by Travis XU on 16/7/2026.
@@ -7,7 +7,7 @@
 
 import GRDB
 
-struct FsBPMangaModel {
+struct BrowsablePluginMangaModel {
     var mangaId: String
     var parserId: String
     var pluginId: String
@@ -15,7 +15,7 @@ struct FsBPMangaModel {
     var info: String
 
     static func createTable(_ db: Database) throws {
-        try db.create(table: FsBPMangaModel.databaseTableName, ifNotExists: true) {
+        try db.create(table: BrowsablePluginMangaModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "parserId", "pluginId"])
 
             $0.column("mangaId", .text).notNull()
@@ -26,16 +26,16 @@ struct FsBPMangaModel {
         }
 
         try db.create(
-            index: "fsbpmanga_on_path_parserId_pluginId",
-            on: FsBPMangaModel.databaseTableName,
+            index: "browsablepluginmanga_on_path_parserId_pluginId",
+            on: BrowsablePluginMangaModel.databaseTableName,
             columns: ["path", "parserId", "pluginId"],
             ifNotExists: true
         )
     }
 }
 
-extension FsBPMangaModel: TableRecord {
-    static let databaseTableName = "fsbpmanga"
+extension BrowsablePluginMangaModel: TableRecord {
+    static let databaseTableName = "browsablepluginmanga"
 }
 
-extension FsBPMangaModel: Codable, FetchableRecord, PersistableRecord {}
+extension BrowsablePluginMangaModel: Codable, FetchableRecord, PersistableRecord {}

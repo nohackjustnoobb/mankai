@@ -121,10 +121,10 @@ final class DbService {
         }
     }
 
-    private var fsBrowsablePluginDb: DatabasePool?
+    private var browsablePluginDb: DatabasePool?
 
-    func openFsBrowsablePluginDb() -> DatabasePool? {
-        if let db = fsBrowsablePluginDb {
+    func openBrowsablePluginDb() -> DatabasePool? {
+        if let db = browsablePluginDb {
             return db
         }
 
@@ -135,11 +135,11 @@ final class DbService {
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            Logger.dbService.error("Failed to create fsBrowsablePluginDb directory at \(dir.path(percentEncoded: false))", error: error)
+            Logger.dbService.error("Failed to create browsable plugin cache directory at \(dir.path(percentEncoded: false))", error: error)
             return nil
         }
 
-        Logger.dbService.debug("Opening fsBrowsablePluginDb at \(path)")
+        Logger.dbService.debug("Opening browsablePluginDb at \(path)")
         var config = Configuration()
         config.busyMode = .timeout(5.0)
 
@@ -147,20 +147,20 @@ final class DbService {
             let pool = try DatabasePool(path: path, configuration: config)
 
             try pool.write { db in
-                try FsBPMangaModel.createTable(db)
+                try BrowsablePluginMangaModel.createTable(db)
             }
 
-            fsBrowsablePluginDb = pool
-            Logger.dbService.info("fsBrowsablePluginDb opened successfully at \(path)")
+            browsablePluginDb = pool
+            Logger.dbService.info("browsablePluginDb opened successfully at \(path)")
             return pool
         } catch {
-            Logger.dbService.error("Failed to open fsBrowsablePluginDb at \(path)", error: error)
+            Logger.dbService.error("Failed to open browsablePluginDb at \(path)", error: error)
             return nil
         }
     }
 
-    func closeFsBrowsablePluginDb() {
-        fsBrowsablePluginDb = nil
-        Logger.dbService.debug("Closed fsBrowsablePluginDb pool")
+    func closeBrowsablePluginDb() {
+        browsablePluginDb = nil
+        Logger.dbService.debug("Closed browsablePluginDb pool")
     }
 }
