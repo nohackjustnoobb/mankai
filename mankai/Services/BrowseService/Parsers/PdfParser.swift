@@ -22,6 +22,7 @@ final class PdfParser: Parser {
     private var cachedDocumentKey: String?
     private var cachedDocument: CachedDocument?
     private let cacheLock = NSLock()
+    private let documentLoadRegistry = ParserLoadRegistry<CachedDocument>()
 
     private func cachedDocument(for cacheKey: String) -> CachedDocument? {
         cacheLock.lock()
@@ -52,22 +53,29 @@ final class PdfParser: Parser {
             return cached
         }
 
-        Logger.pdfParser.debug("Loading document content: \(file.cacheKey)")
-        let data = try await file.getContent()
-        guard let document = PDFDocument(data: data) else {
-            Logger.pdfParser.error("Invalid PDF document: \(file.fileName)")
-            throw MankaiErrorCode.browsePdfInvalidDocument.makeError()
-        }
-        guard !document.isLocked else {
-            Logger.pdfParser.error("Locked PDF document: \(file.fileName)")
-            throw MankaiErrorCode.browsePdfPasswordProtectedDocument.makeError()
-        }
-        guard document.pageCount > 0 else {
-            Logger.pdfParser.error("Empty PDF document: \(file.fileName)")
-            throw MankaiErrorCode.browsePdfNoPagesFound.makeError()
-        }
+        return try await documentLoadRegistry.value(for: file.cacheKey) { [self, file] in
+            if let cached = cachedDocument(for: file.cacheKey) {
+                Logger.pdfParser.debug("Reusing cached document: \(file.cacheKey)")
+                return cached
+            }
 
-        return storeDocument(CachedDocument(document: document), for: file.cacheKey)
+            Logger.pdfParser.debug("Loading document content: \(file.cacheKey)")
+            let data = try await file.getContent()
+            guard let document = PDFDocument(data: data) else {
+                Logger.pdfParser.error("Invalid PDF document: \(file.fileName)")
+                throw MankaiErrorCode.browsePdfInvalidDocument.makeError()
+            }
+            guard !document.isLocked else {
+                Logger.pdfParser.error("Locked PDF document: \(file.fileName)")
+                throw MankaiErrorCode.browsePdfPasswordProtectedDocument.makeError()
+            }
+            guard document.pageCount > 0 else {
+                Logger.pdfParser.error("Empty PDF document: \(file.fileName)")
+                throw MankaiErrorCode.browsePdfNoPagesFound.makeError()
+            }
+
+            return storeDocument(CachedDocument(document: document), for: file.cacheKey)
+        }
     }
 
     private func performRead<T>(

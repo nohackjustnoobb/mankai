@@ -10,7 +10,7 @@ import SwiftUI
 struct BrowseTab: View {
     @ObservedObject private var browseService = BrowseService.shared
     @Binding var importedFiles: [URL]
-    @State private var showingFolderImporter = false
+    @State private var showingAddFolderModal = false
     @State private var importError: String?
     @State private var pluginPendingDeletion: BrowsablePlugin?
     @State private var showingImportsModal = false
@@ -46,7 +46,7 @@ struct BrowseTab: View {
                     }
 
                     Button {
-                        showingFolderImporter = true
+                        showingAddFolderModal = true
                     } label: {
                         Label(
                             "addFolder",
@@ -66,24 +66,6 @@ struct BrowseTab: View {
                 }
             }
             .navigationTitle("browse")
-            .fileImporter(
-                isPresented: $showingFolderImporter,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case let .success(urls):
-                    guard let url = urls.first else { return }
-                    do {
-                        let plugin = try FsBrowsablePlugin(url: url)
-                        try browseService.addPlugin(plugin)
-                    } catch {
-                        importError = error.localizedDescription
-                    }
-                case let .failure(error):
-                    importError = error.localizedDescription
-                }
-            }
             .alert("failedToAddFolder", isPresented: .init(
                 get: { importError != nil },
                 set: { if !$0 { importError = nil } }
@@ -128,6 +110,9 @@ struct BrowseTab: View {
                 ImportsModal(initialFiles: importedFiles) { plugin in
                     importDestinationPluginId = plugin.id
                 }
+            }
+            .sheet(isPresented: $showingAddFolderModal) {
+                AddBrowsableFolderModal()
             }
             .navigationDestination(item: $importDestinationPluginId) { pluginId in
                 if let plugin = browseService.getPlugin(pluginId) {

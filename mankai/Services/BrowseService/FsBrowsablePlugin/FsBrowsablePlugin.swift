@@ -11,10 +11,11 @@ import GRDB
 
 class FsBrowsablePlugin: GenericBrowsablePlugin {
     override var name: String? {
-        dirName
+        pluginName ?? dirName
     }
 
     let url: URL
+    private let pluginName: String?
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
 
@@ -22,9 +23,11 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
         url.appendingPathComponent(importsPath, isDirectory: true)
     }
 
-    init(url: URL, id: String) {
+    init(url: URL, id: String, name: String?) {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
+        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         super.init(id: id)
 
         if !(self is AppDirBrowsablePlugin) {
@@ -37,7 +40,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
         }
     }
 
-    convenience init(url: URL) throws {
+    convenience init(url: URL, name: String?) throws {
         guard url.startAccessingSecurityScopedResource() else {
             throw MankaiErrorCode.browseFilesystemFailedToAccessFolder.makeError()
         }
@@ -60,7 +63,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
             try id.write(to: idFile, atomically: true, encoding: .utf8)
         }
 
-        self.init(url: url, id: id)
+        self.init(url: url, id: id, name: name)
     }
 
     deinit {
@@ -120,7 +123,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
                     url.stopAccessingSecurityScopedResource()
                 }
 
-                results.append(FsBrowsablePlugin(url: url, id: model.id))
+                results.append(FsBrowsablePlugin(url: url, id: model.id, name: model.name))
             } catch {
                 Logger.fsBrowsablePlugin.error(
                     "Failed to resolve bookmark for plugin \(model.id): \(error)"
@@ -142,7 +145,11 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
             relativeTo: nil
         )
         try db.write { db in
-            try FsBrowsablePluginModel(id: id, bookmarkData: bookmarkData).save(db)
+            try FsBrowsablePluginModel(
+                id: id,
+                name: pluginName,
+                bookmarkData: bookmarkData
+            ).save(db)
         }
     }
 
@@ -228,8 +235,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
         return sourceURL
     }
 
-    @discardableResult
-    override func importFile(from source: URL) throws -> URL {
+    override func importFile(from source: URL) async throws {
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: importsDir, withIntermediateDirectories: true)
 
@@ -261,6 +267,5 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
             Logger.fsBrowsablePlugin.error("Failed to import file \(source.path): \(error)")
             throw error
         }
-        return destination
     }
 }

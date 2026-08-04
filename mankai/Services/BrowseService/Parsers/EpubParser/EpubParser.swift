@@ -22,6 +22,7 @@ final class EpubParser: Parser {
     private var cachedArchiveKey: String?
     private var cachedArchive: CachedArchive?
     private let cacheLock = NSLock()
+    private let archiveLoadRegistry = ParserLoadRegistry<CachedArchive>()
 
     private func cachedArchive(for cacheKey: String) -> CachedArchive? {
         cacheLock.lock()
@@ -52,16 +53,23 @@ final class EpubParser: Parser {
             return cached
         }
 
-        Logger.epubParser.debug("Loading EPUB archive content: \(file.cacheKey)")
-        let data = try await file.getContent()
-        do {
-            let archive = try Archive(data: data, accessMode: .read)
-            return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
-        } catch {
-            Logger.epubParser.error("Invalid EPUB ZIP container", error: error)
-            throw MankaiErrorCode.browseEpubInvalidContainer.makeError(
-                underlyingError: error
-            )
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+            if let cached = cachedArchive(for: file.cacheKey) {
+                Logger.epubParser.debug("Reusing cached EPUB archive: \(file.cacheKey)")
+                return cached
+            }
+
+            Logger.epubParser.debug("Loading EPUB archive content: \(file.cacheKey)")
+            let data = try await file.getContent()
+            do {
+                let archive = try Archive(data: data, accessMode: .read)
+                return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
+            } catch {
+                Logger.epubParser.error("Invalid EPUB ZIP container", error: error)
+                throw MankaiErrorCode.browseEpubInvalidContainer.makeError(
+                    underlyingError: error
+                )
+            }
         }
     }
 

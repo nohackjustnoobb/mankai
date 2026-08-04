@@ -28,6 +28,7 @@ final class CbzParser: Parser {
     private var cachedArchiveKey: String?
     private var cachedArchive: CachedArchive?
     private let cacheLock = NSLock()
+    private let archiveLoadRegistry = ParserLoadRegistry<CachedArchive>()
 
     private func cachedArchive(for cacheKey: String) -> CachedArchive? {
         cacheLock.lock()
@@ -62,10 +63,17 @@ final class CbzParser: Parser {
             return cached
         }
 
-        Logger.cbzParser.debug("Loading archive content: \(file.cacheKey)")
-        let data = try await file.getContent()
-        let archive = try Archive(data: data, accessMode: .read)
-        return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+            if let cached = cachedArchive(for: file.cacheKey) {
+                Logger.cbzParser.debug("Reusing cached archive: \(file.cacheKey)")
+                return cached
+            }
+
+            Logger.cbzParser.debug("Loading archive content: \(file.cacheKey)")
+            let data = try await file.getContent()
+            let archive = try Archive(data: data, accessMode: .read)
+            return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
+        }
     }
 
     /// Keeping the lock operation in a synchronous helper avoids suspending while an `NSLock` is held.

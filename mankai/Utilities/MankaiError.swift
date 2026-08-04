@@ -12,6 +12,7 @@ enum MankaiErrorDomain: String {
     case auth = "app.mankai.auth"
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
+    case browseSmb = "app.mankai.browse.smb"
     case browsePdf = "app.mankai.browse.pdf"
     case browseEpub = "app.mankai.browse.epub"
     case chapter = "app.mankai.chapter"
@@ -35,6 +36,7 @@ enum MankaiErrorDomain: String {
         case .auth: return 20
         case .browseArchive: return 30
         case .browseFilesystem: return 31
+        case .browseSmb: return 34
         case .browsePdf: return 32
         case .browseEpub: return 33
         case .chapter: return 40
@@ -90,6 +92,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseFilesystemInvalidMangaMeta
     case browseFilesystemEntryNotFound
     case browseFilesystemUnableToOpenFileForHashing
+    case browseSmbInvalidConnectionConfiguration
+    case browseSmbInvalidPlugin
     case browsePdfInvalidDocument
     case browsePdfPasswordProtectedDocument
     case browsePdfNoPagesFound
@@ -188,6 +192,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .browseFilesystemInvalidMangaMeta: .init(domain: .browseFilesystem, code: 4, messageKey: "invalidMangaMeta"),
         .browseFilesystemEntryNotFound: .init(domain: .browseFilesystem, code: 5, messageKey: "entryNotFound"),
         .browseFilesystemUnableToOpenFileForHashing: .init(domain: .browseFilesystem, code: 6, messageKey: "unableToOpenFileForHashing"),
+        .browseSmbInvalidConnectionConfiguration: .init(domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
+        .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbPlugin"),
         .browsePdfInvalidDocument: .init(domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
         .browsePdfPasswordProtectedDocument: .init(domain: .browsePdf, code: 2, messageKey: "passwordProtectedPdfNotSupported"),
         .browsePdfNoPagesFound: .init(domain: .browsePdf, code: 3, messageKey: "noPagesFoundInPdf"),

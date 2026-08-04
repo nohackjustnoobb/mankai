@@ -24,6 +24,7 @@ final class CbrParser: Parser {
     private var cachedArchiveKey: String?
     private var cachedArchive: CachedArchive?
     private let cacheLock = NSLock()
+    private let archiveLoadRegistry = ParserLoadRegistry<CachedArchive>()
 
     private func cachedArchive(for cacheKey: String) -> CachedArchive? {
         cacheLock.lock()
@@ -54,14 +55,21 @@ final class CbrParser: Parser {
             return cached
         }
 
-        Logger.cbrParser.debug("Loading archive: \(file.cacheKey)")
-        let url = try await file.getUrl()
-        let archive = try URKArchive(url: url)
-        let filenames = try archive.listFilenames()
-        return storeArchive(
-            CachedArchive(archive: archive, filenames: filenames),
-            for: file.cacheKey
-        )
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+            if let cached = cachedArchive(for: file.cacheKey) {
+                Logger.cbrParser.debug("Reusing cached archive: \(file.cacheKey)")
+                return cached
+            }
+
+            Logger.cbrParser.debug("Loading archive: \(file.cacheKey)")
+            let url = try await file.getUrl()
+            let archive = try URKArchive(url: url)
+            let filenames = try archive.listFilenames()
+            return storeArchive(
+                CachedArchive(archive: archive, filenames: filenames),
+                for: file.cacheKey
+            )
+        }
     }
 
     private func performRead<T>(

@@ -67,9 +67,7 @@ protocol Browsable {
     /// (e.g. by starting security-scoped access if needed).
     ///
     /// - Parameter source: The URL of the file to import.
-    /// - Returns: The URL of the imported file inside the plugin directory.
-    @discardableResult
-    func importFile(from source: URL) throws -> URL
+    func importFile(from source: URL) async throws
 }
 
 typealias BrowsablePlugin = Browsable & Plugin
@@ -85,6 +83,7 @@ final class BrowseService: ObservableObject {
 
         // Load plugins from db
         loadFsBrowablePlugins()
+        loadSmbBrowsablePlugins()
     }
 
     private var _plugins: [String: BrowsablePlugin] = [:]
@@ -102,6 +101,16 @@ final class BrowseService: ObservableObject {
         Logger.browseService.info("Loaded \(fsBrowsablePlugins.count) fs browsable plugins")
 
         for plugin in fsBrowsablePlugins {
+            _plugins[plugin.id] = plugin
+        }
+    }
+
+    private func loadSmbBrowsablePlugins() {
+        Logger.browseService.debug("Loading SMB browsable plugins")
+        let smbBrowsablePlugins = SmbBrowsablePlugin.loadPlugins()
+        Logger.browseService.info("Loaded \(smbBrowsablePlugins.count) SMB browsable plugins")
+
+        for plugin in smbBrowsablePlugins {
             _plugins[plugin.id] = plugin
         }
     }

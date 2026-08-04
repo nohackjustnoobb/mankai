@@ -1,86 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "epubResourceNotFound" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "EPUB Resource Not Found"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "找不到EPUB資源"
-          }
-        }
-      }
-    },
-    "invalidEpubContainer" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid EPUB Container"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無效的EPUB容器"
-          }
-        }
-      }
-    },
-    "invalidEpubPackage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Invalid EPUB Package"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無效的EPUB套件"
-          }
-        }
-      }
-    },
-    "noReadableImagesInEpub" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Readable Images Found in EPUB"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "EPUB中找不到可讀取的圖片"
-          }
-        }
-      }
-    },
-    "protectedEpubContentNotSupported" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Protected EPUB Content Is Not Supported"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "不支援受保護的EPUB內容"
-          }
-        }
-      }
-    },
     "/" : {
       "shouldTranslate" : false
     },
@@ -1425,6 +1345,22 @@
         }
       }
     },
+    "defaultName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設名稱"
+          }
+        }
+      }
+    },
     "delete" : {
       "localizations" : {
         "en" : {
@@ -1521,6 +1457,22 @@
         }
       }
     },
+    "displayName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display Name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示名稱"
+          }
+        }
+      }
+    },
     "done" : {
       "localizations" : {
         "en" : {
@@ -1569,22 +1521,6 @@
         }
       }
     },
-    "downloadDisabled" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloads are disabled for this plugin"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此插件已停用下載功能"
-          }
-        }
-      }
-    },
     "downloadDatabaseNotAvailable" : {
       "localizations" : {
         "en" : {
@@ -1597,6 +1533,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "離線資料庫不可用"
+          }
+        }
+      }
+    },
+    "downloadDisabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads are disabled for this plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此插件已停用下載功能"
           }
         }
       }
@@ -1873,6 +1825,22 @@
         }
       }
     },
+    "epubResourceNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EPUB Resource Not Found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到EPUB資源"
+          }
+        }
+      }
+    },
     "error" : {
       "localizations" : {
         "en" : {
@@ -2063,6 +2031,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除已收藏漫畫失敗"
+          }
+        }
+      }
+    },
+    "failedToDiscoverSmbShares" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Find SMB Shares"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到SMB共用"
           }
         }
       }
@@ -2469,6 +2453,38 @@
         }
       }
     },
+    "filesystem" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File System"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案系統"
+          }
+        }
+      }
+    },
+    "filesystemSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File System Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檔案系統設定"
+          }
+        }
+      }
+    },
     "filters" : {
       "localizations" : {
         "en" : {
@@ -2497,6 +2513,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "資料夾"
+          }
+        }
+      }
+    },
+    "folderType" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder Type"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾類型"
           }
         }
       }
@@ -3076,6 +3108,38 @@
         }
       }
     },
+    "invalidEpubContainer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid EPUB Container"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的EPUB容器"
+          }
+        }
+      }
+    },
+    "invalidEpubPackage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid EPUB Package"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的EPUB套件"
+          }
+        }
+      }
+    },
     "invalidHashResponse" : {
       "localizations" : {
         "en" : {
@@ -3312,6 +3376,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "伺服器網址無效"
+          }
+        }
+      }
+    },
+    "invalidSmbConnectionConfiguration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid SMB Connection Configuration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB連線設定無效"
+          }
+        }
+      }
+    },
+    "invalidSmbPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid SMB Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB插件無效"
           }
         }
       }
@@ -3573,22 +3669,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法載入授權條款"
-          }
-        }
-      }
-    },
-    "thirdPartyLicenses" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Third-Party Licenses"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第三方軟體授權"
           }
         }
       }
@@ -4367,6 +4447,22 @@
         }
       }
     },
+    "noReadableImagesInEpub" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Readable Images Found in EPUB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EPUB中找不到可讀取的圖片"
+          }
+        }
+      }
+    },
     "noRefreshTokenInResponse" : {
       "localizations" : {
         "en" : {
@@ -4443,6 +4539,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存漫畫後會在這裡顯示"
+          }
+        }
+      }
+    },
+    "noSmbShares" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No SMB Shares"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有SMB共用"
+          }
+        }
+      }
+    },
+    "noSmbSharesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server has no browsable disk shares."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此伺服器沒有可瀏覽的磁碟共用。"
           }
         }
       }
@@ -4851,6 +4979,22 @@
         }
       }
     },
+    "port" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Port"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接埠"
+          }
+        }
+      }
+    },
     "previousChapterIsLocked" : {
       "localizations" : {
         "en" : {
@@ -4879,6 +5023,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上一頁 / 下一頁"
+          }
+        }
+      }
+    },
+    "protectedEpubContentNotSupported" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protected EPUB Content Is Not Supported"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支援受保護的EPUB內容"
           }
         }
       }
@@ -5577,6 +5737,22 @@
         }
       }
     },
+    "selectShare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Share"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇共用"
+          }
+        }
+      }
+    },
     "serial" : {
       "comment" : "Used as a chapter group label.",
       "extractionState" : "manual",
@@ -5591,6 +5767,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "連載"
+          }
+        }
+      }
+    },
+    "server" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器"
           }
         }
       }
@@ -5703,6 +5895,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "數值越高，越容易將頁面分在一起。數值越低，越容易將頁面分開。"
+          }
+        }
+      }
+    },
+    "smb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB"
+          }
+        }
+      }
+    },
+    "smbSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SMB設定"
+          }
+        }
+      }
+    },
+    "smbSettingsFooter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username and password are optional."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用者名稱和密碼可選。"
           }
         }
       }
@@ -6143,6 +6383,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "文字"
+          }
+        }
+      }
+    },
+    "thirdPartyLicenses" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Third-Party Licenses"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第三方軟體授權"
           }
         }
       }

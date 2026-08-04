@@ -125,7 +125,7 @@ struct ImportsModal: View {
 
         do {
             for file in selectedFiles {
-                try plugin.importFile(from: file)
+                try await plugin.importFile(from: file)
             }
             onImport?(plugin)
             dismiss()

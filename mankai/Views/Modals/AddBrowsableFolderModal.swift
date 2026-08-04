@@ -1,0 +1,367 @@
+//
+//  AddBrowsableFolderModal.swift
+//  mankai
+//
+//  Created by Travis XU on 4/8/2026.
+//
+
+import SwiftSMB
+import SwiftUI
+import UniformTypeIdentifiers
+
+struct AddBrowsableFolderModal: View {
+    @ObservedObject private var browseService = BrowseService.shared
+    @Environment(\.dismiss) private var dismiss
+
+    enum FolderType: String, CaseIterable, Identifiable {
+        case filesystem
+        case smb
+
+        var id: String {
+            rawValue
+        }
+    }
+
+    @State private var selectedFolderType: FolderType = .filesystem
+    @State private var name = ""
+
+    // Fs State
+    @State private var selectedFolder: URL?
+    @State private var showingFileImporter = false
+
+    // SMB state
+    @State private var host = ""
+    @State private var port = "445"
+    @State private var username = ""
+    @State private var password = ""
+    @State private var shares: [SMB.Share] = []
+    @State private var selectedShare: SMB.Share?
+    @State private var showingShareSelection = false
+
+    @State private var isLoadingShares = false
+    @State private var isAdding = false
+    @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
+    @State private var errorMessage: String?
+
+    private var isProcessing: Bool {
+        isLoadingShares || isAdding
+    }
+
+    private var canContinue: Bool {
+        guard !isProcessing else { return false }
+
+        switch selectedFolderType {
+        case .filesystem:
+            return selectedFolder != nil
+        case .smb:
+            return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("folderType", selection: $selectedFolderType) {
+                        ForEach(FolderType.allCases) { type in
+                            switch type {
+                            case .filesystem:
+                                Text("filesystem")
+                                    .tag(type)
+                            case .smb:
+                                Text("smb")
+                                    .tag(type)
+                            }
+                        }
+                    }
+                    .disabled(isProcessing)
+                }
+
+                Section("displayName") {
+                    TextField("defaultName", text: $name)
+                        .disabled(isProcessing)
+                }
+
+                switch selectedFolderType {
+                case .filesystem:
+                    filesystemConfiguration
+                case .smb:
+                    smbConfiguration
+                }
+            }
+            .navigationTitle("addFolder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel") {
+                        dismiss()
+                    }
+                    .disabled(isProcessing)
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    primaryAction
+                }
+            }
+            .fileImporter(
+                isPresented: $showingFileImporter,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case let .success(urls):
+                    selectedFolder = urls.first
+                case let .failure(error):
+                    presentError(error)
+                }
+            }
+            .navigationDestination(isPresented: $showingShareSelection) {
+                shareSelection
+            }
+        }
+        .alert(errorTitle, isPresented: errorIsPresented) {
+            Button("ok", role: .cancel) {
+                errorMessage = nil
+            }
+        } message: {
+            if let errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+
+    private var filesystemConfiguration: some View {
+        Section("filesystemSettings") {
+            Button {
+                showingFileImporter = true
+            } label: {
+                HStack {
+                    Text("selectFolder")
+                    Spacer()
+                    Text(selectedFolder?.lastPathComponent ?? String(localized: "none"))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .disabled(isProcessing)
+        }
+    }
+
+    private var smbConfiguration: some View {
+        Section {
+            TextField("server", text: $host)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .disabled(isProcessing)
+
+            TextField("port", text: $port)
+                .keyboardType(.numberPad)
+                .disabled(isProcessing)
+
+            TextField("username", text: $username)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.username)
+                .disabled(isProcessing)
+
+            SecureField("password", text: $password)
+                .textContentType(.password)
+                .disabled(isProcessing)
+        } header: {
+            Text("smbSettings")
+        } footer: {
+            Text("smbSettingsFooter")
+        }
+    }
+
+    private var shareSelection: some View {
+        List {
+            if shares.isEmpty {
+                ContentUnavailableView(
+                    "noSmbShares",
+                    systemImage: "externaldrive.badge.xmark",
+                    description: Text("noSmbSharesDescription")
+                )
+            } else {
+                Section {
+                    ForEach(shares, id: \.name) { share in
+                        Button {
+                            selectedShare = share
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Label(share.name, systemImage: "externaldrive.fill")
+                                    if let remark = share.remark, !remark.isEmpty {
+                                        Text(remark)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(2)
+                                    }
+                                }
+                                Spacer()
+                                if selectedShare == share {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .navigationTitle("selectShare")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isAdding)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    addSmbFolder()
+                } label: {
+                    if isAdding {
+                        ProgressView()
+                    } else {
+                        Text("add")
+                    }
+                }
+                .disabled(selectedShare == nil || isProcessing)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var primaryAction: some View {
+        switch selectedFolderType {
+        case .filesystem:
+            Button {
+                addFilesystemFolder()
+            } label: {
+                if isAdding {
+                    ProgressView()
+                } else {
+                    Text("add")
+                }
+            }
+            .disabled(!canContinue)
+        case .smb:
+            Button {
+                discoverShares()
+            } label: {
+                if isLoadingShares || isAdding {
+                    ProgressView()
+                } else {
+                    Text("selectShare")
+                }
+            }
+            .disabled(!canContinue)
+        }
+    }
+
+    private var errorIsPresented: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )
+    }
+
+    private func discoverShares() {
+        guard let portValue = parsedPort else {
+            presentError(
+                MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError(),
+                title: "failedToDiscoverSmbShares"
+            )
+            return
+        }
+
+        isLoadingShares = true
+        Task { @MainActor in
+            defer { isLoadingShares = false }
+
+            do {
+                let discoveredShares = try await SmbSession.discoverShares(
+                    host: host,
+                    port: portValue,
+                    username: username,
+                    password: password
+                )
+
+                shares = discoveredShares
+                if discoveredShares.count == 1 {
+                    selectedShare = discoveredShares[0]
+                    addSmbFolder()
+                    return
+                }
+
+                selectedShare = nil
+                showingShareSelection = true
+            } catch {
+                presentError(error, title: "failedToDiscoverSmbShares")
+            }
+        }
+    }
+
+    private func addFilesystemFolder() {
+        guard let selectedFolder else { return }
+
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let plugin = try FsBrowsablePlugin(url: selectedFolder, name: name)
+                try browseService.addPlugin(plugin)
+                dismiss()
+            } catch {
+                presentError(error)
+            }
+        }
+    }
+
+    private func addSmbFolder() {
+        guard let selectedShare,
+              let portValue = parsedPort
+        else { return }
+
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let configuration = try SmbConnectionConfiguration(
+                    host: host,
+                    port: portValue,
+                    share: selectedShare.name,
+                    username: username,
+                    password: password
+                )
+                let session = SmbSession(configuration: configuration)
+                let plugin = try await SmbBrowsablePlugin(session: session, name: name)
+                try browseService.addPlugin(plugin)
+                dismiss()
+            } catch {
+                presentError(error)
+            }
+        }
+    }
+
+    private var parsedPort: Int? {
+        guard let portValue = Int(port.trimmingCharacters(in: .whitespacesAndNewlines)),
+              (1 ... 65535).contains(portValue)
+        else {
+            return nil
+        }
+        return portValue
+    }
+
+    private func presentError(
+        _ error: Error,
+        title: LocalizedStringKey = "failedToAddFolder"
+    ) {
+        errorTitle = title
+        errorMessage = error.localizedDescription
+    }
+}
