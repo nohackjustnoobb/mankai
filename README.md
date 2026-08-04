@@ -47,7 +47,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) and manage local collections stored on your device.
+- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders or [remote shares](#network-protocols).
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
@@ -75,6 +75,14 @@ This plugin is designed for external providers to use Mankai as a reader and, op
 
 - **Specification**: [Mankai API Specification](docs/httpplugin/api.md) (see also the [Mankai Editor API Specification](docs/httpplugin/editor-api.md) for optional editor support)
 - **Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server) - a manga management and sync server implementing the API.
+
+## Network Protocols
+
+Mankai supports network protocols for browsing and reading manga stored on remote services.
+
+| Protocol | Description |
+| :------- |:---------- |
+| **SMB** | Browse and read manga from network shares. Configure the server host, port, and optional credentials, then select an available share. |
 
 ## Reader
 
@@ -169,7 +177,7 @@ These issues do not occur when running the app without a debugger attached.
 
 ### Network Protocols
 
-- [ ] **SMB** - Server Message Block support.
+- [x] **SMB** - Server Message Block support.
 - [ ] **WebDAV** - Web Distributed Authoring and Versioning support.
 - [ ] **NFS** - Network File System support.
 - [ ] **FTP** - File Transfer Protocol support.

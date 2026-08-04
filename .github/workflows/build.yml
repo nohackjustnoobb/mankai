@@ -1,6 +1,7 @@
 name: Build IPA
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
@@ -22,6 +23,7 @@ jobs:
       - name: Build Archive
         run: |
           xcodebuild archive \
+            -skipPackagePluginValidation \
             -project mankai.xcodeproj \
             -scheme mankai \
             -configuration Release \
@@ -38,7 +40,7 @@ jobs:
           zip -r mankai.ipa Payload/
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mankai-unsigned-${{ github.ref_name }}
           path: mankai.ipa
