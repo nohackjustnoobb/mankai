@@ -349,6 +349,30 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         return try await detailedManga(forPrefixedId: id)
     }
 
+    func parseFile(path: String, fileType: String) async throws -> DetailedManga {
+        let normalizedFileType = fileType
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard let parser = parser(forExtension: normalizedFileType) else {
+            Logger.browseService.error(
+                "No parser found for file type '\(fileType)' at path: \(path)"
+            )
+            throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
+        }
+
+        Logger.browseService.debug(
+            "Parsing browsable file '\(path)' as '\(normalizedFileType)'"
+        )
+        do {
+            return try await parseAndCache(parser: parser, relativePath: path)
+        } catch {
+            Logger.browseService.warning(
+                "Parser '\(parser.id)' failed to parse '\(path)': \(error)"
+            )
+            throw error
+        }
+    }
+
     private func detailedManga(forPrefixedId id: String) async throws -> DetailedManga {
         try await loadManga(route: MangaRoute(mangaId: id))
     }
@@ -582,16 +606,9 @@ class GenericBrowsablePlugin: Plugin, Browsable {
             guard entry.isRegularFile else { continue }
 
             let ext = (entry.path as NSString).pathExtension.lowercased()
-            guard let parser = parser(forExtension: ext) else { continue }
+            guard parser(forExtension: ext) != nil else { continue }
 
-            do {
-                let detailed = try await parseAndCache(parser: parser, relativePath: entry.path)
-                entities.append(.book(manga: detailed, path: entry.path))
-            } catch {
-                Logger.browseService.warning(
-                    "Parser '\(parser.id)' failed to parse '\(entry.path)': \(error), skipping"
-                )
-            }
+            entities.append(.book(path: entry.path, fileType: ext))
         }
 
         return entities

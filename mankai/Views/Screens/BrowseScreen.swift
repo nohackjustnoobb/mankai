@@ -17,6 +17,10 @@ struct BrowseScreen: View {
     @State private var entities: [EntityType] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
+    @State private var isParsing: Bool = false
+    @State private var parsedMangas: [String: DetailedManga] = [:]
+    @State private var parsingPaths: Set<String> = []
+    @State private var parseErrors: [String: String] = [:]
 
     @State private var showReaderScreen = false
     @State private var readerManga: DetailedManga? = nil
@@ -47,25 +51,33 @@ struct BrowseScreen: View {
                             directoryView(entity: entity)
                         }
                         .buttonStyle(.plain)
-                    case let .book(manga, _):
-                        let allChapters = manga.chapters.flatMap(\.chapters)
-                        if allChapters.count == 1 {
-                            Button {
-                                navigateToReader(manga: manga)
-                            } label: {
-                                mangaView(manga: manga, entity: entity)
+                    case let .book(path, _):
+                        if let manga = parsedMangas[path] {
+                            let allChapters = manga.chapters.flatMap(\.chapters)
+                            if allChapters.count == 1 {
+                                Button {
+                                    navigateToReader(manga: manga)
+                                } label: {
+                                    mangaView(manga: manga, entity: entity)
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink(
+                                    destination: MangaDetailsScreen(
+                                        plugin: plugin,
+                                        manga: manga.toManga()
+                                    )
+                                ) {
+                                    mangaView(manga: manga, entity: entity)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         } else {
-                            NavigationLink(
-                                destination: MangaDetailsScreen(
-                                    plugin: plugin,
-                                    manga: manga.toManga()
-                                )
-                            ) {
-                                mangaView(manga: manga, entity: entity)
-                            }
-                            .buttonStyle(.plain)
+                            filePlaceholderView(
+                                entity: entity,
+                                isParsing: parsingPaths.contains(path),
+                                errorMessage: parseErrors[path]
+                            )
                         }
                     }
                 }
@@ -174,10 +186,13 @@ struct BrowseScreen: View {
     }
 
     private func loadEntities() {
-        guard !isLoading else { return }
+        guard !isLoading, !isParsing else { return }
 
         isLoading = true
         errorMessage = nil
+        parsedMangas = [:]
+        parsingPaths = []
+        parseErrors = [:]
 
         Task {
             do {
@@ -193,23 +208,73 @@ struct BrowseScreen: View {
                 await MainActor.run {
                     self.entities = sorted
                     self.isLoading = false
+                    self.isParsing = true
+                }
+
+                for entity in sorted {
+                    guard case let .book(filePath, fileType) = entity else { continue }
+
+                    await MainActor.run {
+                        _ = self.parsingPaths.insert(filePath)
+                    }
+
+                    do {
+                        let manga = try await plugin.parseFile(
+                            path: filePath,
+                            fileType: fileType
+                        )
+                        await MainActor.run {
+                            self.parsedMangas[filePath] = manga
+                            self.parsingPaths.remove(filePath)
+                        }
+                    } catch {
+                        await MainActor.run {
+                            self.parseErrors[filePath] = error.localizedDescription
+                            self.parsingPaths.remove(filePath)
+                        }
+                    }
+                }
+
+                await MainActor.run {
+                    self.isParsing = false
                 }
             } catch {
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
+                    self.isParsing = false
                 }
             }
         }
     }
 
+    private func thumbnailView<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Color.clear
+            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .overlay {
+                content()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+    }
+
     private func directoryView(entity: EntityType) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: "folder.fill")
-                .resizable()
-                .scaledToFit()
-                .foregroundStyle(systemImageColor ?? .accentColor)
-                .aspectRatio(1, contentMode: .fit)
+            thumbnailView {
+                Image("FolderIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .overlay {
+                        Image("FolderIcon")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundStyle(systemImageColor ?? .accentColor)
+                            .blendMode(.hue)
+                    }
+                    .compositingGroup()
+            }
 
             Text(entity.name)
                 .font(.caption)
@@ -222,9 +287,66 @@ struct BrowseScreen: View {
 
     private func mangaView(manga: DetailedManga, entity: EntityType) -> some View {
         VStack(spacing: 8) {
-            MangaCoverView(coverUrl: manga.cover, plugin: plugin)
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+            thumbnailView {
+                MangaCoverView(coverUrl: manga.cover, plugin: plugin)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+
+            Text(entity.name(using: manga))
+                .font(.caption)
+                .foregroundColor(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func filePlaceholderView(
+        entity: EntityType,
+        isParsing: Bool,
+        errorMessage: String?
+    ) -> some View {
+        let fileType: String
+        if case let .book(_, type) = entity {
+            fileType = type
+        } else {
+            fileType = ""
+        }
+
+        return VStack(spacing: 8) {
+            thumbnailView {
+                ZStack(alignment: .bottomLeading) {
+                    Image("DocumentIcon")
+                        .resizable()
+                        .scaledToFill()
+                        .clipped()
+
+                    if errorMessage != nil {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.title2)
+                            .foregroundStyle(.orange)
+                            .padding(12)
+                            .background(.regularMaterial, in: Circle())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if isParsing {
+                        ProgressView()
+                            .padding(12)
+                            .background(.regularMaterial, in: Circle())
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+
+                    Text(fileType.uppercased())
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(
+                            errorMessage == nil ? Color.primary : Color.orange
+                        )
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+                        .padding(12)
+                }
+            }
 
             Text(entity.name)
                 .font(.caption)
@@ -233,5 +355,6 @@ struct BrowseScreen: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
+        .help(errorMessage ?? "")
     }
 }

@@ -9,20 +9,34 @@ import Foundation
 import SwiftUI
 
 enum EntityType {
-    case book(manga: DetailedManga, path: String)
+    case book(path: String, fileType: String)
     case directory(path: String)
 
     /// Name of the entity in the browse view.
     var name: String {
         switch self {
-        case let .book(manga, _):
+        case let .book(path, _):
+            return (path as NSString).lastPathComponent
+        case let .directory(path):
+            return (path as NSString).lastPathComponent
+        }
+    }
+
+    /// Display name for a file after its manga metadata has been parsed.
+    func name(using manga: DetailedManga?) -> String {
+        switch self {
+        case let .book(path, _):
+            guard let manga else {
+                return (path as NSString).lastPathComponent
+            }
+
             let allChapters = manga.chapters.flatMap(\.chapters)
             if allChapters.count == 1,
                let chapterTitle = allChapters.first?.title
             {
                 return chapterTitle
             }
-            return manga.title ?? manga.id
+            return manga.title ?? (path as NSString).lastPathComponent
         case let .directory(path):
             return (path as NSString).lastPathComponent
         }
@@ -31,7 +45,7 @@ enum EntityType {
     /// The actual file name of the entity.
     var fileName: String {
         switch self {
-        case let .book(_, path):
+        case let .book(path, _):
             return (path as NSString).lastPathComponent
         case let .directory(path):
             return (path as NSString).lastPathComponent
@@ -54,6 +68,9 @@ protocol Browsable {
 
     /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [EntityType]
+
+    /// Parses a supported manga file at the given path.
+    func parseFile(path: String, fileType: String) async throws -> DetailedManga
 
     /// Returns the absolute filesystem URL for the given relative path, if the
     /// plugin is backed by a local filesystem directory. Returns `nil` for
