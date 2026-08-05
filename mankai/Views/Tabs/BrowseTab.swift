@@ -52,8 +52,12 @@ struct BrowseTab: View {
                             "addFolder",
                             systemImage: "folder.badge.plus"
                         )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                } footer: {
+                    Text("swipeToRemoveFolder")
                 }
             }
             .toolbar {

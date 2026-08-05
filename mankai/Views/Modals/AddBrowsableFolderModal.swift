@@ -79,7 +79,7 @@ struct AddBrowsableFolderModal: View {
                 }
 
                 Section("displayName") {
-                    TextField("defaultName", text: $name)
+                    TextField("default", text: $name)
                         .disabled(isProcessing)
                 }
 

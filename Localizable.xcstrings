@@ -1345,22 +1345,6 @@
         }
       }
     },
-    "defaultName" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Default Name"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "預設名稱"
-          }
-        }
-      }
-    },
     "delete" : {
       "localizations" : {
         "en" : {
@@ -6173,6 +6157,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "向左滑動以刪除已下載的漫畫"
+          }
+        }
+      }
+    },
+    "swipeToRemoveFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe left to remove a folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向左滑動以移除資料夾"
           }
         }
       }
