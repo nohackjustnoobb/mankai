@@ -25,7 +25,7 @@ private struct HttpPluginMetadata {
     let editorEnabled: Bool
     @DecodingDefault([])
     let configs: [Config]
-
+    let cooldown: Cooldown?
 }
 
 class HttpPlugin: Plugin {
@@ -36,6 +36,7 @@ class HttpPlugin: Plugin {
     private var _authors: [String]
     private var _repository: String?
     private var _availableGenres: [Genre]
+    private var _cooldown: Cooldown?
 
     override var id: String {
         _id
@@ -63,6 +64,10 @@ class HttpPlugin: Plugin {
 
     override var availableGenres: [Genre] {
         _availableGenres
+    }
+
+    override var cooldown: Cooldown? {
+        _cooldown
     }
 
     override var configs: [Config] {
@@ -99,7 +104,8 @@ class HttpPlugin: Plugin {
         version: String? = nil, description: String? = nil,
         authors: [String] = [],
         repository: String? = nil,
-        availableGenres: [Genre] = []
+        availableGenres: [Genre] = [],
+        cooldown: Cooldown? = nil
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
         _id = id
@@ -114,6 +120,7 @@ class HttpPlugin: Plugin {
         _authors = authors
         _repository = repository
         _availableGenres = availableGenres
+        _cooldown = cooldown
     }
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
@@ -137,7 +144,7 @@ class HttpPlugin: Plugin {
                 id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
                 name: metadata.name, version: metadata.version, description: metadata.description,
                 authors: metadata.authors, repository: metadata.repository,
-                availableGenres: metadata.availableGenres
+                availableGenres: metadata.availableGenres, cooldown: metadata.cooldown
             )
         }
 
@@ -152,7 +159,7 @@ class HttpPlugin: Plugin {
             id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
             name: metadata.name, version: metadata.version, description: metadata.description,
             authors: metadata.authors, repository: metadata.repository,
-            availableGenres: metadata.availableGenres
+            availableGenres: metadata.availableGenres, cooldown: metadata.cooldown
         )
     }
 
@@ -321,7 +328,8 @@ class HttpPlugin: Plugin {
             availableGenres: availableGenres,
             authenticationEnabled: authenticationEnabled,
             editorEnabled: self is EditableHttpPlugin,
-            configs: configs
+            configs: configs,
+            cooldown: cooldown
         )
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {

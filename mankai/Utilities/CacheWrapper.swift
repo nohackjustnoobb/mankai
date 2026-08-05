@@ -75,6 +75,10 @@ class CacheWrapper: Plugin {
         plugin.version
     }
 
+    override var tags: [String] {
+        plugin.tags
+    }
+
     override var description: String? {
         plugin.description
     }
@@ -95,12 +99,16 @@ class CacheWrapper: Plugin {
         plugin.configs
     }
 
-    override var tags: [String] {
-        plugin.tags
+    override var cooldown: Cooldown? {
+        plugin.cooldown
     }
 
     override var shouldSync: Bool {
         plugin.shouldSync
+    }
+
+    override var shouldCache: Bool {
+        plugin.shouldCache
     }
 
     override var canDownload: Bool {

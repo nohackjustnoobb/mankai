@@ -82,6 +82,12 @@ struct ConfigValue {
     }
 }
 
+struct Cooldown: Codable {
+    var `default`: Int?
+    var getImage: Int?
+    var getImageConcurrency: Int?
+}
+
 class Plugin: Identifiable, ObservableObject {
     // MARK: - Metadata
 
@@ -123,19 +129,23 @@ class Plugin: Identifiable, ObservableObject {
         []
     }
 
-    /// Whether manga sourced from this plugin should be synced across devices.
-    var shouldSync: Bool {
-        true
+    var cooldown: Cooldown? {
+        nil
     }
 
-    /// Whether manga sourced from this plugin can be downloaded for offline access.
-    var canDownload: Bool {
+    /// Whether manga sourced from this plugin should be synced across devices.
+    var shouldSync: Bool {
         true
     }
 
     /// Whether response data from this plugin should be cached.
     var shouldCache: Bool {
         false
+    }
+
+    /// Whether manga sourced from this plugin can be downloaded for offline access.
+    var canDownload: Bool {
+        true
     }
 
     // MARK: - Config Values

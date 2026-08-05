@@ -51,6 +51,7 @@ enum LogCategory: String {
     case general = "General"
     case authManager = "AuthManager"
     case cacheWrapper = "CacheWrapper"
+    case cooldownWrapper = "CooldownWrapper"
 
     var subsystem: String {
         return "app.mankai"
@@ -218,4 +219,5 @@ extension Logger {
     static let general = Logger(category: .general)
     static let authManager = Logger(category: .authManager)
     static let cacheWrapper = Logger(category: .cacheWrapper)
+    static let cooldownWrapper = Logger(category: .cooldownWrapper)
 }

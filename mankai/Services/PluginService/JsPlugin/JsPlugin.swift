@@ -37,7 +37,7 @@ private struct JsPluginMetadata {
     @DecodingDefault([])
     let configs: [Config]
     let getImageHeaders: [String: String]?
-
+    let cooldown: Cooldown?
 }
 
 final class JsPlugin: Plugin {
@@ -51,6 +51,7 @@ final class JsPlugin: Plugin {
     private var _repository: String?
     private var _availableGenres: [Genre]
     private var _configs: [Config]
+    private var _cooldown: Cooldown?
 
     override var id: String {
         _id
@@ -84,6 +85,10 @@ final class JsPlugin: Plugin {
         _configs
     }
 
+    override var cooldown: Cooldown? {
+        _cooldown
+    }
+
     private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
     var updatesUrl: String? {
@@ -114,7 +119,8 @@ final class JsPlugin: Plugin {
         availableGenres: [Genre] = [],
         scripts: [ScriptType: String] = [:],
         configs: [Config] = [],
-        getImageHeaders: [String: String]? = nil
+        getImageHeaders: [String: String]? = nil,
+        cooldown: Cooldown? = nil
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
         _id = id
@@ -127,6 +133,7 @@ final class JsPlugin: Plugin {
         _availableGenres = availableGenres
         _configs = configs
         _getImageHeaders = getImageHeaders
+        _cooldown = cooldown
 
         _scripts = scripts
         for (scriptType, script) in scripts {
@@ -186,7 +193,8 @@ final class JsPlugin: Plugin {
             availableGenres: metadata.availableGenres,
             scripts: scripts,
             configs: metadata.configs,
-            getImageHeaders: metadata.getImageHeaders
+            getImageHeaders: metadata.getImageHeaders,
+            cooldown: metadata.cooldown
         )
     }
 
@@ -289,7 +297,8 @@ final class JsPlugin: Plugin {
             availableGenres: availableGenres,
             scripts: scriptsDict,
             configs: configs,
-            getImageHeaders: _getImageHeaders
+            getImageHeaders: _getImageHeaders,
+            cooldown: cooldown
         )
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
@@ -540,6 +549,7 @@ final class JsPlugin: Plugin {
                 _repository = newPlugin._repository
                 _availableGenres = newPlugin._availableGenres
                 _configs = newPlugin._configs
+                _cooldown = newPlugin._cooldown
 
                 _updatesUrl = newPlugin._updatesUrl
                 _getImageHeaders = newPlugin._getImageHeaders

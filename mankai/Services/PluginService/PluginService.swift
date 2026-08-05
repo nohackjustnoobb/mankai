@@ -40,11 +40,7 @@ final class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(jsPlugins.count) JS plugins")
 
         for jsPlugin in jsPlugins {
-            if jsPlugin.shouldCache {
-                _plugins[jsPlugin.id] = CacheWrapper.wrapping(jsPlugin)
-            } else {
-                _plugins[jsPlugin.id] = jsPlugin
-            }
+            _plugins[jsPlugin.id] = wrap(jsPlugin)
         }
 
         Task {
@@ -60,11 +56,7 @@ final class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(fsPlugins.count) FS plugins")
 
         for fsPlugin in fsPlugins {
-            if fsPlugin.shouldCache {
-                _plugins[fsPlugin.id] = CacheWrapper.wrapping(fsPlugin)
-            } else {
-                _plugins[fsPlugin.id] = fsPlugin
-            }
+            _plugins[fsPlugin.id] = wrap(fsPlugin)
         }
     }
 
@@ -74,12 +66,22 @@ final class PluginService: ObservableObject {
         Logger.pluginService.info("Loaded \(httpPlugins.count) HTTP plugins")
 
         for httpPlugin in httpPlugins {
-            if httpPlugin.shouldCache {
-                _plugins[httpPlugin.id] = CacheWrapper.wrapping(httpPlugin)
-            } else {
-                _plugins[httpPlugin.id] = httpPlugin
-            }
+            _plugins[httpPlugin.id] = wrap(httpPlugin)
         }
+    }
+
+    private func wrap(_ plugin: Plugin) -> Plugin {
+        var wrappedPlugin = plugin
+
+        if plugin.cooldown != nil {
+            wrappedPlugin = CooldownWrapper.wrapping(wrappedPlugin)
+        }
+
+        if plugin.shouldCache {
+            wrappedPlugin = CacheWrapper.wrapping(wrappedPlugin)
+        }
+
+        return wrappedPlugin
     }
 
     /// Retrieves a plugin by its identifier.
@@ -94,11 +96,7 @@ final class PluginService: ObservableObject {
     /// - Throws: An error if saving the plugin fails.
     func addPlugin(_ plugin: Plugin) throws {
         Logger.pluginService.debug("Adding plugin: \(plugin.id)")
-        if plugin.shouldCache {
-            _plugins[plugin.id] = CacheWrapper.wrapping(plugin)
-        } else {
-            _plugins[plugin.id] = plugin
-        }
+        _plugins[plugin.id] = wrap(plugin)
 
         DispatchQueue.main.async {
             self.objectWillChange.send()

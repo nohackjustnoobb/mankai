@@ -40,8 +40,17 @@ interface ServerInfoResponse {
   authors?: string[];
   repository?: string;
   availableGenres?: string[];
+  cooldown?: Cooldown;
+}
+
+interface Cooldown {
+  default?: number;
+  getImage?: number;
+  getImageConcurrency?: number;
 }
 ```
+
+`default` is the optional minimum delay between non-image plugin calls, expressed in milliseconds. `getImage` configures a separate minimum delay between image calls. `getImageConcurrency` optionally limits the number of concurrent image requests.
 
 ## Authentication (Optional)
 
