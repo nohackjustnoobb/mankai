@@ -23,6 +23,7 @@ jobs:
       - name: Build Archive
         run: |
           xcodebuild archive \
+            -skipMacroValidation \
             -skipPackagePluginValidation \
             -project mankai.xcodeproj \
             -scheme mankai \

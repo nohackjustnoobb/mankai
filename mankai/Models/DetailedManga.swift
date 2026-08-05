@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ReerCodable
 
 struct ChapterGroup: Codable {
     var id: String? = nil
@@ -15,7 +16,8 @@ struct ChapterGroup: Codable {
 
 typealias ChapterGroups = [ChapterGroup]
 
-struct DetailedManga: Identifiable, Codable {
+@Codable
+struct DetailedManga: Identifiable {
     var id: String
     var title: String?
     var cover: String?
@@ -23,9 +25,13 @@ struct DetailedManga: Identifiable, Codable {
     var readingDirection: ReadingDirection?
     var latestChapter: Chapter?
     var description: String?
+    @DateCoding(.millisecondsSince1970)
     var updatedAt: Date?
+    @DecodingDefault([])
     var authors: [String]
+    @DecodingDefault([])
     var genres: [Genre]
+    @DecodingDefault([])
     var chapters: ChapterGroups
     var remarks: String?
     var editable: Bool?
@@ -34,111 +40,9 @@ struct DetailedManga: Identifiable, Codable {
 
     init?(from any: Any) {
         guard let dict = any as? [String: Any],
-              let id = dict["id"] as? String
-        else {
-            return nil
-        }
-
-        self.id = id
-        title = dict["title"] as? String
-        cover = dict["cover"] as? String
-        description = dict["description"] as? String
-        meta = dict["meta"] as? String
-        remarks = dict["remarks"] as? String
-        editable = dict["editable"] as? Bool
-
-        // Parse status
-        if let statusValue = dict["status"] {
-            switch statusValue {
-            case let status as Status:
-                self.status = status
-            case let statusInt as Int:
-                status = Status(rawValue: statusInt)
-            default:
-                status = nil
-            }
-        } else {
-            status = nil
-        }
-
-        if let chapterDict = dict["latestChapter"] as? [String: Any], let id = chapterDict["id"] as? String {
-            latestChapter = Chapter(
-                id: id,
-                title: chapterDict["title"] as? String
-            )
-        } else {
-            latestChapter = nil
-        }
-
-        if let readingDirectionValue = dict["readingDirection"] {
-            switch readingDirectionValue {
-            case let readingDirection as ReadingDirection:
-                self.readingDirection = readingDirection
-            case let readingDirectionInt as Int:
-                readingDirection = ReadingDirection(rawValue: readingDirectionInt)
-            default:
-                readingDirection = nil
-            }
-        }
-
-        if let updatedAtMilliseconds = dict["updatedAt"] as? Int64 {
-            updatedAt = Date(
-                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0
-            )
-        } else {
-            updatedAt = nil
-        }
-
-        authors = dict["authors"] as? [String] ?? []
-
-        // Parse genres
-        if let genresValue = dict["genres"] {
-            switch genresValue {
-            case let genresArray as [Genre]:
-                genres = genresArray
-            case let genresStringArray as [String]:
-                genres = genresStringArray.compactMap { Genre(rawValue: $0) }
-            default:
-                genres = []
-            }
-        } else {
-            genres = []
-        }
-
-        if let chapterGroups = dict["chapters"] as? ChapterGroups {
-            chapters = chapterGroups
-        } else if let chapterGroupValues = dict["chapters"] as? [Any] {
-            chapters = chapterGroupValues.compactMap { value in
-                guard let groupDict = value as? [String: Any],
-                      let title = groupDict["title"] as? String
-                else {
-                    return nil
-                }
-
-                let groupChapters = (groupDict["chapters"] as? [Any] ?? []).compactMap {
-                    value -> Chapter? in
-                    guard let chapterDict = value as? [String: Any],
-                          let id = chapterDict["id"] as? String
-                    else {
-                        return nil
-                    }
-
-                    return Chapter(
-                        id: id,
-                        title: chapterDict["title"] as? String,
-                        locked: chapterDict["locked"] as? Bool
-                    )
-                }
-
-                return ChapterGroup(
-                    id: groupDict["id"] as? String,
-                    title: title,
-                    chapters: groupChapters
-                )
-            }
-        } else {
-            chapters = []
-        }
+              let decoded = try? Self.decoded(from: dict)
+        else { return nil }
+        self = decoded
     }
 
     init() {
@@ -153,95 +57,14 @@ struct DetailedManga: Identifiable, Codable {
         status = .onGoing
     }
 
-    enum CodingKeys: String, CodingKey {
-        case id, title, cover, status, readingDirection, latestChapter, description, updatedAt, authors, genres, chapters, meta, remarks, editable
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        id = try container.decode(String.self, forKey: .id)
-        title = try container.decodeIfPresent(String.self, forKey: .title)
-        cover = try container.decodeIfPresent(String.self, forKey: .cover)
-        status = try container.decodeIfPresent(Status.self, forKey: .status)
-        readingDirection = try container.decodeIfPresent(ReadingDirection.self, forKey: .readingDirection)
-        latestChapter = try container.decodeIfPresent(Chapter.self, forKey: .latestChapter)
-        description = try container.decodeIfPresent(String.self, forKey: .description)
-
-        if let updatedAtMilliseconds = try container.decodeIfPresent(Int64.self, forKey: .updatedAt) {
-            updatedAt = Date(
-                timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0
-            )
-        } else {
-            updatedAt = nil
-        }
-
-        authors = try container.decodeIfPresent([String].self, forKey: .authors) ?? []
-        genres = try container.decodeIfPresent([Genre].self, forKey: .genres) ?? []
-        chapters = try container.decodeIfPresent(ChapterGroups.self, forKey: .chapters) ?? []
-
-        meta = try container.decodeIfPresent(String.self, forKey: .meta)
-        remarks = try container.decodeIfPresent(String.self, forKey: .remarks)
-        editable = try container.decodeIfPresent(Bool.self, forKey: .editable)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-
-        try container.encode(id, forKey: .id)
-        try container.encodeIfPresent(title, forKey: .title)
-        try container.encodeIfPresent(cover, forKey: .cover)
-        try container.encodeIfPresent(status, forKey: .status)
-        try container.encodeIfPresent(readingDirection, forKey: .readingDirection)
-        try container.encodeIfPresent(latestChapter, forKey: .latestChapter)
-        try container.encodeIfPresent(description, forKey: .description)
-
-        if let updatedAt = updatedAt {
-            let milliseconds = Int64(updatedAt.timeIntervalSince1970 * 1000)
-            try container.encode(milliseconds, forKey: .updatedAt)
-        }
-
-        try container.encode(authors, forKey: .authors)
-        try container.encode(genres, forKey: .genres)
-        try container.encode(chapters, forKey: .chapters)
-
-        try container.encodeIfPresent(meta, forKey: .meta)
-        try container.encodeIfPresent(remarks, forKey: .remarks)
-        try container.encodeIfPresent(editable, forKey: .editable)
-    }
-
     func toManga() -> Manga {
-        var mangaDict: [String: Any] = [
-            "id": id,
-        ]
-
-        if let title = title {
-            mangaDict["title"] = title
-        }
-
-        if let cover = cover {
-            mangaDict["cover"] = cover
-        }
-
-        if let status = status {
-            mangaDict["status"] = status.rawValue
-        }
-
-        if let latestChapter = latestChapter {
-            var chapterDict: [String: Any] = ["id": latestChapter.id]
-            if let title = latestChapter.title {
-                chapterDict["title"] = title
-            }
-            if let locked = latestChapter.locked {
-                chapterDict["locked"] = locked
-            }
-            mangaDict["latestChapter"] = chapterDict
-        }
-
-        if let meta = meta {
-            mangaDict["meta"] = meta
-        }
-
-        return Manga(from: mangaDict)!
+        Manga(
+            id: id,
+            title: title,
+            cover: cover,
+            status: status,
+            latestChapter: latestChapter,
+            meta: meta
+        )
     }
 }

@@ -8,10 +8,6 @@
 import Foundation
 
 final class EditableHttpPlugin: HttpPlugin, Editable {
-    override var tags: [String] {
-        [String(localized: "http")]
-    }
-
     // MARK: - Manga Management
 
     func upsertManga(_ manga: EditableManga) async throws -> String {

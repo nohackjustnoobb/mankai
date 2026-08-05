@@ -355,17 +355,6 @@ final class SupabaseEngine: SyncEngine {
         let latestChapter: String
         let isDeleted: Bool
         let updatedAt: Date?
-
-        enum CodingKeys: String, CodingKey {
-            case mangaId
-            case pluginId
-            case userId
-            case datetime
-            case updates
-            case latestChapter
-            case isDeleted
-            case updatedAt
-        }
     }
 
     private func getSaveds(_ since: Date? = nil) async throws -> [SupabaseSaved] {
@@ -416,17 +405,6 @@ final class SupabaseEngine: SyncEngine {
         let chapterTitle: String?
         let page: Int
         let updatedAt: Date?
-
-        enum CodingKeys: String, CodingKey {
-            case mangaId
-            case pluginId
-            case userId
-            case datetime
-            case chapterId
-            case chapterTitle
-            case page
-            case updatedAt
-        }
     }
 
     private func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {

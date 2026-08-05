@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import ReerCodable
 
-enum ConfigType: String {
+enum ConfigType: String, Codable {
     case text
     case password
     case number
@@ -30,18 +31,55 @@ enum ConfigType: String {
     }
 }
 
+@Codable
 struct Config {
     var key: String
     var name: String
     var description: String?
     var type: ConfigType
-    var defaultValue: Any
     var options: [String]?
+
+    @CodingKey("defaultValue")
+    private var codedDefaultValue: AnyCodable?
+
+    var defaultValue: Any {
+        get { codedDefaultValue?.value ?? NSNull() }
+        set { codedDefaultValue = AnyCodable(newValue) }
+    }
+
+    init(
+        key: String,
+        name: String,
+        description: String? = nil,
+        type: ConfigType,
+        defaultValue: Any,
+        options: [String]? = nil
+    ) {
+        self.key = key
+        self.name = name
+        self.description = description
+        self.type = type
+        self.options = options
+        codedDefaultValue = AnyCodable(defaultValue)
+    }
 }
 
+@Codable
 struct ConfigValue {
     var key: String
-    var value: Any
+
+    @CodingKey("value")
+    private var codedValue: AnyCodable
+
+    var value: Any {
+        get { codedValue.value }
+        set { codedValue = AnyCodable(newValue) }
+    }
+
+    init(key: String, value: Any) {
+        self.key = key
+        codedValue = AnyCodable(value)
+    }
 }
 
 class Plugin: Identifiable, ObservableObject {

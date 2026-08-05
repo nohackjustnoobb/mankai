@@ -16,6 +16,9 @@ final class AuthManager {
     private var _refreshToken: String?
     private var _accessToken: String?
 
+    private var refreshAccessTokenTask: Task<Void, Error>?
+    private let refreshAccessTokenLock = NSLock()
+
     private var _id: String
 
     var postSave: (() -> Void)?
@@ -154,6 +157,36 @@ final class AuthManager {
     }
 
     private func refreshAccessToken() async throws {
+        let task = getOrCreateRefreshAccessTokenTask()
+        try await task.value
+    }
+
+    private func getOrCreateRefreshAccessTokenTask() -> Task<Void, Error> {
+        refreshAccessTokenLock.lock()
+        defer { refreshAccessTokenLock.unlock() }
+
+        if let refreshAccessTokenTask {
+            return refreshAccessTokenTask
+        }
+
+        let task: Task<Void, Error> = Task { [weak self] in
+            defer { self?.clearRefreshAccessTokenTask() }
+
+            guard let self else { return }
+            try await self.performRefreshAccessToken()
+        }
+
+        refreshAccessTokenTask = task
+        return task
+    }
+
+    private func clearRefreshAccessTokenTask() {
+        refreshAccessTokenLock.lock()
+        refreshAccessTokenTask = nil
+        refreshAccessTokenLock.unlock()
+    }
+
+    private func performRefreshAccessToken() async throws {
         Logger.authManager.debug("AuthManager refreshing access token")
         guard let refreshToken = _refreshToken, let serverUrl = _serverUrl else {
             Logger.authManager.error("AuthManager missing refresh token or server URL")
@@ -185,7 +218,7 @@ final class AuthManager {
             // maybe the refresh token is expired, try to get a new one
             Logger.authManager.warning("AuthManager refresh token expired, trying to re-login")
             try await getRefreshToken()
-            return try await refreshAccessToken()
+            return try await performRefreshAccessToken()
         }
 
         guard httpResponse.statusCode == 200 else {
@@ -295,7 +328,7 @@ final class AuthManager {
                 throw MankaiErrorCode.authRequestFailed.makeError(
                     messageOverride: errorMsg,
                     additionalUserInfo: [
-                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode
+                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode,
                     ]
                 )
             }

@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import ReerCodable
 
 enum ScriptType: String {
     case isOnline
@@ -17,6 +18,26 @@ enum ScriptType: String {
     case getDetailedManga
     case getChapter
     case getImage
+}
+
+@Codable
+private struct JsPluginMetadata {
+    let id: String
+    let name: String?
+    let version: String?
+    let description: String?
+    @DecodingDefault([])
+    let authors: [String]
+    let repository: String?
+    let updatesUrl: String?
+    @DecodingDefault([])
+    let availableGenres: [Genre]
+    @DecodingDefault([:])
+    let scripts: [String: String]
+    @DecodingDefault([])
+    let configs: [Config]
+    let getImageHeaders: [String: String]?
+
 }
 
 final class JsPlugin: Plugin {
@@ -134,26 +155,6 @@ final class JsPlugin: Plugin {
         }
     }
 
-    private static func parseConfigArray(_ arr: [[String: Any]]) -> [Config] {
-        arr.compactMap { dict -> Config? in
-            guard let key = dict["key"] as? String,
-                  let name = dict["name"] as? String,
-                  let type = dict["type"] as? String
-            else {
-                return nil
-            }
-
-            return Config(
-                key: key,
-                name: name,
-                description: dict["description"] as? String,
-                type: ConfigType(rawValue: type)!,
-                defaultValue: dict["defaultValue"] as Any,
-                options: dict["options"] as? [String]
-            )
-        }
-    }
-
     private func setConfigValues(_ configValues: [ConfigValue]) {
         for configValue in configValues {
             _configValues[configValue.key] = configValue
@@ -161,28 +162,31 @@ final class JsPlugin: Plugin {
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {
-        guard let id = json["id"] as? String else { return nil }
-        let name = json["name"] as? String
-        let version = json["version"] as? String
-        let description = json["description"] as? String
-        let authors = json["authors"] as? [String] ?? []
-        let repository = json["repository"] as? String
-        let updatesUrl = json["updatesUrl"] as? String
-        let availableGenres =
-            (json["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
-        let scripts =
-            (json["scripts"] as? [String: String])?.reduce(into: [ScriptType: String]()) {
-                if let scriptType = ScriptType(rawValue: $1.0) {
-                    $0[scriptType] = $1.1
-                }
-            } ?? [:]
-        let configs = (json["configs"] as? [[String: Any]]).map { parseConfigArray($0) } ?? []
-        let getImageHeaders = json["getImageHeaders"] as? [String: String]
+        guard let metadata = try? JsPluginMetadata.decoded(from: json)
+        else { return nil }
+
+        return fromMetadata(metadata)
+    }
+
+    private static func fromMetadata(_ metadata: JsPluginMetadata) -> JsPlugin? {
+        let scripts = metadata.scripts.reduce(into: [ScriptType: String]()) { result, entry in
+            if let scriptType = ScriptType(rawValue: entry.key) {
+                result[scriptType] = entry.value
+            }
+        }
 
         return JsPlugin(
-            id: id, name: name, version: version, description: description, authors: authors,
-            repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
-            scripts: scripts, configs: configs, getImageHeaders: getImageHeaders
+            id: metadata.id,
+            name: metadata.name,
+            version: metadata.version,
+            description: metadata.description,
+            authors: metadata.authors,
+            repository: metadata.repository,
+            updatesUrl: metadata.updatesUrl,
+            availableGenres: metadata.availableGenres,
+            scripts: scripts,
+            configs: metadata.configs,
+            getImageHeaders: metadata.getImageHeaders
         )
     }
 
@@ -191,13 +195,9 @@ final class JsPlugin: Plugin {
             return nil
         }
 
-        guard
-            let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard let metadata = try? JsPluginMetadata.decoded(from: data),
+              let plugin = fromMetadata(metadata)
         else {
-            return nil
-        }
-
-        guard let plugin = fromJson(json) else {
             return nil
         }
 
@@ -220,29 +220,15 @@ final class JsPlugin: Plugin {
 
     static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
         guard let metaData = jsPluginModel.meta.data(using: .utf8),
-              let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
+              let metadata = try? JsPluginMetadata.decoded(from: metaData)
         else {
             return nil
         }
 
-        // Parse config values if they exist
-        var configValues: [ConfigValue]? = nil
-        if let configValuesData = jsPluginModel.configValues.data(using: .utf8),
-           let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
-           as? [[String: Any]]
-        {
-            configValues = configValuesArray.compactMap { dict in
-                guard let key = dict["key"] as? String,
-                      let value = dict["value"]
-                else {
-                    return nil
-                }
+        let configValues = jsPluginModel.configValues.data(using: .utf8)
+            .flatMap { try? [ConfigValue].decoded(from: $0) }
 
-                return ConfigValue(key: key, value: value)
-            }
-        }
-
-        let plugin = fromJson(metaJson)
+        let plugin = fromMetadata(metadata)
 
         // Update config values if they exist
         if let configValues = configValues,
@@ -288,50 +274,30 @@ final class JsPlugin: Plugin {
             throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
-        // Create scripts dictionary
         let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
             dict[pair.key.rawValue] = pair.value
         }
 
-        // Create meta JSON
-        let metaDict: [String: Any] = [
-            "id": id,
-            "name": name as Any,
-            "version": version as Any,
-            "description": description as Any,
-            "authors": authors,
-            "repository": repository as Any,
-            "updatesUrl": updatesUrl as Any,
-            "availableGenres": availableGenres.map { $0.rawValue },
-            "scripts": scriptsDict,
-            "configs": configs.map { config in
-                [
-                    "key": config.key,
-                    "name": config.name,
-                    "description": config.description as Any,
-                    "type": config.type.rawValue,
-                    "defaultValue": config.defaultValue,
-                    "options": config.options as Any,
-                ]
-            },
-            "getImageHeaders": _getImageHeaders as Any,
-        ]
-
-        let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
+        let metadata = JsPluginMetadata(
+            id: id,
+            name: name,
+            version: version,
+            description: description,
+            authors: authors,
+            repository: repository,
+            updatesUrl: updatesUrl,
+            availableGenres: availableGenres,
+            scripts: scriptsDict,
+            configs: configs,
+            getImageHeaders: _getImageHeaders
+        )
+        let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginJavascriptFailedToEncodeMetaData.makeError()
         }
 
         // Create config values JSON
-        let configValuesArray = _configValues.values.map { configValue in
-            [
-                "key": configValue.key,
-                "value": configValue.value,
-            ]
-        }
-        let configValuesData = try JSONSerialization.data(
-            withJSONObject: configValuesArray, options: []
-        )
+        let configValuesData = try Array(_configValues.values).encodedData()
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginJavascriptFailedToEncodeConfigValuesData.makeError()
         }
@@ -439,7 +405,7 @@ final class JsPlugin: Plugin {
             fatalError("Script for getMangas is not defined")
         }
 
-        let idsJson = try JSONSerialization.data(withJSONObject: ids, options: [])
+        let idsJson = try ids.encodedData()
         let idsString = String(data: idsJson, encoding: .utf8) ?? "[]"
 
         let script =
@@ -466,9 +432,7 @@ final class JsPlugin: Plugin {
 
         guard let detailedMangaJson = result as? String,
               let detailedMangaData = detailedMangaJson.data(using: .utf8),
-              let detailedMangaResult = try? JSONDecoder().decode(
-                  DetailedManga.self, from: detailedMangaData
-              )
+              let detailedMangaResult = try? DetailedManga.decoded(from: detailedMangaData)
         else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
@@ -483,8 +447,8 @@ final class JsPlugin: Plugin {
             fatalError("Script for getChapter is not defined")
         }
 
-        let mangaJson = try JSONEncoder().encode(manga)
-        let chapterJson = try JSONEncoder().encode(chapter)
+        let mangaJson = try manga.encodedData()
+        let chapterJson = try chapter.encodedData()
 
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
               let chapterString = String(data: chapterJson, encoding: .utf8)

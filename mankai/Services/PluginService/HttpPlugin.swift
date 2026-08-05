@@ -7,6 +7,26 @@
 
 import Foundation
 import GRDB
+import ReerCodable
+
+@Codable
+private struct HttpPluginMetadata {
+    let id: String
+    let name: String?
+    let version: String?
+    let description: String?
+    @DecodingDefault([])
+    let authors: [String]
+    let repository: String?
+    @DecodingDefault([])
+    let availableGenres: [Genre]
+    let authenticationEnabled: Bool?
+    @DecodingDefault(false)
+    let editorEnabled: Bool
+    @DecodingDefault([])
+    let configs: [Config]
+
+}
 
 class HttpPlugin: Plugin {
     private var _id: String
@@ -103,36 +123,36 @@ class HttpPlugin: Plugin {
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {
-        guard let id = json["id"] as? String else { return nil }
-        guard let authenticationEnabled = json["authenticationEnabled"] as? Bool else { return nil }
-        let editorEnabled = json["editorEnabled"] as? Bool ?? false
-        let name = json["name"] as? String
-        let version = json["version"] as? String
-        let description = json["description"] as? String
-        let authors = json["authors"] as? [String] ?? []
-        let repository = json["repository"] as? String
-        let availableGenres =
-            (json["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
+        guard let metadata = try? HttpPluginMetadata.decoded(from: json)
+        else { return nil }
 
-        if editorEnabled, !(self is EditableHttpPlugin.Type) {
+        return fromMetadata(baseUrl: baseUrl, metadata: metadata)
+    }
+
+    private static func fromMetadata(baseUrl: String, metadata: HttpPluginMetadata) -> HttpPlugin? {
+        guard let authenticationEnabled = metadata.authenticationEnabled else { return nil }
+
+        if metadata.editorEnabled, !(self is EditableHttpPlugin.Type) {
             return EditableHttpPlugin(
-                id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name,
-                version: version, description: description, authors: authors,
-                repository: repository, availableGenres: availableGenres
+                id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
+                name: metadata.name, version: metadata.version, description: metadata.description,
+                authors: metadata.authors, repository: metadata.repository,
+                availableGenres: metadata.availableGenres
             )
         }
 
-        if !editorEnabled, self is EditableHttpPlugin.Type {
+        if !metadata.editorEnabled, self is EditableHttpPlugin.Type {
             Logger.httpPlugin.warning(
-                "Plugin \(id) is not editable but EditableHttpPlugin is being used. This may cause issues."
+                "Plugin \(metadata.id) is not editable but EditableHttpPlugin is being used. This may cause issues."
             )
             return nil
         }
 
         return self.init(
-            id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name,
-            version: version, description: description, authors: authors,
-            repository: repository, availableGenres: availableGenres
+            id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
+            name: metadata.name, version: metadata.version, description: metadata.description,
+            authors: metadata.authors, repository: metadata.repository,
+            availableGenres: metadata.availableGenres
         )
     }
 
@@ -141,9 +161,7 @@ class HttpPlugin: Plugin {
             return nil
         }
 
-        guard
-            let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-        else {
+        guard let metadata = try? HttpPluginMetadata.decoded(from: data) else {
             return nil
         }
 
@@ -154,7 +172,7 @@ class HttpPlugin: Plugin {
             baseUrl = components.string ?? url.absoluteString
         }
 
-        guard let plugin = fromJson(baseUrl: baseUrl, json) else {
+        guard let plugin = fromMetadata(baseUrl: baseUrl, metadata: metadata) else {
             return nil
         }
 
@@ -177,29 +195,13 @@ class HttpPlugin: Plugin {
 
     static func fromDataModel(_ httpPluginModel: HttpPluginModel) -> HttpPlugin? {
         guard let metaData = httpPluginModel.meta.data(using: .utf8),
-              let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
-        else {
-            return nil
-        }
+              let metadata = try? HttpPluginMetadata.decoded(from: metaData)
+        else { return nil }
 
-        // Parse config values if they exist
-        var configValues: [ConfigValue]? = nil
-        if let configValuesData = httpPluginModel.configValues.data(using: .utf8),
-           let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
-           as? [[String: Any]]
-        {
-            configValues = configValuesArray.compactMap { dict in
-                guard let key = dict["key"] as? String,
-                      let value = dict["value"]
-                else {
-                    return nil
-                }
+        let configValues = httpPluginModel.configValues.data(using: .utf8)
+            .flatMap { try? [ConfigValue].decoded(from: $0) }
 
-                return ConfigValue(key: key, value: value)
-            }
-        }
-
-        let plugin = fromJson(baseUrl: httpPluginModel.baseUrl, metaJson)
+        let plugin = fromMetadata(baseUrl: httpPluginModel.baseUrl, metadata: metadata)
 
         // Update config values if they exist
         if let configValues = configValues,
@@ -267,17 +269,16 @@ class HttpPlugin: Plugin {
                 throw MankaiErrorCode.pluginHttpInvalidUrl.makeError()
             }
             let (metaData, _) = try await URLSession.shared.data(from: metaUrl)
-            let metaJson = try JSONSerialization.jsonObject(with: metaData) as? [String: Any]
-            guard let metaJson = metaJson else { return }
+            guard let metadata = try? HttpPluginMetadata.decoded(from: metaData)
+            else { return }
 
-            _name = metaJson["name"] as? String
-            _version = metaJson["version"] as? String
-            _description = metaJson["description"] as? String
-            _authors = metaJson["authors"] as? [String] ?? []
-            _repository = metaJson["repository"] as? String
-            _availableGenres =
-                (metaJson["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
-            _authenticationEnabled = metaJson["authenticationEnabled"] as? Bool ?? false
+            _name = metadata.name
+            _version = metadata.version
+            _description = metadata.description
+            _authors = metadata.authors
+            _repository = metadata.repository
+            _availableGenres = metadata.availableGenres
+            _authenticationEnabled = metadata.authenticationEnabled ?? false
 
             try savePlugin()
             isMetaUpdated = true
@@ -310,44 +311,25 @@ class HttpPlugin: Plugin {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
-        // Create meta JSON
-        let metaDict: [String: Any] = [
-            "id": id,
-            "name": name as Any,
-            "version": version as Any,
-            "description": description as Any,
-            "authors": authors,
-            "repository": repository as Any,
-            "availableGenres": availableGenres.map { $0.rawValue },
-            "authenticationEnabled": authenticationEnabled as Any,
-            "editorEnabled": self is EditableHttpPlugin,
-            "configs": configs.map { config in
-                [
-                    "key": config.key,
-                    "name": config.name,
-                    "description": config.description as Any,
-                    "type": config.type.rawValue,
-                    "defaultValue": config.defaultValue,
-                    "options": config.options as Any,
-                ]
-            },
-        ]
-
-        let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
+        let metadata = HttpPluginMetadata(
+            id: id,
+            name: name,
+            version: version,
+            description: description,
+            authors: authors,
+            repository: repository,
+            availableGenres: availableGenres,
+            authenticationEnabled: authenticationEnabled,
+            editorEnabled: self is EditableHttpPlugin,
+            configs: configs
+        )
+        let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginHttpFailedToEncodeMetaData.makeError()
         }
 
         // Create config values JSON
-        let configValuesArray = _configValues.values.map { configValue in
-            [
-                "key": configValue.key,
-                "value": configValue.value,
-            ]
-        }
-        let configValuesData = try JSONSerialization.data(
-            withJSONObject: configValuesArray, options: []
-        )
+        let configValuesData = try Array(_configValues.values).encodedData()
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginHttpFailedToEncodeConfigValuesData.makeError()
         }
@@ -391,7 +373,7 @@ class HttpPlugin: Plugin {
     override func getSuggestions(_ query: String) async throws -> [String] {
         try await setup()
         let (data, _) = try await authManager.get(path: "/suggestion", query: ["query": query])
-        return try JSONDecoder().decode([String].self, from: data)
+        return try [String].decoded(from: data)
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
@@ -399,7 +381,7 @@ class HttpPlugin: Plugin {
         let (data, _) = try await authManager.get(
             path: "/search", query: ["query": query, "page": String(page)]
         )
-        return try JSONDecoder().decode([Manga].self, from: data)
+        return try [Manga].decoded(from: data)
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
@@ -412,26 +394,26 @@ class HttpPlugin: Plugin {
                 "status": String(status.rawValue),
             ]
         )
-        return try JSONDecoder().decode([Manga].self, from: data)
+        return try [Manga].decoded(from: data)
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         try await setup()
-        let body = try JSONSerialization.data(withJSONObject: ids, options: [])
+        let body = try ids.encodedData()
         let (data, _) = try await authManager.post(path: "/manga", body: body)
-        return try JSONDecoder().decode([Manga].self, from: data)
+        return try [Manga].decoded(from: data)
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         try await setup()
         let (data, _) = try await authManager.get(path: "/manga/\(id)")
-        return try JSONDecoder().decode(DetailedManga.self, from: data)
+        return try DetailedManga.decoded(from: data)
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         try await setup()
         let (data, _) = try await authManager.get(path: "/manga/\(manga.id)/chapter/\(chapter.id)")
-        return try JSONDecoder().decode([String].self, from: data)
+        return try [String].decoded(from: data)
     }
 
     override func getImage(_ url: String) async throws -> Data {

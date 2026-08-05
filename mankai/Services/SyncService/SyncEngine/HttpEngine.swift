@@ -6,15 +6,103 @@
 //
 
 import Foundation
+import ReerCodable
 
 final class HttpEngine: SyncEngine {
     static let shared = HttpEngine()
 
-    private static let iso8601Formatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+    // MARK: - HTTP Models
+
+    private struct SyncRequest: Encodable {
+        let saveds: [SyncSaved]
+        let records: [SyncRecord]
+    }
+
+    @Codable
+    fileprivate struct SyncSaved {
+        let mangaId: String
+        let pluginId: String
+        @CustomCoding(FlexibleDateCoding.self)
+        let datetime: Date
+        let updates: Bool
+        let latestChapter: String
+
+        init(from saved: SavedModel) {
+            mangaId = saved.mangaId
+            pluginId = saved.pluginId
+            datetime = saved.datetime
+            updates = saved.updates
+            latestChapter = saved.latestChapter
+        }
+
+        func toModel() -> SavedModel {
+            SavedModel(
+                mangaId: mangaId,
+                pluginId: pluginId,
+                datetime: datetime,
+                updates: updates,
+                latestChapter: latestChapter
+            )
+        }
+    }
+
+    @Codable
+    fileprivate struct SyncRecord {
+        let mangaId: String
+        let pluginId: String
+        @CustomCoding(FlexibleDateCoding.self)
+        let datetime: Date
+        let page: Int
+        let chapterId: String
+        let chapterTitle: String?
+
+        init(from record: RecordModel) {
+            mangaId = record.mangaId
+            pluginId = record.pluginId
+            datetime = record.datetime
+            page = record.page
+            chapterId = record.chapterId
+            chapterTitle = record.chapterTitle
+        }
+
+        func toModel() -> RecordModel {
+            RecordModel(
+                mangaId: mangaId,
+                pluginId: pluginId,
+                datetime: datetime,
+                chapterId: chapterId,
+                chapterTitle: chapterTitle,
+                page: page
+            )
+        }
+    }
+
+    @Decodable
+    fileprivate struct DeletedItem {
+        let mangaId: String
+        let pluginId: String
+        @CustomCoding(FlexibleDateCoding.self)
+        let datetime: Date
+    }
+
+    @Decodable
+    fileprivate struct SyncResponse {
+        @DecodingDefault([])
+        let saveds: [SyncSaved]
+        @DecodingDefault([])
+        let records: [SyncRecord]
+        @DecodingDefault([])
+        let deleted: [DeletedItem]
+    }
+
+    private struct SavedReference: Encodable {
+        let mangaId: String
+        let pluginId: String
+    }
+
+    private struct HashResponse: Decodable {
+        let hash: String
+    }
 
     private let authManager: AuthManager
 
@@ -126,105 +214,54 @@ final class HttpEngine: SyncEngine {
             let data: Data
 
             if isFirstRequest {
-                var body: [String: Any] = [:]
-
-                body["saveds"] = newLocalSaveds.map { saved in
-                    [
-                        "mangaId": saved.mangaId,
-                        "pluginId": saved.pluginId,
-                        "datetime": Int(saved.datetime.timeIntervalSince1970 * 1000),
-                        "updates": saved.updates,
-                        "latestChapter": saved.latestChapter,
-                    ]
-                }
-
-                body["records"] = newLocalRecords.map { record in
-                    var dict: [String: Any] = [
-                        "mangaId": record.mangaId,
-                        "pluginId": record.pluginId,
-                        "datetime": Int(record.datetime.timeIntervalSince1970 * 1000),
-                        "page": record.page,
-                        "chapterId": record.chapterId,
-                    ]
-                    if let chapterTitle = record.chapterTitle { dict["chapterTitle"] = chapterTitle }
-                    return dict
-                }
-
-                let bodyData = try JSONSerialization.data(withJSONObject: body, options: [])
+                let body = SyncRequest(
+                    saveds: newLocalSaveds.map { SyncSaved(from: $0) },
+                    records: newLocalRecords.map { SyncRecord(from: $0) }
+                )
+                let bodyData = try JSONEncoder().encode(body)
                 (data, _) = try await authManager.post(path: "/sync", query: query, body: bodyData)
                 isFirstRequest = false
             } else {
                 (data, _) = try await authManager.get(path: "/sync", query: query)
             }
 
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            guard let response = try? JSONDecoder().decode(SyncResponse.self, from: data) else {
                 Logger.httpEngine.error("Invalid sync response format")
                 break
             }
 
             // Handle Saveds
-            if let savedsArr = json["saveds"] as? [[String: Any]] {
-                let receivedSaveds = savedsArr.compactMap { dict -> SavedModel? in
-                    guard let mangaId = dict["mangaId"] as? String,
-                          let pluginId = dict["pluginId"] as? String,
-                          let datetimeStr = dict["datetime"] as? String,
-                          let updates = dict["updates"] as? Bool,
-                          let latestChapter = dict["latestChapter"] as? String,
-                          let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-                    else { return nil }
-                    return SavedModel(
-                        mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates,
-                        latestChapter: latestChapter
-                    )
-                }
-
-                if !receivedSaveds.isEmpty {
-                    _ = try await SavedService.shared.batchUpdate(saveds: receivedSaveds)
-                }
+            if !response.saveds.isEmpty {
+                _ = try await SavedService.shared.batchUpdate(
+                    saveds: response.saveds.map { $0.toModel() }
+                )
             }
 
             // Handle Records
-            if let recordsArr = json["records"] as? [[String: Any]] {
-                let receivedRecords = recordsArr.compactMap { dict -> RecordModel? in
-                    guard let mangaId = dict["mangaId"] as? String,
-                          let pluginId = dict["pluginId"] as? String,
-                          let datetimeStr = dict["datetime"] as? String,
-                          let page = dict["page"] as? Int,
-                          let chapterId = dict["chapterId"] as? String,
-                          let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-                    else { return nil }
-                    let chapterTitle = dict["chapterTitle"] as? String
-                    return RecordModel(
-                        mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId,
-                        chapterTitle: chapterTitle, page: page
-                    )
-                }
-
-                if !receivedRecords.isEmpty {
-                    _ = try await HistoryService.shared.batchUpdate(records: receivedRecords)
-                }
+            if !response.records.isEmpty {
+                _ = try await HistoryService.shared.batchUpdate(
+                    records: response.records.map { $0.toModel() }
+                )
             }
 
-            if let deletedArr = json["deleted"] as? [[String: Any]] {
-                for dict in deletedArr {
-                    if let mangaId = dict["mangaId"] as? String,
-                       let pluginId = dict["pluginId"] as? String,
-                       let datetimeStr = dict["datetime"] as? String,
-                       let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-                    {
-                        if let localSaved = SavedService.shared.get(mangaId: mangaId, pluginId: pluginId) {
-                            if datetime > localSaved.datetime {
-                                _ = try await SavedService.shared.delete(mangaId: mangaId, pluginId: pluginId)
-                            }
-                        }
+            for deleted in response.deleted {
+                if let localSaved = SavedService.shared.get(
+                    mangaId: deleted.mangaId,
+                    pluginId: deleted.pluginId
+                ) {
+                    if deleted.datetime > localSaved.datetime {
+                        _ = try await SavedService.shared.delete(
+                            mangaId: deleted.mangaId,
+                            pluginId: deleted.pluginId
+                        )
                     }
                 }
             }
 
             // Check pagination
-            let savedsCount = (json["saveds"] as? [Any])?.count ?? 0
-            let recordsCount = (json["records"] as? [Any])?.count ?? 0
-            let deletedCount = (json["deleted"] as? [Any])?.count ?? 0
+            let savedsCount = response.saveds.count
+            let recordsCount = response.records.count
+            let deletedCount = response.deleted.count
 
             if savedsCount >= limit || recordsCount >= limit || deletedCount >= limit {
                 offset += limit
@@ -241,28 +278,17 @@ final class HttpEngine: SyncEngine {
 
     override func addSaveds(_ saveds: [SavedModel]) async throws {
         Logger.httpEngine.debug("HttpEngine adding \(saveds.count) saveds")
-        let bodyArr: [[String: Any]] = saveds.map { saved in
-            [
-                "mangaId": saved.mangaId,
-                "pluginId": saved.pluginId,
-                "datetime": Int(saved.datetime.timeIntervalSince1970 * 1000),
-                "updates": saved.updates,
-                "latestChapter": saved.latestChapter,
-            ]
-        }
-        let bodyData = try JSONSerialization.data(withJSONObject: bodyArr, options: [])
+        let body = saveds.map { SyncSaved(from: $0) }
+        let bodyData = try JSONEncoder().encode(body)
         _ = try await authManager.post(path: "/saveds/add", body: bodyData)
     }
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         Logger.httpEngine.debug("HttpEngine removing \(saveds.count) saveds")
-        let bodyArr: [[String: Any]] = saveds.map { saved in
-            [
-                "mangaId": saved.mangaId,
-                "pluginId": saved.pluginId,
-            ]
+        let body = saveds.map {
+            SavedReference(mangaId: $0.mangaId, pluginId: $0.pluginId)
         }
-        let bodyData = try JSONSerialization.data(withJSONObject: bodyArr, options: [])
+        let bodyData = try JSONEncoder().encode(body)
         _ = try await authManager.post(path: "/saveds/remove", body: bodyData)
     }
 
@@ -294,12 +320,10 @@ final class HttpEngine: SyncEngine {
     private func getSavedsHash() async throws -> String {
         Logger.httpEngine.debug("HttpEngine getting saveds hash")
         let (data, _) = try await authManager.get(path: "/saveds/hash")
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let hash = json["hash"] as? String
-        else {
+        guard let response = try? JSONDecoder().decode(HashResponse.self, from: data) else {
             Logger.httpEngine.error("HttpEngine invalid hash response")
             throw MankaiErrorCode.syncHttpInvalidHashResponse.makeError()
         }
-        return hash
+        return response.hash
     }
 }
