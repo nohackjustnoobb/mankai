@@ -5737,14 +5737,14 @@
         }
       }
     },
-    "serial" : {
+    "series" : {
       "comment" : "Used as a chapter group label.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serial"
+            "value" : "Series"
           }
         },
         "zh-Hant" : {
@@ -6662,7 +6662,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "卷"
+            "value" : "單行卷"
           }
         }
       }

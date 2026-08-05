@@ -146,7 +146,7 @@ struct DetailedManga: Identifiable, Codable {
         authors = []
         genres = []
         chapters = [
-            ChapterGroup(title: "serial", chapters: []),
+            ChapterGroup(title: "series", chapters: []),
             ChapterGroup(title: "extra", chapters: []),
             ChapterGroup(title: "volume", chapters: []),
         ]
