@@ -67,7 +67,7 @@ struct AddBrowsableFolderModal: View {
                         ForEach(FolderType.allCases) { type in
                             switch type {
                             case .filesystem:
-                                Text("filesystem")
+                                Text("fs")
                                     .tag(type)
                             case .smb:
                                 Text("smb")
@@ -76,6 +76,8 @@ struct AddBrowsableFolderModal: View {
                         }
                     }
                     .disabled(isProcessing)
+                } footer: {
+                    Text("pluginIdSyncHint")
                 }
 
                 Section("displayName") {

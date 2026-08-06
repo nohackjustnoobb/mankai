@@ -24,19 +24,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             url.stopAccessingSecurityScopedResource()
         }
 
-        let idFile = url.appendingPathComponent(".mankai")
-        let id: String
-
-        if FileManager.default.fileExists(atPath: idFile.path) {
-            id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
-        } else {
-            id = UUID().uuidString
-            try id.write(to: idFile, atomically: true, encoding: .utf8)
-        }
-
-        self.init(url: url, id: id)
+        let identity = try Self.resolveIdentity(at: url)
+        self.init(url: url, id: identity.id, shouldSync: identity.shouldSync)
     }
 
     // MARK: - Metadata

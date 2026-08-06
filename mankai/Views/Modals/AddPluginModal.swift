@@ -40,7 +40,17 @@ struct AddPluginModal: View {
                 Section {
                     Picker("pluginType", selection: $selectedPluginType) {
                         ForEach(PluginType.allCases) { type in
-                            Text(LocalizedStringKey(type.rawValue)).tag(type)
+                            switch type {
+                            case .jsPlugin:
+                                Text("js")
+                                    .tag(type)
+                            case .fsPlugin:
+                                Text("fs")
+                                    .tag(type)
+                            case .httpPlugin:
+                                Text("http")
+                                    .tag(type)
+                            }
                         }
                     }
                 }
@@ -82,6 +92,8 @@ struct AddPluginModal: View {
                         Toggle("readOnly", isOn: $isReadOnly)
                     } header: {
                         Text("fsPluginSettings")
+                    } footer: {
+                        Text("pluginIdSyncHint")
                     }
                 } else if selectedPluginType == .httpPlugin {
                     Section {

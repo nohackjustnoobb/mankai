@@ -25,6 +25,7 @@ class ReadFsPlugin: Plugin {
     private lazy var dirName: String = url.lastPathComponent
     lazy var _dbPath: String = url.appendingPathComponent("data.db").path(percentEncoded: false)
     private let _id: String
+    private let _shouldSync: Bool
     private var _isAccessing: Bool = false
 
     private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: true)
@@ -32,10 +33,11 @@ class ReadFsPlugin: Plugin {
         _db
     }
 
-    init(url: URL, id: String) {
+    init(url: URL, id: String, shouldSync: Bool = true) {
         Logger.fsPlugin.debug("Initializing ReadFsPlugin with url: \(url.path)")
         self.url = url
         _id = id
+        _shouldSync = shouldSync
 
         super.init()
 
@@ -57,19 +59,32 @@ class ReadFsPlugin: Plugin {
             url.stopAccessingSecurityScopedResource()
         }
 
+        let identity = try Self.resolveIdentity(at: url)
+        self.init(url: url, id: identity.id, shouldSync: identity.shouldSync)
+    }
+
+    static func resolveIdentity(at url: URL) throws -> (id: String, shouldSync: Bool) {
         let idFile = url.appendingPathComponent(".mankai")
-        guard FileManager.default.fileExists(atPath: idFile.path) else {
-            throw MankaiErrorCode.pluginFilesystemPluginIdNotFound.makeError()
+        if FileManager.default.fileExists(atPath: idFile.path) {
+            let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+            guard !id.isEmpty else {
+                throw MankaiErrorCode.pluginFilesystemPluginIdEmpty.makeError()
+            }
+            return (id, true)
         }
 
-        let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        guard !id.isEmpty else {
-            throw MankaiErrorCode.pluginFilesystemPluginIdEmpty.makeError()
+        let id = UUID().uuidString
+        do {
+            try id.write(to: idFile, atomically: true, encoding: .utf8)
+            return (id, true)
+        } catch {
+            Logger.fsPlugin.warning(
+                "Failed to write .mankai for plugin \(id); using a local-only ID: \(error)"
+            )
+            return (id, false)
         }
-
-        self.init(url: url, id: id)
     }
 
     deinit {
@@ -140,9 +155,17 @@ class ReadFsPlugin: Plugin {
                 let plugin: ReadFsPlugin
 
                 if model.isWriteable {
-                    plugin = ReadWriteFsPlugin(url: url, id: model.id)
+                    plugin = ReadWriteFsPlugin(
+                        url: url,
+                        id: model.id,
+                        shouldSync: model.shouldSync
+                    )
                 } else {
-                    plugin = ReadFsPlugin(url: url, id: model.id)
+                    plugin = ReadFsPlugin(
+                        url: url,
+                        id: model.id,
+                        shouldSync: model.shouldSync
+                    )
                 }
 
                 results.append(plugin)
@@ -158,6 +181,10 @@ class ReadFsPlugin: Plugin {
 
     override var id: String {
         _id
+    }
+
+    override var shouldSync: Bool {
+        _shouldSync
     }
 
     override var tags: [String] {
@@ -193,7 +220,8 @@ class ReadFsPlugin: Plugin {
         let pluginModel = FsPluginModel(
             id: id,
             isWriteable: isWriteable,
-            bookmarkData: bookmarkData
+            bookmarkData: bookmarkData,
+            shouldSync: shouldSync
         )
 
         try db.write { db in

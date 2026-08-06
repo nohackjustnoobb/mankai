@@ -163,6 +163,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
     let configuration: SmbConnectionConfiguration
 
     private let pluginName: String?
+    private let _shouldSync: Bool
     private let session: SmbSession
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("smb", isDirectory: true)
@@ -171,7 +172,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
     /// Creates a new SMB plugin using an existing session.
     convenience init(session: SmbSession, name: String?) async throws {
         do {
-            let id = try await session.withConnectedConnection { connection in
+            let identity = try await session.withConnectedConnection { connection in
                 if try connection.itemExists(at: ".mankai") == .file {
                     let data = try connection.loadFile(at: ".mankai")
                     guard let value = String(data: data, encoding: .utf8) else {
@@ -182,19 +183,27 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
                     guard !id.isEmpty else {
                         throw MankaiErrorCode.browseSmbInvalidPlugin.makeError()
                     }
-                    return id
+                    return (id: id, shouldSync: true)
                 }
 
                 let id = UUID().uuidString
-                try connection.dumpToFile(Data(id.utf8), to: ".mankai")
-                return id
+                do {
+                    try connection.dumpToFile(Data(id.utf8), to: ".mankai")
+                    return (id: id, shouldSync: true)
+                } catch {
+                    Logger.smbBrowsablePlugin.warning(
+                        "Failed to write .mankai for plugin \(id); using a local-only ID: \(error)"
+                    )
+                    return (id: id, shouldSync: false)
+                }
             }
 
             try self.init(
-                id: id,
+                id: identity.id,
                 name: name,
                 configuration: session.configuration,
-                session: session
+                session: session,
+                shouldSync: identity.shouldSync
             )
         } catch {
             Logger.smbBrowsablePlugin.error(
@@ -210,7 +219,8 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         id: String,
         name: String?,
         configuration: SmbConnectionConfiguration,
-        session: SmbSession? = nil
+        session: SmbSession? = nil,
+        shouldSync: Bool = true
     ) throws {
         let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedId.isEmpty else {
@@ -219,6 +229,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
 
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
+        _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? SmbSession(configuration: configuration)
 
@@ -271,6 +282,10 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         false
     }
 
+    override var shouldSync: Bool {
+        _shouldSync
+    }
+
     static func loadPlugins() -> [SmbBrowsablePlugin] {
         Logger.smbBrowsablePlugin.debug("Loading SMB browsable plugins")
         guard let dbPool = DbService.shared.appDb else {
@@ -304,7 +319,8 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
                 try results.append(SmbBrowsablePlugin(
                     id: model.id,
                     name: model.name,
-                    configuration: configuration
+                    configuration: configuration,
+                    shouldSync: model.shouldSync
                 ))
             } catch {
                 Logger.smbBrowsablePlugin.error(
@@ -329,7 +345,8 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
             port: port,
             share: share,
             username: username,
-            password: password
+            password: password,
+            shouldSync: shouldSync
         )
         try db.write { db in
             try model.save(db)

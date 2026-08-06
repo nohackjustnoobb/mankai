@@ -2340,22 +2340,6 @@
         }
       }
     },
-    "filesystem" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "File System"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "檔案系統"
-          }
-        }
-      }
-    },
     "filesystemSettings" : {
       "localizations" : {
         "en" : {
@@ -2448,24 +2432,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "檔案系統"
-          }
-        }
-      }
-    },
-    "fsPlugin" : {
-      "comment" : "Used as a plugin type label.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FsPlugin"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fs插件"
           }
         }
       }
@@ -2701,24 +2667,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HTTP"
-          }
-        }
-      }
-    },
-    "httpPlugin" : {
-      "comment" : "Used as a plugin type label.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP Plugin"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "HTTP 插件"
           }
         }
       }
@@ -3346,24 +3294,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JSON"
-          }
-        }
-      }
-    },
-    "jsPlugin" : {
-      "comment" : "Used as a plugin type label.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "JsPlugin"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Js插件"
           }
         }
       }
@@ -4798,6 +4728,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "插件ID未找到"
+          }
+        }
+      }
+    },
+    "pluginIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai stores a \".mankai\" file in this folder to keep the plugin ID consistent across devices. If the file cannot be written, this plugin will use a local ID and its records will not sync."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai會在此資料夾儲存「.mankai」檔案，讓插件 ID 在不同裝置間保持一致。如果無法寫入此檔案，插件將使用本機 ID，其紀錄亦不會同步。"
           }
         }
       }

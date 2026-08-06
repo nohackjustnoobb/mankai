@@ -15,6 +15,7 @@ struct SmbBrowsablePluginModel {
     var share: String
     var username: String?
     var password: String?
+    var shouldSync: Bool
 
     static func createTable(_ db: Database) throws {
         try db.create(table: SmbBrowsablePluginModel.databaseTableName, ifNotExists: true) {
@@ -26,6 +27,7 @@ struct SmbBrowsablePluginModel {
             $0.column("share", .text).notNull()
             $0.column("username", .text)
             $0.column("password", .text)
+            $0.column("shouldSync", .boolean).notNull()
         }
     }
 }

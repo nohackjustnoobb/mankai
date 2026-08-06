@@ -16,6 +16,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
 
     let url: URL
     private let pluginName: String?
+    private let _shouldSync: Bool
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
 
@@ -23,11 +24,12 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
         url.appendingPathComponent(importsPath, isDirectory: true)
     }
 
-    init(url: URL, id: String, name: String?) {
+    init(url: URL, id: String, name: String?, shouldSync: Bool = true) {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
+        _shouldSync = shouldSync
         super.init(id: id)
 
         if !(self is AppDirBrowsablePlugin) {
@@ -55,15 +57,25 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
 
         let idFile = url.appendingPathComponent(".mankai")
         let id: String
+        let shouldSync: Bool
         if fileManager.fileExists(atPath: idFile.path) {
             id = try String(contentsOf: idFile, encoding: .utf8)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
+            shouldSync = true
         } else {
             id = UUID().uuidString
-            try id.write(to: idFile, atomically: true, encoding: .utf8)
+            do {
+                try id.write(to: idFile, atomically: true, encoding: .utf8)
+                shouldSync = true
+            } catch {
+                Logger.fsBrowsablePlugin.warning(
+                    "Failed to write .mankai for plugin \(id); using a local-only ID: \(error)"
+                )
+                shouldSync = false
+            }
         }
 
-        self.init(url: url, id: id, name: name)
+        self.init(url: url, id: id, name: name, shouldSync: shouldSync)
     }
 
     deinit {
@@ -123,7 +135,12 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
                     url.stopAccessingSecurityScopedResource()
                 }
 
-                results.append(FsBrowsablePlugin(url: url, id: model.id, name: model.name))
+                results.append(FsBrowsablePlugin(
+                    url: url,
+                    id: model.id,
+                    name: model.name,
+                    shouldSync: model.shouldSync
+                ))
             } catch {
                 Logger.fsBrowsablePlugin.error(
                     "Failed to resolve bookmark for plugin \(model.id): \(error)"
@@ -148,9 +165,14 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
             try FsBrowsablePluginModel(
                 id: id,
                 name: pluginName,
-                bookmarkData: bookmarkData
+                bookmarkData: bookmarkData,
+                shouldSync: shouldSync
             ).save(db)
         }
+    }
+
+    override var shouldSync: Bool {
+        _shouldSync
     }
 
     override func deletePlugin() throws {

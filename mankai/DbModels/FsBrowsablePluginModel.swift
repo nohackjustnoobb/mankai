@@ -12,6 +12,7 @@ struct FsBrowsablePluginModel {
     var id: String
     var name: String?
     var bookmarkData: Data
+    var shouldSync: Bool
 
     static func createTable(_ db: Database) throws {
         try db.create(table: FsBrowsablePluginModel.databaseTableName, ifNotExists: true) {
@@ -19,6 +20,7 @@ struct FsBrowsablePluginModel {
 
             $0.column("name", .text)
             $0.column("bookmarkData", .blob).notNull()
+            $0.column("shouldSync", .boolean).notNull()
         }
     }
 }
