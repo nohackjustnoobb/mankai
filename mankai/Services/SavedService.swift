@@ -45,7 +45,7 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Adding saved manga: \(saved.mangaId)")
         let result = try await update(saved: saved, manga: manga)
 
-        if result, SyncService.shared.engine != nil {
+        if result, saved.shouldSync, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.addSaved(saved)
             } catch {
@@ -64,9 +64,10 @@ final class SavedService: ObservableObject {
     /// - Returns: `true` if successful, throws an error if an error occurred.
     func remove(mangaId: String, pluginId: String) async throws -> Bool {
         Logger.savedService.debug("Removing saved manga: \(mangaId)")
+        let shouldSync = get(mangaId: mangaId, pluginId: pluginId)?.shouldSync == true
         let result = try await delete(mangaId: mangaId, pluginId: pluginId)
 
-        if result, SyncService.shared.engine != nil {
+        if result, shouldSync, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.removeSaved(mangaId: mangaId, pluginId: pluginId)
             } catch {
