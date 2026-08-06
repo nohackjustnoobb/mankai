@@ -71,22 +71,6 @@
     "•" : {
       "shouldTranslate" : false
     },
-    "1d" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 Day"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1日"
-          }
-        }
-      }
-    },
     "1gb" : {
       "localizations" : {
         "en" : {
@@ -99,22 +83,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 GB"
-          }
-        }
-      }
-    },
-    "1h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 Hour"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1小時"
           }
         }
       }
@@ -135,22 +103,6 @@
         }
       }
     },
-    "2h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2 Hours"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2小時"
-          }
-        }
-      }
-    },
     "5gb" : {
       "localizations" : {
         "en" : {
@@ -163,22 +115,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "5 GB"
-          }
-        }
-      }
-    },
-    "6h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 Hours"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6小時"
           }
         }
       }
@@ -199,53 +135,20 @@
         }
       }
     },
-    "12h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "12 Hours"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "12小時"
-          }
-        }
-      }
+    "25" : {
+      "shouldTranslate" : false
     },
-    "15m" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "15 Minutes"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "15分鐘"
-          }
-        }
-      }
+    "50" : {
+      "shouldTranslate" : false
     },
-    "30m" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 Minutes"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30分鐘"
-          }
-        }
-      }
+    "100" : {
+      "shouldTranslate" : false
+    },
+    "250" : {
+      "shouldTranslate" : false
+    },
+    "500" : {
+      "shouldTranslate" : false
     },
     "500mb" : {
       "localizations" : {
@@ -3044,18 +2947,18 @@
         }
       }
     },
-    "inMemoryCacheExpiryDuration" : {
+    "inMemoryCacheItemCount" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In-Memory Cache Expiry Duration"
+            "value" : "In-Memory Cache Item Count"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "記憶體快取過期時間"
+            "value" : "記憶體快取項目數量"
           }
         }
       }

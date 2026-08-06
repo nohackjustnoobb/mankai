@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct GeneralSettingsScreen: View {
-    @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue: Double = SettingsDefaults.inMemoryCacheExpiryDuration.rawValue
+    @AppStorage(SettingsKey.inMemoryCacheItemCount.rawValue) private var inMemoryCacheItemCount: Int = SettingsDefaults.inMemoryCacheItemCount
     @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue: Int = SettingsDefaults.diskCacheSizeLimit.rawValue
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
@@ -34,19 +34,14 @@ struct GeneralSettingsScreen: View {
 
             Section {
                 Picker(
-                    "inMemoryCacheExpiryDuration",
-                    selection: Binding(
-                        get: { CacheDuration(rawValue: inMemoryCacheExpiryDurationRawValue) ?? SettingsDefaults.inMemoryCacheExpiryDuration },
-                        set: { inMemoryCacheExpiryDurationRawValue = $0.rawValue }
-                    )
+                    "inMemoryCacheItemCount",
+                    selection: $inMemoryCacheItemCount
                 ) {
-                    Text("15m").tag(CacheDuration.fifteenMinutes)
-                    Text("30m").tag(CacheDuration.thirtyMinutes)
-                    Text("1h").tag(CacheDuration.oneHour)
-                    Text("2h").tag(CacheDuration.twoHours)
-                    Text("6h").tag(CacheDuration.sixHours)
-                    Text("12h").tag(CacheDuration.twelveHours)
-                    Text("1d").tag(CacheDuration.oneDay)
+                    Text("25").tag(25)
+                    Text("50").tag(50)
+                    Text("100").tag(100)
+                    Text("250").tag(250)
+                    Text("500").tag(500)
                 }
 
                 Picker(

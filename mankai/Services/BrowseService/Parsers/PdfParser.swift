@@ -22,7 +22,7 @@ final class PdfParser: Parser {
     private var cachedDocumentKey: String?
     private var cachedDocument: CachedDocument?
     private let cacheLock = NSLock()
-    private let documentLoadRegistry = ParserLoadRegistry<CachedDocument>()
+    private let documentLoadRegistry = AsyncLoadRegistry<CachedDocument>()
 
     private func cachedDocument(for cacheKey: String) -> CachedDocument? {
         cacheLock.lock()

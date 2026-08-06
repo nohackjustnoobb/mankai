@@ -28,7 +28,7 @@ final class CbzParser: Parser {
     private var cachedArchiveKey: String?
     private var cachedArchive: CachedArchive?
     private let cacheLock = NSLock()
-    private let archiveLoadRegistry = ParserLoadRegistry<CachedArchive>()
+    private let archiveLoadRegistry = AsyncLoadRegistry<CachedArchive>()
 
     private func cachedArchive(for cacheKey: String) -> CachedArchive? {
         cacheLock.lock()

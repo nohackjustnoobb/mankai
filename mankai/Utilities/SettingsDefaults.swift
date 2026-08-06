@@ -13,7 +13,7 @@ enum SettingsDefaults {
     static let showDebugScreen: Bool = false
 
     // Cache Settings
-    static let inMemoryCacheExpiryDuration: CacheDuration = .oneHour
+    static let inMemoryCacheItemCount: Int = 100
     static let diskCacheSizeLimit: DiskCacheLimit = .oneGB
 
     // Shared Reader Settings

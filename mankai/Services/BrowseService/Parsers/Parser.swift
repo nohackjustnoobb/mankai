@@ -36,53 +36,6 @@ struct ParserChapterMetadata: Codable {
     }
 }
 
-/// Coalesces concurrent asynchronous loads for the same parser cache key.
-final class ParserLoadRegistry<Value>: @unchecked Sendable {
-    private struct Entry {
-        let id: UUID
-        let task: Task<Value, Error>
-    }
-
-    private let lock = NSLock()
-    private var entries: [String: Entry] = [:]
-
-    func value(
-        for key: String,
-        operation: @escaping () async throws -> Value
-    ) async throws -> Value {
-        let entry = lock.withLock {
-            if let existing = entries[key] {
-                return existing
-            }
-
-            let created = Entry(
-                id: UUID(),
-                task: Task {
-                    try await operation()
-                }
-            )
-            entries[key] = created
-            return created
-        }
-
-        do {
-            let result = try await entry.task.value
-            removeEntry(for: key, id: entry.id)
-            return result
-        } catch {
-            removeEntry(for: key, id: entry.id)
-            throw error
-        }
-    }
-
-    private func removeEntry(for key: String, id: UUID) {
-        lock.withLock {
-            guard entries[key]?.id == id else { return }
-            entries.removeValue(forKey: key)
-        }
-    }
-}
-
 /// A backend-neutral file supplied to a parser.
 ///
 /// `cacheKey` must identify the current content. Callers should provide a new key
