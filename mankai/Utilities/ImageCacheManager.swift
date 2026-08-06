@@ -10,14 +10,16 @@ import Foundation
 final class ImageCacheManager: @unchecked Sendable {
     static let shared = ImageCacheManager()
 
-    private lazy var regularCacheDirectory: URL? = FileManager.default
-        .urls(for: .cachesDirectory, in: .userDomainMask)
-        .first?
-        .appendingPathComponent(CacheDirectory.regular)
+    private let regularCacheDirectory: URL?
     private let requestRegistry = AsyncLoadRegistry<Data>()
     private let pruningTimer: DispatchSourceTimer
 
     private init() {
+        regularCacheDirectory = FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent(CacheDirectory.regular)
+
         let timer = DispatchSource.makeTimerSource(
             queue: DispatchQueue(label: "com.mankai.image-cache", qos: .background)
         )
