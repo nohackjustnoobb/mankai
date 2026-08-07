@@ -27,7 +27,7 @@ struct AppLicenseScreen: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .padding()
                 }
                 .background(Color(.systemGroupedBackground))
