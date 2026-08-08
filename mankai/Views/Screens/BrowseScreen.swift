@@ -22,11 +22,7 @@ struct BrowseScreen: View {
     @State private var parsingPaths: Set<String> = []
     @State private var parseErrors: [String: String] = [:]
 
-    @State private var showReaderScreen = false
-    @State private var readerManga: DetailedManga? = nil
-    @State private var readerChapter: Chapter? = nil
-    @State private var readerChapterGroupIndex: Int? = nil
-    @State private var readerPage: Int? = nil
+    @State private var readerRoute: ReaderRoute?
 
     init(plugin: BrowsablePlugin, path: String? = nil, systemImageColor: Color? = nil) {
         self.plugin = plugin
@@ -121,20 +117,15 @@ struct BrowseScreen: View {
         .onAppear {
             loadEntities()
         }
-        .navigationDestination(isPresented: $showReaderScreen) {
-            if let readerManga = readerManga,
-               let readerChapter = readerChapter,
-               let readerChapterGroupIndex = readerChapterGroupIndex
-            {
-                ReaderScreen(
-                    plugin: plugin,
-                    manga: readerManga,
-                    downloadManga: nil,
-                    chapterGroupIndex: readerChapterGroupIndex,
-                    chapter: readerChapter,
-                    initialPage: readerPage
-                )
-            }
+        .navigationDestination(item: $readerRoute) { params in
+            ReaderScreen(
+                plugin: params.plugin,
+                manga: params.manga,
+                downloadManga: params.downloadManga,
+                chapterGroupIndex: params.chapterGroupIndex,
+                chapter: params.chapter,
+                initialPage: params.initialPage
+            )
         }
     }
 
@@ -158,11 +149,14 @@ struct BrowseScreen: View {
             page = nil
         }
 
-        readerManga = manga
-        readerChapter = chapter
-        readerChapterGroupIndex = chapterGroupIndex
-        readerPage = page
-        showReaderScreen = true
+        readerRoute = ReaderRoute(
+            plugin: plugin,
+            manga: manga,
+            downloadManga: nil,
+            chapterGroupIndex: chapterGroupIndex,
+            chapter: chapter,
+            initialPage: page
+        )
     }
 
     private var navigationTitle: String {

@@ -22,7 +22,7 @@ enum LogCategory: String {
 
     // UI
     case ui = "UI"
-    case readerSession = "ReaderSession"
+    case reader = "Reader"
     case adjacencyModel = "AdjacencyModel"
 
     // Plugin Types
@@ -190,7 +190,7 @@ extension Logger {
 
     // UI
     static let ui = Logger(category: .ui)
-    static let readerSession = Logger(category: .readerSession)
+    static let reader = Logger(category: .reader)
     static let adjacencyModel = Logger(category: .adjacencyModel)
 
     // Plugin Types

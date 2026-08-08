@@ -1,0 +1,1035 @@
+//
+//  ReaderScreen.swift
+//  mankai
+//
+//  Created by Travis XU on 7/2/2026.
+//
+
+import SwiftUI
+import UIKit
+
+private struct ReaderChapterLoadKey: Hashable {
+    let chapterID: String?
+    let retryGeneration: Int
+}
+
+private struct ReaderAdjacencyKey: Hashable {
+    let chapterID: String?
+    let loadedURLs: [String]
+    let readingDirection: ReadingDirection
+    let enabled: Bool
+}
+
+private struct ReaderGroupingKey: Equatable {
+    let imageLayout: ImageLayout
+    let readingDirection: ReadingDirection
+    let useSmartGrouping: Bool
+    let sensitivity: Double
+    let viewportWidth: Int
+    let viewportHeight: Int
+}
+
+private enum ReaderGrouping {
+    static func defaultGroupSize(
+        readingDirection: ReadingDirection,
+        imageLayout: ImageLayout,
+        viewportSize: CGSize
+    ) -> Int {
+        if readingDirection == .vertical { return 1 }
+
+        switch imageLayout {
+        case .auto:
+            return viewportSize.width > viewportSize.height ? 2 : 1
+        case .onePerRow:
+            return 1
+        case .twoPerRow:
+            return 2
+        }
+    }
+
+    static func makeGroups(
+        urls: [String],
+        images: [String: ReaderImageState],
+        defaultGroupSize: Int,
+        useSmartGrouping: Bool,
+        smartGroupingSensitivity: Double,
+        adjacencyScores: [String: Double]
+    ) -> [ReaderGroup] {
+        var groups: [ReaderGroup] = []
+        var index = 0
+
+        while index < urls.count {
+            let url = urls[index]
+
+            if isWide(url: url, images: images) {
+                groups.append(ReaderGroup(urls: [url]))
+                index += 1
+                continue
+            }
+
+            if index + 1 < urls.count {
+                let nextURL = urls[index + 1]
+                if isSpread(
+                    url,
+                    nextURL,
+                    useSmartGrouping: useSmartGrouping,
+                    sensitivity: smartGroupingSensitivity,
+                    adjacencyScores: adjacencyScores
+                ) {
+                    groups.append(ReaderGroup(urls: [url, nextURL]))
+                    index += 2
+                    continue
+                }
+            }
+
+            var groupURLs: [String] = []
+            var candidateIndex = index
+
+            while candidateIndex < urls.count, groupURLs.count < defaultGroupSize {
+                let candidateURL = urls[candidateIndex]
+                if isWide(url: candidateURL, images: images) { break }
+
+                if candidateIndex > index, candidateIndex + 1 < urls.count,
+                   isSpread(
+                       candidateURL,
+                       urls[candidateIndex + 1],
+                       useSmartGrouping: useSmartGrouping,
+                       sensitivity: smartGroupingSensitivity,
+                       adjacencyScores: adjacencyScores
+                   )
+                {
+                    break
+                }
+
+                groupURLs.append(candidateURL)
+                candidateIndex += 1
+            }
+
+            if groupURLs.isEmpty {
+                groupURLs.append(url)
+                candidateIndex = index + 1
+            }
+
+            groups.append(ReaderGroup(urls: groupURLs))
+            index = candidateIndex
+        }
+
+        return groups
+    }
+
+    static func pairKey(_ firstURL: String, _ secondURL: String) -> String {
+        "\(firstURL)|\(secondURL)"
+    }
+
+    private static func isWide(url: String, images: [String: ReaderImageState]) -> Bool {
+        guard case let .success(image) = images[url] else { return false }
+        return image.size.width > image.size.height
+    }
+
+    private static func isSpread(
+        _ firstURL: String,
+        _ secondURL: String,
+        useSmartGrouping: Bool,
+        sensitivity: Double,
+        adjacencyScores: [String: Double]
+    ) -> Bool {
+        guard useSmartGrouping else { return false }
+        return adjacencyScores[pairKey(firstURL, secondURL), default: 0] > (1 - sensitivity)
+    }
+}
+
+private struct ReaderSavedPosition: Equatable {
+    let chapterID: String
+    let page: Int
+}
+
+private enum ReaderImageLoadResult {
+    case success(String, UIImage)
+    case failed(String)
+}
+
+private struct ReaderNavigationBarController: UIViewControllerRepresentable {
+    let isHidden: Bool
+    let onWillDisappear: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onWillDisappear: onWillDisappear)
+    }
+
+    func makeUIViewController(context: Context) -> Controller {
+        Controller {
+            context.coordinator.onWillDisappear()
+        }
+    }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        context.coordinator.onWillDisappear = onWillDisappear
+        controller.setNavigationBarHidden(isHidden, animated: true)
+    }
+
+    static func dismantleUIViewController(_ controller: Controller, coordinator _: Coordinator) {
+        controller.restoreNavigationBar()
+    }
+
+    final class Coordinator {
+        var onWillDisappear: () -> Void
+
+        init(onWillDisappear: @escaping () -> Void) {
+            self.onWillDisappear = onWillDisappear
+        }
+    }
+
+    final class Controller: UIViewController {
+        private let showChrome: () -> Void
+        private var shouldHideNavigationBar = false
+        private var isAnimatingNavigationBar = false
+
+        init(showChrome: @escaping () -> Void) {
+            self.showChrome = showChrome
+            super.init(nibName: nil, bundle: nil)
+        }
+
+        @available(*, unavailable)
+        required init?(coder _: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .clear
+            view.isUserInteractionEnabled = false
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            applyNavigationBarVisibility(animated: false)
+        }
+
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            guard shouldHideNavigationBar, !isAnimatingNavigationBar else { return }
+            applyNavigationBarVisibility(animated: false)
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            shouldHideNavigationBar = false
+            restoreNavigationBar(animated: animated)
+            showChrome()
+        }
+
+        func setNavigationBarHidden(_ isHidden: Bool, animated: Bool) {
+            guard shouldHideNavigationBar != isHidden else { return }
+            shouldHideNavigationBar = isHidden
+            applyNavigationBarVisibility(animated: animated)
+        }
+
+        func restoreNavigationBar() {
+            restoreNavigationBar(animated: false)
+        }
+
+        private func applyNavigationBarVisibility(animated: Bool) {
+            guard let navigationBar = navigationController?.navigationBar else { return }
+
+            let transform = shouldHideNavigationBar
+                ? CGAffineTransform(
+                    translationX: 0,
+                    y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
+                )
+                : .identity
+
+            updateNavigationBar(navigationBar, transform: transform, animated: animated)
+        }
+
+        private func restoreNavigationBar(animated: Bool) {
+            guard let navigationBar = navigationController?.navigationBar else { return }
+            updateNavigationBar(navigationBar, transform: .identity, animated: animated)
+        }
+
+        private func updateNavigationBar(
+            _ navigationBar: UINavigationBar,
+            transform: CGAffineTransform,
+            animated: Bool
+        ) {
+            let changes = {
+                navigationBar.transform = transform
+            }
+
+            guard animated else {
+                changes()
+                return
+            }
+
+            isAnimatingNavigationBar = true
+            UIView.animate(
+                withDuration: 0.2,
+                delay: 0,
+                options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction],
+                animations: changes
+            ) { _ in
+                self.isAnimatingNavigationBar = false
+            }
+        }
+    }
+}
+
+struct ReaderScreen: View {
+    let plugin: Plugin
+    let manga: DetailedManga
+    let downloadManga: DetailedManga?
+    let chapterGroupIndex: Int
+    let chapter: Chapter
+    var initialPage: Int?
+
+    @AppStorage(SettingsKey.readerType.rawValue)
+    private var readerTypeRawValue: Int = SettingsDefaults.readerType.rawValue
+    @AppStorage(SettingsKey.imageLayout.rawValue)
+    private var imageLayoutRawValue: Int = SettingsDefaults.imageLayout.rawValue
+    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue)
+    private var respectMangaReadingDirection = SettingsDefaults.respectMangaReadingDirection
+    @AppStorage(SettingsKey.useSmartGrouping.rawValue)
+    private var useSmartGrouping = SettingsDefaults.useSmartGrouping
+    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue)
+    private var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
+
+    /// Continuous Reader
+    @AppStorage(SettingsKey.CR_readingDirection.rawValue)
+    private var continuousDirectionRawValue = SettingsDefaults.CR_readingDirection.rawValue
+    @AppStorage(SettingsKey.CR_tapNavigation.rawValue)
+    private var continuousTapNavigation = SettingsDefaults.CR_tapNavigation
+    @AppStorage(SettingsKey.CR_snapToPage.rawValue)
+    private var continuousSnapToPage = SettingsDefaults.CR_snapToPage
+    @AppStorage(SettingsKey.CR_softSnap.rawValue)
+    private var continuousSoftSnap = SettingsDefaults.CR_softSnap
+
+    /// Paged Reader
+    @AppStorage(SettingsKey.PR_readingDirection.rawValue)
+    private var pagedDirectionRawValue = SettingsDefaults.PR_readingDirection.rawValue
+    @AppStorage(SettingsKey.PR_navigationOrientation.rawValue)
+    private var pagedOrientationRawValue = SettingsDefaults.PR_navigationOrientation.rawValue
+    @AppStorage(SettingsKey.PR_tapNavigation.rawValue)
+    private var pagedTapNavigation = SettingsDefaults.PR_tapNavigation
+    @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue)
+    private var pagedTapBehaviorRawValue = SettingsDefaults.PR_tapNavigationBehavior.rawValue
+
+    @State private var currentChapterIndex: Int
+    @State private var pendingInitialPage: Int?
+    @State private var retryGeneration = 0
+    @State private var loadPhase = ReaderLoadPhase.idle
+    @State private var urls: [String] = []
+    @State private var images: [String: ReaderImageState] = [:]
+    @State private var groups: [ReaderGroup] = []
+    @State private var adjacencyScores: [String: Double] = [:]
+    @State private var checkedPairs: Set<String> = []
+    @State private var currentPage = 0
+    @State private var contentRevision = 0
+    @State private var navigationGeneration = 0
+    @State private var navigationCommand: ReaderNavigationCommand?
+    @State private var viewportSize: CGSize = .zero
+    @State private var isChromeVisible = true
+    @State private var isShowingChapters = false
+    @State private var saveScheduled = false
+    @State private var saveRequestGeneration = 0
+    @State private var lastSavedPosition: ReaderSavedPosition?
+
+    init(
+        plugin: Plugin,
+        manga: DetailedManga,
+        downloadManga: DetailedManga?,
+        chapterGroupIndex: Int,
+        chapter: Chapter,
+        initialPage: Int? = nil
+    ) {
+        self.plugin = plugin
+        self.manga = manga
+        self.downloadManga = downloadManga
+        self.chapterGroupIndex = chapterGroupIndex
+        self.chapter = chapter
+        self.initialPage = initialPage
+
+        let chapters = manga.chapters.indices.contains(chapterGroupIndex)
+            ? manga.chapters[chapterGroupIndex].chapters
+            : []
+        _currentChapterIndex = State(
+            initialValue: chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
+        )
+        _pendingInitialPage = State(initialValue: initialPage)
+    }
+
+    private var chapters: [Chapter] {
+        guard manga.chapters.indices.contains(chapterGroupIndex) else { return [] }
+        return manga.chapters[chapterGroupIndex].chapters
+    }
+
+    private var currentChapter: Chapter? {
+        guard chapters.indices.contains(currentChapterIndex) else { return nil }
+        return chapters[currentChapterIndex]
+    }
+
+    private var readerType: ReaderType {
+        if respectMangaReadingDirection, manga.readingDirection == .vertical {
+            return .continuous
+        }
+        return ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
+    }
+
+    private var readingDirection: ReadingDirection {
+        if respectMangaReadingDirection, let direction = manga.readingDirection {
+            return direction
+        }
+
+        switch readerType {
+        case .continuous:
+            return ReadingDirection(rawValue: continuousDirectionRawValue)
+                ?? SettingsDefaults.CR_readingDirection
+        case .paged:
+            return ReadingDirection(rawValue: pagedDirectionRawValue)
+                ?? SettingsDefaults.PR_readingDirection
+        }
+    }
+
+    private var imageLayout: ImageLayout {
+        ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout
+    }
+
+    private var defaultGroupSize: Int {
+        ReaderGrouping.defaultGroupSize(
+            readingDirection: readingDirection,
+            imageLayout: imageLayout,
+            viewportSize: viewportSize
+        )
+    }
+
+    private var renderConfiguration: ReaderRenderConfiguration {
+        ReaderRenderConfiguration(
+            readingDirection: readingDirection,
+            defaultGroupSize: defaultGroupSize,
+
+            tapNavigation: readerType == .continuous
+                ? continuousTapNavigation
+                : pagedTapNavigation,
+
+            tapNavigationBehavior: TapBehavior(rawValue: pagedTapBehaviorRawValue)
+                ?? SettingsDefaults.PR_tapNavigationBehavior,
+            navigationOrientation: NavigationOrientation(rawValue: pagedOrientationRawValue)
+                ?? SettingsDefaults.PR_navigationOrientation,
+
+            snapToPage: continuousSnapToPage,
+            softSnap: continuousSoftSnap
+        )
+    }
+
+    private var renderState: ReaderRenderState {
+        ReaderRenderState(
+            revision: contentRevision,
+            chapterID: currentChapter?.id,
+            urls: urls,
+            images: images,
+            groups: groups,
+            currentPage: currentPage,
+            navigationCommand: navigationCommand,
+            previousChapter: chapterAvailability(at: currentChapterIndex - 1),
+            nextChapter: chapterAvailability(at: currentChapterIndex + 1)
+        )
+    }
+
+    private var renderActions: ReaderRenderActions {
+        ReaderRenderActions(
+            pageDidChange: pageDidChange,
+            requestGroupStep: stepGroup,
+            requestChapterStep: stepChapter,
+            toggleChrome: toggleChrome,
+            viewportDidChange: updateViewportSize
+        )
+    }
+
+    private var chapterLoadKey: ReaderChapterLoadKey {
+        ReaderChapterLoadKey(chapterID: currentChapter?.id, retryGeneration: retryGeneration)
+    }
+
+    private var loadedURLs: [String] {
+        urls.filter { url in
+            if case .success = images[url] { return true }
+            return false
+        }
+    }
+
+    private var adjacencyKey: ReaderAdjacencyKey {
+        ReaderAdjacencyKey(
+            chapterID: currentChapter?.id,
+            loadedURLs: loadedURLs,
+            readingDirection: readingDirection,
+            enabled: useSmartGrouping && readingDirection != .vertical
+        )
+    }
+
+    private var groupingKey: ReaderGroupingKey {
+        ReaderGroupingKey(
+            imageLayout: imageLayout,
+            readingDirection: readingDirection,
+            useSmartGrouping: useSmartGrouping,
+            sensitivity: smartGroupingSensitivity,
+            viewportWidth: Int(viewportSize.width.rounded()),
+            viewportHeight: Int(viewportSize.height.rounded())
+        )
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                renderer
+                    .ignoresSafeArea()
+
+                loadOverlay
+
+                if loadPhase == .ready {
+                    controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .offset(
+                            y: isChromeVisible
+                                ? 0
+                                : 180 + proxy.safeAreaInsets.bottom
+                        )
+                        .opacity(isChromeVisible ? 1 : 0)
+                        .allowsHitTesting(isChromeVisible)
+                        .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
+                }
+            }
+            .ignoresSafeArea(edges: .bottom)
+            .onAppear {
+                updateViewportSize(proxy.size)
+            }
+            .onChange(of: proxy.size) { _, size in
+                updateViewportSize(size)
+            }
+        }
+        .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .background {
+            ReaderNavigationBarController(isHidden: !isChromeVisible) {
+                isChromeVisible = true
+            }
+        }
+        .sheet(isPresented: $isShowingChapters) {
+            ChaptersModal(
+                plugin: plugin,
+                manga: manga,
+                chapterGroupIndex: chapterGroupIndex
+            ) { selectedChapter, _, _ in
+                selectChapter(selectedChapter)
+                isShowingChapters = false
+            }
+        }
+        .task(id: chapterLoadKey) {
+            await loadChapter(for: chapterLoadKey)
+        }
+        .task(id: adjacencyKey) {
+            await updateAdjacencyScores(for: adjacencyKey)
+        }
+        .task(id: saveRequestGeneration) {
+            await performScheduledSave()
+        }
+        .onChange(of: groupingKey) { oldValue, _ in
+            if oldValue.readingDirection != readingDirection {
+                checkedPairs.removeAll()
+                adjacencyScores.removeAll()
+            }
+            regroup(keepCurrentPageVisible: true)
+        }
+        .onDisappear {
+            finishReading()
+        }
+    }
+
+    @ViewBuilder
+    private var renderer: some View {
+        switch readerType {
+        case .continuous:
+            ContinuousReaderScreen(
+                state: renderState,
+                configuration: renderConfiguration,
+                actions: renderActions
+            )
+        case .paged:
+            PagedReaderScreen(
+                state: renderState,
+                configuration: renderConfiguration,
+                actions: renderActions
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var loadOverlay: some View {
+        switch loadPhase {
+        case .idle, .loading:
+            ProgressView()
+                .controlSize(.large)
+        case .failed:
+            Button(action: retryChapter) {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.circle")
+                        .font(.system(size: 44))
+                    Text("failedToLoadChapter")
+                    Text("tapToRetry")
+                        .font(.caption)
+                }
+                .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        case .ready:
+            EmptyView()
+        }
+    }
+
+    private func controls(bottomSafeAreaInset: CGFloat) -> some View {
+        VStack(spacing: 10) {
+            HStack {
+                controlButton(
+                    systemImage: "chevron.left.to.line",
+                    label: "previousChapter",
+                    enabled: chapterAvailability(at: currentChapterIndex - 1) == .available
+                ) {
+                    stepChapter(.previous)
+                }
+
+                controlButton(
+                    systemImage: "chevron.left",
+                    label: "previousPage",
+                    enabled: canStepGroup(.previous)
+                ) {
+                    stepGroup(.previous)
+                }
+
+                Button {
+                    isShowingChapters = true
+                } label: {
+                    Text("\(min(currentPage + 1, max(urls.count, 1))) / \(max(urls.count, 1))")
+                        .frame(minWidth: 72)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.accent)
+
+                controlButton(
+                    systemImage: "chevron.right",
+                    label: "nextPage",
+                    enabled: canStepGroup(.next)
+                ) {
+                    stepGroup(.next)
+                }
+
+                controlButton(
+                    systemImage: "chevron.right.to.line",
+                    label: "nextChapter",
+                    enabled: chapterAvailability(at: currentChapterIndex + 1) == .available
+                ) {
+                    stepChapter(.next)
+                }
+            }
+
+            Slider(
+                value: Binding(
+                    get: { Double(min(currentPage + 1, max(urls.count, 1))) },
+                    set: { requestPage(Int($0.rounded()) - 1, animated: false) }
+                ),
+                in: 1 ... Double(max(urls.count, 1)),
+                step: 1
+            )
+            .disabled(urls.isEmpty)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 12 + bottomSafeAreaInset)
+        .background(.regularMaterial)
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 25, topTrailingRadius: 25))
+        .ignoresSafeArea(edges: .bottom)
+    }
+
+    private func controlButton(
+        systemImage: String,
+        label: LocalizedStringKey,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(minWidth: 44, minHeight: 32)
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+        .foregroundStyle(.accent)
+    }
+
+    private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {
+        guard chapters.indices.contains(index) else { return .unavailable }
+        return chapters[index].locked == true ? .locked : .available
+    }
+
+    private func canStepGroup(_ step: ReaderStep) -> Bool {
+        guard let groupIndex = currentGroupIndex else { return false }
+        switch step {
+        case .previous:
+            return groupIndex > 0
+        case .next:
+            return groupIndex < groups.count - 1
+        }
+    }
+
+    private var currentGroupIndex: Int? {
+        guard urls.indices.contains(currentPage) else { return nil }
+        return groups.firstIndex { $0.contains(urls[currentPage]) }
+    }
+
+    private func pageDidChange(_ page: Int) {
+        guard urls.indices.contains(page) else { return }
+        let chapterID = currentChapter?.id
+        let pageURL = urls[page]
+
+        DispatchQueue.main.async {
+            guard currentChapter?.id == chapterID,
+                  urls.indices.contains(page),
+                  urls[page] == pageURL,
+                  currentPage != page
+            else { return }
+
+            currentPage = page
+            scheduleSave()
+        }
+    }
+
+    private func stepGroup(_ step: ReaderStep) {
+        guard let groupIndex = currentGroupIndex else { return }
+        let targetIndex = step == .previous ? groupIndex - 1 : groupIndex + 1
+        guard groups.indices.contains(targetIndex),
+              let targetURL = groups[targetIndex].urls.first,
+              let page = urls.firstIndex(of: targetURL)
+        else { return }
+
+        requestPage(page, animated: true)
+    }
+
+    private func requestPage(_ page: Int, animated: Bool) {
+        guard urls.indices.contains(page) else { return }
+        let selectedURL = urls[page]
+        guard let group = groups.first(where: { $0.contains(selectedURL) }),
+              let targetURL = group.urls.first,
+              let targetPage = urls.firstIndex(of: targetURL)
+        else { return }
+
+        currentPage = targetPage
+        navigationGeneration += 1
+        navigationCommand = ReaderNavigationCommand(
+            generation: navigationGeneration,
+            targetURL: targetURL,
+            animated: animated
+        )
+        scheduleSave()
+    }
+
+    private func stepChapter(_ step: ReaderStep) {
+        let targetIndex = step == .previous ? currentChapterIndex - 1 : currentChapterIndex + 1
+        guard chapterAvailability(at: targetIndex) == .available else { return }
+
+        forceSaveCurrentPosition()
+        currentChapterIndex = targetIndex
+        pendingInitialPage = step == .previous ? -1 : 0
+        loadPhase = .loading
+    }
+
+    private func selectChapter(_ selectedChapter: Chapter) {
+        guard selectedChapter.locked != true,
+              let index = chapters.firstIndex(where: { $0.id == selectedChapter.id })
+        else { return }
+
+        forceSaveCurrentPosition()
+        currentChapterIndex = index
+        pendingInitialPage = 0
+        loadPhase = .loading
+    }
+
+    private func retryChapter() {
+        retryGeneration += 1
+        loadPhase = .loading
+    }
+
+    private func toggleChrome() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isChromeVisible.toggle()
+        }
+    }
+
+    private func updateViewportSize(_ size: CGSize) {
+        guard size.width > 0, size.height > 0, viewportSize != size else { return }
+        viewportSize = size
+    }
+
+    @MainActor
+    private func loadChapter(for key: ReaderChapterLoadKey) async {
+        guard let chapter = currentChapter, chapter.id == key.chapterID, chapter.locked != true else {
+            loadPhase = .failed
+            return
+        }
+
+        loadPhase = .loading
+        urls = []
+        images = [:]
+        groups = []
+        adjacencyScores = [:]
+        checkedPairs = []
+        currentPage = 0
+        navigationCommand = nil
+        contentRevision += 1
+
+        do {
+            let loadedURLs = try await chapterURLs(for: chapter)
+            try Task.checkCancellation()
+            guard chapterLoadKey == key, !loadedURLs.isEmpty else {
+                if chapterLoadKey == key { loadPhase = .failed }
+                return
+            }
+
+            urls = loadedURLs
+            images = Dictionary(uniqueKeysWithValues: loadedURLs.map { ($0, .loading) })
+            regroup()
+            loadPhase = .ready
+
+            let requestedPage: Int
+            if pendingInitialPage == -1 {
+                requestedPage = loadedURLs.count - 1
+            } else {
+                requestedPage = pendingInitialPage ?? 0
+            }
+            pendingInitialPage = nil
+            requestPage(min(max(requestedPage, 0), loadedURLs.count - 1), animated: false)
+
+            await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
+                for url in loadedURLs {
+                    taskGroup.addTask {
+                        await loadImage(url: url)
+                    }
+                }
+
+                for await result in taskGroup {
+                    guard !Task.isCancelled, chapterLoadKey == key else {
+                        taskGroup.cancelAll()
+                        return
+                    }
+
+                    switch result {
+                    case let .success(url, image):
+                        images[url] = .success(image)
+                    case let .failed(url):
+                        images[url] = .failed
+                    }
+                    regroup()
+                }
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            guard chapterLoadKey == key else { return }
+            Logger.ui.error("Failed to load chapter", error: error)
+            loadPhase = .failed
+        }
+    }
+
+    private func chapterURLs(for chapter: Chapter) async throws -> [String] {
+        if let downloadManga {
+            do {
+                let downloadedURLs = try await DownloadPlugin.shared.getChapter(
+                    manga: downloadManga,
+                    chapter: chapter
+                )
+                if !downloadedURLs.isEmpty { return downloadedURLs }
+            } catch {
+                Logger.ui.warning("Failed to load chapter from download")
+            }
+        }
+
+        return try await plugin.getChapter(manga: manga, chapter: chapter)
+    }
+
+    private func loadImage(url: String) async -> ReaderImageLoadResult {
+        for retry in 0 ... 3 {
+            do {
+                try Task.checkCancellation()
+                let data: Data
+                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
+                    data = try await DownloadPlugin.shared.getImage(url)
+                } else {
+                    data = try await plugin.getImage(url)
+                }
+
+                if let image = UIImage(data: data) {
+                    return .success(url, image)
+                }
+            } catch is CancellationError {
+                return .failed(url)
+            } catch {
+                if retry == 3 {
+                    Logger.ui.error("Failed to load reader image", error: error)
+                }
+            }
+
+            guard retry < 3 else { break }
+            let delay = UInt64(1 << retry) * 1_000_000_000
+            do {
+                try await Task.sleep(nanoseconds: delay)
+            } catch {
+                return .failed(url)
+            }
+        }
+
+        return .failed(url)
+    }
+
+    @MainActor
+    private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
+        guard key.enabled, key.chapterID == currentChapter?.id else { return }
+
+        let pairs: [(String, String, UIImage, UIImage)] = urls.indices.dropLast().compactMap { index in
+            let firstURL = urls[index]
+            let secondURL = urls[index + 1]
+            let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
+            guard !checkedPairs.contains(pairKey),
+                  case let .success(firstImage) = images[firstURL],
+                  case let .success(secondImage) = images[secondURL]
+            else { return nil }
+
+            if readingDirection == .rightToLeft {
+                return (firstURL, secondURL, secondImage, firstImage)
+            }
+            return (firstURL, secondURL, firstImage, secondImage)
+        }
+
+        await withTaskGroup(of: (String, Double?).self) { taskGroup in
+            for (firstURL, secondURL, firstImage, secondImage) in pairs {
+                let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
+                taskGroup.addTask {
+                    do {
+                        let score =
+                            try AdjacencyModelWrapper.shared?.predict(
+                                image1: firstImage,
+                                image2: secondImage
+                            ) ?? 0
+                        return (pairKey, score)
+                    } catch {
+                        Logger.ui.error("Adjacency check failed", error: error)
+                        return (pairKey, nil)
+                    }
+                }
+            }
+
+            for await (pairKey, score) in taskGroup {
+                guard !Task.isCancelled, adjacencyKey == key else {
+                    taskGroup.cancelAll()
+                    return
+                }
+                guard let score else { continue }
+                checkedPairs.insert(pairKey)
+                adjacencyScores[pairKey] = score
+                regroup()
+            }
+        }
+    }
+
+    private func regroup(keepCurrentPageVisible: Bool = false) {
+        let currentURL = urls.indices.contains(currentPage) ? urls[currentPage] : nil
+        groups = ReaderGrouping.makeGroups(
+            urls: urls,
+            images: images,
+            defaultGroupSize: defaultGroupSize,
+            useSmartGrouping: useSmartGrouping && readingDirection != .vertical,
+            smartGroupingSensitivity: smartGroupingSensitivity,
+            adjacencyScores: adjacencyScores
+        )
+        contentRevision += 1
+
+        if keepCurrentPageVisible, let currentURL, urls.contains(currentURL) {
+            navigationGeneration += 1
+            navigationCommand = ReaderNavigationCommand(
+                generation: navigationGeneration,
+                targetURL: currentURL,
+                animated: false
+            )
+        }
+    }
+
+    private func scheduleSave() {
+        guard currentChapter != nil, !saveScheduled else { return }
+        saveScheduled = true
+        saveRequestGeneration += 1
+    }
+
+    @MainActor
+    private func performScheduledSave() async {
+        guard saveScheduled else { return }
+        do {
+            try await Task.sleep(nanoseconds: 3_000_000_000)
+        } catch {
+            return
+        }
+
+        guard saveScheduled else { return }
+        saveScheduled = false
+        await persistCurrentPosition()
+    }
+
+    private func forceSaveCurrentPosition() {
+        saveScheduled = false
+        saveRequestGeneration += 1
+        guard let chapter = currentChapter else { return }
+        let page = currentPage
+        Task {
+            await persist(chapter: chapter, page: page)
+        }
+    }
+
+    @MainActor
+    private func persistCurrentPosition() async {
+        guard let chapter = currentChapter else { return }
+        await persist(chapter: chapter, page: currentPage)
+    }
+
+    @MainActor
+    private func persist(chapter: Chapter, page: Int) async {
+        let position = ReaderSavedPosition(chapterID: chapter.id, page: page)
+        guard lastSavedPosition != position else { return }
+
+        let mangaInfo =
+            (try? JSONEncoder().encode(manga))
+                .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        let mangaModel = MangaModel(mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
+        let record = RecordModel(
+            mangaId: manga.id,
+            pluginId: plugin.id,
+            datetime: Date(),
+            chapterId: chapter.id,
+            chapterTitle: chapter.title,
+            page: page,
+            shouldSync: plugin.shouldSync
+        )
+
+        do {
+            _ = try await HistoryService.shared.add(record: record, manga: mangaModel)
+            lastSavedPosition = position
+        } catch {
+            Logger.ui.error("Failed to save reader position", error: error)
+        }
+    }
+
+    private func finishReading() {
+        saveScheduled = false
+        saveRequestGeneration += 1
+        guard let chapter = currentChapter else { return }
+        let page = currentPage
+
+        Task {
+            await persist(chapter: chapter, page: page)
+            try? await SyncService.shared.sync()
+        }
+    }
+}

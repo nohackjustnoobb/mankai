@@ -32,7 +32,13 @@ struct MangaCoverView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemGray6))
             } else {
-                Image(systemName: "photo.badge.exclamationmark")
+                Group {
+                    if #available(iOS 18.0, *) {
+                        Image(systemName: "photo.badge.exclamationmark")
+                    } else {
+                        Image(systemName: "exclamationmark.circle.fill")
+                    }
+                }
                     .font(.title2)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

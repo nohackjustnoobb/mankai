@@ -4,6 +4,17 @@
     "/" : {
       "shouldTranslate" : false
     },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "%lld bytes" : {
       "localizations" : {
         "en" : {
@@ -3880,6 +3891,22 @@
         }
       }
     },
+    "nextChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一話"
+          }
+        }
+      }
+    },
     "nextChapterIsLocked" : {
       "localizations" : {
         "en" : {
@@ -3892,6 +3919,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "下一話已鎖定"
+          }
+        }
+      }
+    },
+    "nextPage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Page"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一頁"
           }
         }
       }
@@ -4828,6 +4871,22 @@
         }
       }
     },
+    "previousChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一話"
+          }
+        }
+      }
+    },
     "previousChapterIsLocked" : {
       "localizations" : {
         "en" : {
@@ -4856,6 +4915,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "上一頁 / 下一頁"
+          }
+        }
+      }
+    },
+    "previousPage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Page"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一頁"
           }
         }
       }

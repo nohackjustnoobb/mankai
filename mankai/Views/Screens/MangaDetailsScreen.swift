@@ -18,10 +18,7 @@ struct MangaDetailsScreen: View {
     @State private var selectedChapterGroupIndex: Int? = nil
     @State private var isReversed = true
 
-    @State private var readerChapterGroupIndex: Int? = nil
-    @State private var readerChapter: Chapter? = nil
-    @State private var readerPage: Int? = nil
-    @State private var showReaderScreen = false
+    @State private var readerRoute: ReaderRoute?
 
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
@@ -78,12 +75,19 @@ struct MangaDetailsScreen: View {
     private func navigateToChapter(
         _ chapter: Chapter, page: Int? = nil, chapterGroupIndex: Int? = nil
     ) {
-        readerChapter = chapter
-        readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
-        readerPage = page
+        guard let mangaData,
+              let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
+        else { return }
 
         showingChaptersModal = false
-        showReaderScreen = true
+        readerRoute = ReaderRoute(
+            plugin: plugin,
+            manga: mangaData,
+            downloadManga: downloadManga,
+            chapterGroupIndex: readerChapterGroupIndex,
+            chapter: chapter,
+            initialPage: page
+        )
     }
 
     private func scrollToRecord(proxy: ScrollViewProxy) {
@@ -402,8 +406,7 @@ struct MangaDetailsScreen: View {
                                                     Text(chapter.title ?? chapter.id)
                                                         .foregroundColor(.primary)
 
-                                                    if downloadedChapterIds?.contains(chapter.id) == true
-                                                    {
+                                                    if downloadedChapterIds?.contains(chapter.id) == true {
                                                         Image(systemName: "network.slash")
                                                             .foregroundColor(.secondary)
                                                     }
@@ -547,20 +550,15 @@ struct MangaDetailsScreen: View {
                 )
             }
         }
-        .navigationDestination(isPresented: $showReaderScreen) {
-            if let readerChapter = readerChapter,
-               let readerChapterGroupIndex = readerChapterGroupIndex,
-               let mangaData = mangaData
-            {
-                ReaderScreen(
-                    plugin: plugin,
-                    manga: mangaData,
-                    downloadManga: downloadManga,
-                    chapterGroupIndex: readerChapterGroupIndex,
-                    chapter: readerChapter,
-                    initialPage: readerPage
-                )
-            }
+        .navigationDestination(item: $readerRoute) { params in
+            ReaderScreen(
+                plugin: params.plugin,
+                manga: params.manga,
+                downloadManga: params.downloadManga,
+                chapterGroupIndex: params.chapterGroupIndex,
+                chapter: params.chapter,
+                initialPage: params.initialPage
+            )
         }
         .navigationDestination(isPresented: $showPluginLibraryScreen) {
             if let selectedGenre = selectedGenre {
