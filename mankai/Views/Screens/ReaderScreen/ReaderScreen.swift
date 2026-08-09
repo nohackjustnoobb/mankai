@@ -291,6 +291,8 @@ struct ReaderScreen: View {
     private var useSmartGrouping = SettingsDefaults.useSmartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue)
     private var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
+    @AppStorage(SettingsKey.downsampleImages.rawValue)
+    private var downsampleImages = SettingsDefaults.downsampleImages
 
     /// Continuous Reader
     @AppStorage(SettingsKey.CR_readingDirection.rawValue)
@@ -863,7 +865,13 @@ struct ReaderScreen: View {
                     data = try await plugin.getImage(url)
                 }
 
-                if let image = UIImage(data: data) {
+                let targetSize = viewportSize == .zero
+                    ? UIApplication.windowBounds.size
+                    : viewportSize
+                let image = downsampleImages
+                    ? data.downsampledImage(to: targetSize)
+                    : UIImage(data: data)
+                if let image {
                     return .success(url, image)
                 }
             } catch is CancellationError {

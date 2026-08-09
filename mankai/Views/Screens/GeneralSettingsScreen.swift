@@ -12,6 +12,8 @@ struct GeneralSettingsScreen: View {
     @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue: Int = SettingsDefaults.diskCacheSizeLimit.rawValue
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
+    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
+        SettingsDefaults.downsampleImages
     @ObservedObject private var updateService = UpdateService.shared
     @State private var cacheSize: String = ""
     @State private var indexCacheSize: String = ""
@@ -29,6 +31,15 @@ struct GeneralSettingsScreen: View {
                         Text("never")
                             .foregroundColor(.secondary)
                     }
+                }
+            }
+
+            Section("imageScaling") {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("downsampleImages", isOn: $downsampleImages)
+                    Text("downsampleImagesDescription")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
 

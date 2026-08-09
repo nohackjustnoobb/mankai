@@ -10,6 +10,7 @@ import Foundation
 enum SettingsKey: String {
     case hideBuiltInPlugins
     case showDebugScreen
+    case downsampleImages
 
     /// Cache Settings
     case inMemoryCacheItemCount

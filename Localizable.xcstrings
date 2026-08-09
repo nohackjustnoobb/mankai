@@ -1515,6 +1515,38 @@
         }
       }
     },
+    "downsampleImages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downsample Images"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小圖片"
+          }
+        }
+      }
+    },
+    "downsampleImagesDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduce decoded image sizes to lower memory usage. Disable this to preserve full image resolution at the cost of higher memory usage."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "縮小解碼後的圖片尺寸，以降低記憶體用量。停用後會保留完整圖片解析度，但會增加記憶體用量。"
+          }
+        }
+      }
+    },
     "dummyPluginCannotBeUsed" : {
       "localizations" : {
         "en" : {
@@ -2774,6 +2806,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "圖片排版"
+          }
+        }
+      }
+    },
+    "imageScaling" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Scaling"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片縮放"
           }
         }
       }

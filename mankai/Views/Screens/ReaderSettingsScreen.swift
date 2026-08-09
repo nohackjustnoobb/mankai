@@ -36,9 +36,9 @@ struct ReaderSettingsScreen: View {
                         set: { imageLayoutRawValue = $0.rawValue }
                     )
                 ) {
-                    Text(String(localized: "auto")).tag(ImageLayout.auto)
-                    Text(String(localized: "onePerRow")).tag(ImageLayout.onePerRow)
-                    Text(String(localized: "twoPerRow")).tag(ImageLayout.twoPerRow)
+                    Text("auto").tag(ImageLayout.auto)
+                    Text("onePerRow").tag(ImageLayout.onePerRow)
+                    Text("twoPerRow").tag(ImageLayout.twoPerRow)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -46,20 +46,20 @@ struct ReaderSettingsScreen: View {
                         String(localized: "useSmartGrouping"),
                         isOn: $useSmartGrouping
                     )
-                    Text(String(localized: "useSmartGroupingDescription"))
+                    Text("useSmartGroupingDescription")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
                 if useSmartGrouping {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(String(localized: "smartGroupingSensitivity"))
+                        Text("smartGroupingSensitivity")
                         Slider(
                             value: $smartGroupingSensitivity,
                             in: 0 ... 1,
                             step: 0.1
                         )
-                        Text(String(localized: "smartGroupingSensitivityDescription"))
+                        Text("smartGroupingSensitivityDescription")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -72,7 +72,7 @@ struct ReaderSettingsScreen: View {
                         String(localized: "respectMangaReadingDirection"),
                         isOn: $respectMangaReadingDirection
                     )
-                    Text(String(localized: "respectMangaReadingDirectionDescription"))
+                    Text("respectMangaReadingDirectionDescription")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -84,8 +84,8 @@ struct ReaderSettingsScreen: View {
                         set: { readerTypeRawValue = $0.rawValue }
                     )
                 ) {
-                    Text(String(localized: "paged")).tag(ReaderType.paged)
-                    Text(String(localized: "continuous")).tag(ReaderType.continuous)
+                    Text("paged").tag(ReaderType.paged)
+                    Text("continuous").tag(ReaderType.continuous)
                 }
             }
 
