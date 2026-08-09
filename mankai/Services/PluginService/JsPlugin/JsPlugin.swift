@@ -204,7 +204,7 @@ final class JsPlugin: Plugin {
         }
 
         guard let metadata = try? JsPluginMetadata.decoded(from: data),
-              let plugin = fromMetadata(metadata)
+            let plugin = fromMetadata(metadata)
         else {
             return nil
         }
@@ -228,7 +228,7 @@ final class JsPlugin: Plugin {
 
     static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
         guard let metaData = jsPluginModel.meta.data(using: .utf8),
-              let metadata = try? JsPluginMetadata.decoded(from: metaData)
+            let metadata = try? JsPluginMetadata.decoded(from: metaData)
         else {
             return nil
         }
@@ -240,7 +240,7 @@ final class JsPlugin: Plugin {
 
         // Update config values if they exist
         if let configValues = configValues,
-           let plugin = plugin
+            let plugin = plugin
         {
             plugin.setConfigValues(configValues)
         }
@@ -331,8 +331,8 @@ final class JsPlugin: Plugin {
         try dbPool.write { db in
             _ =
                 try JsPluginModel
-                    .filter(Column("id") == id)
-                    .deleteAll(db)
+                .filter(Column("id") == id)
+                .deleteAll(db)
         }
     }
 
@@ -440,8 +440,8 @@ final class JsPlugin: Plugin {
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let detailedMangaJson = result as? String,
-              let detailedMangaData = detailedMangaJson.data(using: .utf8),
-              let detailedMangaResult = try? DetailedManga.decoded(from: detailedMangaData)
+            let detailedMangaData = detailedMangaJson.data(using: .utf8),
+            let detailedMangaResult = try? DetailedManga.decoded(from: detailedMangaData)
         else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
@@ -460,7 +460,7 @@ final class JsPlugin: Plugin {
         let chapterJson = try chapter.encodedData()
 
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
-              let chapterString = String(data: chapterJson, encoding: .utf8)
+            let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
             throw MankaiErrorCode.pluginJavascriptInvalidMangaOrChapterFormat.makeError()
         }
@@ -500,8 +500,8 @@ final class JsPlugin: Plugin {
         }
 
         guard let proxyRequest = result as? [String: Any],
-              let proxyUrl = proxyRequest["url"] as? String,
-              let headers = proxyRequest["headers"] as? [String: String]
+            let proxyUrl = proxyRequest["url"] as? String,
+            let headers = proxyRequest["headers"] as? [String: String]
         else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImage.makeError()
         }

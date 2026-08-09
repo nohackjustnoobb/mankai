@@ -55,7 +55,7 @@ struct MangasListView: View {
             columns: [
                 GridItem(
                     .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12
-                ),
+                )
             ], spacing: 12
         ) {
             if let mangas = mangas, let plugin = plugin {
@@ -69,13 +69,13 @@ struct MangasListView: View {
                     }
                 }
             } else if let mangasDict = mangasDict,
-                      let pluginsDict = pluginsDict,
-                      let keys = keys
+                let pluginsDict = pluginsDict,
+                let keys = keys
             {
                 // Complex case: dictionaries with keys
                 ForEach(keys, id: \.self) { key in
                     if let manga = mangasDict[key],
-                       let plugin = pluginsDict[key]
+                        let plugin = pluginsDict[key]
                     {
                         NavigationLink(
                             destination: MangaDetailsScreen(

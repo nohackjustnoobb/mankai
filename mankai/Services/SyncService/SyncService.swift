@@ -30,7 +30,7 @@ final class SyncService: ObservableObject {
     private var engineCancellable: AnyCancellable?
     private var syncTimer: Timer?
     private var syncTask: Task<Void, Error>?
-    private let syncInterval: TimeInterval = 60 * 3 // 3 minutes
+    private let syncInterval: TimeInterval = 60 * 3  // 3 minutes
 
     /// A flag indicating if a synchronization process is currently in progress.
     @Published var isSyncing = false
@@ -165,7 +165,8 @@ final class SyncService: ObservableObject {
 
             if showError, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToSync")
-                NotificationService.shared.showWarning(String(format: message, error.localizedDescription))
+                NotificationService.shared.showWarning(
+                    String(format: message, error.localizedDescription))
             }
 
             throw error

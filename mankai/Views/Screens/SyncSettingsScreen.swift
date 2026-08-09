@@ -186,16 +186,19 @@ struct HttpEngineConfigView: View {
                         .autocapitalization(.none)
 
                     Button {
-                        let trimmedServerUrl = serverUrl.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let trimmedServerUrl = serverUrl.trimmingCharacters(
+                            in: .whitespacesAndNewlines)
                         var cleanedUrl = trimmedServerUrl
                         var loginUsername: String?
                         var loginPassword: String?
 
                         if var components = URLComponents(string: trimmedServerUrl),
-                           let queryItems = components.queryItems
+                            let queryItems = components.queryItems
                         {
-                            loginUsername = queryItems.first(where: { $0.name == "username" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
-                            loginPassword = queryItems.first(where: { $0.name == "password" })?.value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                            loginUsername = queryItems.first(where: { $0.name == "username" })?
+                                .value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                            loginPassword = queryItems.first(where: { $0.name == "password" })?
+                                .value?.trimmingCharacters(in: .whitespacesAndNewlines)
 
                             if loginUsername != nil || loginPassword != nil {
                                 components.queryItems = components.queryItems?.filter {
@@ -271,7 +274,9 @@ struct HttpEngineConfigView: View {
                                 Text("login")
                             }
                         }
-                        .disabled(username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn)
+                        .disabled(
+                            username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn
+                        )
                     }
                 }
             }
@@ -376,7 +381,7 @@ struct SupabaseEngineConfigView: View {
                     if let user = supabaseEngine.currentUser {
                         HStack(spacing: 8) {
                             if let avatarUrlString = user.userMetadata["avatar_url"]?.stringValue,
-                               let avatarUrl = URL(string: avatarUrlString)
+                                let avatarUrl = URL(string: avatarUrlString)
                             {
                                 AsyncImage(url: avatarUrl) { image in
                                     image

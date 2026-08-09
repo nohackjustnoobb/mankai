@@ -56,7 +56,7 @@ struct Manga: Identifiable {
 
     init?(from any: Any) {
         guard let dict = any as? [String: Any],
-              let decoded = try? Self.decoded(from: dict)
+            let decoded = try? Self.decoded(from: dict)
         else { return nil }
         self = decoded
     }

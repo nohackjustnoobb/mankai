@@ -193,7 +193,8 @@ final class HttpEngine: SyncEngine {
         let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime, shouldSync: true)
 
         // Fetch new local records since last sync
-        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime, shouldSync: true)
+        let newLocalRecords = HistoryService.shared.getAllSince(
+            date: lastSyncTime, shouldSync: true)
 
         var offset = 0
         let limit = 50

@@ -168,103 +168,172 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case updateSyncFailed
 
     private static let definitions: [MankaiErrorCode: MankaiErrorDefinition] = [
-        .readerAdjacencyInvalidInputImage: .init(domain: .readerAdjacency, code: 1, messageKey: "invalidInputImage"),
-        .readerAdjacencyFailedToCreatePixelBuffer: .init(domain: .readerAdjacency, code: 2, messageKey: "failedToCreatePixelBuffer"),
+        .readerAdjacencyInvalidInputImage: .init(
+            domain: .readerAdjacency, code: 1, messageKey: "invalidInputImage"),
+        .readerAdjacencyFailedToCreatePixelBuffer: .init(
+            domain: .readerAdjacency, code: 2, messageKey: "failedToCreatePixelBuffer"),
 
-        .authMissingCredentialsOrServerUrl: .init(domain: .auth, code: 1, messageKey: "missingCredentialsOrServerUrl"),
+        .authMissingCredentialsOrServerUrl: .init(
+            domain: .auth, code: 1, messageKey: "missingCredentialsOrServerUrl"),
         .authInvalidServerUrl: .init(domain: .auth, code: 2, messageKey: "invalidServerUrl"),
         .authInvalidCredentials: .init(domain: .auth, code: 3, messageKey: "invalidCredentials"),
         .authInvalidJsonResponse: .init(domain: .auth, code: 4, messageKey: "invalidJsonResponse"),
-        .authNoRefreshTokenInResponse: .init(domain: .auth, code: 5, messageKey: "noRefreshTokenInResponse"),
-        .authMissingRefreshTokenOrServerUrl: .init(domain: .auth, code: 6, messageKey: "missingRefreshTokenOrServerUrl"),
+        .authNoRefreshTokenInResponse: .init(
+            domain: .auth, code: 5, messageKey: "noRefreshTokenInResponse"),
+        .authMissingRefreshTokenOrServerUrl: .init(
+            domain: .auth, code: 6, messageKey: "missingRefreshTokenOrServerUrl"),
         .authInvalidResponse: .init(domain: .auth, code: 7, messageKey: "invalidResponse"),
         .authRefreshFailed: .init(domain: .auth, code: 8, messageKey: "refreshFailed"),
-        .authNoAccessTokenInResponse: .init(domain: .auth, code: 9, messageKey: "noAccessTokenInResponse"),
+        .authNoAccessTokenInResponse: .init(
+            domain: .auth, code: 9, messageKey: "noAccessTokenInResponse"),
         .authMissingServerUrl: .init(domain: .auth, code: 10, messageKey: "missingServerUrl"),
         .authInvalidUrl: .init(domain: .auth, code: 11, messageKey: "invalidUrl"),
         .authRequestFailed: .init(domain: .auth, code: 12, messageKey: "httpRequestFailed"),
 
-        .browseArchiveNoImagesFoundInArchive: .init(domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
-        .browseArchiveEntryNotFound: .init(domain: .browseArchive, code: 2, messageKey: "entryNotFound"),
-        .browseFilesystemFailedToAccessFolder: .init(domain: .browseFilesystem, code: 1, messageKey: "failedToAccessFolder"),
-        .browseFilesystemDatabaseNotAvailable: .init(domain: .browseFilesystem, code: 2, messageKey: "databaseNotAvailable"),
-        .browseFilesystemParserNotFound: .init(domain: .browseFilesystem, code: 3, messageKey: "parserNotFound"),
-        .browseFilesystemInvalidMangaMeta: .init(domain: .browseFilesystem, code: 4, messageKey: "invalidMangaMeta"),
-        .browseFilesystemEntryNotFound: .init(domain: .browseFilesystem, code: 5, messageKey: "entryNotFound"),
-        .browseFilesystemUnableToOpenFileForHashing: .init(domain: .browseFilesystem, code: 6, messageKey: "unableToOpenFileForHashing"),
-        .browseSmbInvalidConnectionConfiguration: .init(domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
+        .browseArchiveNoImagesFoundInArchive: .init(
+            domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
+        .browseArchiveEntryNotFound: .init(
+            domain: .browseArchive, code: 2, messageKey: "entryNotFound"),
+        .browseFilesystemFailedToAccessFolder: .init(
+            domain: .browseFilesystem, code: 1, messageKey: "failedToAccessFolder"),
+        .browseFilesystemDatabaseNotAvailable: .init(
+            domain: .browseFilesystem, code: 2, messageKey: "databaseNotAvailable"),
+        .browseFilesystemParserNotFound: .init(
+            domain: .browseFilesystem, code: 3, messageKey: "parserNotFound"),
+        .browseFilesystemInvalidMangaMeta: .init(
+            domain: .browseFilesystem, code: 4, messageKey: "invalidMangaMeta"),
+        .browseFilesystemEntryNotFound: .init(
+            domain: .browseFilesystem, code: 5, messageKey: "entryNotFound"),
+        .browseFilesystemUnableToOpenFileForHashing: .init(
+            domain: .browseFilesystem, code: 6, messageKey: "unableToOpenFileForHashing"),
+        .browseSmbInvalidConnectionConfiguration: .init(
+            domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
         .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbPlugin"),
-        .browsePdfInvalidDocument: .init(domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
-        .browsePdfPasswordProtectedDocument: .init(domain: .browsePdf, code: 2, messageKey: "passwordProtectedPdfNotSupported"),
+        .browsePdfInvalidDocument: .init(
+            domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
+        .browsePdfPasswordProtectedDocument: .init(
+            domain: .browsePdf, code: 2, messageKey: "passwordProtectedPdfNotSupported"),
         .browsePdfNoPagesFound: .init(domain: .browsePdf, code: 3, messageKey: "noPagesFoundInPdf"),
         .browsePdfPageNotFound: .init(domain: .browsePdf, code: 4, messageKey: "pdfPageNotFound"),
-        .browsePdfFailedToRenderPage: .init(domain: .browsePdf, code: 5, messageKey: "failedToRenderPdfPage"),
-        .browseEpubInvalidContainer: .init(domain: .browseEpub, code: 1, messageKey: "invalidEpubContainer"),
-        .browseEpubInvalidPackage: .init(domain: .browseEpub, code: 2, messageKey: "invalidEpubPackage"),
-        .browseEpubProtectedContent: .init(domain: .browseEpub, code: 3, messageKey: "protectedEpubContentNotSupported"),
-        .browseEpubNoReadableImages: .init(domain: .browseEpub, code: 4, messageKey: "noReadableImagesInEpub"),
-        .browseEpubResourceNotFound: .init(domain: .browseEpub, code: 5, messageKey: "epubResourceNotFound"),
+        .browsePdfFailedToRenderPage: .init(
+            domain: .browsePdf, code: 5, messageKey: "failedToRenderPdfPage"),
+        .browseEpubInvalidContainer: .init(
+            domain: .browseEpub, code: 1, messageKey: "invalidEpubContainer"),
+        .browseEpubInvalidPackage: .init(
+            domain: .browseEpub, code: 2, messageKey: "invalidEpubPackage"),
+        .browseEpubProtectedContent: .init(
+            domain: .browseEpub, code: 3, messageKey: "protectedEpubContentNotSupported"),
+        .browseEpubNoReadableImages: .init(
+            domain: .browseEpub, code: 4, messageKey: "noReadableImagesInEpub"),
+        .browseEpubResourceNotFound: .init(
+            domain: .browseEpub, code: 5, messageKey: "epubResourceNotFound"),
 
         .chapterMissingChapterId: .init(domain: .chapter, code: 1, messageKey: "missingChapterId"),
         .chapterGroupNotFound: .init(domain: .chapter, code: 2, messageKey: "chapterGroupNotFound"),
 
-        .downloadDatabaseNotAvailable: .init(domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
+        .downloadDatabaseNotAvailable: .init(
+            domain: .download, code: 1, messageKey: "downloadDatabaseNotAvailable"),
         .downloadPluginNotFound: .init(domain: .download, code: 2, messageKey: "pluginNotFound"),
         .downloadDisabled: .init(domain: .download, code: 3, messageKey: "downloadDisabled"),
-        .historyFailedToUpdateHistoryRecord: .init(domain: .history, code: 1, messageKey: "failedToUpdateHistoryRecord"),
-        .libraryFailedToUpdateSavedManga: .init(domain: .library, code: 1, messageKey: "failedToUpdateSavedManga"),
-        .libraryFailedToDeleteSavedManga: .init(domain: .library, code: 2, messageKey: "failedToDeleteSavedManga"),
+        .historyFailedToUpdateHistoryRecord: .init(
+            domain: .history, code: 1, messageKey: "failedToUpdateHistoryRecord"),
+        .libraryFailedToUpdateSavedManga: .init(
+            domain: .library, code: 1, messageKey: "failedToUpdateSavedManga"),
+        .libraryFailedToDeleteSavedManga: .init(
+            domain: .library, code: 2, messageKey: "failedToDeleteSavedManga"),
 
         .pluginMangaNotFound: .init(domain: .plugin, code: 1, messageKey: "mangaNotFound"),
-        .pluginDummyCannotBeUsed: .init(domain: .pluginDummy, code: 1, messageKey: "dummyPluginCannotBeUsed"),
-        .pluginDownloadDatabaseNotAvailable: .init(domain: .pluginDownload, code: 1, messageKey: "databaseNotAvailable"),
-        .pluginDownloadMangaNotFound: .init(domain: .pluginDownload, code: 2, messageKey: "mangaNotFound"),
-        .pluginDownloadFailedToLoadMangaDetails: .init(domain: .pluginDownload, code: 3, messageKey: "failedToLoadMangaDetails"),
-        .pluginDownloadMangaMetaMissing: .init(domain: .pluginDownload, code: 4, messageKey: "mangaMetaMissing"),
-        .pluginDownloadChapterNotFound: .init(domain: .pluginDownload, code: 5, messageKey: "chapterNotFound"),
-        .pluginDownloadFailedToLoadImage: .init(domain: .pluginDownload, code: 6, messageKey: "failedToLoadImage"),
+        .pluginDummyCannotBeUsed: .init(
+            domain: .pluginDummy, code: 1, messageKey: "dummyPluginCannotBeUsed"),
+        .pluginDownloadDatabaseNotAvailable: .init(
+            domain: .pluginDownload, code: 1, messageKey: "databaseNotAvailable"),
+        .pluginDownloadMangaNotFound: .init(
+            domain: .pluginDownload, code: 2, messageKey: "mangaNotFound"),
+        .pluginDownloadFailedToLoadMangaDetails: .init(
+            domain: .pluginDownload, code: 3, messageKey: "failedToLoadMangaDetails"),
+        .pluginDownloadMangaMetaMissing: .init(
+            domain: .pluginDownload, code: 4, messageKey: "mangaMetaMissing"),
+        .pluginDownloadChapterNotFound: .init(
+            domain: .pluginDownload, code: 5, messageKey: "chapterNotFound"),
+        .pluginDownloadFailedToLoadImage: .init(
+            domain: .pluginDownload, code: 6, messageKey: "failedToLoadImage"),
 
-        .pluginFilesystemFailedToAccessFolder: .init(domain: .pluginFilesystem, code: 1, messageKey: "failedToAccessFolder"),
-        .pluginFilesystemPluginIdNotFound: .init(domain: .pluginFilesystem, code: 2, messageKey: "pluginIdNotFound"),
-        .pluginFilesystemPluginIdEmpty: .init(domain: .pluginFilesystem, code: 3, messageKey: "pluginIdEmpty"),
-        .pluginFilesystemDatabaseNotAvailable: .init(domain: .pluginFilesystem, code: 4, messageKey: "databaseNotAvailable"),
-        .pluginFilesystemMangaDirectoryNotFound: .init(domain: .pluginFilesystem, code: 5, messageKey: "mangaDirectoryNotFound"),
-        .pluginFilesystemFailedToLoadMangaDetails: .init(domain: .pluginFilesystem, code: 6, messageKey: "failedToLoadMangaDetails"),
-        .pluginFilesystemInvalidMangaOrChapterFormat: .init(domain: .pluginFilesystem, code: 7, messageKey: "invalidMangaOrChapterFormat"),
-        .pluginFilesystemFailedToLoadImage: .init(domain: .pluginFilesystem, code: 8, messageKey: "failedToLoadImage"),
-        .pluginFilesystemMissingRequiredFields: .init(domain: .pluginFilesystem, code: 9, messageKey: "missingRequiredFields"),
-        .pluginFilesystemChapterGroupNotFound: .init(domain: .pluginFilesystem, code: 10, messageKey: "chapterGroupNotFound"),
-        .pluginFilesystemChapterNotFound: .init(domain: .pluginFilesystem, code: 11, messageKey: "chapterNotFound"),
+        .pluginFilesystemFailedToAccessFolder: .init(
+            domain: .pluginFilesystem, code: 1, messageKey: "failedToAccessFolder"),
+        .pluginFilesystemPluginIdNotFound: .init(
+            domain: .pluginFilesystem, code: 2, messageKey: "pluginIdNotFound"),
+        .pluginFilesystemPluginIdEmpty: .init(
+            domain: .pluginFilesystem, code: 3, messageKey: "pluginIdEmpty"),
+        .pluginFilesystemDatabaseNotAvailable: .init(
+            domain: .pluginFilesystem, code: 4, messageKey: "databaseNotAvailable"),
+        .pluginFilesystemMangaDirectoryNotFound: .init(
+            domain: .pluginFilesystem, code: 5, messageKey: "mangaDirectoryNotFound"),
+        .pluginFilesystemFailedToLoadMangaDetails: .init(
+            domain: .pluginFilesystem, code: 6, messageKey: "failedToLoadMangaDetails"),
+        .pluginFilesystemInvalidMangaOrChapterFormat: .init(
+            domain: .pluginFilesystem, code: 7, messageKey: "invalidMangaOrChapterFormat"),
+        .pluginFilesystemFailedToLoadImage: .init(
+            domain: .pluginFilesystem, code: 8, messageKey: "failedToLoadImage"),
+        .pluginFilesystemMissingRequiredFields: .init(
+            domain: .pluginFilesystem, code: 9, messageKey: "missingRequiredFields"),
+        .pluginFilesystemChapterGroupNotFound: .init(
+            domain: .pluginFilesystem, code: 10, messageKey: "chapterGroupNotFound"),
+        .pluginFilesystemChapterNotFound: .init(
+            domain: .pluginFilesystem, code: 11, messageKey: "chapterNotFound"),
 
         .pluginHttpInvalidUrl: .init(domain: .pluginHttp, code: 1, messageKey: "invalidUrl"),
-        .pluginHttpInvalidCredentials: .init(domain: .pluginHttp, code: 2, messageKey: "invalidCredentials"),
-        .pluginHttpDatabaseNotAvailable: .init(domain: .pluginHttp, code: 3, messageKey: "databaseNotAvailable"),
-        .pluginHttpFailedToEncodeMetaData: .init(domain: .pluginHttp, code: 4, messageKey: "failedToEncodeMetaData"),
-        .pluginHttpFailedToEncodeConfigValuesData: .init(domain: .pluginHttp, code: 5, messageKey: "failedToEncodeConfigValuesData"),
-        .pluginHttpMissingRequiredFields: .init(domain: .pluginHttp, code: 6, messageKey: "missingRequiredFields"),
+        .pluginHttpInvalidCredentials: .init(
+            domain: .pluginHttp, code: 2, messageKey: "invalidCredentials"),
+        .pluginHttpDatabaseNotAvailable: .init(
+            domain: .pluginHttp, code: 3, messageKey: "databaseNotAvailable"),
+        .pluginHttpFailedToEncodeMetaData: .init(
+            domain: .pluginHttp, code: 4, messageKey: "failedToEncodeMetaData"),
+        .pluginHttpFailedToEncodeConfigValuesData: .init(
+            domain: .pluginHttp, code: 5, messageKey: "failedToEncodeConfigValuesData"),
+        .pluginHttpMissingRequiredFields: .init(
+            domain: .pluginHttp, code: 6, messageKey: "missingRequiredFields"),
 
-        .pluginJavascriptDatabaseNotAvailable: .init(domain: .pluginJavascript, code: 1, messageKey: "databaseNotAvailable"),
-        .pluginJavascriptFailedToEncodeMetaData: .init(domain: .pluginJavascript, code: 2, messageKey: "failedToEncodeMetaData"),
-        .pluginJavascriptFailedToEncodeConfigValuesData: .init(domain: .pluginJavascript, code: 3, messageKey: "failedToEncodeConfigValuesData"),
-        .pluginJavascriptInvalidResultFormatForIsOnline: .init(domain: .pluginJavascript, code: 4, messageKey: "invalidResultFormatForIsOnline"),
-        .pluginJavascriptInvalidResultFormatForSuggestions: .init(domain: .pluginJavascript, code: 5, messageKey: "invalidResultFormatForSuggestions"),
-        .pluginJavascriptInvalidResultFormatForMangas: .init(domain: .pluginJavascript, code: 6, messageKey: "invalidResultFormatForMangas"),
-        .pluginJavascriptInvalidResultFormatForDetailedManga: .init(domain: .pluginJavascript, code: 7, messageKey: "invalidResultFormatForDetailedManga"),
-        .pluginJavascriptInvalidMangaOrChapterFormat: .init(domain: .pluginJavascript, code: 8, messageKey: "invalidMangaOrChapterFormat"),
-        .pluginJavascriptInvalidResultFormatForImages: .init(domain: .pluginJavascript, code: 9, messageKey: "invalidResultFormatForImages"),
-        .pluginJavascriptInvalidUrl: .init(domain: .pluginJavascript, code: 10, messageKey: "invalidUrl"),
-        .pluginJavascriptInvalidResultFormatForImage: .init(domain: .pluginJavascript, code: 11, messageKey: "invalidResultFormatForImage"),
-        .pluginJavascriptInvalidBase64StringForImage: .init(domain: .pluginJavascript, code: 12, messageKey: "invalidBase64StringForImage"),
-        .pluginJavascriptWebViewNotInitialized: .init(domain: .pluginJavascript, code: 13, messageKey: "webViewNotInitialized"),
-        .pluginJavascriptMissingUrlParameter: .init(domain: .pluginJavascript, code: 14, messageKey: "missingUrlParameter"),
-        .pluginJavascriptInvalidResponseType: .init(domain: .pluginJavascript, code: 15, messageKey: "invalidResponseType"),
-        .pluginJavascriptMissingPluginId: .init(domain: .pluginJavascript, code: 16, messageKey: "missingPluginId"),
+        .pluginJavascriptDatabaseNotAvailable: .init(
+            domain: .pluginJavascript, code: 1, messageKey: "databaseNotAvailable"),
+        .pluginJavascriptFailedToEncodeMetaData: .init(
+            domain: .pluginJavascript, code: 2, messageKey: "failedToEncodeMetaData"),
+        .pluginJavascriptFailedToEncodeConfigValuesData: .init(
+            domain: .pluginJavascript, code: 3, messageKey: "failedToEncodeConfigValuesData"),
+        .pluginJavascriptInvalidResultFormatForIsOnline: .init(
+            domain: .pluginJavascript, code: 4, messageKey: "invalidResultFormatForIsOnline"),
+        .pluginJavascriptInvalidResultFormatForSuggestions: .init(
+            domain: .pluginJavascript, code: 5, messageKey: "invalidResultFormatForSuggestions"),
+        .pluginJavascriptInvalidResultFormatForMangas: .init(
+            domain: .pluginJavascript, code: 6, messageKey: "invalidResultFormatForMangas"),
+        .pluginJavascriptInvalidResultFormatForDetailedManga: .init(
+            domain: .pluginJavascript, code: 7, messageKey: "invalidResultFormatForDetailedManga"),
+        .pluginJavascriptInvalidMangaOrChapterFormat: .init(
+            domain: .pluginJavascript, code: 8, messageKey: "invalidMangaOrChapterFormat"),
+        .pluginJavascriptInvalidResultFormatForImages: .init(
+            domain: .pluginJavascript, code: 9, messageKey: "invalidResultFormatForImages"),
+        .pluginJavascriptInvalidUrl: .init(
+            domain: .pluginJavascript, code: 10, messageKey: "invalidUrl"),
+        .pluginJavascriptInvalidResultFormatForImage: .init(
+            domain: .pluginJavascript, code: 11, messageKey: "invalidResultFormatForImage"),
+        .pluginJavascriptInvalidBase64StringForImage: .init(
+            domain: .pluginJavascript, code: 12, messageKey: "invalidBase64StringForImage"),
+        .pluginJavascriptWebViewNotInitialized: .init(
+            domain: .pluginJavascript, code: 13, messageKey: "webViewNotInitialized"),
+        .pluginJavascriptMissingUrlParameter: .init(
+            domain: .pluginJavascript, code: 14, messageKey: "missingUrlParameter"),
+        .pluginJavascriptInvalidResponseType: .init(
+            domain: .pluginJavascript, code: 15, messageKey: "invalidResponseType"),
+        .pluginJavascriptMissingPluginId: .init(
+            domain: .pluginJavascript, code: 16, messageKey: "missingPluginId"),
 
         .syncNoEngine: .init(domain: .sync, code: 1, messageKey: "noSyncEngine"),
-        .syncHttpInvalidHashResponse: .init(domain: .syncHttp, code: 1, messageKey: "invalidHashResponse"),
+        .syncHttpInvalidHashResponse: .init(
+            domain: .syncHttp, code: 1, messageKey: "invalidHashResponse"),
         .syncSupabaseInvalidUrl: .init(domain: .syncSupabase, code: 1, messageKey: "invalidUrl"),
-        .syncSupabaseNotConfigured: .init(domain: .syncSupabase, code: 2, messageKey: "supabaseNotConfigured"),
-        .syncSupabaseNotReady: .init(domain: .syncSupabase, code: 3, messageKey: "supabaseNotReady"),
+        .syncSupabaseNotConfigured: .init(
+            domain: .syncSupabase, code: 2, messageKey: "supabaseNotConfigured"),
+        .syncSupabaseNotReady: .init(
+            domain: .syncSupabase, code: 3, messageKey: "supabaseNotReady"),
         .updateSyncFailed: .init(domain: .update, code: 1, messageKey: "syncFailed"),
     ]
 

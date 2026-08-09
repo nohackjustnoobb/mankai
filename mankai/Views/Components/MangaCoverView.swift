@@ -42,10 +42,10 @@ struct MangaCoverView: View {
                         Image(systemName: "exclamationmark.circle.fill")
                     }
                 }
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemGray6))
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemGray6))
             }
 
             if let tag = tag, !tag.isEmpty {
@@ -73,8 +73,8 @@ struct MangaCoverView: View {
 
     private func loadImage() {
         guard let coverUrl = coverUrl,
-              let plugin = plugin,
-              image == nil
+            let plugin = plugin,
+            image == nil
         else {
             return
         }
@@ -85,14 +85,16 @@ struct MangaCoverView: View {
             do {
                 let data = try await plugin.getImage(coverUrl)
 
-                self.image = downsampleImages
+                self.image =
+                    downsampleImages
                     ? data.downsampledImage(to: UIApplication.windowBounds.size)
                     : UIImage(data: data)
                 self.isLoading = false
             } catch {
                 // try offline
                 if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                    self.image = downsampleImages
+                    self.image =
+                        downsampleImages
                         ? data.downsampledImage(to: UIApplication.windowBounds.size)
                         : UIImage(data: data)
                 }

@@ -28,8 +28,10 @@ struct FsImageModel {
             $0.column("chapterId", .integer)
             $0.column("sequence", .integer)
 
-            $0.foreignKey(["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
-            $0.foreignKey(["chapterId"], references: FsChapterModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["chapterId"], references: FsChapterModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

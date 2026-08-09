@@ -153,7 +153,8 @@ struct AddPluginModal: View {
                                     }
 
                                     // Check if the folder is accessible
-                                    guard selectedFolder.startAccessingSecurityScopedResource() else {
+                                    guard selectedFolder.startAccessingSecurityScopedResource()
+                                    else {
                                         errorMessage = String(localized: "failedToAccessFolder")
                                         showError = true
                                         return
@@ -213,11 +214,11 @@ struct AddPluginModal: View {
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
-                case let .success(urls):
+                case .success(let urls):
                     if let url = urls.first {
                         selectedFolder = url
                     }
-                case let .failure(error):
+                case .failure(let error):
                     errorMessage = error.localizedDescription
                     showError = true
                 }

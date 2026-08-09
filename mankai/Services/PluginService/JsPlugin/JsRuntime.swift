@@ -103,20 +103,20 @@ final class JsRuntime: NSObject {
             }
 
             let getConfigs = """
-            function getConfigs() {
-                return \(configValuesJson);
-            }
-            """
+                function getConfigs() {
+                    return \(configValuesJson);
+                }
+                """
 
             injectedJs += getConfigs
 
             // inject getValue and setValue
             injectedJs += jsStorage
             injectedJs += """
-            const getValue = (key) => _getValue(key, "\(plugin.id)");
-            const setValue = (key, value) => _setValue(key, value, "\(plugin.id)");
-            const removeValue = (key) => _removeValue(key, "\(plugin.id)");
-            """
+                const getValue = (key) => _getValue(key, "\(plugin.id)");
+                const setValue = (key, value) => _setValue(key, value, "\(plugin.id)");
+                const removeValue = (key) => _removeValue(key, "\(plugin.id)");
+                """
         }
 
         var from = plugin?.id ?? from
@@ -235,12 +235,19 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
+                )
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
+                        .localizedDescription
+                )
             }
 
             do {
@@ -258,12 +265,19 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
+                )
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
+                        .localizedDescription
+                )
             }
 
             do {
@@ -281,12 +295,19 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (nil, MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
+                )
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (nil, MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError().localizedDescription)
+                return (
+                    nil,
+                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
+                        .localizedDescription
+                )
             }
 
             do {

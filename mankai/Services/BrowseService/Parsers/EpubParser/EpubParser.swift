@@ -123,7 +123,8 @@ final class EpubParser: Parser {
         return manga
     }
 
-    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
+    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga
+    {
         guard manga.title == nil else { return manga }
 
         var presented = manga
@@ -142,7 +143,7 @@ final class EpubParser: Parser {
         }
 
         if var latestChapter = presented.latestChapter,
-           latestChapter.title == nil
+            latestChapter.title == nil
         {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter
@@ -209,9 +210,11 @@ final class EpubParser: Parser {
 
     private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
-        _ = try archive.extract(entry, consumer: { chunk in
-            data.append(chunk)
-        })
+        _ = try archive.extract(
+            entry,
+            consumer: { chunk in
+                data.append(chunk)
+            })
         return data
     }
 
@@ -221,9 +224,10 @@ final class EpubParser: Parser {
 
         for subject in subjects {
             let normalizedSubject = normalizedGenreName(subject)
-            guard let genre = Genre.allCases.first(where: {
-                $0 != .all && normalizedGenreName($0.rawValue) == normalizedSubject
-            }),
+            guard
+                let genre = Genre.allCases.first(where: {
+                    $0 != .all && normalizedGenreName($0.rawValue) == normalizedSubject
+                }),
                 seen.insert(genre).inserted
             else { continue }
             result.append(genre)

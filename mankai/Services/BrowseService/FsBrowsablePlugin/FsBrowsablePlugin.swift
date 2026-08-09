@@ -113,7 +113,8 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
                 )
 
                 if isStale {
-                    Logger.fsBrowsablePlugin.warning("Bookmark data is stale for plugin: \(model.id)")
+                    Logger.fsBrowsablePlugin.warning(
+                        "Bookmark data is stale for plugin: \(model.id)")
                     let newBookmarkData = try url.bookmarkData(
                         options: .minimalBookmark,
                         includingResourceValuesForKeys: nil,
@@ -135,12 +136,13 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
                     url.stopAccessingSecurityScopedResource()
                 }
 
-                results.append(FsBrowsablePlugin(
-                    url: url,
-                    id: model.id,
-                    name: model.name,
-                    shouldSync: model.shouldSync
-                ))
+                results.append(
+                    FsBrowsablePlugin(
+                        url: url,
+                        id: model.id,
+                        name: model.name,
+                        shouldSync: model.shouldSync
+                    ))
             } catch {
                 Logger.fsBrowsablePlugin.error(
                     "Failed to resolve bookmark for plugin \(model.id): \(error)"
@@ -268,7 +270,8 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
             let ext = source.pathExtension
             var counter = 1
             repeat {
-                let candidate = ext.isEmpty
+                let candidate =
+                    ext.isEmpty
                     ? "\(stem) (\(counter))"
                     : "\(stem) (\(counter)).\(ext)"
                 destination = importsDir.appendingPathComponent(candidate)

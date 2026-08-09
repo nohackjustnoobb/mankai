@@ -54,8 +54,8 @@ enum ReadingDirection: Int, Codable {
 }
 
 enum TapBehavior: Int {
-    case previousNext = 1 // Left = previous, Right = next
-    case followReadingDirection = 2 // Follow reading direction
+    case previousNext = 1  // Left = previous, Right = next
+    case followReadingDirection = 2  // Follow reading direction
 }
 
 enum NavigationOrientation: Int {

@@ -12,7 +12,7 @@ struct DownloadMangaModel {
     var pluginId: String
     var mangaId: String
 
-    var id: String // pluginId+mangaId
+    var id: String  // pluginId+mangaId
 
     var title: String?
     var cover: String?
@@ -22,10 +22,10 @@ struct DownloadMangaModel {
     var authors: String
     var genres: String
 
-    var latestChapter: String? // Chapter encoded in json
-    var chapters: String? // ChapterGroup[] encoded as JSON
+    var latestChapter: String?  // Chapter encoded in json
+    var chapters: String?  // ChapterGroup[] encoded as JSON
 
-    var downloaded: Bool // if true, the manga is fully downloaded
+    var downloaded: Bool  // if true, the manga is fully downloaded
 
     static func createTable(_ db: Database) throws {
         try db.create(table: DownloadMangaModel.databaseTableName, ifNotExists: true) {

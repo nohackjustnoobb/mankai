@@ -108,7 +108,7 @@ struct LibraryTab: View {
 
         searchTask = Task {
             // Add debouncing delay
-            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+            try? await Task.sleep(nanoseconds: 300_000_000)  // 300ms
 
             guard !Task.isCancelled else { return }
 

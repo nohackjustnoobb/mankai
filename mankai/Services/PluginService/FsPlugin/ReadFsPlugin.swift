@@ -126,7 +126,8 @@ class ReadFsPlugin: Plugin {
                     Logger.fsPlugin.warning("Bookmark data is stale for plugin: \(model.id)")
                     do {
                         let newBookmarkData = try url.bookmarkData(
-                            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
+                            options: .minimalBookmark, includingResourceValuesForKeys: nil,
+                            relativeTo: nil
                         )
                         model.bookmarkData = newBookmarkData
                         try dbPool.write { db in
@@ -251,7 +252,7 @@ class ReadFsPlugin: Plugin {
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
 
         var mangaDict: [String: Any] = [
-            "id": mangaModel.id,
+            "id": mangaModel.id
         ]
 
         if let title = mangaModel.title {
@@ -286,7 +287,7 @@ class ReadFsPlugin: Plugin {
             .fetchAll(db)
 
         var mangaDict: [String: Any] = [
-            "id": mangaModel.id,
+            "id": mangaModel.id
         ]
 
         if let title = mangaModel.title {
@@ -331,10 +332,10 @@ class ReadFsPlugin: Plugin {
             let chapters = try group.chapters.fetchAll(db)
             let chaptersArray =
                 chapters
-                    .sorted { $0.sequence < $1.sequence }
-                    .map { chapter in
-                        Chapter(id: String(chapter.id!), title: chapter.title)
-                    }
+                .sorted { $0.sequence < $1.sequence }
+                .map { chapter in
+                    Chapter(id: String(chapter.id!), title: chapter.title)
+                }
             chapterGroups.append(
                 ChapterGroup(
                     id: self is Editable ? group.id.map(String.init) : nil,
@@ -359,9 +360,9 @@ class ReadFsPlugin: Plugin {
             let searchQuery = "%\(query.lowercased())%"
             let mangas =
                 try FsMangaModel
-                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                    .limit(Int(ReadFsPluginConstants.suggestionLimit))
-                    .fetchAll(db)
+                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(Int(ReadFsPluginConstants.suggestionLimit))
+                .fetchAll(db)
 
             return mangas.compactMap { $0.title }
         }
@@ -381,9 +382,9 @@ class ReadFsPlugin: Plugin {
 
             let mangas =
                 try FsMangaModel
-                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                    .limit(limit, offset: offset)
-                    .fetchAll(db)
+                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(limit, offset: offset)
+                .fetchAll(db)
 
             return try mangas.compactMap { mangaModel in
                 try self.convertToManga(mangaModel, db: db)
@@ -417,8 +418,8 @@ class ReadFsPlugin: Plugin {
 
             let mangas =
                 try query
-                    .limit(limit, offset: offset)
-                    .fetchAll(db)
+                .limit(limit, offset: offset)
+                .fetchAll(db)
 
             return try mangas.compactMap { mangaModel in
                 try self.convertToManga(mangaModel, db: db)
@@ -436,8 +437,8 @@ class ReadFsPlugin: Plugin {
         return try await db.read { db in
             let mangas =
                 try FsMangaModel
-                    .filter(ids.contains(Column("id")))
-                    .fetchAll(db)
+                .filter(ids.contains(Column("id")))
+                .fetchAll(db)
 
             return try mangas.compactMap { mangaModel in
                 try self.convertToManga(mangaModel, db: db)
@@ -482,13 +483,13 @@ class ReadFsPlugin: Plugin {
         return try await db.read { db in
             let images =
                 try FsImageModel
-                    .filter(Column("chapterId") == chapterIdInt)
-                    .fetchAll(db)
+                .filter(Column("chapterId") == chapterIdInt)
+                .fetchAll(db)
 
             return
                 images
-                    .sorted { ($0.sequence ?? 0) < ($1.sequence ?? 0) }
-                    .map { $0.path }
+                .sorted { ($0.sequence ?? 0) < ($1.sequence ?? 0) }
+                .map { $0.path }
         }
     }
 

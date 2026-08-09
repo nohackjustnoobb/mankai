@@ -203,9 +203,9 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         init(parserId: String, hash: String, relativePath: String) throws {
             let isSHA256 = hash.count == 64 && hash.allSatisfy(\.isHexDigit)
             guard !parserId.isEmpty,
-                  isSHA256,
-                  !relativePath.isEmpty,
-                  Self.encode(relativePath) != nil
+                isSHA256,
+                !relativePath.isEmpty,
+                Self.encode(relativePath) != nil
             else {
                 Logger.browseService.error("Unable to create manga route for: \(relativePath)")
                 throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
@@ -251,8 +251,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
             var routed = manga
             routed.id = mangaId
             if let cover = routed.cover,
-               !cover.isEmpty,
-               !cover.hasPrefix(coverCachePrefix)
+                !cover.isEmpty,
+                !cover.hasPrefix(coverCachePrefix)
             {
                 routed.cover = try ImageRoute(manga: self, parserURL: cover).imageId
             }
@@ -293,7 +293,7 @@ class GenericBrowsablePlugin: Plugin, Browsable {
 
         init(imageId: String) throws {
             guard let separator = imageId.range(of: "#", options: .backwards),
-                  separator.upperBound < imageId.endIndex
+                separator.upperBound < imageId.endIndex
             else {
                 Logger.browseService.error("Invalid image route: \(imageId)")
                 throw MankaiErrorCode.browseFilesystemInvalidMangaMeta.makeError()
@@ -350,7 +350,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
     }
 
     func parseFile(path: String, fileType: String) async throws -> DetailedManga {
-        let normalizedFileType = fileType
+        let normalizedFileType =
+            fileType
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
         guard let parser = parser(forExtension: normalizedFileType) else {
@@ -477,7 +478,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
                 relativePath: relativePath
             )
             let file = try await parserFile(for: route)
-            return try await prepareCachedManga(cached.manga, route: route, parser: parser, file: file)
+            return try await prepareCachedManga(
+                cached.manga, route: route, parser: parser, file: file)
         }
 
         Logger.browseService.debug("Browsable source cache miss, hashing: \(relativePath)")
@@ -516,8 +518,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
 
     private static func decodeCachedManga(_ row: BrowsablePluginMangaModel?) -> CachedManga? {
         guard let row,
-              let data = row.info.data(using: .utf8),
-              let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
+            let data = row.info.data(using: .utf8),
+            let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
         else { return nil }
         return CachedManga(mangaId: row.mangaId, path: row.path, manga: stored)
     }
@@ -529,8 +531,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         path: String
     ) async {
         guard let db,
-              let infoData = try? JSONEncoder().encode(manga),
-              let infoString = String(data: infoData, encoding: .utf8)
+            let infoData = try? JSONEncoder().encode(manga),
+            let infoString = String(data: infoData, encoding: .utf8)
         else { return }
 
         let model = BrowsablePluginMangaModel(

@@ -57,7 +57,7 @@ struct PluginSettingsScreen: View {
                             }
 
                             if plugin is Editable,
-                               !plugin.tags.contains(String(localized: "editable"))
+                                !plugin.tags.contains(String(localized: "editable"))
                             {
                                 Text("editable")
                                     .smallTagStyle()

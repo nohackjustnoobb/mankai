@@ -197,9 +197,11 @@ struct DebugScreen: View {
 
                             // Test setValue/getValue/removeValue
                             let jsPlugin =
-                                PluginService.shared.plugins.first(where: { $0 is JsPlugin }) as! JsPlugin
+                                PluginService.shared.plugins.first(where: { $0 is JsPlugin })
+                                as! JsPlugin
                             let setValue = try! await JsRuntime.shared.execute(
-                                "return await setValue('test', 'test')", from: "DEBUG", plugin: jsPlugin
+                                "return await setValue('test', 'test')", from: "DEBUG",
+                                plugin: jsPlugin
                             )
                             Logger.jsRuntime.debug("setValue: \(setValue ?? "nil")")
 
@@ -216,7 +218,8 @@ struct DebugScreen: View {
                             let getValueAfterRemove = try! await JsRuntime.shared.execute(
                                 "return await getValue('test')", from: "DEBUG", plugin: jsPlugin
                             )
-                            Logger.jsRuntime.debug("getValueAfterRemove: \(getValueAfterRemove ?? "nil")")
+                            Logger.jsRuntime.debug(
+                                "getValueAfterRemove: \(getValueAfterRemove ?? "nil")")
                         }
                     }
                 }
@@ -249,7 +252,8 @@ struct DebugScreen: View {
     private func clearCacheDir() {
         DispatchQueue.global(qos: .userInitiated).async {
             let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            else {
                 return
             }
 

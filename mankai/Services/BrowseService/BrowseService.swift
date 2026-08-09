@@ -15,9 +15,9 @@ enum EntityType {
     /// Name of the entity in the browse view.
     var name: String {
         switch self {
-        case let .book(path, _):
+        case .book(let path, _):
             return (path as NSString).lastPathComponent
-        case let .directory(path):
+        case .directory(let path):
             return (path as NSString).lastPathComponent
         }
     }
@@ -25,19 +25,19 @@ enum EntityType {
     /// Display name for a file after its manga metadata has been parsed.
     func name(using manga: DetailedManga?) -> String {
         switch self {
-        case let .book(path, _):
+        case .book(let path, _):
             guard let manga else {
                 return (path as NSString).lastPathComponent
             }
 
             let allChapters = manga.chapters.flatMap(\.chapters)
             if allChapters.count == 1,
-               let chapterTitle = allChapters.first?.title
+                let chapterTitle = allChapters.first?.title
             {
                 return chapterTitle
             }
             return manga.title ?? (path as NSString).lastPathComponent
-        case let .directory(path):
+        case .directory(let path):
             return (path as NSString).lastPathComponent
         }
     }
@@ -45,9 +45,9 @@ enum EntityType {
     /// The actual file name of the entity.
     var fileName: String {
         switch self {
-        case let .book(path, _):
+        case .book(let path, _):
             return (path as NSString).lastPathComponent
-        case let .directory(path):
+        case .directory(let path):
             return (path as NSString).lastPathComponent
         }
     }

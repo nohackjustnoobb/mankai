@@ -9,11 +9,11 @@ import Foundation
 import GRDB
 
 struct DownloadChapterModel {
-    var mangaId: String // pluginId+mangaId
+    var mangaId: String  // pluginId+mangaId
     var chapterId: String
-    var urls: String // encoded by inserting "|" between urls
+    var urls: String  // encoded by inserting "|" between urls
 
-    var downloaded: Bool // if true, the chapter is fully downloaded
+    var downloaded: Bool  // if true, the chapter is fully downloaded
 
     static func createTable(_ db: Database) throws {
         try db.create(table: DownloadChapterModel.databaseTableName, ifNotExists: true) {

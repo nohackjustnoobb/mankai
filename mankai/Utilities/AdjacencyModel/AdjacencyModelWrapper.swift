@@ -46,7 +46,7 @@ final class AdjacencyModelWrapper {
         let targetH = Int(Self.inputSize.height)
 
         guard let ci1 = image1.ciImage ?? image1.cgImage.map({ CIImage(cgImage: $0) }),
-              let ci2 = image2.ciImage ?? image2.cgImage.map({ CIImage(cgImage: $0) })
+            let ci2 = image2.ciImage ?? image2.cgImage.map({ CIImage(cgImage: $0) })
         else {
             throw MankaiErrorCode.readerAdjacencyInvalidInputImage.makeError()
         }
@@ -76,7 +76,7 @@ final class AdjacencyModelWrapper {
     /// Merge the rightmost 224 px of `left` and the leftmost 224 px of `right`
     /// side-by-side into a single 448-wide `CIImage` whose origin is at (0, 0).
     private func mergePatches(left: CIImage, right: CIImage) -> CIImage {
-        let stripWidth = CGFloat(Int(Self.inputSize.width)) // 224
+        let stripWidth = CGFloat(Int(Self.inputSize.width))  // 224
 
         // Normalise both images to origin (0, 0)
         let normLeft = left.transformed(
@@ -91,12 +91,16 @@ final class AdjacencyModelWrapper {
         // Crop: rightmost 224 px of the left image, translated so its origin is at x=0
         let cropLeftX = max(0, normLeft.extent.width - stripWidth)
         let leftStrip = normLeft.cropped(
-            to: CGRect(x: cropLeftX, y: 0, width: min(stripWidth, normLeft.extent.width), height: normLeft.extent.height)
+            to: CGRect(
+                x: cropLeftX, y: 0, width: min(stripWidth, normLeft.extent.width),
+                height: normLeft.extent.height)
         ).transformed(by: CGAffineTransform(translationX: -cropLeftX, y: 0))
 
         // Crop: leftmost 224 px of the right image, placed immediately to the right of leftStrip
         let rightStrip = normRight.cropped(
-            to: CGRect(x: 0, y: 0, width: min(stripWidth, normRight.extent.width), height: normRight.extent.height)
+            to: CGRect(
+                x: 0, y: 0, width: min(stripWidth, normRight.extent.width),
+                height: normRight.extent.height)
         ).transformed(by: CGAffineTransform(translationX: stripWidth, y: 0))
 
         // Composite rightStrip over leftStrip
@@ -119,7 +123,9 @@ final class AdjacencyModelWrapper {
 
     // MARK: - Pixel Buffer
 
-    private func createPixelBuffer(from image: CIImage, width: Int, height: Int) throws -> CVPixelBuffer {
+    private func createPixelBuffer(from image: CIImage, width: Int, height: Int) throws
+        -> CVPixelBuffer
+    {
         var pixelBuffer: CVPixelBuffer?
         let attributes: [String: Any] = [
             kCVPixelBufferCGImageCompatibilityKey as String: true,

@@ -30,7 +30,7 @@ struct ParserChapterMetadata: Codable {
 
     static func decode(_ value: String?) -> Self? {
         guard let value,
-              let data = value.data(using: .utf8)
+            let data = value.data(using: .utf8)
         else { return nil }
         return try? JSONDecoder().decode(Self.self, from: data)
     }

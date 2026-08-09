@@ -1,6 +1,9 @@
 > [!IMPORTANT]
 > Mankai does not provide, host, or distribute any media content. Users are responsible for obtaining media through legal means and complying with their local laws. Any plugins used with the app are unaffiliated with Mankai, and we have no control over them.
 
+> [!WARNING]
+> Mankai is pre-1.0.0, and breaking changes may be introduced before the 1.0.0 release. See the [roadmap](#road-to-100) for planned milestones.
+
 <div align="center">
 
 <img src="assets/icon.png" width="128" />
@@ -54,6 +57,31 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 - **Library & History**: Manage your collection and track reading progress.
 - **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
 - **Download Manager**: Save manga chapters for offline access.
+
+## Road to 1.0.0
+
+### Sync Engines
+
+- [ ] **iCloud** - Pending availability of resources (aka. I have no money)
+
+### Network Protocols
+
+- [x] **SMB** - Server Message Block support.
+- [ ] **WebDAV** - Web Distributed Authoring and Versioning support.
+- [ ] **NFS** - Network File System support.
+- [ ] **FTP** - File Transfer Protocol support.
+- [ ] **SFTP** - SSH File Transfer Protocol support.
+
+### Parsers
+
+- [x] **EPUB** - Digital book format.
+- [x] **PDF** - Portable Document Format.
+- [x] **CBR** - Comic Book RAR archive.
+- [ ] **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
+
+### AI Features
+
+- [ ] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
 
 ## Plugins
 
@@ -152,7 +180,7 @@ Mankai ships with built-in parsers that read local book files (e.g., CBZ, CBR, E
 
 **Automatic Build Numbers**
 
-The repository includes a pre-commit hook that increments Xcode's `CURRENT_PROJECT_VERSION` once per commit and keeps the app and thumbnail extension build numbers synchronized.
+The repository includes a pre-commit hook that formats all staged Swift files in parallel with `xcrun swift-format` and increments Xcode's `CURRENT_PROJECT_VERSION` for every target with `xcrun agvtool next-version -all`. The app and thumbnail extension build numbers stay synchronized.
 
 Enable the version-controlled hooks once after cloning:
 
@@ -160,7 +188,7 @@ Enable the version-controlled hooks once after cloning:
 git config core.hooksPath .githooks
 ```
 
-The hook stages the updated Xcode project file automatically. If that file has unstaged changes, the commit stops so unrelated Xcode settings are not staged silently, stage or stash those changes and retry the commit. A failed or retried commit reuses the same build number.
+The hook stages formatter output and the updated Xcode project file automatically. If a staged Swift file or the project file has unstaged changes, the commit stops so unrelated edits are not staged silently; stage or stash those changes and retry the commit.
 
 **Performance with Debugger Attached (e.g., from Xcode):**
 
@@ -168,28 +196,3 @@ The hook stages the updated Xcode project file automatically. If that file has u
 - The app may temporarily freeze on the first scroll in the reader screen.
 
 These issues do not occur when running the app without a debugger attached.
-
-## Road to 1.0.0
-
-### Sync Engines
-
-- [ ] **iCloud** - Pending availability of resources (aka. I have no money)
-
-### Network Protocols
-
-- [x] **SMB** - Server Message Block support.
-- [ ] **WebDAV** - Web Distributed Authoring and Versioning support.
-- [ ] **NFS** - Network File System support.
-- [ ] **FTP** - File Transfer Protocol support.
-- [ ] **SFTP** - SSH File Transfer Protocol support.
-
-### Parsers
-
-- [x] **EPUB** - Digital book format.
-- [x] **PDF** - Portable Document Format.
-- [x] **CBR** - Comic Book RAR archive.
-- [ ] **Mankai Custom Format** - A dedicated format tailored to Mankai's needs.
-
-### AI Features
-
-- [ ] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.

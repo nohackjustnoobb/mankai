@@ -76,7 +76,8 @@ struct SelectChaptersModal: View {
                     groupIndex, group in
                     Section {
                         chapterGroupRow(
-                            groupIndex: groupIndex, groupTitle: group.title, chapters: group.chapters
+                            groupIndex: groupIndex, groupTitle: group.title,
+                            chapters: group.chapters
                         )
 
                         if expandedGroupIndex == groupIndex {
@@ -131,10 +132,13 @@ struct SelectChaptersModal: View {
 
         // calculate currently selected count among selectable ones
         let currentlySelectedIds = selectedChapters[groupIndex] ?? []
-        let selectedSelectableCount = selectableChapters.filter { currentlySelectedIds.contains($0.id) }.count
+        let selectedSelectableCount = selectableChapters.filter {
+            currentlySelectedIds.contains($0.id)
+        }.count
 
         let isAllSelected = selectableCount > 0 && selectedSelectableCount == selectableCount
-        let isPartiallySelected = selectedSelectableCount > 0 && selectedSelectableCount < selectableCount
+        let isPartiallySelected =
+            selectedSelectableCount > 0 && selectedSelectableCount < selectableCount
 
         HStack(spacing: 12) {
             // Select All / Deselect All Checkbox
@@ -142,10 +146,16 @@ struct SelectChaptersModal: View {
                 Button(action: {
                     selectAllInGroup(groupIndex, chapters: chapters)
                 }) {
-                    Image(systemName: isAllSelected ? "checkmark.circle.fill" : (isPartiallySelected ? "minus.circle.fill" : "circle"))
-                        .resizable()
-                        .frame(width: 20, height: 20)
-                        .foregroundColor(isAllSelected || isPartiallySelected ? .accentColor : .secondary.opacity(0.5))
+                    Image(
+                        systemName: isAllSelected
+                            ? "checkmark.circle.fill"
+                            : (isPartiallySelected ? "minus.circle.fill" : "circle")
+                    )
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(
+                        isAllSelected || isPartiallySelected
+                            ? .accentColor : .secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -206,15 +216,15 @@ struct SelectChaptersModal: View {
                     systemName: downloaded
                         ? "checkmark.circle.fill"
                         : selected
-                        ? "checkmark.circle.fill"
-                        : "circle"
+                            ? "checkmark.circle.fill"
+                            : "circle"
                 )
                 .foregroundColor(
                     downloaded
                         ? .gray
                         : selected
-                        ? .accentColor
-                        : .secondary
+                            ? .accentColor
+                            : .secondary
                 )
 
                 Text(chapter.title ?? chapter.id)

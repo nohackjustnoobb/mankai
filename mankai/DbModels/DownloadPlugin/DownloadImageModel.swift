@@ -10,7 +10,7 @@ import GRDB
 struct DownloadImageModel {
     var id: Int?
     var url: String
-    var mangaId: String // pluginId+mangaId
+    var mangaId: String  // pluginId+mangaId
     var path: String
 
     static func createTable(_ db: Database) throws {

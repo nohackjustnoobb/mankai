@@ -135,11 +135,13 @@ final class Logger {
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
     func error(
-        _ message: String, error: Error? = nil, file _: String = #file, function: String = #function,
+        _ message: String, error: Error? = nil, file _: String = #file,
+        function: String = #function,
         line: Int = #line
     ) {
         if let error = error {
-            osLogger.error("[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
+            osLogger.error(
+                "[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
         } else {
             osLogger.error("[\(function):\(line)] \(message)")
         }
@@ -153,11 +155,13 @@ final class Logger {
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
     func critical(
-        _ message: String, error: Error? = nil, file _: String = #file, function: String = #function,
+        _ message: String, error: Error? = nil, file _: String = #file,
+        function: String = #function,
         line: Int = #line
     ) {
         if let error = error {
-            osLogger.critical("[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
+            osLogger.critical(
+                "[\(function):\(line)] \(message) - Error: \(self.formattedError(error))")
         } else {
             osLogger.critical("[\(function):\(line)] \(message)")
         }

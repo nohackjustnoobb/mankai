@@ -97,14 +97,16 @@ struct SmbParserFile: ParserFile {
     private func localURL() async throws -> URL {
         let localURL = localURL(for: remotePath)
         do {
-            return try await Self.downloadRegistry.file(at: localURL) { [session, remotePath] localURL in
+            return try await Self.downloadRegistry.file(at: localURL) {
+                [session, remotePath] localURL in
                 Logger.smbBrowsablePlugin.info(
                     "Downloading SMB parser file: \(remotePath)"
                 )
                 try await session.withConnectedConnection { connection in
                     try connection.downloadFile(remote: remotePath, local: localURL) {
                         completed, total, _, _ in
-                        let progress = total > 0
+                        let progress =
+                            total > 0
                             ? Double(completed) / Double(total)
                             : 1
                         Logger.smbBrowsablePlugin.debug(

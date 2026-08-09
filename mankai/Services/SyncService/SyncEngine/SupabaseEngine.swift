@@ -210,11 +210,13 @@ final class SupabaseEngine: SyncEngine {
 
         // Get last sync time
         let lastSavedsSync = defaults.object(forKey: "SupabaseEngine.lastSyncTime.saveds") as? Date
-        let lastRecordsSync = defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
+        let lastRecordsSync =
+            defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
 
         // Get local data that needs to be synced
         let localSaveds = SavedService.shared.getAllSince(date: lastSavedsSync, shouldSync: true)
-        let localRecords = HistoryService.shared.getAllSince(date: lastRecordsSync, shouldSync: true)
+        let localRecords = HistoryService.shared.getAllSince(
+            date: lastRecordsSync, shouldSync: true)
 
         // Upload local data via edge function
         let syncPayload = SyncPayload(
@@ -245,7 +247,8 @@ final class SupabaseEngine: SyncEngine {
 
         guard !saveds.isEmpty else { return }
 
-        Logger.supabaseEngine.debug("SupabaseEngine adding \(saveds.count) saveds via edge function")
+        Logger.supabaseEngine.debug(
+            "SupabaseEngine adding \(saveds.count) saveds via edge function")
 
         // Upload saveds via edge function (handles insert/update with conflict resolution)
         let syncPayload = SyncPayload(
@@ -311,7 +314,8 @@ final class SupabaseEngine: SyncEngine {
         // Delete local saveds that are marked as deleted in remote
         for saved in deletedSaveds {
             Logger.supabaseEngine.info("Deleting local saved marked as deleted: \(saved.mangaId)")
-            _ = try await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+            _ = try await SavedService.shared.delete(
+                mangaId: saved.mangaId, pluginId: saved.pluginId)
         }
 
         // Apply non-deleted saveds
@@ -362,7 +366,8 @@ final class SupabaseEngine: SyncEngine {
             throw MankaiErrorCode.syncSupabaseNotReady.makeError()
         }
 
-        Logger.supabaseEngine.debug("SupabaseEngine getting saveds since: \(String(describing: since))")
+        Logger.supabaseEngine.debug(
+            "SupabaseEngine getting saveds since: \(String(describing: since))")
 
         var query = supabase.from("Saved")
             .select()
@@ -380,8 +385,8 @@ final class SupabaseEngine: SyncEngine {
         while true {
             let chunkQuery =
                 query
-                    .order("datetime", ascending: false)
-                    .range(from: offset, to: offset + limit - 1)
+                .order("datetime", ascending: false)
+                .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseSaved] = try await chunkQuery.execute().value
 
@@ -418,7 +423,7 @@ final class SupabaseEngine: SyncEngine {
 
         // Supabase/PostgREST uses ISO8601 strings for date comparison
         var query = supabase.from("Record")
-            .select() // Select all fields
+            .select()  // Select all fields
             .eq("userId", value: userId)
 
         if let since = since {
@@ -429,14 +434,14 @@ final class SupabaseEngine: SyncEngine {
         // Pagination
         var allResults: [RecordModel] = []
         var offset = 0
-        let limit = 1000 // max limit 1000
+        let limit = 1000  // max limit 1000
 
         while true {
             // Apply order and range to the filtered query
             let chunkQuery =
                 query
-                    .order("datetime", ascending: false)
-                    .range(from: offset, to: offset + limit - 1)
+                .order("datetime", ascending: false)
+                .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseRecord] = try await chunkQuery.execute().value
 

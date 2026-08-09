@@ -30,12 +30,12 @@ struct SmbConnectionConfiguration {
         guard !trimmedHost.isEmpty else {
             throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
         }
-        guard (1 ... 65535).contains(port) else {
+        guard (1...65535).contains(port) else {
             throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
         }
         guard !trimmedShare.isEmpty,
-              !trimmedShare.contains("/"),
-              !trimmedShare.contains("\\")
+            !trimmedShare.contains("/"),
+            !trimmedShare.contains("\\")
         else {
             throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
         }
@@ -316,12 +316,13 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
                     username: model.username,
                     password: model.password
                 )
-                try results.append(SmbBrowsablePlugin(
-                    id: model.id,
-                    name: model.name,
-                    configuration: configuration,
-                    shouldSync: model.shouldSync
-                ))
+                try results.append(
+                    SmbBrowsablePlugin(
+                        id: model.id,
+                        name: model.name,
+                        configuration: configuration,
+                        shouldSync: model.shouldSync
+                    ))
             } catch {
                 Logger.smbBrowsablePlugin.error(
                     "Failed to load SMB plugin \(model.id)",
@@ -389,7 +390,8 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
                 return nil
             }
 
-            let entryPath = remotePath.isEmpty
+            let entryPath =
+                remotePath.isEmpty
                 ? entry.name
                 : "\(remotePath)/\(entry.name)"
             return BrowsableEntry(

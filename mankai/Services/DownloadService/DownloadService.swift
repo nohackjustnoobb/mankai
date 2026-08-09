@@ -86,8 +86,8 @@ final class DownloadTask: Identifiable, ObservableObject {
 
         var chaptersToDownload: [Chapter] = []
         if let chaptersJson = manga.chapters,
-           let chaptersData = chaptersJson.data(using: .utf8),
-           let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
+            let chaptersData = chaptersJson.data(using: .utf8),
+            let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
         {
             chaptersToDownload = chapterGroups.flatMap(\.chapters)
         }
@@ -140,7 +140,7 @@ final class DownloadTask: Identifiable, ObservableObject {
 
                     let currentProgress =
                         (downloadedChaptersCount + (Double(index + 1) / totalPages))
-                            / totalChapters
+                        / totalChapters
                     await MainActor.run {
                         status = .downloading(progress: currentProgress)
                     }
@@ -233,9 +233,12 @@ final class DownloadService: ObservableObject {
         }
     }
 
-    func queue(plugin: Plugin, manga: DetailedManga, chapters: ChapterGroups) async throws -> DownloadTask {
+    func queue(plugin: Plugin, manga: DetailedManga, chapters: ChapterGroups) async throws
+        -> DownloadTask
+    {
         let chaptersCount = chapters.flatMap(\.chapters).count
-        Logger.downloadService.debug("Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
+        Logger.downloadService.debug(
+            "Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
 
         guard plugin.canDownload else {
             Logger.downloadService.warning("Downloads are disabled for plugin: \(plugin.id)")
@@ -254,18 +257,23 @@ final class DownloadService: ObservableObject {
         var finalChapters = chapters
 
         // Check if manga exists and get old chapters
-        if let existingManga = try await db.read({ db in try DownloadMangaModel.fetchOne(db, key: combinedId) }) {
+        if let existingManga = try await db.read({ db in
+            try DownloadMangaModel.fetchOne(db, key: combinedId)
+        }) {
             Logger.downloadService.info("Found existing manga in database, merging chapters")
 
             // Parse existing chapters
             if let existingChaptersJson = existingManga.chapters,
-               let chaptersData = existingChaptersJson.data(using: .utf8),
-               let existingChapters = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
+                let chaptersData = existingChaptersJson.data(using: .utf8),
+                let existingChapters = try? JSONDecoder().decode(
+                    ChapterGroups.self, from: chaptersData)
             {
                 for existingGroup in existingChapters {
-                    guard let currentIndex = finalChapters.firstIndex(where: {
-                        $0.title == existingGroup.title
-                    }) else {
+                    guard
+                        let currentIndex = finalChapters.firstIndex(where: {
+                            $0.title == existingGroup.title
+                        })
+                    else {
                         finalChapters.append(existingGroup)
                         continue
                     }
@@ -299,7 +307,8 @@ final class DownloadService: ObservableObject {
             if let title = latestChapter.title {
                 latestChapterDict["title"] = title
             }
-            let latestChapterData = try JSONSerialization.data(withJSONObject: latestChapterDict, options: [])
+            let latestChapterData = try JSONSerialization.data(
+                withJSONObject: latestChapterDict, options: [])
             latestChapterJson = String(data: latestChapterData, encoding: .utf8)
         }
 
@@ -325,7 +334,8 @@ final class DownloadService: ObservableObject {
             self.scheduleDownloads()
         }
 
-        Logger.downloadService.info("Successfully queued download task for \(manga.title ?? manga.id)")
+        Logger.downloadService.info(
+            "Successfully queued download task for \(manga.title ?? manga.id)")
         let message = String(localized: "downloadQueuedMessage")
         NotificationService.shared.showInfo(String(format: message, manga.title ?? manga.id))
 
@@ -386,9 +396,11 @@ final class DownloadService: ObservableObject {
             do {
                 try await task.download()
 
-                Logger.downloadService.info("Successfully downloaded task for \(task.manga.title ?? task.manga.id)")
+                Logger.downloadService.info(
+                    "Successfully downloaded task for \(task.manga.title ?? task.manga.id)")
                 let message = String(localized: "downloadCompletedMessage")
-                NotificationService.shared.showSuccess(String(format: message, task.manga.title ?? task.manga.id))
+                NotificationService.shared.showSuccess(
+                    String(format: message, task.manga.title ?? task.manga.id))
 
                 await MainActor.run {
                     _ = tasks.removeValue(forKey: task.id)

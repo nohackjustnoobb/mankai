@@ -114,10 +114,11 @@ final class CbzParser: Parser {
         var info: ComicInfo? = nil
         var coverEntryPath: String? = nil
         try await withReadLock(for: file) { archive in
-            imageEntries = archive
+            imageEntries =
+                archive
                 .compactMap { entry -> Entry? in
                     guard entry.type == .file,
-                          ComicArchiveSupport.isImagePath(entry.path)
+                        ComicArchiveSupport.isImagePath(entry.path)
                     else { return nil }
                     return entry
                 }
@@ -129,12 +130,14 @@ final class CbzParser: Parser {
             }
 
             if let infoEntry = archive["ComicInfo.xml"],
-               let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
+                let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
             {
                 Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
                 info = ComicInfoParser.parse(data: infoData)
                 if info == nil {
-                    Logger.cbzParser.warning("ComicInfo.xml exists but could not be parsed, proceeding with image-only mode")
+                    Logger.cbzParser.warning(
+                        "ComicInfo.xml exists but could not be parsed, proceeding with image-only mode"
+                    )
                 }
             } else {
                 Logger.cbzParser.debug(
@@ -142,10 +145,11 @@ final class CbzParser: Parser {
                 )
             }
 
-            let coverEntry = info?.frontCoverIndex.flatMap { idx -> Entry? in
-                guard idx >= 0, idx < imageEntries.count else { return nil }
-                return imageEntries[idx]
-            } ?? imageEntries.first
+            let coverEntry =
+                info?.frontCoverIndex.flatMap { idx -> Entry? in
+                    guard idx >= 0, idx < imageEntries.count else { return nil }
+                    return imageEntries[idx]
+                } ?? imageEntries.first
 
             if let coverEntry {
                 coverEntryPath = coverEntry.path
@@ -164,7 +168,8 @@ final class CbzParser: Parser {
         return manga
     }
 
-    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
+    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga
+    {
         ComicArchiveSupport.prepareForPresentation(manga, file: file)
     }
 
@@ -188,7 +193,7 @@ final class CbzParser: Parser {
             archive
                 .compactMap { entry -> Entry? in
                     guard entry.type == .file,
-                          ComicArchiveSupport.isImagePath(entry.path)
+                        ComicArchiveSupport.isImagePath(entry.path)
                     else { return nil }
                     return entry
                 }
@@ -216,9 +221,11 @@ final class CbzParser: Parser {
 
     private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
-        _ = try archive.extract(entry, consumer: { chunk in
-            data.append(chunk)
-        })
+        _ = try archive.extract(
+            entry,
+            consumer: { chunk in
+                data.append(chunk)
+            })
         return data
     }
 }

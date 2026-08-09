@@ -53,7 +53,8 @@ struct ChaptersModal: View {
                             Text("noChaptersAvailable")
                                 .foregroundStyle(.secondary)
                         } else {
-                            ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
+                            ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
+                                chapter in
                                 Button(action: {
                                     onNavigateToChapter(chapter, nil, chapterGroupIndex)
                                 }) {
@@ -62,7 +63,7 @@ struct ChaptersModal: View {
                                             .foregroundColor(.primary)
 
                                         if let downloadChapters = downloadChapters,
-                                           downloadChapters.contains(chapter.id)
+                                            downloadChapters.contains(chapter.id)
                                         {
                                             Image(systemName: "network.slash")
                                                 .foregroundColor(.secondary)
@@ -74,8 +75,11 @@ struct ChaptersModal: View {
                                         }
 
                                         Spacer()
-                                        Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
-                                            .foregroundColor(.secondary)
+                                        Image(
+                                            systemName: (chapter.locked ?? false)
+                                                ? "lock.fill" : "chevron.right"
+                                        )
+                                        .foregroundColor(.secondary)
                                     }
                                 }
                                 .disabled(chapter.locked ?? false)

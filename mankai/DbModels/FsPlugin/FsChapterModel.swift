@@ -23,7 +23,8 @@ struct FsChapterModel {
             $0.column("chapterGroupId", .integer).notNull()
 
             $0.foreignKey(
-                ["chapterGroupId"], references: FsChapterGroupModel.databaseTableName, onDelete: .cascade
+                ["chapterGroupId"], references: FsChapterGroupModel.databaseTableName,
+                onDelete: .cascade
             )
         }
     }

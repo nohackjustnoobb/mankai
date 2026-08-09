@@ -42,7 +42,8 @@ struct MangasRowListView: View {
                         .foregroundColor(.secondary)
                         .frame(
                             maxWidth: .infinity,
-                            minHeight: horizontalSizeClass == .regular ? 240 : 200, alignment: .center
+                            minHeight: horizontalSizeClass == .regular ? 240 : 200,
+                            alignment: .center
                         )
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {

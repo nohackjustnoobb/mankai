@@ -94,7 +94,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         super.viewDidLayoutSubviews()
 
         let viewportSize = view.bounds.size
-        if viewportSize != lastReportedViewportSize, viewportSize.width > 0, viewportSize.height > 0 {
+        if viewportSize != lastReportedViewportSize, viewportSize.width > 0, viewportSize.height > 0
+        {
             lastReportedViewportSize = viewportSize
             actions.viewportDidChange(viewportSize)
         }
@@ -146,7 +147,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func enqueueNavigationCommand(from state: ReaderRenderState) {
         guard let command = state.navigationCommand,
-              command.generation != lastAppliedNavigationGeneration
+            command.generation != lastAppliedNavigationGeneration
         else { return }
         pendingNavigationCommand = command
     }
@@ -184,16 +185,16 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
 
         if offsetY < -CONTINUOUS_OVERSCROLL_THRESHOLD,
-           !hasTriggeredTopHaptic,
-           renderState.previousChapter == .available
+            !hasTriggeredTopHaptic,
+            renderState.previousChapter == .available
         {
             impactFeedback.impactOccurred()
             hasTriggeredTopHaptic = true
         }
 
         if offsetY > maximumY + CONTINUOUS_OVERSCROLL_THRESHOLD,
-           !hasTriggeredBottomHaptic,
-           renderState.nextChapter == .available
+            !hasTriggeredBottomHaptic,
+            renderState.nextChapter == .available
         {
             impactFeedback.impactOccurred()
             hasTriggeredBottomHaptic = true
@@ -279,11 +280,11 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
 
         if offsetY < -CONTINUOUS_OVERSCROLL_THRESHOLD,
-           renderState.previousChapter == .available
+            renderState.previousChapter == .available
         {
             actions.requestChapterStep(.previous)
         } else if offsetY > maximumY + CONTINUOUS_OVERSCROLL_THRESHOLD,
-                  renderState.nextChapter == .available
+            renderState.nextChapter == .available
         {
             actions.requestChapterStep(.next)
         }
@@ -306,8 +307,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         currentGroupIndex = closestIndex
         guard let firstURL = groups[closestIndex].urls.first,
-              let page = renderState.urls.firstIndex(of: firstURL),
-              page != currentPage
+            let page = renderState.urls.firstIndex(of: firstURL),
+            page != currentPage
         else { return }
 
         currentPage = page
@@ -407,7 +408,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func view(for state: ReaderImageState) -> UIView {
         switch state {
-        case let .success(image):
+        case .success(let image):
             let imageView = UIImageView(image: image)
             imageView.contentMode = .scaleToFill
             return imageView
@@ -448,7 +449,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func view(_ view: UIView, matches state: ReaderImageState) -> Bool {
         switch state {
-        case let .success(image):
+        case .success(let image):
             return (view as? UIImageView)?.image === image
         case .failed:
             return view.viewWithTag(CONTINUOUS_ERROR_IMAGE_TAG) != nil
@@ -468,7 +469,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func calculateImageRatios() -> [String: CGFloat] {
         renderState.images.compactMapValues { state in
-            guard case let .success(image) = state else { return nil }
+            guard case .success(let image) = state else { return nil }
             return image.size.width / image.size.height
         }
     }
@@ -499,12 +500,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             guard let firstURL = groupURLs.first else { continue }
             let isSinglePortrait =
                 configuration.defaultGroupSize != 1
-                    && groupURLs.count == 1
-                    && ratios[firstURL, default: mode] < 1
+                && groupURLs.count == 1
+                && ratios[firstURL, default: mode] < 1
             let effectiveWidth =
                 isSinglePortrait
-                    ? width / CGFloat(configuration.defaultGroupSize)
-                    : width
+                ? width / CGFloat(configuration.defaultGroupSize)
+                : width
             let ratioSum = groupURLs.reduce(CGFloat(0)) { result, url in
                 result + ratios[url, default: mode]
             }
@@ -560,9 +561,9 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func applyPendingNavigationCommand() {
         guard let command = pendingNavigationCommand,
-              command.generation != lastAppliedNavigationGeneration,
-              let targetPage = renderState.urls.firstIndex(of: command.targetURL),
-              let groupIndex = groups.firstIndex(where: { $0.contains(command.targetURL) })
+            command.generation != lastAppliedNavigationGeneration,
+            let targetPage = renderState.urls.firstIndex(of: command.targetURL),
+            let groupIndex = groups.firstIndex(where: { $0.contains(command.targetURL) })
         else { return }
 
         let group = groups[groupIndex]
@@ -619,11 +620,13 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             topArrow.heightAnchor.constraint(equalToConstant: 48),
             topText.topAnchor.constraint(equalTo: topArrow.bottomAnchor, constant: 8),
             topText.leadingAnchor.constraint(equalTo: topOverscrollView.leadingAnchor, constant: 8),
-            topText.trailingAnchor.constraint(equalTo: topOverscrollView.trailingAnchor, constant: -8),
+            topText.trailingAnchor.constraint(
+                equalTo: topOverscrollView.trailingAnchor, constant: -8),
             topText.bottomAnchor.constraint(equalTo: topOverscrollView.bottomAnchor, constant: -8),
 
             bottomText.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor, constant: 8),
-            bottomText.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
+            bottomText.leadingAnchor.constraint(
+                equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
             bottomText.trailingAnchor.constraint(
                 equalTo: bottomOverscrollView.trailingAnchor, constant: -8
             ),
@@ -631,7 +634,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             bottomArrow.centerXAnchor.constraint(equalTo: bottomOverscrollView.centerXAnchor),
             bottomArrow.widthAnchor.constraint(equalToConstant: 48),
             bottomArrow.heightAnchor.constraint(equalToConstant: 48),
-            bottomArrow.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
+            bottomArrow.bottomAnchor.constraint(
+                equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
         ])
     }
 
@@ -669,7 +673,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         unavailableText: String.LocalizationValue
     ) {
         guard let arrow = overscrollView.viewWithTag(arrowTag) as? UIImageView,
-              let label = overscrollView.viewWithTag(textTag) as? UILabel
+            let label = overscrollView.viewWithTag(textTag) as? UILabel
         else { return }
 
         switch availability {

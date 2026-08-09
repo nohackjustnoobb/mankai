@@ -66,9 +66,9 @@ private final class EpubContainerXMLParser: NSObject, XMLParserDelegate {
         attributes attributeDict: [String: String] = [:]
     ) {
         guard rootfile == nil,
-              EpubXML.localName(elementName, qualifiedName: qName) == "rootfile",
-              let path = EpubXML.attribute(attributeDict, named: "full-path"),
-              !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            EpubXML.localName(elementName, qualifiedName: qName) == "rootfile",
+            let path = EpubXML.attribute(attributeDict, named: "full-path"),
+            !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else { return }
         rootfile = path
     }
@@ -146,9 +146,9 @@ private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
             startMetadataCapture(name: name, attributes: attributeDict)
         case .manifest where name == "item":
             guard let id = EpubXML.attribute(attributeDict, named: "id"),
-                  let href = EpubXML.attribute(attributeDict, named: "href"),
-                  !id.isEmpty,
-                  !href.isEmpty
+                let href = EpubXML.attribute(attributeDict, named: "href"),
+                !id.isEmpty,
+                !href.isEmpty
             else { return }
             let mediaType = EpubXML.attribute(attributeDict, named: "media-type") ?? ""
             let properties = Set(
@@ -173,9 +173,9 @@ private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
                 .split(whereSeparator: \.isWhitespace)
                 .map { $0.lowercased() }
             if document.guideCoverHref == nil,
-               types.contains("cover"),
-               let href = EpubXML.attribute(attributeDict, named: "href"),
-               !href.isEmpty
+                types.contains("cover"),
+                let href = EpubXML.attribute(attributeDict, named: "href"),
+                !href.isEmpty
             {
                 document.guideCoverHref = href
             }
@@ -234,15 +234,15 @@ private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
             let legacyName = EpubXML.attribute(attributes, named: "name")
             let legacyContent = EpubXML.attribute(attributes, named: "content")
             if document.legacyCoverId == nil,
-               legacyName?.caseInsensitiveCompare("cover") == .orderedSame,
-               let legacyContent,
-               !legacyContent.isEmpty
+                legacyName?.caseInsensitiveCompare("cover") == .orderedSame,
+                let legacyContent,
+                !legacyContent.isEmpty
             {
                 document.legacyCoverId = legacyContent
             }
 
             if let property = EpubXML.attribute(attributes, named: "property"),
-               !property.isEmpty
+                !property.isEmpty
             {
                 beginCapture(
                     .meta,
@@ -355,9 +355,9 @@ private final class EpubEncryptionXMLParser: NSObject, XMLParserDelegate {
         if name == "encrypteddata" {
             encryptedDataDepth += 1
         } else if name == "cipherreference",
-                  encryptedDataDepth > 0,
-                  let uri = EpubXML.attribute(attributeDict, named: "uri"),
-                  !uri.isEmpty
+            encryptedDataDepth > 0,
+            let uri = EpubXML.attribute(attributeDict, named: "uri"),
+            !uri.isEmpty
         {
             references.append(uri)
         }

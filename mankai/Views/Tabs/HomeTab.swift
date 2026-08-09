@@ -145,7 +145,10 @@ struct HomeTab: View {
                         }
                         .disabled(isDownloadsMode)
                     } label: {
-                        Text(LocalizedStringKey(isDownloadsMode || status == .all ? dataSource.rawValue : status.rawValue))
+                        Text(
+                            LocalizedStringKey(
+                                isDownloadsMode || status == .all
+                                    ? dataSource.rawValue : status.rawValue))
                     }
                 }
 
@@ -173,7 +176,12 @@ struct HomeTab: View {
                     .disabled(isDownloadsMode)
                 }
             }
-            .searchable(text: $searchText, prompt: isDownloadsMode ? LocalizedStringKey("searchDownloadedManga") : LocalizedStringKey("searchSavedManga"))
+            .searchable(
+                text: $searchText,
+                prompt: isDownloadsMode
+                    ? LocalizedStringKey("searchDownloadedManga")
+                    : LocalizedStringKey("searchSavedManga")
+            )
             .onChange(of: searchText) {
                 filterManga()
             }
@@ -220,7 +228,9 @@ struct HomeTab: View {
             .onReceive(HistoryService.shared.objectWillChange) {
                 updateRecord()
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            .onReceive(
+                NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            ) { _ in
                 checkInternetAndPrompt()
             }
             .sheet(isPresented: $showingFilters) {
@@ -277,8 +287,9 @@ struct HomeTab: View {
                 ).fetchOne(db)
             }) {
                 if let mangaData = mangaModel.info.data(using: .utf8),
-                   let mangaDict = try? JSONSerialization.jsonObject(with: mangaData) as? [String: Any],
-                   let manga = Manga(from: mangaDict)
+                    let mangaDict = try? JSONSerialization.jsonObject(with: mangaData)
+                        as? [String: Any],
+                    let manga = Manga(from: mangaDict)
                 {
                     mangas[key] = manga
                 }
@@ -329,7 +340,7 @@ struct HomeTab: View {
             let newerDate2 = [savedDate2, recordDate2].compactMap { $0 }.max()
 
             switch (newerDate1, newerDate2) {
-            case let (date1?, date2?):
+            case (let date1?, let date2?):
                 if abs(date1.timeIntervalSince(date2)) < 1e-3 {
                     return key1 < key2
                 }

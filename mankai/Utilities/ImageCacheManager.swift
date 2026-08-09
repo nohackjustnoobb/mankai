@@ -64,7 +64,8 @@ final class ImageCacheManager: @unchecked Sendable {
             return nil
         }
 
-        let fileURL = regularCacheDirectory
+        let fileURL =
+            regularCacheDirectory
             .appendingPathComponent(pluginID)
             .appendingPathComponent(key)
         return try? Data(contentsOf: fileURL)
@@ -93,7 +94,8 @@ final class ImageCacheManager: @unchecked Sendable {
     }
 
     private func diskCacheSizeLimit() -> Int64 {
-        let limitRaw = UserDefaults.standard.integer(forKey: SettingsKey.diskCacheSizeLimit.rawValue)
+        let limitRaw = UserDefaults.standard.integer(
+            forKey: SettingsKey.diskCacheSizeLimit.rawValue)
         let limit = DiskCacheLimit(rawValue: limitRaw) ?? SettingsDefaults.diskCacheSizeLimit
         return Int64(limit.rawValue) * 1024 * 1024
     }
@@ -109,7 +111,10 @@ final class ImageCacheManager: @unchecked Sendable {
         let limit = diskCacheSizeLimit()
 
         // Avoid collecting and sorting file metadata while the cache is within its limit.
-        guard let totalSizeRaw = try? FileManager.default.allocatedSizeOfDirectory(at: regularCacheDirectory) else {
+        guard
+            let totalSizeRaw = try? FileManager.default.allocatedSizeOfDirectory(
+                at: regularCacheDirectory)
+        else {
             Logger.cacheWrapper.error("Failed to measure disk cache size")
             return
         }
@@ -121,7 +126,9 @@ final class ImageCacheManager: @unchecked Sendable {
             return
         }
 
-        let resourceKeys: [URLResourceKey] = [.isDirectoryKey, .contentModificationDateKey, .fileSizeKey]
+        let resourceKeys: [URLResourceKey] = [
+            .isDirectoryKey, .contentModificationDateKey, .fileSizeKey,
+        ]
         let enumerator = FileManager.default.enumerator(
             at: regularCacheDirectory,
             includingPropertiesForKeys: resourceKeys,
@@ -132,19 +139,24 @@ final class ImageCacheManager: @unchecked Sendable {
 
         for case let fileURL as URL in enumerator {
             guard let resourceValues = try? fileURL.resourceValues(forKeys: Set(resourceKeys)),
-                  let isDirectory = resourceValues.isDirectory,
-                  !isDirectory,
-                  resourceValues.contentModificationDate != nil
+                let isDirectory = resourceValues.isDirectory,
+                !isDirectory,
+                resourceValues.contentModificationDate != nil
             else { continue }
 
             fileURLs.append(fileURL)
         }
 
-        Logger.cacheWrapper.debug("Disk cache exceeds its limit; found \(fileURLs.count) files to consider for pruning")
+        Logger.cacheWrapper.debug(
+            "Disk cache exceeds its limit; found \(fileURLs.count) files to consider for pruning")
 
         fileURLs.sort { url1, url2 in
-            let d1 = (try? url1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
-            let d2 = (try? url2.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? Date.distantPast
+            let d1 =
+                (try? url1.resourceValues(forKeys: [.contentModificationDateKey])
+                    .contentModificationDate) ?? Date.distantPast
+            let d2 =
+                (try? url2.resourceValues(forKeys: [.contentModificationDateKey])
+                    .contentModificationDate) ?? Date.distantPast
             return d1 < d2
         }
 
@@ -156,7 +168,7 @@ final class ImageCacheManager: @unchecked Sendable {
             if currentSize <= targetSize { break }
 
             if let resources = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
-               let fileSize = resources.fileSize
+                let fileSize = resources.fileSize
             {
                 do {
                     try FileManager.default.removeItem(at: fileURL)

@@ -12,12 +12,14 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.readerType.rawValue
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
-    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private var respectMangaReadingDirection: Bool =
-        SettingsDefaults.respectMangaReadingDirection
+    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
+        var respectMangaReadingDirection: Bool =
+            SettingsDefaults.respectMangaReadingDirection
     @AppStorage(SettingsKey.useSmartGrouping.rawValue) private var useSmartGrouping: Bool =
         SettingsDefaults.useSmartGrouping
-    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity: Double =
-        SettingsDefaults.smartGroupingSensitivity
+    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
+        Double =
+            SettingsDefaults.smartGroupingSensitivity
 
     var body: some View {
         List {
@@ -32,7 +34,10 @@ struct ReaderSettingsScreen: View {
                 Picker(
                     String(localized: "imageLayout"),
                     selection: Binding(
-                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout },
+                        get: {
+                            ImageLayout(rawValue: imageLayoutRawValue)
+                                ?? SettingsDefaults.imageLayout
+                        },
                         set: { imageLayoutRawValue = $0.rawValue }
                     )
                 ) {
@@ -56,7 +61,7 @@ struct ReaderSettingsScreen: View {
                         Text("smartGroupingSensitivity")
                         Slider(
                             value: $smartGroupingSensitivity,
-                            in: 0 ... 1,
+                            in: 0...1,
                             step: 0.1
                         )
                         Text("smartGroupingSensitivityDescription")
@@ -80,7 +85,9 @@ struct ReaderSettingsScreen: View {
                 Picker(
                     String(localized: "readerType"),
                     selection: Binding(
-                        get: { ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType },
+                        get: {
+                            ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
+                        },
                         set: { readerTypeRawValue = $0.rawValue }
                     )
                 ) {
@@ -104,8 +111,9 @@ struct ReaderSettingsScreen: View {
 }
 
 struct ContinuousReaderSettingsView: View {
-    @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var readingDirectionRawValue: Int =
-        SettingsDefaults.CR_readingDirection.rawValue
+    @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var readingDirectionRawValue:
+        Int =
+            SettingsDefaults.CR_readingDirection.rawValue
     @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.CR_tapNavigation
     @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var snapToPage: Bool =
@@ -150,14 +158,17 @@ struct ContinuousReaderSettingsView: View {
 }
 
 struct PagedReaderSettingsView: View {
-    @AppStorage(SettingsKey.PR_readingDirection.rawValue) private var readingDirectionRawValue: Int =
-        SettingsDefaults.PR_readingDirection.rawValue
-    @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private var navigationOrientationRawValue: Int =
-        SettingsDefaults.PR_navigationOrientation.rawValue
+    @AppStorage(SettingsKey.PR_readingDirection.rawValue) private var readingDirectionRawValue:
+        Int =
+            SettingsDefaults.PR_readingDirection.rawValue
+    @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private
+        var navigationOrientationRawValue: Int =
+            SettingsDefaults.PR_navigationOrientation.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.PR_tapNavigation
-    @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private var tapNavigationBehaviorRawValue: Int =
-        SettingsDefaults.PR_tapNavigationBehavior.rawValue
+    @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
+        var tapNavigationBehaviorRawValue: Int =
+            SettingsDefaults.PR_tapNavigationBehavior.rawValue
 
     private var isVertical: Bool {
         NavigationOrientation(rawValue: navigationOrientationRawValue) == .vertical

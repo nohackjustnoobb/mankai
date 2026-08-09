@@ -202,7 +202,7 @@ class HttpPlugin: Plugin {
 
     static func fromDataModel(_ httpPluginModel: HttpPluginModel) -> HttpPlugin? {
         guard let metaData = httpPluginModel.meta.data(using: .utf8),
-              let metadata = try? HttpPluginMetadata.decoded(from: metaData)
+            let metadata = try? HttpPluginMetadata.decoded(from: metaData)
         else { return nil }
 
         let configValues = httpPluginModel.configValues.data(using: .utf8)
@@ -212,7 +212,7 @@ class HttpPlugin: Plugin {
 
         // Update config values if they exist
         if let configValues = configValues,
-           let plugin = plugin
+            let plugin = plugin
         {
             plugin.setConfigValues(configValues)
         }
@@ -363,8 +363,8 @@ class HttpPlugin: Plugin {
         try dbPool.write { db in
             _ =
                 try HttpPluginModel
-                    .filter(Column("id") == id)
-                    .deleteAll(db)
+                .filter(Column("id") == id)
+                .deleteAll(db)
         }
     }
 

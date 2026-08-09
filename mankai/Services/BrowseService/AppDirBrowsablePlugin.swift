@@ -20,7 +20,8 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
             do {
                 try fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
             } catch {
-                Logger.appDirBrowsablePlugin.error("Failed to create directory \(mangaDir.path): \(error)")
+                Logger.appDirBrowsablePlugin.error(
+                    "Failed to create directory \(mangaDir.path): \(error)")
             }
         }
 

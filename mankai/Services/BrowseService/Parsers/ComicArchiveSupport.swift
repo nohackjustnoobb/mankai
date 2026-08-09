@@ -52,7 +52,8 @@ enum ComicArchiveSupport {
             for field in creditFields {
                 guard let field, !field.isEmpty else { continue }
                 authors.append(
-                    contentsOf: field
+                    contentsOf:
+                        field
                         .split(separator: ",")
                         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                         .filter { !$0.isEmpty }
@@ -62,7 +63,7 @@ enum ComicArchiveSupport {
 
             // Reading direction mapped from the <Manga> element.
             if let mangaTag = info.manga?.trimmingCharacters(in: .whitespacesAndNewlines),
-               !mangaTag.isEmpty
+                !mangaTag.isEmpty
             {
                 switch mangaTag {
                 case "No":
@@ -108,7 +109,7 @@ enum ComicArchiveSupport {
             return presentedGroup
         }
         if var latestChapter = presented.latestChapter,
-           latestChapter.title == nil
+            latestChapter.title == nil
         {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter

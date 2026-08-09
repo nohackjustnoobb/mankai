@@ -70,10 +70,13 @@ struct BrowseTab: View {
                 }
             }
             .navigationTitle("browse")
-            .alert("failedToAddFolder", isPresented: .init(
-                get: { importError != nil },
-                set: { if !$0 { importError = nil } }
-            )) {
+            .alert(
+                "failedToAddFolder",
+                isPresented: .init(
+                    get: { importError != nil },
+                    set: { if !$0 { importError = nil } }
+                )
+            ) {
                 Button("ok", role: .cancel) {}
             } message: {
                 if let importError {
@@ -104,13 +107,15 @@ struct BrowseTab: View {
             } message: {
                 Text("removeFolderConfirmation")
             }
-            .sheet(isPresented: .init(
-                get: { showingImportsModal || !importedFiles.isEmpty },
-                set: { _ in
-                    showingImportsModal = false
-                    importedFiles = []
-                }
-            )) {
+            .sheet(
+                isPresented: .init(
+                    get: { showingImportsModal || !importedFiles.isEmpty },
+                    set: { _ in
+                        showingImportsModal = false
+                        importedFiles = []
+                    }
+                )
+            ) {
                 ImportsModal(initialFiles: importedFiles) { plugin in
                     importDestinationPluginId = plugin.id
                 }

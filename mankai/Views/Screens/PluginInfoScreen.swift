@@ -111,7 +111,8 @@ struct PluginInfoScreen: View {
                                 }
                             )
                             .confirmationDialog(
-                                "resetConfigs", isPresented: $showResetConfirmation, titleVisibility: .visible
+                                "resetConfigs", isPresented: $showResetConfirmation,
+                                titleVisibility: .visible
                             ) {
                                 Button("reset", role: .destructive) {
                                     do {
@@ -136,7 +137,8 @@ struct PluginInfoScreen: View {
                             }
                         )
                         .confirmationDialog(
-                            "removePlugin", isPresented: $showRemoveConfirmation, titleVisibility: .visible
+                            "removePlugin", isPresented: $showRemoveConfirmation,
+                            titleVisibility: .visible
                         ) {
                             Button("remove", role: .destructive) {
                                 do {

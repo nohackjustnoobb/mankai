@@ -116,7 +116,7 @@ final class PdfParser: Parser {
 
         var manga = DetailedManga()
         let chapter = Chapter(id: "0", title: nil)
-        let pages = (0 ..< pageCount).map { Self.pageReference(for: $0) }
+        let pages = (0..<pageCount).map { Self.pageReference(for: $0) }
         manga.cover = Self.pageReference(for: 0)
         manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
         manga.latestChapter = chapter
@@ -129,7 +129,8 @@ final class PdfParser: Parser {
         return manga
     }
 
-    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
+    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga
+    {
         guard manga.title == nil else { return manga }
 
         var presented = manga
@@ -147,7 +148,7 @@ final class PdfParser: Parser {
             return presentedGroup
         }
         if var latestChapter = presented.latestChapter,
-           latestChapter.title == nil
+            latestChapter.title == nil
         {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter
@@ -176,7 +177,7 @@ final class PdfParser: Parser {
         let pageCount = try await withReadLock(for: file) { cachedDocument in
             cachedDocument.document.pageCount
         }
-        let pages = (0 ..< pageCount).map { Self.pageReference(for: $0) }
+        let pages = (0..<pageCount).map { Self.pageReference(for: $0) }
 
         Logger.pdfParser.debug("Found \(pages.count) pages for chapter of \(manga.id)")
         return pages
@@ -187,8 +188,8 @@ final class PdfParser: Parser {
 
         let path = url as NSString
         guard path.pathExtension.lowercased() == "png",
-              let pageIndex = Int(path.deletingPathExtension),
-              pageIndex >= 0
+            let pageIndex = Int(path.deletingPathExtension),
+            pageIndex >= 0
         else {
             Logger.pdfParser.error("Invalid page reference: \(url)")
             throw MankaiErrorCode.browsePdfPageNotFound.makeError()
@@ -197,7 +198,7 @@ final class PdfParser: Parser {
         return try await withReadLock(for: file) { cachedDocument in
             let document = cachedDocument.document
             guard pageIndex < document.pageCount,
-                  let page = document.page(at: pageIndex)
+                let page = document.page(at: pageIndex)
             else {
                 Logger.pdfParser.error("Page not found: \(url)")
                 throw MankaiErrorCode.browsePdfPageNotFound.makeError()
@@ -205,16 +206,17 @@ final class PdfParser: Parser {
 
             let bounds = page.bounds(for: .cropBox)
             guard bounds.width.isFinite,
-                  bounds.height.isFinite,
-                  bounds.width > 0,
-                  bounds.height > 0
+                bounds.height.isFinite,
+                bounds.width > 0,
+                bounds.height > 0
             else {
                 Logger.pdfParser.error("Invalid bounds for page: \(url)")
                 throw MankaiErrorCode.browsePdfFailedToRenderPage.makeError()
             }
 
             let isQuarterTurn = abs(page.rotation % 180) == 90
-            let displaySize = isQuarterTurn
+            let displaySize =
+                isQuarterTurn
                 ? CGSize(width: bounds.height, height: bounds.width)
                 : bounds.size
             let image = page.thumbnail(of: displaySize, for: .cropBox)

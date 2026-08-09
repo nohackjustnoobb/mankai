@@ -50,8 +50,8 @@ struct MangaDetailsScreen: View {
 
     private var selectedChapterGroup: ChapterGroup? {
         guard let mangaData,
-              let selectedChapterGroupIndex,
-              mangaData.chapters.indices.contains(selectedChapterGroupIndex)
+            let selectedChapterGroupIndex,
+            mangaData.chapters.indices.contains(selectedChapterGroupIndex)
         else {
             return nil
         }
@@ -76,7 +76,7 @@ struct MangaDetailsScreen: View {
         _ chapter: Chapter, page: Int? = nil, chapterGroupIndex: Int? = nil
     ) {
         guard let mangaData,
-              let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
+            let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
         else { return }
 
         showingChaptersModal = false
@@ -93,9 +93,11 @@ struct MangaDetailsScreen: View {
     private func scrollToRecord(proxy: ScrollViewProxy) {
         guard let record = record, let mangaData = mangaData else { return }
 
-        guard let targetIndex = mangaData.chapters.firstIndex(where: { group in
-            group.chapters.contains { $0.id == record.chapterId }
-        }) else {
+        guard
+            let targetIndex = mangaData.chapters.firstIndex(where: { group in
+                group.chapters.contains { $0.id == record.chapterId }
+            })
+        else {
             return
         }
 
@@ -122,7 +124,7 @@ struct MangaDetailsScreen: View {
 
         if let mangaData = mangaData {
             if let group = mangaData.chapters.first,
-               let chapter = group.chapters.first
+                let chapter = group.chapters.first
             {
                 navigateToChapter(chapter, chapterGroupIndex: 0)
             }
@@ -133,7 +135,8 @@ struct MangaDetailsScreen: View {
         Task {
             do {
                 if saved != nil {
-                    let _ = try await SavedService.shared.remove(mangaId: manga.id, pluginId: plugin.id)
+                    let _ = try await SavedService.shared.remove(
+                        mangaId: manga.id, pluginId: plugin.id)
                 } else {
                     let newSaved = SavedModel(
                         mangaId: manga.id,
@@ -183,7 +186,8 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            Section {} header: {
+            Section {
+            } header: {
                 VStack {
                     MangaCoverView(coverUrl: mangaData?.cover ?? manga.cover, plugin: plugin)
                         .aspectRatio(3 / 4, contentMode: .fit)
@@ -200,7 +204,7 @@ struct MangaDetailsScreen: View {
                         .foregroundColor(.primary)
 
                     if let authors = mangaData?.authors,
-                       !authors.isEmpty
+                        !authors.isEmpty
                     {
                         HStack(spacing: 4) {
                             HStack(spacing: 4) {
@@ -309,7 +313,7 @@ struct MangaDetailsScreen: View {
             }
 
             if let genres = mangaData?.genres,
-               !genres.isEmpty
+                !genres.isEmpty
             {
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
@@ -331,7 +335,7 @@ struct MangaDetailsScreen: View {
             }
 
             if let mangaData = mangaData,
-               !mangaData.chapters.isEmpty
+                !mangaData.chapters.isEmpty
             {
                 Section {
                     ForEach(Array(mangaData.chapters.enumerated()), id: \.offset) {
@@ -397,7 +401,9 @@ struct MangaDetailsScreen: View {
                                         Text("noChaptersAvailable")
                                             .foregroundStyle(.secondary)
                                     } else {
-                                        ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
+                                        ForEach(
+                                            isReversed ? chapters.reversed() : chapters, id: \.id
+                                        ) {
                                             chapter in
                                             Button(action: {
                                                 navigateToChapter(chapter)
@@ -406,19 +412,26 @@ struct MangaDetailsScreen: View {
                                                     Text(chapter.title ?? chapter.id)
                                                         .foregroundColor(.primary)
 
-                                                    if downloadedChapterIds?.contains(chapter.id) == true {
+                                                    if downloadedChapterIds?.contains(chapter.id)
+                                                        == true
+                                                    {
                                                         Image(systemName: "network.slash")
                                                             .foregroundColor(.secondary)
                                                     }
 
-                                                    if let record = record, record.chapterId == chapter.id {
+                                                    if let record = record,
+                                                        record.chapterId == chapter.id
+                                                    {
                                                         Image(systemName: "clock.arrow.circlepath")
                                                             .foregroundColor(.accentColor)
                                                     }
 
                                                     Spacer()
-                                                    Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
-                                                        .foregroundColor(.secondary)
+                                                    Image(
+                                                        systemName: (chapter.locked ?? false)
+                                                            ? "lock.fill" : "chevron.right"
+                                                    )
+                                                    .foregroundColor(.secondary)
                                                 }
                                             }
                                             .disabled(chapter.locked ?? false)
@@ -450,7 +463,7 @@ struct MangaDetailsScreen: View {
                                             .buttonStyle(.plain)
 
                                             if plugin is Editable,
-                                               detailedManga?.editable ?? true
+                                                detailedManga?.editable ?? true
                                             {
                                                 Button(action: {
                                                     isUpdateChaptersModalPresented = true
@@ -493,7 +506,7 @@ struct MangaDetailsScreen: View {
         .sheet(isPresented: $showingChaptersModal) {
             [mangaData, selectedChapterGroupIndex] in
             if let mangaData = mangaData,
-               let selectedChapterGroupIndex = selectedChapterGroupIndex
+                let selectedChapterGroupIndex = selectedChapterGroupIndex
             {
                 ChaptersModal(
                     plugin: plugin,
@@ -507,8 +520,8 @@ struct MangaDetailsScreen: View {
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga,
-               detailedManga.editable ?? true,
-               let editablePlugin = plugin as? any Editable
+                detailedManga.editable ?? true,
+                let editablePlugin = plugin as? any Editable
             {
                 UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
             }
@@ -516,9 +529,9 @@ struct MangaDetailsScreen: View {
         .sheet(isPresented: $isUpdateChaptersModalPresented) {
             [detailedManga, selectedChapterGroupIndex] in
             if let detailedManga = detailedManga,
-               detailedManga.editable ?? true,
-               let selectedChapterGroupIndex = selectedChapterGroupIndex,
-               let editablePlugin = plugin as? any Editable
+                detailedManga.editable ?? true,
+                let selectedChapterGroupIndex = selectedChapterGroupIndex,
+                let editablePlugin = plugin as? any Editable
             {
                 UpdateChaptersModal(
                     plugin: editablePlugin,
@@ -658,7 +671,8 @@ struct MangaDetailsScreen: View {
 
             if mangaData == nil, let cachedError = cachedError {
                 let message = String(localized: "failedToLoadMangaDetails")
-                NotificationService.shared.showError(String(format: message, cachedError.localizedDescription))
+                NotificationService.shared.showError(
+                    String(format: message, cachedError.localizedDescription))
 
                 dismiss()
             }

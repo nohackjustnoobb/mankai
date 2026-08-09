@@ -23,7 +23,8 @@ final class SavedService: ObservableObject {
     ///   - pluginId: The ID of the plugin providing the manga.
     /// - Returns: The `SavedModel` if found, otherwise `nil`.
     func get(mangaId: String, pluginId: String) -> SavedModel? {
-        Logger.savedService.debug("Getting saved manga for mangaId: \(mangaId), pluginId: \(pluginId)")
+        Logger.savedService.debug(
+            "Getting saved manga for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
             return try DbService.shared.appDb?.read { db in
                 try SavedModel
@@ -164,8 +165,8 @@ final class SavedService: ObservableObject {
             result = try await DbService.shared.appDb?.write { db in
                 let deleted =
                     try SavedModel
-                        .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-                        .deleteAll(db)
+                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+                    .deleteAll(db)
 
                 try MangaModel
                     .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
@@ -246,15 +247,15 @@ final class SavedService: ObservableObject {
                 // Fetch all saved items, sorted by mangaId and pluginId
                 let saveds =
                     try SavedModel
-                        .filter(Column("shouldSync") == true)
-                        .order(Column("mangaId").asc, Column("pluginId").asc)
-                        .fetchAll(db)
+                    .filter(Column("shouldSync") == true)
+                    .order(Column("mangaId").asc, Column("pluginId").asc)
+                    .fetchAll(db)
 
                 // Concatenate primary keys
                 let keyString =
                     saveds
-                        .map { "\($0.mangaId)|\($0.pluginId)" }
-                        .joined()
+                    .map { "\($0.mangaId)|\($0.pluginId)" }
+                    .joined()
 
                 // Generate SHA256 hash
                 let data = Data(keyString.utf8)

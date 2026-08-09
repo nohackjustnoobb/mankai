@@ -23,8 +23,8 @@ struct MangaItemView: View {
                 tag: manga.status == .ended
                     ? String(localized: "ended")
                     : saved?.updates == true
-                    ? String(localized: "updated")
-                    : nil,
+                        ? String(localized: "updated")
+                        : nil,
                 tagColor: (saved?.updates == true ? .green.opacity(0.8) : .red.opacity(0.8))
             )
             .clipShape(RoundedRectangle(cornerRadius: 8))

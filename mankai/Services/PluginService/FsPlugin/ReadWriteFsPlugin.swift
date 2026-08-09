@@ -225,8 +225,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
             let chapters =
                 try FsChapterModel
-                    .filter(Column("chapterGroupId") == intId)
-                    .fetchAll(db)
+                .filter(Column("chapterGroupId") == intId)
+                .fetchAll(db)
 
             return (chapterGroup.mangaId, chapters.compactMap { $0.id })
         }
@@ -236,9 +236,9 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         for chapterId in chapterIds {
             let chapterDir =
                 url
-                    .appendingPathComponent(mangaId)
-                    .appendingPathComponent("chapters")
-                    .appendingPathComponent(String(chapterId))
+                .appendingPathComponent(mangaId)
+                .appendingPathComponent("chapters")
+                .appendingPathComponent(String(chapterId))
 
             if fileManager.fileExists(atPath: chapterDir.path) {
                 try? fileManager.removeItem(at: chapterDir)
@@ -265,8 +265,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         return try await db.read { db in
             let chapters =
                 try FsChapterModel
-                    .filter(Column("chapterGroupId") == intGroupId)
-                    .fetchAll(db)
+                .filter(Column("chapterGroupId") == intGroupId)
+                .fetchAll(db)
 
             return chapters.sorted { $0.sequence < $1.sequence }
                 .map { Chapter(id: String($0.id ?? 0), title: $0.title, locked: nil) }
@@ -297,11 +297,11 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             if intId == nil || existingChapter == nil {
                 let maxSequence =
                     try
-                        (FsChapterModel
-                            .filter(Column("chapterGroupId") == intChapterGroupId)
-                            .select(max(Column("sequence")))
-                            .asRequest(of: Int?.self)
-                            .fetchOne(db) ?? nil) ?? -1
+                    (FsChapterModel
+                    .filter(Column("chapterGroupId") == intChapterGroupId)
+                    .select(max(Column("sequence")))
+                    .asRequest(of: Int?.self)
+                    .fetchOne(db) ?? nil) ?? -1
                 sequence = maxSequence + 1
             } else {
                 sequence = existingChapter!.sequence
@@ -357,9 +357,9 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             let fileManager = FileManager.default
             let chapterDir =
                 url
-                    .appendingPathComponent(mangaId)
-                    .appendingPathComponent("chapters")
-                    .appendingPathComponent(id)
+                .appendingPathComponent(mangaId)
+                .appendingPathComponent("chapters")
+                .appendingPathComponent(id)
 
             if fileManager.fileExists(atPath: chapterDir.path) {
                 try? fileManager.removeItem(at: chapterDir)
@@ -406,8 +406,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         // Look up mangaId from chapter -> chapterGroup
         let mangaId: String = try await db.read { db in
             guard let chapterIdInt = Int(chapterId),
-                  let chapter = try FsChapterModel.fetchOne(db, key: chapterIdInt),
-                  let group = try FsChapterGroupModel.fetchOne(db, key: chapter.chapterGroupId)
+                let chapter = try FsChapterModel.fetchOne(db, key: chapterIdInt),
+                let group = try FsChapterGroupModel.fetchOne(db, key: chapter.chapterGroupId)
             else {
                 throw MankaiErrorCode.pluginFilesystemChapterNotFound.makeError()
             }
@@ -417,9 +417,9 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         let fileManager = FileManager.default
         let chapterDir =
             url
-                .appendingPathComponent(mangaId)
-                .appendingPathComponent("chapters")
-                .appendingPathComponent(chapterId)
+            .appendingPathComponent(mangaId)
+            .appendingPathComponent("chapters")
+            .appendingPathComponent(chapterId)
 
         if !fileManager.fileExists(atPath: chapterDir.path) {
             try fileManager.createDirectory(at: chapterDir, withIntermediateDirectories: true)
@@ -448,11 +448,11 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
                 if let chapterIdInt = Int(chapterId) {
                     let maxSequence =
                         try
-                            (FsImageModel
-                                .filter(Column("chapterId") == chapterIdInt)
-                                .select(max(Column("sequence")))
-                                .asRequest(of: Int?.self)
-                                .fetchOne(db) ?? nil) ?? -1
+                        (FsImageModel
+                        .filter(Column("chapterId") == chapterIdInt)
+                        .select(max(Column("sequence")))
+                        .asRequest(of: Int?.self)
+                        .fetchOne(db) ?? nil) ?? -1
 
                     var currentSequence = maxSequence + 1
 

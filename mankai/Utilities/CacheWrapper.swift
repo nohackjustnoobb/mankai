@@ -154,7 +154,8 @@ class CacheWrapper: Plugin {
     // MARK: - Caching Logic
 
     private func updateInMemoryCacheItemCount() {
-        var itemCount = UserDefaults.standard.integer(forKey: SettingsKey.inMemoryCacheItemCount.rawValue)
+        var itemCount = UserDefaults.standard.integer(
+            forKey: SettingsKey.inMemoryCacheItemCount.rawValue)
         itemCount = itemCount > 0 ? itemCount : SettingsDefaults.inMemoryCacheItemCount
 
         guard cache.countLimit != itemCount else { return }

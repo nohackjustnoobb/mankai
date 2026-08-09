@@ -99,9 +99,9 @@ struct NotificationView: View {
 
 // MARK: - Glass Background Extension
 
-private extension View {
+extension View {
     @ViewBuilder
-    func applyGlassBackground() -> some View {
+    fileprivate func applyGlassBackground() -> some View {
         if #available(iOS 26.0, *) {
             glassEffect()
                 .clipShape(RoundedRectangle(cornerRadius: 12))

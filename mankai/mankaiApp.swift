@@ -28,7 +28,7 @@ struct mankai: App {
     private static func checkAndUpdate() async {
         if let lastUpdateTime = UpdateService.shared.lastUpdateTime {
             let timeInterval = Date().timeIntervalSince(lastUpdateTime)
-            if timeInterval > 300 { // 5 minutes in seconds
+            if timeInterval > 300 {  // 5 minutes in seconds
                 try? await UpdateService.shared.update()
             }
         } else {

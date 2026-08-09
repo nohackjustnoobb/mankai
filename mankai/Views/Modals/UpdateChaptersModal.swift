@@ -33,7 +33,8 @@ struct UpdateChaptersModal: View {
         self.manga = manga
         self.chapterGroupIndex = chapterGroupIndex
         self.isRootOfSheet = isRootOfSheet
-        chapterGroupTitle = manga.chapters.indices.contains(chapterGroupIndex)
+        chapterGroupTitle =
+            manga.chapters.indices.contains(chapterGroupIndex)
             ? manga.chapters[chapterGroupIndex].title
             : nil
     }

@@ -87,11 +87,11 @@ enum EpubPackageDecoder {
         }
 
         guard let rootfileReference = EpubXMLParsers.containerRootfile(from: containerData),
-              let rootfilePath = EpubPath.resolve(
-                  reference: rootfileReference,
-                  relativeTo: ""
-              ),
-              let packageResource = index.resource(at: rootfilePath)
+            let rootfilePath = EpubPath.resolve(
+                reference: rootfileReference,
+                relativeTo: ""
+            ),
+            let packageResource = index.resource(at: rootfilePath)
         else {
             throw MankaiErrorCode.browseEpubInvalidPackage.makeError()
         }
@@ -115,9 +115,10 @@ enum EpubPackageDecoder {
         guard let references = EpubXMLParsers.encryptedResourceReferences(from: data) else {
             throw MankaiErrorCode.browseEpubInvalidPackage.makeError()
         }
-        return Set(references.compactMap {
-            EpubPath.resolve(reference: $0, relativeTo: "").map(EpubPath.key)
-        })
+        return Set(
+            references.compactMap {
+                EpubPath.resolve(reference: $0, relativeTo: "").map(EpubPath.key)
+            })
     }
 
     private static func readingDirection(from value: String?) -> ReadingDirection? {
@@ -147,7 +148,7 @@ enum EpubPackageDecoder {
 
     private static func parseDate(_ value: String?) -> Date? {
         guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !value.isEmpty
+            !value.isEmpty
         else { return nil }
 
         let fractionalFormatter = ISO8601DateFormatter()
@@ -176,9 +177,11 @@ enum EpubPackageDecoder {
 
     private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
-        _ = try archive.extract(entry, consumer: { chunk in
-            data.append(chunk)
-        })
+        _ = try archive.extract(
+            entry,
+            consumer: { chunk in
+                data.append(chunk)
+            })
         return data
     }
 }
@@ -211,10 +214,12 @@ private struct EpubResourceResolver {
             }
         }
         manifestByPath = package.manifest.reduce(into: [:]) { result, item in
-            guard let resolved = EpubPath.resolve(
-                reference: item.href,
-                relativeTo: packagePath
-            ) else { return }
+            guard
+                let resolved = EpubPath.resolve(
+                    reference: item.href,
+                    relativeTo: packagePath
+                )
+            else { return }
             let key = EpubPath.key(resolved)
             if result[key] == nil {
                 result[key] = item
@@ -232,8 +237,8 @@ private struct EpubResourceResolver {
         }
 
         if let legacyCoverId = package.legacyCoverId,
-           let coverItem = manifestById[legacyCoverId],
-           let cover = try imageResources(for: coverItem).first
+            let coverItem = manifestById[legacyCoverId],
+            let cover = try imageResources(for: coverItem).first
         {
             return cover
         }
@@ -261,10 +266,11 @@ private struct EpubResourceResolver {
 
         var seen = Set<String>()
         return try package.manifest.compactMap { item in
-            guard let resolved = EpubPath.resolve(
-                reference: item.href,
-                relativeTo: packagePath
-            ),
+            guard
+                let resolved = EpubPath.resolve(
+                    reference: item.href,
+                    relativeTo: packagePath
+                ),
                 EpubResourceKind.isRaster(item: item, path: resolved)
             else { return nil }
 
@@ -272,7 +278,7 @@ private struct EpubResourceResolver {
                 throw resourceNotFound(path: resolved)
             }
             guard resource.normalizedPath != cover?.normalizedPath,
-                  seen.insert(EpubPath.key(resource.normalizedPath)).inserted
+                seen.insert(EpubPath.key(resource.normalizedPath)).inserted
             else { return nil }
 
             try requireUnencrypted(resource, encryptedPaths: encryptedPaths)
@@ -293,14 +299,17 @@ private struct EpubResourceResolver {
         relativeTo basePath: String,
         manifestItem: EpubManifestItem?
     ) throws -> [ArchiveResource] {
-        guard let resolved = EpubPath.resolve(
-            reference: reference,
-            relativeTo: basePath
-        ) else { return [] }
+        guard
+            let resolved = EpubPath.resolve(
+                reference: reference,
+                relativeTo: basePath
+            )
+        else { return [] }
 
         let item = manifestItem ?? manifestByPath[EpubPath.key(resolved)]
-        guard EpubResourceKind.isRaster(item: item, path: resolved)
-            || EpubResourceKind.isContentDocument(item: item, path: resolved)
+        guard
+            EpubResourceKind.isRaster(item: item, path: resolved)
+                || EpubResourceKind.isContentDocument(item: item, path: resolved)
         else { return [] }
 
         guard let resource = index.resource(at: resolved) else {
@@ -311,13 +320,15 @@ private struct EpubResourceResolver {
         if EpubResourceKind.isRaster(item: item, path: resource.normalizedPath) {
             return [resource]
         }
-        guard EpubResourceKind.isContentDocument(
-            item: item,
-            path: resource.normalizedPath
-        ) else { return [] }
+        guard
+            EpubResourceKind.isContentDocument(
+                item: item,
+                path: resource.normalizedPath
+            )
+        else { return [] }
 
         guard let data = try? entryData(entry: resource.entry),
-              let references = EpubXMLParsers.contentImageReferences(from: data)
+            let references = EpubXMLParsers.contentImageReferences(from: data)
         else { return [] }
 
         return try references.compactMap { reference in
@@ -332,10 +343,12 @@ private struct EpubResourceResolver {
         reference: String,
         relativeTo basePath: String
     ) throws -> ArchiveResource? {
-        guard let path = EpubPath.resolve(
-            reference: reference,
-            relativeTo: basePath
-        ) else { return nil }
+        guard
+            let path = EpubPath.resolve(
+                reference: reference,
+                relativeTo: basePath
+            )
+        else { return nil }
 
         let item = manifestByPath[EpubPath.key(path)]
         guard EpubResourceKind.isRaster(item: item, path: path) else {
@@ -350,9 +363,11 @@ private struct EpubResourceResolver {
 
     private func entryData(entry: Entry) throws -> Data {
         var data = Data()
-        _ = try archive.extract(entry, consumer: { chunk in
-            data.append(chunk)
-        })
+        _ = try archive.extract(
+            entry,
+            consumer: { chunk in
+                data.append(chunk)
+            })
         return data
     }
 }
@@ -392,7 +407,7 @@ private enum EpubPath {
             reference = String(reference[..<delimiter])
         }
         guard !reference.isEmpty,
-              let decoded = reference.removingPercentEncoding
+            let decoded = reference.removingPercentEncoding
         else { return nil }
 
         let normalizedReference = decoded.replacingOccurrences(of: "\\", with: "/")
@@ -461,7 +476,7 @@ private enum EpubPath {
         guard let first = scheme.first, isASCIIAlpha(first) else { return false }
         return scheme.dropFirst().allSatisfy { scalar in
             isASCIIAlpha(scalar)
-                || (48 ... 57).contains(scalar.value)
+                || (48...57).contains(scalar.value)
                 || scalar == "+"
                 || scalar == "-"
                 || scalar == "."
@@ -469,7 +484,7 @@ private enum EpubPath {
     }
 
     private static func isASCIIAlpha(_ scalar: Unicode.Scalar) -> Bool {
-        (65 ... 90).contains(scalar.value) || (97 ... 122).contains(scalar.value)
+        (65...90).contains(scalar.value) || (97...122).contains(scalar.value)
     }
 }
 
@@ -555,16 +570,16 @@ struct EpubPackageDocument {
 
     var selectedTitle: String? {
         for meta in metaValues
-            where meta.property.lowercased().hasSuffix("title-type")
+        where meta.property.lowercased().hasSuffix("title-type")
             && meta.value.trimmingCharacters(in: .whitespacesAndNewlines)
-            .caseInsensitiveCompare("main") == .orderedSame
+                .caseInsensitiveCompare("main") == .orderedSame
         {
             guard let refines = meta.refines,
-                  refines.hasPrefix("#")
+                refines.hasPrefix("#")
             else { continue }
             let id = String(refines.dropFirst())
             if let title = titles.first(where: { $0.id == id })?.value,
-               !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             {
                 return title.trimmingCharacters(in: .whitespacesAndNewlines)
             }

@@ -118,7 +118,7 @@ final class CbrParser: Parser {
             }
 
             if filenames.contains("ComicInfo.xml"),
-               let infoData = try? archive.extractData(fromFile: "ComicInfo.xml")
+                let infoData = try? archive.extractData(fromFile: "ComicInfo.xml")
             {
                 Logger.cbrParser.debug("Found ComicInfo.xml, parsing metadata")
                 info = ComicInfoParser.parse(data: infoData)
@@ -133,10 +133,11 @@ final class CbrParser: Parser {
                 )
             }
 
-            coverPath = info?.frontCoverIndex.flatMap { index in
-                guard index >= 0, index < imagePaths.count else { return nil }
-                return imagePaths[index]
-            } ?? imagePaths.first
+            coverPath =
+                info?.frontCoverIndex.flatMap { index in
+                    guard index >= 0, index < imagePaths.count else { return nil }
+                    return imagePaths[index]
+                } ?? imagePaths.first
         }
 
         var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverPath)
@@ -151,13 +152,14 @@ final class CbrParser: Parser {
         return manga
     }
 
-    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
+    override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga
+    {
         ComicArchiveSupport.prepareForPresentation(manga, file: file)
     }
 
     override func parseChapter(
         manga: DetailedManga,
-        chapter : Chapter,
+        chapter: Chapter,
         file: ParserFile
     ) async throws -> [String] {
         Logger.cbrParser.debug("Parsing chapter images for manga: \(manga.id)")

@@ -19,7 +19,8 @@ struct FsChapterGroupModel {
             $0.column("mangaId", .text).notNull()
             $0.column("title", .text).notNull()
 
-            $0.foreignKey(["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

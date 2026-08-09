@@ -45,7 +45,8 @@ final class UpdateService: ObservableObject {
             Logger.updateService.error("Update failed", error: error)
             if case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToUpdateLibrary")
-                NotificationService.shared.showError(String(format: message, error.localizedDescription))
+                NotificationService.shared.showError(
+                    String(format: message, error.localizedDescription))
             }
             throw error
         }
@@ -57,7 +58,7 @@ final class UpdateService: ObservableObject {
             if let lastSyncTime = SyncService.shared.lastSyncTime {
                 // Check if last sync was more than 1 minute ago
                 let timeInterval = Date().timeIntervalSince(lastSyncTime)
-                if timeInterval > 60 { // 1 minute in seconds
+                if timeInterval > 60 {  // 1 minute in seconds
                     Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
                     do {
                         try await SyncService.shared.sync(wait: true, showError: false)
@@ -102,7 +103,7 @@ final class UpdateService: ObservableObject {
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
-                continue // Skip if plugin doesn't exist
+                continue  // Skip if plugin doesn't exist
             }
 
             // Get manga IDs for this plugin
@@ -124,7 +125,7 @@ final class UpdateService: ObservableObject {
                 // Check for updates
                 for saved in pluginSaveds {
                     guard let updatedManga = mangaDict[saved.mangaId] else {
-                        continue // Skip if manga not found in updated data
+                        continue  // Skip if manga not found in updated data
                     }
 
                     // Check if there's a new chapter
@@ -149,7 +150,7 @@ final class UpdateService: ObservableObject {
 
                     // Update manga model in database
                     if let mangaInfoData = try? JSONEncoder().encode(updatedManga),
-                       let mangaInfoString = String(data: mangaInfoData, encoding: .utf8)
+                        let mangaInfoString = String(data: mangaInfoData, encoding: .utf8)
                     {
                         let mangaModel = MangaModel(
                             mangaId: updatedManga.id,
@@ -160,7 +161,8 @@ final class UpdateService: ObservableObject {
                     }
                 }
             } catch {
-                Logger.updateService.error("Error checking updates for plugin \(pluginId)", error: error)
+                Logger.updateService.error(
+                    "Error checking updates for plugin \(pluginId)", error: error)
                 if case .online = Reach().connectionStatus() {
                     let message = String(localized: "failedToCheckUpdatesForPlugin")
                     NotificationService.shared.showWarning(String(format: message, pluginId))
@@ -172,7 +174,8 @@ final class UpdateService: ObservableObject {
         }
 
         // Batch update all changed saveds and mangas
-        _ = try await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
+        _ = try await SavedService.shared.batchUpdate(
+            saveds: updatedSaveds, mangas: updatedMangaModels)
         if !updatedSaveds.isEmpty {
             Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds")
             do {

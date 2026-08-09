@@ -21,7 +21,9 @@ final class DbService {
     lazy var appDb: DatabasePool? = {
         Logger.dbService.debug("Initializing appDb")
         guard
-            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            let documentsURL = FileManager.default.urls(
+                for: .documentDirectory, in: .userDomainMask
+            )
             .first
         else {
             Logger.dbService.error("Could not find document directory")
@@ -98,7 +100,8 @@ final class DbService {
             return db
         }
 
-        let path = DownloadPlugin.shared.downloadDir.appendingPathComponent("data.db").path(percentEncoded: false)
+        let path = DownloadPlugin.shared.downloadDir.appendingPathComponent("data.db").path(
+            percentEncoded: false)
 
         Logger.dbService.debug("Opening DownloadDb at \(path)")
         var config = Configuration()
@@ -129,14 +132,20 @@ final class DbService {
             return db
         }
 
-        guard let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
-        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent("browsableplugin")
+        guard
+            let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+                .first
+        else { return nil }
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent(
+            "browsableplugin")
         let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         do {
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         } catch {
-            Logger.dbService.error("Failed to create browsable plugin cache directory at \(dir.path(percentEncoded: false))", error: error)
+            Logger.dbService.error(
+                "Failed to create browsable plugin cache directory at \(dir.path(percentEncoded: false))",
+                error: error)
             return nil
         }
 

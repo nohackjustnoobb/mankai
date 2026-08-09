@@ -90,13 +90,13 @@ private enum ReaderGrouping {
                 if isWide(url: candidateURL, images: images) { break }
 
                 if candidateIndex > index, candidateIndex + 1 < urls.count,
-                   isSpread(
-                       candidateURL,
-                       urls[candidateIndex + 1],
-                       useSmartGrouping: useSmartGrouping,
-                       sensitivity: smartGroupingSensitivity,
-                       adjacencyScores: adjacencyScores
-                   )
+                    isSpread(
+                        candidateURL,
+                        urls[candidateIndex + 1],
+                        useSmartGrouping: useSmartGrouping,
+                        sensitivity: smartGroupingSensitivity,
+                        adjacencyScores: adjacencyScores
+                    )
                 {
                     break
                 }
@@ -122,7 +122,7 @@ private enum ReaderGrouping {
     }
 
     private static func isWide(url: String, images: [String: ReaderImageState]) -> Bool {
-        guard case let .success(image) = images[url] else { return false }
+        guard case .success(let image) = images[url] else { return false }
         return image.size.width > image.size.height
     }
 
@@ -231,7 +231,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         private func applyNavigationBarVisibility(animated: Bool) {
             guard let navigationBar = navigationController?.navigationBar else { return }
 
-            let transform = shouldHideNavigationBar
+            let transform =
+                shouldHideNavigationBar
                 ? CGAffineTransform(
                     translationX: 0,
                     y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
@@ -349,7 +350,8 @@ struct ReaderScreen: View {
         self.chapter = chapter
         self.initialPage = initialPage
 
-        let chapters = manga.chapters.indices.contains(chapterGroupIndex)
+        let chapters =
+            manga.chapters.indices.contains(chapterGroupIndex)
             ? manga.chapters[chapterGroupIndex].chapters
             : []
         _currentChapterIndex = State(
@@ -636,7 +638,7 @@ struct ReaderScreen: View {
                     get: { Double(min(currentPage + 1, max(urls.count, 1))) },
                     set: { requestPage(Int($0.rounded()) - 1, animated: false) }
                 ),
-                in: 1 ... Double(max(urls.count, 1)),
+                in: 1...Double(max(urls.count, 1)),
                 step: 1
             )
             .disabled(urls.isEmpty)
@@ -692,9 +694,9 @@ struct ReaderScreen: View {
 
         DispatchQueue.main.async {
             guard currentChapter?.id == chapterID,
-                  urls.indices.contains(page),
-                  urls[page] == pageURL,
-                  currentPage != page
+                urls.indices.contains(page),
+                urls[page] == pageURL,
+                currentPage != page
             else { return }
 
             currentPage = page
@@ -706,8 +708,8 @@ struct ReaderScreen: View {
         guard let groupIndex = currentGroupIndex else { return }
         let targetIndex = step == .previous ? groupIndex - 1 : groupIndex + 1
         guard groups.indices.contains(targetIndex),
-              let targetURL = groups[targetIndex].urls.first,
-              let page = urls.firstIndex(of: targetURL)
+            let targetURL = groups[targetIndex].urls.first,
+            let page = urls.firstIndex(of: targetURL)
         else { return }
 
         requestPage(page, animated: true)
@@ -717,8 +719,8 @@ struct ReaderScreen: View {
         guard urls.indices.contains(page) else { return }
         let selectedURL = urls[page]
         guard let group = groups.first(where: { $0.contains(selectedURL) }),
-              let targetURL = group.urls.first,
-              let targetPage = urls.firstIndex(of: targetURL)
+            let targetURL = group.urls.first,
+            let targetPage = urls.firstIndex(of: targetURL)
         else { return }
 
         currentPage = targetPage
@@ -743,7 +745,7 @@ struct ReaderScreen: View {
 
     private func selectChapter(_ selectedChapter: Chapter) {
         guard selectedChapter.locked != true,
-              let index = chapters.firstIndex(where: { $0.id == selectedChapter.id })
+            let index = chapters.firstIndex(where: { $0.id == selectedChapter.id })
         else { return }
 
         forceSaveCurrentPosition()
@@ -770,7 +772,8 @@ struct ReaderScreen: View {
 
     @MainActor
     private func loadChapter(for key: ReaderChapterLoadKey) async {
-        guard let chapter = currentChapter, chapter.id == key.chapterID, chapter.locked != true else {
+        guard let chapter = currentChapter, chapter.id == key.chapterID, chapter.locked != true
+        else {
             loadPhase = .failed
             return
         }
@@ -821,9 +824,9 @@ struct ReaderScreen: View {
                     }
 
                     switch result {
-                    case let .success(url, image):
+                    case .success(let url, let image):
                         images[url] = .success(image)
-                    case let .failed(url):
+                    case .failed(let url):
                         images[url] = .failed
                     }
                     regroup()
@@ -855,20 +858,24 @@ struct ReaderScreen: View {
     }
 
     private func loadImage(url: String) async -> ReaderImageLoadResult {
-        for retry in 0 ... 3 {
+        for retry in 0...3 {
             do {
                 try Task.checkCancellation()
                 let data: Data
-                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
+                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url),
+                    downloaded
+                {
                     data = try await DownloadPlugin.shared.getImage(url)
                 } else {
                     data = try await plugin.getImage(url)
                 }
 
-                let targetSize = viewportSize == .zero
+                let targetSize =
+                    viewportSize == .zero
                     ? UIApplication.windowBounds.size
                     : viewportSize
-                let image = downsampleImages
+                let image =
+                    downsampleImages
                     ? data.downsampledImage(to: targetSize)
                     : UIImage(data: data)
                 if let image {
@@ -898,13 +905,14 @@ struct ReaderScreen: View {
     private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
         guard key.enabled, key.chapterID == currentChapter?.id else { return }
 
-        let pairs: [(String, String, UIImage, UIImage)] = urls.indices.dropLast().compactMap { index in
+        let pairs: [(String, String, UIImage, UIImage)] = urls.indices.dropLast().compactMap {
+            index in
             let firstURL = urls[index]
             let secondURL = urls[index + 1]
             let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
             guard !checkedPairs.contains(pairKey),
-                  case let .success(firstImage) = images[firstURL],
-                  case let .success(secondImage) = images[secondURL]
+                case .success(let firstImage) = images[firstURL],
+                case .success(let secondImage) = images[secondURL]
             else { return nil }
 
             if readingDirection == .rightToLeft {
@@ -1009,7 +1017,7 @@ struct ReaderScreen: View {
 
         let mangaInfo =
             (try? JSONEncoder().encode(manga))
-                .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         let mangaModel = MangaModel(mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
         let record = RecordModel(
             mangaId: manga.id,

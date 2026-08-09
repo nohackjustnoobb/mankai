@@ -140,7 +140,8 @@ final class AuthManager {
             throw MankaiErrorCode.authInvalidCredentials.makeError()
         }
 
-        guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
             Logger.authManager.error("AuthManager invalid JSON response during login")
             throw MankaiErrorCode.authInvalidJsonResponse.makeError()
@@ -203,7 +204,7 @@ final class AuthManager {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: String] = [
-            "refreshToken": refreshToken,
+            "refreshToken": refreshToken
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
 
@@ -228,7 +229,8 @@ final class AuthManager {
             throw MankaiErrorCode.authRefreshFailed.makeError()
         }
 
-        guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
             Logger.authManager.error("AuthManager invalid JSON response during token refresh")
             throw MankaiErrorCode.authInvalidJsonResponse.makeError()
@@ -268,7 +270,9 @@ final class AuthManager {
         return try await request(method: "PUT", path: path, query: query, body: body)
     }
 
-    func delete(path: String, query: [String: String]? = nil) async throws -> (Data, HTTPURLResponse) {
+    func delete(path: String, query: [String: String]? = nil) async throws -> (
+        Data, HTTPURLResponse
+    ) {
         return try await request(method: "DELETE", path: path, query: query, body: nil)
     }
 
@@ -314,12 +318,14 @@ final class AuthManager {
 
         if let httpResponse = response as? HTTPURLResponse {
             if httpResponse.statusCode == 401 || httpResponse.statusCode == 403, retry {
-                Logger.authManager.warning("AuthManager request 401/403, retrying with token refresh")
+                Logger.authManager.warning(
+                    "AuthManager request 401/403, retrying with token refresh")
                 try await refreshAccessToken()
-                return try await request(method: method, path: path, query: query, body: body, retry: false)
+                return try await request(
+                    method: method, path: path, query: query, body: body, retry: false)
             }
 
-            if (200 ... 299).contains(httpResponse.statusCode) {
+            if (200...299).contains(httpResponse.statusCode) {
                 return (data, httpResponse)
             } else {
                 let errorMsg =
@@ -328,7 +334,7 @@ final class AuthManager {
                 throw MankaiErrorCode.authRequestFailed.makeError(
                     messageOverride: errorMsg,
                     additionalUserInfo: [
-                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode,
+                        MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode
                     ]
                 )
             }

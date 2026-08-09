@@ -22,7 +22,8 @@ final class HistoryService: ObservableObject {
     ///   - pluginId: The ID of the plugin providing the manga.
     /// - Returns: The `RecordModel` if found, otherwise `nil`.
     func get(mangaId: String, pluginId: String) -> RecordModel? {
-        Logger.historyService.debug("Getting history for mangaId: \(mangaId), pluginId: \(pluginId)")
+        Logger.historyService.debug(
+            "Getting history for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
             return try DbService.shared.appDb?.read { db in
                 try RecordModel
@@ -66,11 +67,11 @@ final class HistoryService: ObservableObject {
                 // Set updates to false in the corresponding saved if it exists
                 if var saved =
                     try SavedModel
-                        .filter(
-                            Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId
-                                && Column("updates") == true
-                        )
-                        .fetchOne(db)
+                    .filter(
+                        Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId
+                            && Column("updates") == true
+                    )
+                    .fetchOne(db)
                 {
                     saved.updates = false
                     saved.datetime = Date()
@@ -78,7 +79,8 @@ final class HistoryService: ObservableObject {
                 }
             }
         } catch {
-            Logger.historyService.error("Failed to update saved model after adding history", error: error)
+            Logger.historyService.error(
+                "Failed to update saved model after adding history", error: error)
             throw error
         }
 

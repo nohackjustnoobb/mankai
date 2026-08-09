@@ -20,7 +20,8 @@ struct JsRuntimeKvPairModel {
             $0.column("key", .text).notNull()
             $0.column("value", .text).notNull()
 
-            $0.foreignKey(["pluginId"], references: JsPluginModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["pluginId"], references: JsPluginModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

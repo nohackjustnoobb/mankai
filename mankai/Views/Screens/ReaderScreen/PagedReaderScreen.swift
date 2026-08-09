@@ -72,14 +72,18 @@ private final class OverscrollViewController: UIViewController {
             constraints += [
                 container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
                 container.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                container.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-                container.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
+                container.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+                container.trailingAnchor.constraint(
+                    lessThanOrEqualTo: view.trailingAnchor, constant: -20),
             ]
         } else if orientation == .vertical {
             constraints += [
                 container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                container.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-                container.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
+                container.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+                container.trailingAnchor.constraint(
+                    lessThanOrEqualTo: view.trailingAnchor, constant: -20),
                 type == .previous
                     ? container.bottomAnchor.constraint(
                         equalTo: view.safeAreaLayoutGuide.bottomAnchor,
@@ -119,26 +123,28 @@ private final class OverscrollViewController: UIViewController {
             arrow.image = UIImage(systemName: "xmark")
             label.text =
                 type == .previous
-                    ? String(localized: "noPreviousChapter")
-                    : String(localized: "noNextChapter")
+                ? String(localized: "noPreviousChapter")
+                : String(localized: "noNextChapter")
         case .locked:
             arrow.image = UIImage(systemName: "lock.fill")
             label.text =
                 type == .previous
-                    ? String(localized: "previousChapterIsLocked")
-                    : String(localized: "nextChapterIsLocked")
+                ? String(localized: "previousChapterIsLocked")
+                : String(localized: "nextChapterIsLocked")
         case .available:
             if orientation == .vertical {
                 arrow.image = UIImage(systemName: type == .previous ? "chevron.up" : "chevron.down")
             } else if readingDirection == .rightToLeft {
-                arrow.image = UIImage(systemName: type == .previous ? "chevron.right" : "chevron.left")
+                arrow.image = UIImage(
+                    systemName: type == .previous ? "chevron.right" : "chevron.left")
             } else {
-                arrow.image = UIImage(systemName: type == .previous ? "chevron.left" : "chevron.right")
+                arrow.image = UIImage(
+                    systemName: type == .previous ? "chevron.left" : "chevron.right")
             }
             label.text =
                 type == .previous
-                    ? String(localized: "pullToLoadPreviousChapter")
-                    : String(localized: "pullToLoadNextChapter")
+                ? String(localized: "pullToLoadPreviousChapter")
+                : String(localized: "pullToLoadNextChapter")
         }
     }
 }
@@ -185,7 +191,8 @@ private final class PagedReaderViewController: UIViewController,
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         let viewportSize = view.bounds.size
-        if viewportSize != lastReportedViewportSize, viewportSize.width > 0, viewportSize.height > 0 {
+        if viewportSize != lastReportedViewportSize, viewportSize.width > 0, viewportSize.height > 0
+        {
             lastReportedViewportSize = viewportSize
             actions.viewportDidChange(viewportSize)
         }
@@ -200,7 +207,7 @@ private final class PagedReaderViewController: UIViewController,
         let contentChanged = renderedRevision != state.revision
         let orientationChanged =
             self.configuration.navigationOrientation
-                != configuration.navigationOrientation
+            != configuration.navigationOrientation
         let directionChanged = self.configuration.readingDirection != configuration.readingDirection
 
         renderState = state
@@ -222,7 +229,7 @@ private final class PagedReaderViewController: UIViewController,
         }
 
         if let command = state.navigationCommand,
-           command.generation != lastAppliedNavigationGeneration
+            command.generation != lastAppliedNavigationGeneration
         {
             applyNavigationCommand(command)
         }
@@ -252,9 +259,10 @@ private final class PagedReaderViewController: UIViewController,
         }
         currentGroup = min(max(currentGroup, 0), renderState.groups.count - 1)
 
-        if let visiblePage = pageViewController.viewControllers?.first as? PageContentViewController,
-           visiblePage.pageIndex == currentGroup,
-           visiblePage.urls == renderState.groups[currentGroup].urls
+        if let visiblePage = pageViewController.viewControllers?.first
+            as? PageContentViewController,
+            visiblePage.pageIndex == currentGroup,
+            visiblePage.urls == renderState.groups[currentGroup].urls
         {
             visiblePage.apply(
                 images: images(for: renderState.groups[currentGroup]),
@@ -310,8 +318,8 @@ private final class PagedReaderViewController: UIViewController,
 
         if location.x < width / 3 {
             if configuration.navigationOrientation == .horizontal,
-               configuration.tapNavigationBehavior == .followReadingDirection,
-               configuration.readingDirection == .rightToLeft
+                configuration.tapNavigationBehavior == .followReadingDirection,
+                configuration.readingDirection == .rightToLeft
             {
                 actions.requestGroupStep(.next)
             } else {
@@ -319,8 +327,8 @@ private final class PagedReaderViewController: UIViewController,
             }
         } else if location.x > width * 2 / 3 {
             if configuration.navigationOrientation == .horizontal,
-               configuration.tapNavigationBehavior == .followReadingDirection,
-               configuration.readingDirection == .rightToLeft
+                configuration.tapNavigationBehavior == .followReadingDirection,
+                configuration.readingDirection == .rightToLeft
             {
                 actions.requestGroupStep(.previous)
             } else {
@@ -340,7 +348,7 @@ private final class PagedReaderViewController: UIViewController,
 
         let direction: UIPageViewController.NavigationDirection
         if configuration.navigationOrientation == .horizontal,
-           configuration.readingDirection == .rightToLeft
+            configuration.readingDirection == .rightToLeft
         {
             direction = targetGroup > currentGroup ? .reverse : .forward
         } else {
@@ -418,12 +426,12 @@ private final class PagedReaderViewController: UIViewController,
         before: Bool
     ) -> UIViewController? {
         guard !(viewController is OverscrollViewController),
-              let content = viewController as? PageContentViewController
+            let content = viewController as? PageContentViewController
         else { return nil }
 
         let isHorizontalRTL =
             configuration.navigationOrientation == .horizontal
-                && configuration.readingDirection == .rightToLeft
+            && configuration.readingDirection == .rightToLeft
         let delta: Int
         if configuration.navigationOrientation == .vertical {
             delta = before ? -1 : 1
@@ -456,17 +464,17 @@ private final class PagedReaderViewController: UIViewController,
         if let overscroll = visibleController as? OverscrollViewController {
             let availability =
                 overscroll.type == .previous
-                    ? renderState.previousChapter
-                    : renderState.nextChapter
+                ? renderState.previousChapter
+                : renderState.nextChapter
             guard availability == .available else { return }
             actions.requestChapterStep(overscroll.type == .previous ? .previous : .next)
             return
         }
 
         guard let page = visibleController as? PageContentViewController,
-              renderState.groups.indices.contains(page.pageIndex),
-              let firstURL = renderState.groups[page.pageIndex].urls.first,
-              let rawPage = renderState.urls.firstIndex(of: firstURL)
+            renderState.groups.indices.contains(page.pageIndex),
+            let firstURL = renderState.groups[page.pageIndex].urls.first,
+            let rawPage = renderState.urls.firstIndex(of: firstURL)
         else { return }
 
         currentGroup = page.pageIndex
@@ -611,7 +619,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         var totalRatio: CGFloat = 0
 
         for url in urls {
-            if case let .success(image) = images[url] {
+            if case .success(let image) = images[url] {
                 let ratio = image.size.width / image.size.height
                 ratios[url] = ratio
                 totalRatio += ratio
@@ -623,13 +631,13 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
 
         for url in urls {
             guard let imageView = imageViews[url],
-                  let loadingIndicator = loadingIndicators[url],
-                  let errorIcon = errorIcons[url],
-                  let widthConstraint = imageWidthConstraints[url]
+                let loadingIndicator = loadingIndicators[url],
+                let errorIcon = errorIcons[url],
+                let widthConstraint = imageWidthConstraints[url]
             else { continue }
 
             switch images[url] ?? .loading {
-            case let .success(image):
+            case .success(let image):
                 imageView.image = image
                 imageView.isHidden = false
                 loadingIndicator.stopAnimating()

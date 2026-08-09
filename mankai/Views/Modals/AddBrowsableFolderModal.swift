@@ -112,9 +112,9 @@ struct AddBrowsableFolderModal: View {
                 allowsMultipleSelection: false
             ) { result in
                 switch result {
-                case let .success(urls):
+                case .success(let urls):
                     selectedFolder = urls.first
-                case let .failure(error):
+                case .failure(let error):
                     presentError(error)
                 }
             }
@@ -325,7 +325,7 @@ struct AddBrowsableFolderModal: View {
 
     private func addSmbFolder() {
         guard let selectedShare,
-              let portValue = parsedPort
+            let portValue = parsedPort
         else { return }
 
         isAdding = true
@@ -352,7 +352,7 @@ struct AddBrowsableFolderModal: View {
 
     private var parsedPort: Int? {
         guard let portValue = Int(port.trimmingCharacters(in: .whitespacesAndNewlines)),
-              (1 ... 65535).contains(portValue)
+            (1...65535).contains(portValue)
         else {
             return nil
         }

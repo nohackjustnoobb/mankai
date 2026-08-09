@@ -104,9 +104,9 @@ struct UpdateMangaContent: View {
 
     private func loadCoverImage() {
         guard !isCreatingManga,
-              let coverUrl = manga.cover,
-              !coverUrl.isEmpty,
-              let plugin = plugins.first(where: { $0.id == plugin })
+            let coverUrl = manga.cover,
+            !coverUrl.isEmpty,
+            let plugin = plugins.first(where: { $0.id == plugin })
         else {
             coverImageData = nil
             return
@@ -155,7 +155,7 @@ struct UpdateMangaContent: View {
 
     private func deleteChapterGroup() async {
         guard let chapterGroupIndexToRemove,
-              manga.chapters.indices.contains(chapterGroupIndexToRemove)
+            manga.chapters.indices.contains(chapterGroupIndexToRemove)
         else { return }
 
         isProcessing = true
@@ -265,7 +265,7 @@ struct UpdateMangaContent: View {
                 HStack(alignment: .center, spacing: 8) {
                     Group {
                         if let coverImageData = coverImageData,
-                           let uiImage = UIImage(data: coverImageData)
+                            let uiImage = UIImage(data: coverImageData)
                         {
                             Image(uiImage: uiImage)
                                 .resizable()
@@ -306,7 +306,7 @@ struct UpdateMangaContent: View {
                 TextField("title", text: title)
 
                 TextField("description", text: description, axis: .vertical)
-                    .lineLimit(3 ... 6)
+                    .lineLimit(3...6)
 
                 Picker("status", selection: status) {
                     Text("onGoing")

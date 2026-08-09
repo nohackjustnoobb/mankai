@@ -68,9 +68,11 @@ final class DownloadPlugin: Plugin {
         return convertToDetailedManga(mangaModel)?.toManga()
     }
 
-    private func convertToDetailedManga(_ mangaModel: DownloadMangaModel, db: Database? = nil) -> DetailedManga? {
+    private func convertToDetailedManga(_ mangaModel: DownloadMangaModel, db: Database? = nil)
+        -> DetailedManga?
+    {
         var mangaDict: [String: Any] = [
-            "id": mangaModel.mangaId,
+            "id": mangaModel.mangaId
         ]
 
         if let title = mangaModel.title {
@@ -104,15 +106,15 @@ final class DownloadPlugin: Plugin {
         mangaDict["genres"] = genres
 
         if let latestChapter = mangaModel.latestChapter,
-           let chapterData = latestChapter.data(using: .utf8),
-           let chapterDict = try? JSONSerialization.jsonObject(with: chapterData) as? [String: Any]
+            let chapterData = latestChapter.data(using: .utf8),
+            let chapterDict = try? JSONSerialization.jsonObject(with: chapterData) as? [String: Any]
         {
             mangaDict["latestChapter"] = chapterDict
         }
 
         if let chapters = mangaModel.chapters,
-           let chaptersData = chapters.data(using: .utf8),
-           let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
+            let chaptersData = chapters.data(using: .utf8),
+            let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
         {
             mangaDict["chapters"] = chapterGroups
         }
@@ -125,11 +127,13 @@ final class DownloadPlugin: Plugin {
 
         if let db = db {
             do {
-                let chapters = try DownloadChapterModel
+                let chapters =
+                    try DownloadChapterModel
                     .filter(Column("mangaId") == mangaModel.id)
                     .fetchAll(db)
 
-                let downloadedChapterIds = Set(chapters.filter { $0.downloaded }.map { $0.chapterId })
+                let downloadedChapterIds = Set(
+                    chapters.filter { $0.downloaded }.map { $0.chapterId })
 
                 detailedManga.chapters = detailedManga.chapters.map { group in
                     var updatedGroup = group
@@ -143,7 +147,8 @@ final class DownloadPlugin: Plugin {
                     return updatedGroup
                 }
             } catch {
-                Logger.downloadPlugin.error("Failed to fetch chapters for download status check: \(error)")
+                Logger.downloadPlugin.error(
+                    "Failed to fetch chapters for download status check: \(error)")
             }
         }
 
@@ -163,9 +168,9 @@ final class DownloadPlugin: Plugin {
             let searchQuery = "%\(query.lowercased())%"
             let mangas =
                 try DownloadMangaModel
-                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                    .limit(Int(DownloadPluginConstants.suggestionLimit))
-                    .fetchAll(db)
+                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(Int(DownloadPluginConstants.suggestionLimit))
+                .fetchAll(db)
 
             return mangas.compactMap { $0.title }
         }
@@ -185,9 +190,9 @@ final class DownloadPlugin: Plugin {
 
             let mangas =
                 try DownloadMangaModel
-                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                    .limit(limit, offset: offset)
-                    .fetchAll(db)
+                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(limit, offset: offset)
+                .fetchAll(db)
 
             return mangas.compactMap { mangaModel in
                 self.convertToManga(mangaModel)
@@ -196,7 +201,8 @@ final class DownloadPlugin: Plugin {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        Logger.downloadPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
+        Logger.downloadPlugin.debug(
+            "Getting list, page: \(page), genre: \(genre), status: \(status)")
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for list")
             throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
@@ -221,8 +227,8 @@ final class DownloadPlugin: Plugin {
 
             let mangas =
                 try query
-                    .limit(limit, offset: offset)
-                    .fetchAll(db)
+                .limit(limit, offset: offset)
+                .fetchAll(db)
 
             return mangas.compactMap { mangaModel in
                 self.convertToManga(mangaModel)
@@ -240,8 +246,8 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             let mangas =
                 try DownloadMangaModel
-                    .filter(ids.contains(Column("id")))
-                    .fetchAll(db)
+                .filter(ids.contains(Column("id")))
+                .fetchAll(db)
 
             return mangas.compactMap { mangaModel in
                 self.convertToManga(mangaModel)
@@ -263,7 +269,8 @@ final class DownloadPlugin: Plugin {
             }
 
             guard let detailedManga = self.convertToDetailedManga(mangaModel, db: db) else {
-                Logger.downloadPlugin.error("Failed to convert manga model to detailed manga: \(id)")
+                Logger.downloadPlugin.error(
+                    "Failed to convert manga model to detailed manga: \(id)")
                 throw MankaiErrorCode.pluginDownloadFailedToLoadMangaDetails.makeError()
             }
 
@@ -287,9 +294,10 @@ final class DownloadPlugin: Plugin {
 
         return try await db.read { db in
             guard
-                let chapterModel = try DownloadChapterModel
-                .filter(Column("mangaId") == mangaId && Column("chapterId") == chapter.id)
-                .fetchOne(db)
+                let chapterModel =
+                    try DownloadChapterModel
+                    .filter(Column("mangaId") == mangaId && Column("chapterId") == chapter.id)
+                    .fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Chapter not found: \(chapter.id)")
                 throw MankaiErrorCode.pluginDownloadChapterNotFound.makeError()
@@ -309,9 +317,10 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             // First try to get the image from the database
             guard
-                let imageModel = try DownloadImageModel
-                .filter(Column("url") == path)
-                .fetchOne(db)
+                let imageModel =
+                    try DownloadImageModel
+                    .filter(Column("url") == path)
+                    .fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Image not found in DB: \(path)")
                 throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError()
@@ -328,8 +337,10 @@ final class DownloadPlugin: Plugin {
             do {
                 return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
             } catch {
-                Logger.downloadPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
-                throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError(underlyingError: error)
+                Logger.downloadPlugin.error(
+                    "Failed to load image data: \(fullImagePath)", error: error)
+                throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError(
+                    underlyingError: error)
             }
         }
     }
@@ -344,7 +355,8 @@ final class DownloadPlugin: Plugin {
         }
 
         return try await db.read { db in
-            let mangas = try DownloadMangaModel
+            let mangas =
+                try DownloadMangaModel
                 .filter(Column("downloaded") == true)
                 .fetchAll(db)
 
@@ -467,7 +479,9 @@ final class DownloadPlugin: Plugin {
                 try fileManager.removeItem(at: imagesDir)
                 Logger.downloadPlugin.debug("Deleted manga image directory: \(imagesDir.path)")
             } catch {
-                Logger.downloadPlugin.warning("Failed to delete manga image directory: \(imagesDir.path) - \(error.localizedDescription)")
+                Logger.downloadPlugin.warning(
+                    "Failed to delete manga image directory: \(imagesDir.path) - \(error.localizedDescription)"
+                )
             }
         }
 

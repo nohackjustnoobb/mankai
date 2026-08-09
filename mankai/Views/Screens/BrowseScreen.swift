@@ -34,20 +34,20 @@ struct BrowseScreen: View {
         ScrollView {
             LazyVGrid(
                 columns: [
-                    GridItem(.adaptive(minimum: 100), spacing: 20),
+                    GridItem(.adaptive(minimum: 100), spacing: 20)
                 ],
                 spacing: 20
             ) {
                 ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
                     switch entity {
-                    case let .directory(dirPath):
+                    case .directory(let dirPath):
                         NavigationLink(
                             destination: BrowseScreen(plugin: plugin, path: dirPath)
                         ) {
                             directoryView(entity: entity)
                         }
                         .buttonStyle(.plain)
-                    case let .book(path, _):
+                    case .book(let path, _):
                         if let manga = parsedMangas[path] {
                             let allChapters = manga.chapters.flatMap(\.chapters)
                             if allChapters.count == 1 {
@@ -135,14 +135,14 @@ struct BrowseScreen: View {
     private func navigateToReader(manga: DetailedManga) {
         let allChapters = manga.chapters.flatMap(\.chapters)
         guard let chapter = allChapters.first,
-              let chapterGroupIndex = manga.chapters.firstIndex(where: { group in
-                  group.chapters.contains { $0.id == chapter.id }
-              })
+            let chapterGroupIndex = manga.chapters.firstIndex(where: { group in
+                group.chapters.contains { $0.id == chapter.id }
+            })
         else { return }
 
         let page: Int?
         if let record = HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id),
-           record.chapterId == chapter.id
+            record.chapterId == chapter.id
         {
             page = record.page
         } else {
@@ -196,7 +196,8 @@ struct BrowseScreen: View {
                     case (.directory, .book): return true
                     case (.book, .directory): return false
                     default:
-                        return lhs.fileName.localizedStandardCompare(rhs.fileName) == .orderedAscending
+                        return lhs.fileName.localizedStandardCompare(rhs.fileName)
+                            == .orderedAscending
                     }
                 }
                 await MainActor.run {
@@ -206,7 +207,7 @@ struct BrowseScreen: View {
                 }
 
                 for entity in sorted {
-                    guard case let .book(filePath, fileType) = entity else { continue }
+                    guard case .book(let filePath, let fileType) = entity else { continue }
 
                     await MainActor.run {
                         _ = self.parsingPaths.insert(filePath)
@@ -301,7 +302,7 @@ struct BrowseScreen: View {
         errorMessage: String?
     ) -> some View {
         let fileType: String
-        if case let .book(_, type) = entity {
+        if case .book(_, let type) = entity {
             fileType = type
         } else {
             fileType = ""

@@ -98,7 +98,7 @@ struct HistoryItemView: View {
             } else {
                 NavigationLink(destination: {
                     if let manga = manga,
-                       let plugin = plugin
+                        let plugin = plugin
                     {
                         MangaDetailsScreen(plugin: plugin, manga: manga)
                     } else {
@@ -149,11 +149,13 @@ struct HistoryItemView: View {
     }
 
     private func loadMangaData() {
-        plugin = PluginService.shared.getPlugin(record.pluginId) ?? BrowseService.shared.getPlugin(record.pluginId)
+        plugin =
+            PluginService.shared.getPlugin(record.pluginId)
+            ?? BrowseService.shared.getPlugin(record.pluginId)
 
         // Try to get manga from DbService
         if let mangaModel = getMangaModel(mangaId: record.mangaId, pluginId: record.pluginId),
-           let infoData = mangaModel.info.data(using: .utf8)
+            let infoData = mangaModel.info.data(using: .utf8)
         {
             do {
                 manga = try JSONDecoder().decode(Manga.self, from: infoData)

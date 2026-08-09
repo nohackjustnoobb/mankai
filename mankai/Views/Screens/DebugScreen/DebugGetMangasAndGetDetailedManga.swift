@@ -120,7 +120,7 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     InfoRow(
                                         label: String(localized: "totalChapters"),
                                         value:
-                                        "\(detailedManga.chapters.flatMap(\.chapters).count)"
+                                            "\(detailedManga.chapters.flatMap(\.chapters).count)"
                                     )
                                 }
                             }

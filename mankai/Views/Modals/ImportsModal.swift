@@ -100,9 +100,9 @@ struct ImportsModal: View {
                 allowsMultipleSelection: true
             ) { result in
                 switch result {
-                case let .success(urls):
+                case .success(let urls):
                     selectedFiles = urls
-                case let .failure(error):
+                case .failure(let error):
                     importError = error.localizedDescription
                     showingError = true
                 }

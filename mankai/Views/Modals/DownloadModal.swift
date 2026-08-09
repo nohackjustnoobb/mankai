@@ -57,7 +57,10 @@ struct DownloadModal: View {
                             }
                         }
                     }
-                    .confirmationDialog("deleteManga", isPresented: $showDeleteConfirmation, titleVisibility: .visible, presenting: mangaToDelete) { manga in
+                    .confirmationDialog(
+                        "deleteManga", isPresented: $showDeleteConfirmation,
+                        titleVisibility: .visible, presenting: mangaToDelete
+                    ) { manga in
                         Button("remove", role: .destructive) {
                             deleteManga(manga)
                         }
@@ -151,7 +154,7 @@ struct DownloadedMangaRow: View {
 
     private func handleTap() {
         guard let pluginId = manga.meta,
-              let plugin = PluginService.shared.getPlugin(pluginId)
+            let plugin = PluginService.shared.getPlugin(pluginId)
         else {
             return
         }
@@ -188,7 +191,7 @@ struct DownloadTaskRow: View {
                     Text("queued")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                case let .downloading(progress):
+                case .downloading(let progress):
                     VStack(alignment: .leading, spacing: 4) {
                         ProgressView(value: progress)
                             .progressViewStyle(.linear)
@@ -201,7 +204,7 @@ struct DownloadTaskRow: View {
                     Text("completed")
                         .font(.subheadline)
                         .foregroundStyle(.green)
-                case let .failed(error):
+                case .failed(let error):
                     VStack(alignment: .leading, spacing: 4) {
                         Text("failed")
                             .font(.subheadline)
@@ -249,7 +252,9 @@ struct DownloadTaskRow: View {
                 }
             }
         }
-        .confirmationDialog("cancelDownload", isPresented: $showCancelConfirmation, titleVisibility: .visible) {
+        .confirmationDialog(
+            "cancelDownload", isPresented: $showCancelConfirmation, titleVisibility: .visible
+        ) {
             Button("yes", role: .destructive) {
                 Task {
                     try? await DownloadService.shared.cancelTask(id: task.id)

@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct GeneralSettingsScreen: View {
-    @AppStorage(SettingsKey.inMemoryCacheItemCount.rawValue) private var inMemoryCacheItemCount: Int = SettingsDefaults.inMemoryCacheItemCount
-    @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue: Int = SettingsDefaults.diskCacheSizeLimit.rawValue
+    @AppStorage(SettingsKey.inMemoryCacheItemCount.rawValue) private var inMemoryCacheItemCount:
+        Int = SettingsDefaults.inMemoryCacheItemCount
+    @AppStorage(SettingsKey.diskCacheSizeLimit.rawValue) private var diskCacheSizeLimitRawValue:
+        Int = SettingsDefaults.diskCacheSizeLimit.rawValue
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
     @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
@@ -58,7 +60,10 @@ struct GeneralSettingsScreen: View {
                 Picker(
                     "cacheSizeLimit",
                     selection: Binding(
-                        get: { DiskCacheLimit(rawValue: diskCacheSizeLimitRawValue) ?? SettingsDefaults.diskCacheSizeLimit },
+                        get: {
+                            DiskCacheLimit(rawValue: diskCacheSizeLimitRawValue)
+                                ?? SettingsDefaults.diskCacheSizeLimit
+                        },
                         set: { diskCacheSizeLimitRawValue = $0.rawValue }
                     )
                 ) {
@@ -160,10 +165,11 @@ struct GeneralSettingsScreen: View {
 
     private var appVersion: String {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         {
             return "\(version) (\(build))"
-        } else if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+        } else if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        {
             return version
         } else {
             return String(localized: "nil")
@@ -173,7 +179,8 @@ struct GeneralSettingsScreen: View {
     private func updateCacheSize() {
         DispatchQueue.global(qos: .userInitiated).async {
             let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            else {
                 return
             }
 
@@ -196,7 +203,8 @@ struct GeneralSettingsScreen: View {
     private func updateIndexCacheSize() {
         DispatchQueue.global(qos: .userInitiated).async {
             let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            else {
                 return
             }
 
@@ -217,7 +225,8 @@ struct GeneralSettingsScreen: View {
     private func clearCache() {
         DispatchQueue.global(qos: .userInitiated).async {
             let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            else {
                 return
             }
 
@@ -246,7 +255,8 @@ struct GeneralSettingsScreen: View {
     private func clearIndexCache() {
         DispatchQueue.global(qos: .userInitiated).async {
             let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            else {
                 return
             }
 
