@@ -11,11 +11,12 @@ import UIKit
 private struct ReaderChapterLoadKey: Hashable {
     let chapterID: String?
     let retryGeneration: Int
+    let retainImageData: Bool
 }
 
 private struct ReaderAdjacencyKey: Hashable {
-    let chapterID: String?
-    let loadedURLs: [String]
+    let chapterLoadKey: ReaderChapterLoadKey
+    let imagesSettled: Bool
     let readingDirection: ReadingDirection
     let enabled: Bool
 }
@@ -144,7 +145,7 @@ private struct ReaderSavedPosition: Equatable {
 }
 
 private enum ReaderImageLoadResult {
-    case success(String, UIImage)
+    case success(String, TempImage)
     case failed(String)
 }
 
@@ -321,6 +322,7 @@ struct ReaderScreen: View {
     @State private var loadPhase = ReaderLoadPhase.idle
     @State private var urls: [String] = []
     @State private var images: [String: ReaderImageState] = [:]
+    @State private var imageLoadingFinished = false
     @State private var groups: [ReaderGroup] = []
     @State private var adjacencyScores: [String: Double] = [:]
     @State private var checkedPairs: Set<String> = []
@@ -448,20 +450,17 @@ struct ReaderScreen: View {
     }
 
     private var chapterLoadKey: ReaderChapterLoadKey {
-        ReaderChapterLoadKey(chapterID: currentChapter?.id, retryGeneration: retryGeneration)
-    }
-
-    private var loadedURLs: [String] {
-        urls.filter { url in
-            if case .success = images[url] { return true }
-            return false
-        }
+        ReaderChapterLoadKey(
+            chapterID: currentChapter?.id,
+            retryGeneration: retryGeneration,
+            retainImageData: useSmartGrouping && readingDirection != .vertical
+        )
     }
 
     private var adjacencyKey: ReaderAdjacencyKey {
         ReaderAdjacencyKey(
-            chapterID: currentChapter?.id,
-            loadedURLs: loadedURLs,
+            chapterLoadKey: chapterLoadKey,
+            imagesSettled: imageLoadingFinished,
             readingDirection: readingDirection,
             enabled: useSmartGrouping && readingDirection != .vertical
         )
@@ -781,6 +780,7 @@ struct ReaderScreen: View {
         loadPhase = .loading
         urls = []
         images = [:]
+        imageLoadingFinished = false
         groups = []
         adjacencyScores = [:]
         checkedPairs = []
@@ -813,7 +813,7 @@ struct ReaderScreen: View {
             await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
                 for url in loadedURLs {
                     taskGroup.addTask {
-                        await loadImage(url: url)
+                        await loadImage(url: url, retainData: key.retainImageData)
                     }
                 }
 
@@ -832,6 +832,9 @@ struct ReaderScreen: View {
                     regroup()
                 }
             }
+
+            guard !Task.isCancelled, chapterLoadKey == key else { return }
+            imageLoadingFinished = true
         } catch is CancellationError {
             return
         } catch {
@@ -857,7 +860,7 @@ struct ReaderScreen: View {
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
-    private func loadImage(url: String) async -> ReaderImageLoadResult {
+    private func loadImage(url: String, retainData: Bool) async -> ReaderImageLoadResult {
         for retry in 0...3 {
             do {
                 try Task.checkCancellation()
@@ -874,11 +877,12 @@ struct ReaderScreen: View {
                     viewportSize == .zero
                     ? UIApplication.windowBounds.size
                     : viewportSize
-                let image =
-                    downsampleImages
-                    ? data.downsampledImage(to: targetSize)
-                    : UIImage(data: data)
-                if let image {
+                let image = TempImage(data: data)
+                let uiImage = image.uiImage(
+                    downsampledTo: downsampleImages ? targetSize : nil,
+                    retainData: retainData
+                )
+                if uiImage != nil {
                     return .success(url, image)
                 }
             } catch is CancellationError {
@@ -903,9 +907,9 @@ struct ReaderScreen: View {
 
     @MainActor
     private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
-        guard key.enabled, key.chapterID == currentChapter?.id else { return }
+        guard key.enabled, key.imagesSettled, key.chapterLoadKey == chapterLoadKey else { return }
 
-        let pairs: [(String, String, UIImage, UIImage)] = urls.indices.dropLast().compactMap {
+        let pairs: [(String, String, TempImage, TempImage)] = urls.indices.dropLast().compactMap {
             index in
             let firstURL = urls[index]
             let secondURL = urls[index + 1]
@@ -921,35 +925,91 @@ struct ReaderScreen: View {
             return (firstURL, secondURL, firstImage, secondImage)
         }
 
-        await withTaskGroup(of: (String, Double?).self) { taskGroup in
-            for (firstURL, secondURL, firstImage, secondImage) in pairs {
-                let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
-                taskGroup.addTask {
-                    do {
-                        let score =
-                            try AdjacencyModelWrapper.shared?.predict(
-                                image1: firstImage,
-                                image2: secondImage
-                            ) ?? 0
-                        return (pairKey, score)
-                    } catch {
-                        Logger.ui.error("Adjacency check failed", error: error)
-                        return (pairKey, nil)
-                    }
-                }
-            }
+        Logger.adjacencyModel.notice(
+            "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages"
+        )
 
-            for await (pairKey, score) in taskGroup {
+        var remainingUses: [ObjectIdentifier: Int] = [:]
+        for (_, _, firstImage, secondImage) in pairs {
+            remainingUses[ObjectIdentifier(firstImage), default: 0] += 1
+            remainingUses[ObjectIdentifier(secondImage), default: 0] += 1
+        }
+
+        for state in images.values {
+            guard case .success(let image) = state,
+                remainingUses[ObjectIdentifier(image)] == nil
+            else { continue }
+            image.releaseData()
+        }
+
+        var completedCount = 0
+
+        for (firstURL, secondURL, firstImage, secondImage) in pairs {
+            let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
+
+            do {
+                guard
+                    let firstCIImage = ciImage(
+                        from: firstImage,
+                        remainingUses: &remainingUses
+                    ),
+                    let secondCIImage = ciImage(
+                        from: secondImage,
+                        remainingUses: &remainingUses
+                    )
+                else {
+                    Logger.adjacencyModel.error(
+                        "Missing retained image data for adjacency pair \(pairKey)"
+                    )
+                    continue
+                }
+
+                let score = try await AdjacencyModelWrapper.shared.predict(
+                    image1: firstCIImage,
+                    image2: secondCIImage
+                )
+
                 guard !Task.isCancelled, adjacencyKey == key else {
-                    taskGroup.cancelAll()
+                    Logger.adjacencyModel.notice(
+                        "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
+                    )
                     return
                 }
-                guard let score else { continue }
                 checkedPairs.insert(pairKey)
                 adjacencyScores[pairKey] = score
+                completedCount += 1
                 regroup()
+            } catch is CancellationError {
+                Logger.adjacencyModel.notice(
+                    "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
+                )
+                return
+            } catch {
+                Logger.ui.error("Adjacency check failed", error: error)
             }
         }
+
+        Logger.adjacencyModel.notice(
+            "Finished adjacency pass with \(completedCount) predictions; \(checkedPairs.count) pairs checked"
+        )
+    }
+
+    private func ciImage(
+        from image: TempImage,
+        remainingUses: inout [ObjectIdentifier: Int]
+    ) -> CIImage? {
+        let identifier = ObjectIdentifier(image)
+        guard let count = remainingUses[identifier], count > 0 else { return nil }
+
+        guard let ciImage = image.ciImage(retainData: count > 1) else { return nil }
+
+        if count <= 1 {
+            remainingUses[identifier] = nil
+        } else {
+            remainingUses[identifier] = count - 1
+        }
+
+        return ciImage
     }
 
     private func regroup(keepCurrentPageVisible: Bool = false) {

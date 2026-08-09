@@ -6,7 +6,6 @@
 //
 
 import CoreGraphics
-import ImageIO
 import SwiftUI
 import UIKit
 
@@ -97,47 +96,6 @@ extension Data {
 extension NSData {
     var imageFormat: ImageFormat {
         (self as Data).imageFormat
-    }
-}
-
-extension Data {
-    func downsampledImage(
-        to pointSize: CGSize,
-        scale: CGFloat = UIScreen.main.scale
-    ) -> UIImage? {
-        guard pointSize.width.isFinite,
-            pointSize.height.isFinite,
-            pointSize.width > 0,
-            pointSize.height > 0,
-            scale.isFinite,
-            scale > 0
-        else {
-            return nil
-        }
-
-        let maxPixelSize = Swift.max(pointSize.width, pointSize.height) * scale
-        let sourceOptions =
-            [
-                kCGImageSourceShouldCache: false
-            ] as CFDictionary
-
-        guard let source = CGImageSourceCreateWithData(self as CFData, sourceOptions) else {
-            return nil
-        }
-
-        let thumbnailOptions =
-            [
-                kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceShouldCacheImmediately: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
-            ] as CFDictionary
-
-        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage, scale: scale, orientation: .up)
     }
 }
 

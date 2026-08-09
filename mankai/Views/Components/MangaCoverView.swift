@@ -85,18 +85,18 @@ struct MangaCoverView: View {
             do {
                 let data = try await plugin.getImage(coverUrl)
 
-                self.image =
-                    downsampleImages
-                    ? data.downsampledImage(to: UIApplication.windowBounds.size)
-                    : UIImage(data: data)
+                self.image = TempImage(data: data).uiImage(
+                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
+                    retainData: false
+                )
                 self.isLoading = false
             } catch {
                 // try offline
                 if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                    self.image =
-                        downsampleImages
-                        ? data.downsampledImage(to: UIApplication.windowBounds.size)
-                        : UIImage(data: data)
+                    self.image = TempImage(data: data).uiImage(
+                        downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
+                        retainData: false
+                    )
                 }
 
                 self.isLoading = false

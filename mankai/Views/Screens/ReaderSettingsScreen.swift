@@ -107,6 +107,13 @@ struct ReaderSettingsScreen: View {
         }
         .navigationTitle("reader")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: useSmartGrouping) { _, isEnabled in
+            guard !isEnabled else { return }
+
+            Task {
+                await AdjacencyModelWrapper.shared.unloadImmediately()
+            }
+        }
     }
 }
 
