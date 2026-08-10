@@ -5,7 +5,6 @@
 //  Created by Travis XU on 4/8/2026.
 //
 
-import CryptoKit
 import Foundation
 import GRDB
 import SwiftSMB
@@ -43,14 +42,8 @@ struct SmbConnectionConfiguration {
         self.host = trimmedHost
         self.port = port
         self.share = trimmedShare
-        self.username = Self.optionalValue(username)
-        self.password = Self.optionalValue(password)
-    }
-
-    private static func optionalValue(_ value: String?) -> String? {
-        guard let value else { return nil }
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        self.username = username.trimmed
+        self.password = password.trimmed
     }
 
     var server: SMB.Server {
@@ -234,7 +227,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         self.session = session ?? SmbSession(configuration: configuration)
 
         super.init(id: trimmedId)
-        try Self.clearTemporaryDirectory(at: temporaryDirectory)
+        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     var host: String {
@@ -263,7 +256,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         Task {
             await session.disconnect()
         }
-        try? Self.clearTemporaryDirectory(at: temporaryDirectory)
+        try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     override var name: String? {
@@ -364,7 +357,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
             try SmbBrowsablePluginModel.deleteOne(db, key: id)
         }
         try super.deletePlugin()
-        try Self.clearTemporaryDirectory(at: temporaryDirectory)
+        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
 
         let session = session
         Task {
@@ -415,18 +408,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
     override func hashFile(relativePath: String) async throws -> String {
         let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
         let fileURL = try await file.getUrl()
-        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
-            throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
-        }
-        defer { try? handle.close() }
-
-        var hasher = SHA256()
-        while true {
-            let chunk = handle.readData(ofLength: 1 << 16)
-            if chunk.isEmpty { break }
-            hasher.update(data: chunk)
-        }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        return try BrowsableFileUtilities.sha256(of: fileURL)
     }
 
     override func isOnline() async throws -> Bool {
@@ -462,7 +444,10 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
 
             let existingEntries = try connection.listDirectory(at: importsPath)
             let existingNames = Set(existingEntries.map(\.name))
-            let fileName = Self.uniqueFileName(for: source, existingNames: existingNames)
+            let fileName = BrowsableFileUtilities.uniqueFileName(
+                for: source,
+                existingNames: existingNames
+            )
             let remotePath = "\(importsPath)/\(fileName)"
             try connection.uploadFile(local: source, remote: remotePath) { _, _, _, _ in
                 !Task.isCancelled
@@ -471,31 +456,4 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         }
     }
 
-    private static func uniqueFileName(for source: URL, existingNames: Set<String>) -> String {
-        let baseName = source.lastPathComponent
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "\\", with: "_")
-        let stem = (baseName as NSString).deletingPathExtension
-        let extensionName = (baseName as NSString).pathExtension
-
-        func candidate(_ suffix: String) -> String {
-            let name = suffix.isEmpty ? stem : "\(stem) \(suffix)"
-            return extensionName.isEmpty ? name : "\(name).\(extensionName)"
-        }
-
-        var result = candidate("")
-        var counter = 1
-        while existingNames.contains(result) {
-            result = candidate("(\(counter))")
-            counter += 1
-        }
-        return result
-    }
-
-    private static func clearTemporaryDirectory(at directory: URL) throws {
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: directory.path(percentEncoded: false)) {
-            try fileManager.removeItem(at: directory)
-        }
-    }
 }

@@ -5,7 +5,6 @@
 //  Created by Travis XU on 13/7/2026.
 //
 
-import CryptoKit
 import Foundation
 import GRDB
 
@@ -228,18 +227,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
 
     override func hashFile(relativePath: String) async throws -> String {
         let fileURL = try sourceURL(for: relativePath)
-        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
-            throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
-        }
-        defer { try? handle.close() }
-
-        var hasher = SHA256()
-        while true {
-            let chunk = handle.readData(ofLength: 1 << 16)
-            if chunk.isEmpty { break }
-            hasher.update(data: chunk)
-        }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        return try BrowsableFileUtilities.sha256(of: fileURL)
     }
 
     override func absoluteURL(for path: String?) -> URL? {

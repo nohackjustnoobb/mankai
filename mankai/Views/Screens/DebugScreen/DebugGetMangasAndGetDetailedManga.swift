@@ -24,18 +24,6 @@ struct InfoRow: View {
 }
 
 extension DebugGetMangasAndGetDetailedManga {
-    private func statusText(_ status: Status?) -> String {
-        guard let status = status else { return String(localized: "nil") }
-        switch status {
-        case .any:
-            return String(localized: "any")
-        case .onGoing:
-            return String(localized: "onGoing")
-        case .ended:
-            return String(localized: "ended")
-        }
-    }
-
     private func chapterText(_ chapter: Chapter?) -> String {
         guard let chapter = chapter else { return String(localized: "nil") }
         if let title = chapter.title {
@@ -89,7 +77,7 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     )
                                     InfoRow(
                                         label: String(localized: "status"),
-                                        value: statusText(detailedManga.status)
+                                        value: detailedManga.status.statusText
                                     )
                                     InfoRow(
                                         label: String(localized: "description"),

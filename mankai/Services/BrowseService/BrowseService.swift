@@ -101,6 +101,7 @@ final class BrowseService: ObservableObject {
         // Load plugins from db
         loadFsBrowablePlugins()
         loadSmbBrowsablePlugins()
+        loadWebDavBrowsablePlugins()
     }
 
     private var _plugins: [String: BrowsablePlugin] = [:]
@@ -128,6 +129,17 @@ final class BrowseService: ObservableObject {
         Logger.browseService.info("Loaded \(smbBrowsablePlugins.count) SMB browsable plugins")
 
         for plugin in smbBrowsablePlugins {
+            _plugins[plugin.id] = plugin
+        }
+    }
+
+    private func loadWebDavBrowsablePlugins() {
+        Logger.browseService.debug("Loading WebDAV browsable plugins")
+        let webDavBrowsablePlugins = WebDavBrowsablePlugin.loadPlugins()
+        Logger.browseService.info(
+            "Loaded \(webDavBrowsablePlugins.count) WebDAV browsable plugins")
+
+        for plugin in webDavBrowsablePlugins {
             _plugins[plugin.id] = plugin
         }
     }

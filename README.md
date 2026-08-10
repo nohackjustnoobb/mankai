@@ -50,7 +50,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders or [remote shares](#network-protocols).
+- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders or [remote shares](#remote-sources).
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
@@ -64,10 +64,11 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 
 - [ ] **iCloud** - Pending availability of resources (aka. I have no money)
 
-### Network Protocols
+### Integrations
 
+- [ ] **Komga** - Support for the Komga API.
 - [x] **SMB** - Server Message Block support.
-- [ ] **WebDAV** - Web Distributed Authoring and Versioning support.
+- [x] **WebDAV** - Web Distributed Authoring and Versioning support.
 - [ ] **NFS** - Network File System support.
 - [ ] **FTP** - File Transfer Protocol support.
 - [ ] **SFTP** - SSH File Transfer Protocol support.
@@ -104,13 +105,14 @@ This plugin is designed for external providers to use Mankai as a reader and, op
 - **Specification**: [Mankai API Specification](docs/httpplugin/api.md) (see also the [Mankai Editor API Specification](docs/httpplugin/editor-api.md) for optional editor support)
 - **Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server) - a manga management and sync server implementing the API.
 
-## Network Protocols
+## Remote Sources
 
-Mankai supports network protocols for browsing and reading manga stored on remote services.
+Mankai supports remote sources for browsing and reading manga stored on remote services.
 
-| Protocol | Description |
-| :------- |:---------- |
-| **SMB** | Browse and read manga from network shares. Configure the server host, port, and optional credentials, then select an available share. |
+| Protocol   | Description                                                                                                                           | Test Environment                                                    |
+| :--------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------ |
+| **SMB**    | Browse and read manga from an SMB share, with optional username and password authentication.                                         | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba) |
+| **WebDAV** | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                    | [hacdias/webdav](https://github.com/hacdias/webdav)                 |
 
 ## Reader
 
@@ -169,12 +171,12 @@ Once configured, you can enter your Supabase URL and Key in the app settings to 
 
 Mankai ships with built-in parsers that read local book files (e.g., CBZ, CBR, EPUB, and PDF) and extract their metadata and images. Each parser targets a specific file format.
 
-| Parser        | Extensions | Description                                                                                           |
-| :------------ | :--------- | :---------------------------------------------------------------------------------------------------- |
-| **CbzParser** | `.cbz`     | Parses Comic Book ZIP archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
-| **CbrParser** | `.cbr`     | Parses Comic Book RAR archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
-| **EpubParser** | `.epub`   | Parses EPUB 2/3 publications, extracting package metadata and comic images in spine order.            |
-| **PdfParser** | `.pdf`     | Parses PDF documents and renders their pages as images.                                               |
+| Parser         | Extensions | Description                                                                                           |
+| :------------- | :--------- | :---------------------------------------------------------------------------------------------------- |
+| **CbzParser**  | `.cbz`     | Parses Comic Book ZIP archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
+| **CbrParser**  | `.cbr`     | Parses Comic Book RAR archives, extracting metadata from `ComicInfo.xml` and images from the archive. |
+| **EpubParser** | `.epub`    | Parses EPUB 2/3 publications, extracting package metadata and comic images in spine order.            |
+| **PdfParser**  | `.pdf`     | Parses PDF documents and renders their pages as images.                                               |
 
 ## Development Notes
 

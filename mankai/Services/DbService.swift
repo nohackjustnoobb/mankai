@@ -51,6 +51,7 @@ final class DbService {
                 try FsPluginModel.createTable(db)
                 try FsBrowsablePluginModel.createTable(db)
                 try SmbBrowsablePluginModel.createTable(db)
+                try WebDavBrowsablePluginModel.createTable(db)
             }
 
             Logger.dbService.info("appDb initialized successfully")

@@ -3322,6 +3322,38 @@
         }
       }
     },
+    "invalidWebDavConnectionConfiguration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid WebDAV Connection Configuration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV連線設定無效"
+          }
+        }
+      }
+    },
+    "invalidWebDavPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid WebDAV Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV插件無效"
+          }
+        }
+      }
+    },
     "isOnline" : {
       "shouldTranslate" : false
     },
@@ -6653,6 +6685,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "戰爭"
+          }
+        }
+      }
+    },
+    "webdav" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV"
+          }
+        }
+      }
+    },
+    "webDavRequestFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV Request Failed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV請求失敗"
+          }
+        }
+      }
+    },
+    "webdavSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebDAV設定"
+          }
+        }
+      }
+    },
+    "webdavSettingsFooter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the full HTTP or HTTPS URL of the WebDAV folder. Username and password are optional."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入WebDAV資料夾的完整HTTP或HTTPS網址。使用者名稱和密碼可選。"
           }
         }
       }

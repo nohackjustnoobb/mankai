@@ -1,5 +1,5 @@
 //
-//  Utils.swift
+//  Extensions.swift
 //  mankai
 //
 //  Created by Travis XU on 27/6/2025.
@@ -17,15 +17,9 @@ extension UIApplication {
     }
 }
 
-func statusText(_ status: Status?) -> String {
-    guard let status = status else { return String(localized: "nil") }
-    switch status {
-    case .any:
-        return String(localized: "any")
-    case .onGoing:
-        return String(localized: "onGoing")
-    case .ended:
-        return String(localized: "ended")
+extension Optional where Wrapped == Status {
+    var statusText: String {
+        self?.statusText ?? String(localized: "nil")
     }
 }
 
@@ -99,12 +93,10 @@ extension NSData {
     }
 }
 
-func Copy<T: Codable>(of object: T) -> T? {
-    do {
-        let json = try JSONEncoder().encode(object)
-        return try JSONDecoder().decode(T.self, from: json)
-    } catch {
-        Logger.general.error("Failed to copy object", error: error)
-        return nil
+extension Optional where Wrapped == String {
+    var trimmed: String? {
+        guard let self else { return nil }
+        let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }

@@ -36,6 +36,17 @@ enum Status: Int {
     case any = 0
     case onGoing = 1
     case ended = 2
+
+    var statusText: String {
+        switch self {
+        case .any:
+            return String(localized: "any")
+        case .onGoing:
+            return String(localized: "onGoing")
+        case .ended:
+            return String(localized: "ended")
+        }
+    }
 }
 
 struct Chapter: Codable {

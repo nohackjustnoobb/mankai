@@ -13,6 +13,7 @@ enum MankaiErrorDomain: String {
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
     case browseSmb = "app.mankai.browse.smb"
+    case browseWebDav = "app.mankai.browse.webdav"
     case browsePdf = "app.mankai.browse.pdf"
     case browseEpub = "app.mankai.browse.epub"
     case chapter = "app.mankai.chapter"
@@ -37,6 +38,7 @@ enum MankaiErrorDomain: String {
         case .browseArchive: return 30
         case .browseFilesystem: return 31
         case .browseSmb: return 34
+        case .browseWebDav: return 35
         case .browsePdf: return 32
         case .browseEpub: return 33
         case .chapter: return 40
@@ -94,6 +96,9 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseFilesystemUnableToOpenFileForHashing
     case browseSmbInvalidConnectionConfiguration
     case browseSmbInvalidPlugin
+    case browseWebDavInvalidConnectionConfiguration
+    case browseWebDavInvalidPlugin
+    case browseWebDavRequestFailed
     case browsePdfInvalidDocument
     case browsePdfPasswordProtectedDocument
     case browsePdfNoPagesFound
@@ -209,6 +214,15 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .browseSmbInvalidConnectionConfiguration: .init(
             domain: .browseSmb, code: 1, messageKey: "invalidSmbConnectionConfiguration"),
         .browseSmbInvalidPlugin: .init(domain: .browseSmb, code: 2, messageKey: "invalidSmbPlugin"),
+        .browseWebDavInvalidConnectionConfiguration: .init(
+            domain: .browseWebDav,
+            code: 1,
+            messageKey: "invalidWebDavConnectionConfiguration"
+        ),
+        .browseWebDavInvalidPlugin: .init(
+            domain: .browseWebDav, code: 2, messageKey: "invalidWebDavPlugin"),
+        .browseWebDavRequestFailed: .init(
+            domain: .browseWebDav, code: 3, messageKey: "webDavRequestFailed"),
         .browsePdfInvalidDocument: .init(
             domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
         .browsePdfPasswordProtectedDocument: .init(

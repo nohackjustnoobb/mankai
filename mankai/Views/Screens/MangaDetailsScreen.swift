@@ -245,7 +245,7 @@ struct MangaDetailsScreen: View {
 
                         if let status = mangaData?.status {
                             Text("•")
-                            Text(statusText(status))
+                            Text(status.statusText)
                         }
                     }
                     .font(.caption)

@@ -16,6 +16,7 @@ struct AddBrowsableFolderModal: View {
     enum FolderType: String, CaseIterable, Identifiable {
         case filesystem
         case smb
+        case webdav
 
         var id: String {
             rawValue
@@ -38,6 +39,11 @@ struct AddBrowsableFolderModal: View {
     @State private var selectedShare: SMB.Share?
     @State private var showingShareSelection = false
 
+    // WebDAV state
+    @State private var webDavServerURL = ""
+    @State private var webDavUsername = ""
+    @State private var webDavPassword = ""
+
     @State private var isLoadingShares = false
     @State private var isAdding = false
     @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
@@ -56,6 +62,8 @@ struct AddBrowsableFolderModal: View {
         case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .webdav:
+            return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -71,6 +79,9 @@ struct AddBrowsableFolderModal: View {
                                     .tag(type)
                             case .smb:
                                 Text("smb")
+                                    .tag(type)
+                            case .webdav:
+                                Text("webdav")
                                     .tag(type)
                             }
                         }
@@ -90,6 +101,8 @@ struct AddBrowsableFolderModal: View {
                     filesystemConfiguration
                 case .smb:
                     smbConfiguration
+                case .webdav:
+                    webDavConfiguration
                 }
             }
             .navigationTitle("addFolder")
@@ -177,6 +190,31 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
+    private var webDavConfiguration: some View {
+        Section {
+            TextField("serverUrl", text: $webDavServerURL)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.URL)
+                .disabled(isProcessing)
+
+            TextField("username", text: $webDavUsername)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.username)
+                .disabled(isProcessing)
+
+            SecureField("password", text: $webDavPassword)
+                .textContentType(.password)
+                .disabled(isProcessing)
+        } header: {
+            Text("webdavSettings")
+        } footer: {
+            Text("webdavSettingsFooter")
+        }
+    }
+
     private var shareSelection: some View {
         List {
             if shares.isEmpty {
@@ -257,6 +295,17 @@ struct AddBrowsableFolderModal: View {
                     ProgressView()
                 } else {
                     Text("selectShare")
+                }
+            }
+            .disabled(!canContinue)
+        case .webdav:
+            Button {
+                addWebDavFolder()
+            } label: {
+                if isAdding {
+                    ProgressView()
+                } else {
+                    Text("add")
                 }
             }
             .disabled(!canContinue)
@@ -342,6 +391,27 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = SmbSession(configuration: configuration)
                 let plugin = try await SmbBrowsablePlugin(session: session, name: name)
+                try browseService.addPlugin(plugin)
+                dismiss()
+            } catch {
+                presentError(error)
+            }
+        }
+    }
+
+    private func addWebDavFolder() {
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let configuration = try WebDavConnectionConfiguration(
+                    baseURL: webDavServerURL,
+                    username: webDavUsername,
+                    password: webDavPassword
+                )
+                let session = WebDavSession(configuration: configuration)
+                let plugin = try await WebDavBrowsablePlugin(session: session, name: name)
                 try browseService.addPlugin(plugin)
                 dismiss()
             } catch {

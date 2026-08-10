@@ -5,65 +5,10 @@
 //  Created by Travis XU on 4/8/2026.
 //
 
-import CryptoKit
 import Foundation
 
 /// A parser file that downloads and caches its SMB source on first access.
 struct SmbParserFile: ParserFile {
-    /// Coordinates downloads shared by parser-file values for the same cache path.
-    private actor DownloadRegistry {
-        private var downloadTasks: [String: Task<URL, Error>] = [:]
-
-        func file(
-            at localURL: URL,
-            download: @escaping @Sendable (URL) async throws -> Void
-        ) async throws -> URL {
-            let fileManager = FileManager.default
-            let key = localURL.path(percentEncoded: false)
-
-            if fileManager.fileExists(atPath: key) {
-                Logger.smbBrowsablePlugin.debug(
-                    "SMB parser cache hit: \(key)"
-                )
-                return localURL
-            }
-
-            if let existingTask = downloadTasks[key] {
-                Logger.smbBrowsablePlugin.debug(
-                    "Waiting for SMB parser download: \(key)"
-                )
-                return try await existingTask.value
-            }
-
-            try fileManager.createDirectory(
-                at: localURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-
-            let task = Task<URL, Error> {
-                do {
-                    try await download(localURL)
-                    return localURL
-                } catch {
-                    try? fileManager.removeItem(at: localURL)
-                    throw error
-                }
-            }
-            downloadTasks[key] = task
-
-            do {
-                let result = try await task.value
-                downloadTasks.removeValue(forKey: key)
-                return result
-            } catch {
-                downloadTasks.removeValue(forKey: key)
-                throw error
-            }
-        }
-    }
-
-    private static let downloadRegistry = DownloadRegistry()
-
     let cacheKey: String
     var fileName: String
 
@@ -95,9 +40,12 @@ struct SmbParserFile: ParserFile {
     }
 
     private func localURL() async throws -> URL {
-        let localURL = localURL(for: remotePath)
+        let localURL = BrowsableFileUtilities.parserCacheURL(
+            for: remotePath,
+            in: temporaryDirectory
+        )
         do {
-            return try await Self.downloadRegistry.file(at: localURL) {
+            return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
                 [session, remotePath] localURL in
                 Logger.smbBrowsablePlugin.info(
                     "Downloading SMB parser file: \(remotePath)"
@@ -128,14 +76,5 @@ struct SmbParserFile: ParserFile {
             )
             throw error
         }
-    }
-
-    private func localURL(for relativePath: String) -> URL {
-        let hash = SHA256.hash(data: Data(relativePath.utf8))
-            .map { String(format: "%02x", $0) }
-            .joined()
-        let extensionName = (relativePath as NSString).pathExtension
-        let fileName = extensionName.isEmpty ? hash : "\(hash).\(extensionName)"
-        return temporaryDirectory.appendingPathComponent(fileName, isDirectory: false)
     }
 }
