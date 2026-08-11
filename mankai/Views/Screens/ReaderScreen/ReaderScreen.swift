@@ -149,8 +149,19 @@ private enum ReaderImageLoadResult {
     case failed(String)
 }
 
+private struct ReaderLegacyTabBarModifier: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content
+        } else {
+            content.toolbar(.hidden, for: .tabBar)
+        }
+    }
+}
+
 private struct ReaderNavigationBarController: UIViewControllerRepresentable {
-    let isHidden: Bool
+    let isNavigationBarHidden: Bool
     let onWillDisappear: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -165,11 +176,14 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: Controller, context: Context) {
         context.coordinator.onWillDisappear = onWillDisappear
-        controller.setNavigationBarHidden(isHidden, animated: true)
+        controller.setNavigationBarHidden(isNavigationBarHidden, animated: true)
     }
 
     static func dismantleUIViewController(_ controller: Controller, coordinator _: Coordinator) {
         controller.restoreNavigationBar()
+        if #available(iOS 18.0, *) {
+            controller.tabBarController?.setTabBarHidden(false, animated: true)
+        }
     }
 
     final class Coordinator {
@@ -201,6 +215,13 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             view.isUserInteractionEnabled = false
         }
 
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            if #available(iOS 18.0, *) {
+                tabBarController?.setTabBarHidden(true, animated: animated)
+            }
+        }
+
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             applyNavigationBarVisibility(animated: false)
@@ -216,6 +237,9 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             super.viewWillDisappear(animated)
             shouldHideNavigationBar = false
             restoreNavigationBar(animated: animated)
+            if #available(iOS 18.0, *) {
+                tabBarController?.setTabBarHidden(false, animated: animated)
+            }
             showChrome()
         }
 
@@ -223,10 +247,6 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             guard shouldHideNavigationBar != isHidden else { return }
             shouldHideNavigationBar = isHidden
             applyNavigationBarVisibility(animated: animated)
-        }
-
-        func restoreNavigationBar() {
-            restoreNavigationBar(animated: false)
         }
 
         private func applyNavigationBarVisibility(animated: Bool) {
@@ -243,7 +263,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             updateNavigationBar(navigationBar, transform: transform, animated: animated)
         }
 
-        private func restoreNavigationBar(animated: Bool) {
+        func restoreNavigationBar(animated: Bool = false) {
             guard let navigationBar = navigationController?.navigationBar else { return }
             updateNavigationBar(navigationBar, transform: .identity, animated: animated)
         }
@@ -509,9 +529,9 @@ struct ReaderScreen: View {
         .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar(.hidden, for: .tabBar)
+        .modifier(ReaderLegacyTabBarModifier())
         .background {
-            ReaderNavigationBarController(isHidden: !isChromeVisible) {
+            ReaderNavigationBarController(isNavigationBarHidden: !isChromeVisible) {
                 isChromeVisible = true
             }
         }

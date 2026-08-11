@@ -22,8 +22,6 @@ struct BrowseScreen: View {
     @State private var parsingPaths: Set<String> = []
     @State private var parseErrors: [String: String] = [:]
 
-    @State private var readerRoute: ReaderRoute?
-
     init(plugin: BrowsablePlugin, path: String? = nil, systemImageColor: Color? = nil) {
         self.plugin = plugin
         self.path = path
@@ -49,25 +47,15 @@ struct BrowseScreen: View {
                         .buttonStyle(.plain)
                     case .book(let path, _):
                         if let manga = parsedMangas[path] {
-                            let allChapters = manga.chapters.flatMap(\.chapters)
-                            if allChapters.count == 1 {
-                                Button {
-                                    navigateToReader(manga: manga)
-                                } label: {
-                                    mangaView(manga: manga, entity: entity)
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                NavigationLink(
-                                    destination: MangaDetailsScreen(
-                                        plugin: plugin,
-                                        manga: manga.toManga()
-                                    )
-                                ) {
-                                    mangaView(manga: manga, entity: entity)
-                                }
-                                .buttonStyle(.plain)
+                            NavigationLink(
+                                destination: MangaDetailsScreen(
+                                    plugin: plugin,
+                                    manga: manga.toManga()
+                                )
+                            ) {
+                                mangaView(manga: manga, entity: entity)
                             }
+                            .buttonStyle(.plain)
                         } else {
                             filePlaceholderView(
                                 entity: entity,
@@ -117,46 +105,6 @@ struct BrowseScreen: View {
         .onAppear {
             loadEntities()
         }
-        .navigationDestination(item: $readerRoute) { params in
-            ReaderScreen(
-                plugin: params.plugin,
-                manga: params.manga,
-                downloadManga: params.downloadManga,
-                chapterGroupIndex: params.chapterGroupIndex,
-                chapter: params.chapter,
-                initialPage: params.initialPage
-            )
-        }
-    }
-
-    /// If the manga has only a single chapter, skip the details screen and
-    /// open the reader directly. The reading history is looked up so the
-    /// reader can resume on the last-read page when available.
-    private func navigateToReader(manga: DetailedManga) {
-        let allChapters = manga.chapters.flatMap(\.chapters)
-        guard let chapter = allChapters.first,
-            let chapterGroupIndex = manga.chapters.firstIndex(where: { group in
-                group.chapters.contains { $0.id == chapter.id }
-            })
-        else { return }
-
-        let page: Int?
-        if let record = HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id),
-            record.chapterId == chapter.id
-        {
-            page = record.page
-        } else {
-            page = nil
-        }
-
-        readerRoute = ReaderRoute(
-            plugin: plugin,
-            manga: manga,
-            downloadManga: nil,
-            chapterGroupIndex: chapterGroupIndex,
-            chapter: chapter,
-            initialPage: page
-        )
     }
 
     private var navigationTitle: String {
