@@ -60,6 +60,14 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 
 ## Road to 1.0.0
 
+### App Features
+
+- [ ] **Plugin Installation Deep Links** - Add plugins to Mankai through deep links.
+- [ ] **Export** - Export content from Mankai.
+- [ ] **Sharing** - Share manga as an image.
+- [ ] **Page curl animations** - Add realistic page-turning animations for a more immersive reading experience.
+- [ ] **NavigationTransition (Hero Animation)** - Add smooth hero animations between related views.
+
 ### Sync Engines
 
 - [ ] **iCloud** - Pending availability of resources (aka. I have no money)
@@ -83,6 +91,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 ### AI Features
 
 - [ ] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
+- [ ] **Smart Dark Mode** - Transform page images into dark-friendly versions with AI while preserving readable line art, contrast, and important details.
 
 ## Plugins
 
@@ -109,10 +118,10 @@ This plugin is designed for external providers to use Mankai as a reader and, op
 
 Mankai supports remote sources for browsing and reading manga stored on remote services.
 
-| Protocol   | Description                                                                                                                           | Test Environment                                                    |
-| :--------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------ |
-| **SMB**    | Browse and read manga from an SMB share, with optional username and password authentication.                                         | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba) |
-| **WebDAV** | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                    | [hacdias/webdav](https://github.com/hacdias/webdav)                 |
+| Protocol   | Description                                                                                                        | Test Environment                                                    |
+| :--------- | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **SMB**    | Browse and read manga from an SMB share, with optional username and password authentication.                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba) |
+| **WebDAV** | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication. | [hacdias/webdav](https://github.com/hacdias/webdav)                 |
 
 ## Reader
 
