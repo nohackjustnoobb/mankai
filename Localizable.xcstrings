@@ -5143,6 +5143,22 @@
         }
       }
     },
+    "readerSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reader Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀設定"
+          }
+        }
+      }
+    },
     "readerType" : {
       "localizations" : {
         "en" : {
@@ -5851,6 +5867,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示插件"
+          }
+        }
+      }
+    },
+    "smartGrouping" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart Grouping"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能分組"
+          }
+        }
+      }
+    },
+    "smartGroupingDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart grouping uses deep learning to automatically organize pages based on content similarity. Results may vary, and enabling this feature could impact performance and battery life."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能分組利用深度學習技術，根據內容相似度自動對頁面進行分類。請注意，分組結果可能不盡完美，且可能會影響執行效能和電池續航力。"
           }
         }
       }
@@ -6566,38 +6614,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用者名稱"
-          }
-        }
-      }
-    },
-    "useSmartGrouping" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use Smart Grouping"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用智能分組"
-          }
-        }
-      }
-    },
-    "useSmartGroupingDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Smart grouping uses deep learning to automatically organize pages based on content similarity. Results may vary, and enabling this feature could impact performance and battery life."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "智能分組利用深度學習技術，根據內容相似度自動對頁面進行分類。請注意，分組結果可能不盡完美，且可能會影響執行效能和電池續航力。"
           }
         }
       }

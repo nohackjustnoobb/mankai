@@ -11,7 +11,6 @@ import UIKit
 private struct ReaderChapterLoadKey: Hashable {
     let chapterID: String?
     let retryGeneration: Int
-    let retainImageData: Bool
 }
 
 private struct ReaderAdjacencyKey: Hashable {
@@ -21,10 +20,30 @@ private struct ReaderAdjacencyKey: Hashable {
     let enabled: Bool
 }
 
+private struct ReaderAdjacencyPair {
+    let firstURL: String
+    let secondURL: String
+    let leftImage: TempImage
+    let rightImage: TempImage
+
+    var key: String {
+        ReaderGrouping.pairKey(firstURL, secondURL)
+    }
+
+    var urls: [String] {
+        [firstURL, secondURL]
+    }
+
+    var images: [TempImage] {
+        [leftImage, rightImage]
+    }
+}
+
 private struct ReaderGroupingKey: Equatable {
+    let readerType: ReaderType
     let imageLayout: ImageLayout
     let readingDirection: ReadingDirection
-    let useSmartGrouping: Bool
+    let smartGrouping: Bool
     let sensitivity: Double
     let viewportWidth: Int
     let viewportHeight: Int
@@ -52,7 +71,7 @@ private enum ReaderGrouping {
         urls: [String],
         images: [String: ReaderImageState],
         defaultGroupSize: Int,
-        useSmartGrouping: Bool,
+        smartGrouping: Bool,
         smartGroupingSensitivity: Double,
         adjacencyScores: [String: Double]
     ) -> [ReaderGroup] {
@@ -73,7 +92,7 @@ private enum ReaderGrouping {
                 if isSpread(
                     url,
                     nextURL,
-                    useSmartGrouping: useSmartGrouping,
+                    smartGrouping: smartGrouping,
                     sensitivity: smartGroupingSensitivity,
                     adjacencyScores: adjacencyScores
                 ) {
@@ -94,7 +113,7 @@ private enum ReaderGrouping {
                     isSpread(
                         candidateURL,
                         urls[candidateIndex + 1],
-                        useSmartGrouping: useSmartGrouping,
+                        smartGrouping: smartGrouping,
                         sensitivity: smartGroupingSensitivity,
                         adjacencyScores: adjacencyScores
                     )
@@ -130,11 +149,11 @@ private enum ReaderGrouping {
     private static func isSpread(
         _ firstURL: String,
         _ secondURL: String,
-        useSmartGrouping: Bool,
+        smartGrouping: Bool,
         sensitivity: Double,
         adjacencyScores: [String: Double]
     ) -> Bool {
-        guard useSmartGrouping else { return false }
+        guard smartGrouping else { return false }
         return adjacencyScores[pairKey(firstURL, secondURL), default: 0] > (1 - sensitivity)
     }
 }
@@ -309,8 +328,8 @@ struct ReaderScreen: View {
     private var imageLayoutRawValue: Int = SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue)
     private var respectMangaReadingDirection = SettingsDefaults.respectMangaReadingDirection
-    @AppStorage(SettingsKey.useSmartGrouping.rawValue)
-    private var useSmartGrouping = SettingsDefaults.useSmartGrouping
+    @AppStorage(SettingsKey.smartGrouping.rawValue)
+    private var smartGrouping = SettingsDefaults.smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue)
     private var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
     @AppStorage(SettingsKey.downsampleImages.rawValue)
@@ -418,6 +437,82 @@ struct ReaderScreen: View {
         ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout
     }
 
+    private var readerTypeSelection: Binding<ReaderType> {
+        Binding(
+            get: { readerType },
+            set: { readerType in
+                scheduleCurrentPageNavigationCommand()
+                readerTypeRawValue = readerType.rawValue
+            }
+        )
+    }
+
+    private var imageLayoutSelection: Binding<ImageLayout> {
+        Binding(
+            get: {
+                ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout
+            },
+            set: { imageLayout in
+                scheduleCurrentPageNavigationCommand()
+                imageLayoutRawValue = imageLayout.rawValue
+            }
+        )
+    }
+
+    private var readingDirectionSelection: Binding<ReadingDirection> {
+        Binding(
+            get: { readingDirection },
+            set: { direction in
+                scheduleCurrentPageNavigationCommand()
+                switch readerType {
+                case .continuous:
+                    continuousDirectionRawValue = direction.rawValue
+                case .paged:
+                    pagedDirectionRawValue = direction.rawValue
+                }
+            }
+        )
+    }
+
+    private var smartGroupingSelection: Binding<Bool> {
+        Binding(
+            get: { smartGrouping },
+            set: { isEnabled in
+                scheduleCurrentPageNavigationCommand()
+                smartGrouping = isEnabled
+            }
+        )
+    }
+
+    private var tapNavigationSelection: Binding<Bool> {
+        Binding(
+            get: {
+                readerType == .continuous ? continuousTapNavigation : pagedTapNavigation
+            },
+            set: { isEnabled in
+                switch readerType {
+                case .continuous:
+                    continuousTapNavigation = isEnabled
+                case .paged:
+                    pagedTapNavigation = isEnabled
+                }
+            }
+        )
+    }
+
+    private var navigationOrientationSelection: Binding<NavigationOrientation> {
+        Binding(
+            get: {
+                NavigationOrientation(rawValue: pagedOrientationRawValue)
+                    ?? SettingsDefaults.PR_navigationOrientation
+            },
+            set: { orientation in
+                scheduleCurrentPageNavigationCommand()
+                pagedOrientationRawValue = orientation.rawValue
+            }
+        )
+    }
+
     private var defaultGroupSize: Int {
         ReaderGrouping.defaultGroupSize(
             readingDirection: readingDirection,
@@ -472,8 +567,7 @@ struct ReaderScreen: View {
     private var chapterLoadKey: ReaderChapterLoadKey {
         ReaderChapterLoadKey(
             chapterID: currentChapter?.id,
-            retryGeneration: retryGeneration,
-            retainImageData: useSmartGrouping && readingDirection != .vertical
+            retryGeneration: retryGeneration
         )
     }
 
@@ -482,15 +576,16 @@ struct ReaderScreen: View {
             chapterLoadKey: chapterLoadKey,
             imagesSettled: imageLoadingFinished,
             readingDirection: readingDirection,
-            enabled: useSmartGrouping && readingDirection != .vertical
+            enabled: smartGrouping && readingDirection != .vertical
         )
     }
 
     private var groupingKey: ReaderGroupingKey {
         ReaderGroupingKey(
+            readerType: readerType,
             imageLayout: imageLayout,
             readingDirection: readingDirection,
-            useSmartGrouping: useSmartGrouping,
+            smartGrouping: smartGrouping,
             sensitivity: smartGroupingSensitivity,
             viewportWidth: Int(viewportSize.width.rounded()),
             viewportHeight: Int(viewportSize.height.rounded())
@@ -529,6 +624,11 @@ struct ReaderScreen: View {
         .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                readerSettingsMenu
+            }
+        }
         .modifier(ReaderLegacyTabBarModifier())
         .background {
             ReaderNavigationBarController(isNavigationBarHidden: !isChromeVisible) {
@@ -564,6 +664,61 @@ struct ReaderScreen: View {
         .onDisappear {
             finishReading()
         }
+    }
+
+    private var readerSettingsMenu: some View {
+        Menu {
+            Picker(selection: readerTypeSelection) {
+                Text("paged").tag(ReaderType.paged)
+                Text("continuous").tag(ReaderType.continuous)
+            } label: {
+                Label("readerType", systemImage: "book.pages")
+            }
+            .disabled(respectMangaReadingDirection && manga.readingDirection == .vertical)
+
+            Section("readerSettings") {
+                Picker(selection: readingDirectionSelection) {
+                    Text("leftToRight").tag(ReadingDirection.leftToRight)
+                    Text("rightToLeft").tag(ReadingDirection.rightToLeft)
+                } label: {
+                    Label("readingDirection", systemImage: "arrow.left.arrow.right")
+                }
+                .disabled(respectMangaReadingDirection && manga.readingDirection != nil)
+                .pickerStyle(.menu)
+
+                if readerType == .paged {
+                    Picker(selection: navigationOrientationSelection) {
+                        Text("horizontal").tag(NavigationOrientation.horizontal)
+                        Text("vertical").tag(NavigationOrientation.vertical)
+                    } label: {
+                        Label("navigationOrientation", systemImage: "rectangle.portrait.rotate")
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Toggle(isOn: tapNavigationSelection) {
+                    Label("tapNavigation", systemImage: "hand.tap")
+                }
+            }
+
+            Section("imageGrouping") {
+                Picker(selection: imageLayoutSelection) {
+                    Text("auto").tag(ImageLayout.auto)
+                    Text("onePerRow").tag(ImageLayout.onePerRow)
+                    Text("twoPerRow").tag(ImageLayout.twoPerRow)
+                } label: {
+                    Label("imageLayout", systemImage: "rectangle.grid.2x2")
+                }
+                .pickerStyle(.menu)
+
+                Toggle(isOn: smartGroupingSelection) {
+                    Label("smartGrouping", systemImage: "sparkles")
+                }
+            }
+        } label: {
+            Label("settings", systemImage: "gearshape")
+        }
+        .menuOrder(.fixed)
     }
 
     @ViewBuilder
@@ -752,6 +907,23 @@ struct ReaderScreen: View {
         scheduleSave()
     }
 
+    private func scheduleCurrentPageNavigationCommand() {
+        guard urls.indices.contains(currentPage) else { return }
+        let targetURL = urls[currentPage]
+
+        DispatchQueue.main.async {
+            guard let targetPage = urls.firstIndex(of: targetURL) else { return }
+
+            currentPage = targetPage
+            navigationGeneration += 1
+            navigationCommand = ReaderNavigationCommand(
+                generation: navigationGeneration,
+                targetURL: targetURL,
+                animated: false
+            )
+        }
+    }
+
     private func stepChapter(_ step: ReaderStep) {
         let targetIndex = step == .previous ? currentChapterIndex - 1 : currentChapterIndex + 1
         guard chapterAvailability(at: targetIndex) == .available else { return }
@@ -824,16 +996,20 @@ struct ReaderScreen: View {
             let requestedPage: Int
             if pendingInitialPage == -1 {
                 requestedPage = loadedURLs.count - 1
+            } else if let pendingInitialPage {
+                requestedPage = pendingInitialPage
             } else {
-                requestedPage = pendingInitialPage ?? 0
+                requestedPage = 0
             }
             pendingInitialPage = nil
             requestPage(min(max(requestedPage, 0), loadedURLs.count - 1), animated: false)
 
+            let retainImageData = smartGrouping && readingDirection != .vertical
+
             await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
                 for url in loadedURLs {
                     taskGroup.addTask {
-                        await loadImage(url: url, retainData: key.retainImageData)
+                        await loadImage(url: url, retainData: retainImageData)
                     }
                 }
 
@@ -849,7 +1025,7 @@ struct ReaderScreen: View {
                     case .failed(let url):
                         images[url] = .failed
                     }
-                    regroup()
+                    regroup(keepCurrentPageVisible: true)
                 }
             }
 
@@ -884,14 +1060,7 @@ struct ReaderScreen: View {
         for retry in 0...3 {
             do {
                 try Task.checkCancellation()
-                let data: Data
-                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url),
-                    downloaded
-                {
-                    data = try await DownloadPlugin.shared.getImage(url)
-                } else {
-                    data = try await plugin.getImage(url)
-                }
+                let data = try await imageData(for: url)
 
                 let targetSize =
                     viewportSize == .zero
@@ -925,68 +1094,109 @@ struct ReaderScreen: View {
         return .failed(url)
     }
 
+    private func imageData(for url: String) async throws -> Data {
+        if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
+            return try await DownloadPlugin.shared.getImage(url)
+        }
+        return try await plugin.getImage(url)
+    }
+
+    private func restoreImageData(url: String) async -> Data? {
+        for retry in 0...3 {
+            do {
+                try Task.checkCancellation()
+                return try await imageData(for: url)
+            } catch is CancellationError {
+                return nil
+            } catch {
+                if retry == 3 {
+                    Logger.ui.error("Failed to restore reader image data", error: error)
+                }
+            }
+
+            guard retry < 3 else { break }
+            let delay = UInt64(1 << retry) * 1_000_000_000
+            do {
+                try await Task.sleep(nanoseconds: delay)
+            } catch {
+                return nil
+            }
+        }
+
+        return nil
+    }
+
     @MainActor
     private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
         guard key.enabled, key.imagesSettled, key.chapterLoadKey == chapterLoadKey else { return }
 
-        let pairs: [(String, String, TempImage, TempImage)] = urls.indices.dropLast().compactMap {
-            index in
+        let pairs = urls.indices.dropLast().compactMap { index -> ReaderAdjacencyPair? in
             let firstURL = urls[index]
             let secondURL = urls[index + 1]
-            let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
-            guard !checkedPairs.contains(pairKey),
+            guard !checkedPairs.contains(ReaderGrouping.pairKey(firstURL, secondURL)),
                 case .success(let firstImage) = images[firstURL],
                 case .success(let secondImage) = images[secondURL]
             else { return nil }
 
-            if readingDirection == .rightToLeft {
-                return (firstURL, secondURL, secondImage, firstImage)
-            }
-            return (firstURL, secondURL, firstImage, secondImage)
+            let isRightToLeft = readingDirection == .rightToLeft
+            return ReaderAdjacencyPair(
+                firstURL: firstURL,
+                secondURL: secondURL,
+                leftImage: isRightToLeft ? secondImage : firstImage,
+                rightImage: isRightToLeft ? firstImage : secondImage
+            )
         }
 
         Logger.adjacencyModel.notice(
             "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages"
         )
 
-        var remainingUses: [ObjectIdentifier: Int] = [:]
-        for (_, _, firstImage, secondImage) in pairs {
-            remainingUses[ObjectIdentifier(firstImage), default: 0] += 1
-            remainingUses[ObjectIdentifier(secondImage), default: 0] += 1
+        let requiredURLs = Set(pairs.flatMap(\.urls))
+        for url in urls where requiredURLs.contains(url) {
+            guard case .success(let image) = images[url], !image.hasAnalysisSource else {
+                continue
+            }
+
+            guard let data = await restoreImageData(url: url) else { continue }
+            guard !Task.isCancelled, adjacencyKey == key else { return }
+            image.restoreSourceData(data)
+        }
+
+        var remainingImageUses: [ObjectIdentifier: Int] = [:]
+        for image in pairs.flatMap(\.images) {
+            remainingImageUses[ObjectIdentifier(image), default: 0] += 1
         }
 
         for state in images.values {
             guard case .success(let image) = state,
-                remainingUses[ObjectIdentifier(image)] == nil
+                remainingImageUses[ObjectIdentifier(image)] == nil
             else { continue }
             image.releaseData()
         }
 
         var completedCount = 0
 
-        for (firstURL, secondURL, firstImage, secondImage) in pairs {
-            let pairKey = ReaderGrouping.pairKey(firstURL, secondURL)
-
+        for pair in pairs {
             do {
                 guard
-                    let firstCIImage = ciImage(
-                        from: firstImage,
-                        remainingUses: &remainingUses
+                    let leftCIImage = consumeCIImage(
+                        from: pair.leftImage,
+                        remainingUses: &remainingImageUses
                     ),
-                    let secondCIImage = ciImage(
-                        from: secondImage,
-                        remainingUses: &remainingUses
+                    let rightCIImage = consumeCIImage(
+                        from: pair.rightImage,
+                        remainingUses: &remainingImageUses
                     )
                 else {
                     Logger.adjacencyModel.error(
-                        "Missing retained image data for adjacency pair \(pairKey)"
+                        "Missing retained image data for adjacency pair \(pair.key)"
                     )
                     continue
                 }
 
                 let score = try await AdjacencyModelWrapper.shared.predict(
-                    image1: firstCIImage,
-                    image2: secondCIImage
+                    image1: leftCIImage,
+                    image2: rightCIImage
                 )
 
                 guard !Task.isCancelled, adjacencyKey == key else {
@@ -995,10 +1205,10 @@ struct ReaderScreen: View {
                     )
                     return
                 }
-                checkedPairs.insert(pairKey)
-                adjacencyScores[pairKey] = score
+                checkedPairs.insert(pair.key)
+                adjacencyScores[pair.key] = score
                 completedCount += 1
-                regroup()
+                regroup(keepCurrentPageVisible: true)
             } catch is CancellationError {
                 Logger.adjacencyModel.notice(
                     "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
@@ -1014,19 +1224,22 @@ struct ReaderScreen: View {
         )
     }
 
-    private func ciImage(
+    private func consumeCIImage(
         from image: TempImage,
         remainingUses: inout [ObjectIdentifier: Int]
     ) -> CIImage? {
         let identifier = ObjectIdentifier(image)
-        guard let count = remainingUses[identifier], count > 0 else { return nil }
+        guard let remainingUseCount = remainingUses[identifier], remainingUseCount > 0 else {
+            return nil
+        }
 
-        guard let ciImage = image.ciImage(retainData: count > 1) else { return nil }
+        let hasFutureUse = remainingUseCount > 1
+        guard let ciImage = image.ciImage(retainData: hasFutureUse) else { return nil }
 
-        if count <= 1 {
-            remainingUses[identifier] = nil
+        if hasFutureUse {
+            remainingUses[identifier] = remainingUseCount - 1
         } else {
-            remainingUses[identifier] = count - 1
+            remainingUses.removeValue(forKey: identifier)
         }
 
         return ciImage
@@ -1038,7 +1251,7 @@ struct ReaderScreen: View {
             urls: urls,
             images: images,
             defaultGroupSize: defaultGroupSize,
-            useSmartGrouping: useSmartGrouping && readingDirection != .vertical,
+            smartGrouping: smartGrouping && readingDirection != .vertical,
             smartGroupingSensitivity: smartGroupingSensitivity,
             adjacencyScores: adjacencyScores
         )

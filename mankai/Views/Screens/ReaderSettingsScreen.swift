@@ -15,8 +15,8 @@ struct ReaderSettingsScreen: View {
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
         var respectMangaReadingDirection: Bool =
             SettingsDefaults.respectMangaReadingDirection
-    @AppStorage(SettingsKey.useSmartGrouping.rawValue) private var useSmartGrouping: Bool =
-        SettingsDefaults.useSmartGrouping
+    @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping: Bool =
+        SettingsDefaults.smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
         Double =
             SettingsDefaults.smartGroupingSensitivity
@@ -48,15 +48,15 @@ struct ReaderSettingsScreen: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     Toggle(
-                        String(localized: "useSmartGrouping"),
-                        isOn: $useSmartGrouping
+                        String(localized: "smartGrouping"),
+                        isOn: $smartGrouping
                     )
-                    Text("useSmartGroupingDescription")
+                    Text("smartGroupingDescription")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
-                if useSmartGrouping {
+                if smartGrouping {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("smartGroupingSensitivity")
                         Slider(
@@ -107,7 +107,7 @@ struct ReaderSettingsScreen: View {
         }
         .navigationTitle("reader")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: useSmartGrouping) { _, isEnabled in
+        .onChange(of: smartGrouping) { _, isEnabled in
             guard !isEnabled else { return }
 
             Task {

@@ -20,7 +20,7 @@ enum SettingsDefaults {
     // Shared Reader Settings
     static let imageLayout: ImageLayout = .auto
     static let respectMangaReadingDirection: Bool = true
-    static let useSmartGrouping: Bool = false
+    static let smartGrouping: Bool = false
     static let smartGroupingSensitivity: Double = 0.5
 
     /// Default Reader

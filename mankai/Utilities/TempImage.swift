@@ -18,6 +18,10 @@ final class TempImage {
     private var cachedUIImage: UIImage?
     private var cachedCIImage: CIImage?
 
+    var hasAnalysisSource: Bool {
+        data != nil || cachedCIImage != nil
+    }
+
     var size: CGSize {
         cachedUIImage?.size ?? .zero
     }
@@ -78,6 +82,11 @@ final class TempImage {
     func releaseData() {
         data = nil
         cachedCIImage = nil
+    }
+
+    func restoreSourceData(_ data: Data) {
+        guard !hasAnalysisSource else { return }
+        self.data = data
     }
 
     private func releaseDataIfNeeded(retainData: Bool) {
