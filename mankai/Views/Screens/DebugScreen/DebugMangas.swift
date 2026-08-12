@@ -43,7 +43,7 @@ struct DebugMangas: View {
                             Text("status")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text(manga.status.statusText)
+                            Text(manga.status.localizedName)
                                 .font(.caption)
                                 .foregroundColor(.primary)
                         }

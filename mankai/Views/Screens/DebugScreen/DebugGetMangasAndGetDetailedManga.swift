@@ -77,7 +77,7 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     )
                                     InfoRow(
                                         label: String(localized: "status"),
-                                        value: detailedManga.status.statusText
+                                        value: detailedManga.status.localizedName
                                     )
                                     InfoRow(
                                         label: String(localized: "description"),

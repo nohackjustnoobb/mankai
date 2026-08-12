@@ -41,9 +41,9 @@ struct ReaderSettingsScreen: View {
                         set: { imageLayoutRawValue = $0.rawValue }
                     )
                 ) {
-                    Text("auto").tag(ImageLayout.auto)
-                    Text("onePerRow").tag(ImageLayout.onePerRow)
-                    Text("twoPerRow").tag(ImageLayout.twoPerRow)
+                    Text(ImageLayout.auto.localizedName).tag(ImageLayout.auto)
+                    Text(ImageLayout.onePerRow.localizedName).tag(ImageLayout.onePerRow)
+                    Text(ImageLayout.twoPerRow.localizedName).tag(ImageLayout.twoPerRow)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -91,8 +91,8 @@ struct ReaderSettingsScreen: View {
                         set: { readerTypeRawValue = $0.rawValue }
                     )
                 ) {
-                    Text("paged").tag(ReaderType.paged)
-                    Text("continuous").tag(ReaderType.continuous)
+                    Text(ReaderType.paged.localizedName).tag(ReaderType.paged)
+                    Text(ReaderType.continuous.localizedName).tag(ReaderType.continuous)
                 }
             }
 
@@ -140,8 +140,8 @@ struct ContinuousReaderSettingsView: View {
                     set: { readingDirectionRawValue = $0.rawValue }
                 )
             ) {
-                Text("leftToRight").tag(ReadingDirection.leftToRight)
-                Text("rightToLeft").tag(ReadingDirection.rightToLeft)
+                Text(ReadingDirection.leftToRight.localizedName).tag(ReadingDirection.leftToRight)
+                Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
             Toggle(
@@ -171,6 +171,8 @@ struct PagedReaderSettingsView: View {
     @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private
         var navigationOrientationRawValue: Int =
             SettingsDefaults.PR_navigationOrientation.rawValue
+    @AppStorage(SettingsKey.PR_pageTransition.rawValue) private var pageTransitionRawValue: Int =
+        SettingsDefaults.PR_pageTransition.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.PR_tapNavigation
     @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
@@ -193,8 +195,24 @@ struct PagedReaderSettingsView: View {
                     set: { navigationOrientationRawValue = $0.rawValue }
                 )
             ) {
-                Text("horizontal").tag(NavigationOrientation.horizontal)
-                Text("vertical").tag(NavigationOrientation.vertical)
+                Text(NavigationOrientation.horizontal.localizedName)
+                    .tag(NavigationOrientation.horizontal)
+                Text(NavigationOrientation.vertical.localizedName)
+                    .tag(NavigationOrientation.vertical)
+            }
+
+            Picker(
+                "pageTransition",
+                selection: Binding(
+                    get: {
+                        PageTransition(rawValue: pageTransitionRawValue)
+                            ?? SettingsDefaults.PR_pageTransition
+                    },
+                    set: { pageTransitionRawValue = $0.rawValue }
+                )
+            ) {
+                Text(PageTransition.scroll.localizedName).tag(PageTransition.scroll)
+                Text(PageTransition.pageCurl.localizedName).tag(PageTransition.pageCurl)
             }
 
             Picker(
@@ -207,8 +225,8 @@ struct PagedReaderSettingsView: View {
                     set: { readingDirectionRawValue = $0.rawValue }
                 )
             ) {
-                Text("leftToRight").tag(ReadingDirection.leftToRight)
-                Text("rightToLeft").tag(ReadingDirection.rightToLeft)
+                Text(ReadingDirection.leftToRight.localizedName).tag(ReadingDirection.leftToRight)
+                Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
             Toggle(
@@ -227,8 +245,9 @@ struct PagedReaderSettingsView: View {
                         set: { tapNavigationBehaviorRawValue = $0.rawValue }
                     )
                 ) {
-                    Text("previousNext").tag(TapBehavior.previousNext)
-                    Text("followReadingDirection").tag(TapBehavior.followReadingDirection)
+                    Text(TapBehavior.previousNext.localizedName).tag(TapBehavior.previousNext)
+                    Text(TapBehavior.followReadingDirection.localizedName)
+                        .tag(TapBehavior.followReadingDirection)
                 }
             }
         }

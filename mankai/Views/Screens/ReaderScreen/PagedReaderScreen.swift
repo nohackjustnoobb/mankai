@@ -162,6 +162,8 @@ private final class PagedReaderViewController: UIViewController,
             self.configuration.navigationOrientation
             != configuration.navigationOrientation
         let directionChanged = self.configuration.readingDirection != configuration.readingDirection
+        let transitionChanged =
+            self.configuration.pageTransition != configuration.pageTransition
 
         renderState = state
         self.configuration = configuration
@@ -173,11 +175,13 @@ private final class PagedReaderViewController: UIViewController,
             currentGroup = 0
         }
 
-        if orientationChanged || directionChanged {
+        if orientationChanged || directionChanged || transitionChanged {
             recreatePageViewController()
         }
 
-        if chapterChanged || contentChanged || orientationChanged || directionChanged {
+        if chapterChanged || contentChanged || orientationChanged || directionChanged
+            || transitionChanged
+        {
             applyCurrentState(force: true)
         }
 
@@ -229,9 +233,25 @@ private final class PagedReaderViewController: UIViewController,
     private func createPageViewController() {
         let orientation: UIPageViewController.NavigationOrientation =
             configuration.navigationOrientation == .vertical ? .vertical : .horizontal
+        let transitionStyle: UIPageViewController.TransitionStyle =
+            configuration.pageTransition == .pageCurl ? .pageCurl : .scroll
+        let spineLocation: UIPageViewController.SpineLocation =
+            configuration.navigationOrientation == .horizontal
+                && configuration.readingDirection == .rightToLeft
+            ? .max
+            : .min
+        let options: [UIPageViewController.OptionsKey: Any]? =
+            transitionStyle == .pageCurl
+            ? [
+                .spineLocation: NSNumber(
+                    value: spineLocation.rawValue
+                )
+            ]
+            : nil
         pageViewController = UIPageViewController(
-            transitionStyle: .scroll,
-            navigationOrientation: orientation
+            transitionStyle: transitionStyle,
+            navigationOrientation: orientation,
+            options: options
         )
         pageViewController.dataSource = self
         pageViewController.delegate = self

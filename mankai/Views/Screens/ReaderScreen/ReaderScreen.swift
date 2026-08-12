@@ -350,6 +350,8 @@ struct ReaderScreen: View {
     private var pagedDirectionRawValue = SettingsDefaults.PR_readingDirection.rawValue
     @AppStorage(SettingsKey.PR_navigationOrientation.rawValue)
     private var pagedOrientationRawValue = SettingsDefaults.PR_navigationOrientation.rawValue
+    @AppStorage(SettingsKey.PR_pageTransition.rawValue)
+    private var pagedTransitionRawValue = SettingsDefaults.PR_pageTransition.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue)
     private var pagedTapNavigation = SettingsDefaults.PR_tapNavigation
     @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue)
@@ -500,6 +502,23 @@ struct ReaderScreen: View {
         )
     }
 
+    private var followReadingDirectionSelection: Binding<Bool> {
+        Binding(
+            get: {
+                let behavior =
+                    TapBehavior(rawValue: pagedTapBehaviorRawValue)
+                    ?? SettingsDefaults.PR_tapNavigationBehavior
+                return behavior == .followReadingDirection
+            },
+            set: { isEnabled in
+                pagedTapBehaviorRawValue =
+                    isEnabled
+                    ? TapBehavior.followReadingDirection.rawValue
+                    : TapBehavior.previousNext.rawValue
+            }
+        )
+    }
+
     private var navigationOrientationSelection: Binding<NavigationOrientation> {
         Binding(
             get: {
@@ -509,6 +528,19 @@ struct ReaderScreen: View {
             set: { orientation in
                 scheduleCurrentPageNavigationCommand()
                 pagedOrientationRawValue = orientation.rawValue
+            }
+        )
+    }
+
+    private var pageTransitionSelection: Binding<PageTransition> {
+        Binding(
+            get: {
+                PageTransition(rawValue: pagedTransitionRawValue)
+                    ?? SettingsDefaults.PR_pageTransition
+            },
+            set: { transition in
+                scheduleCurrentPageNavigationCommand()
+                pagedTransitionRawValue = transition.rawValue
             }
         )
     }
@@ -534,6 +566,8 @@ struct ReaderScreen: View {
                 ?? SettingsDefaults.PR_tapNavigationBehavior,
             navigationOrientation: NavigationOrientation(rawValue: pagedOrientationRawValue)
                 ?? SettingsDefaults.PR_navigationOrientation,
+            pageTransition: PageTransition(rawValue: pagedTransitionRawValue)
+                ?? SettingsDefaults.PR_pageTransition,
 
             snapToPage: continuousSnapToPage,
             softSnap: continuousSoftSnap
@@ -669,29 +703,58 @@ struct ReaderScreen: View {
     private var readerSettingsMenu: some View {
         Menu {
             Picker(selection: readerTypeSelection) {
-                Text("paged").tag(ReaderType.paged)
-                Text("continuous").tag(ReaderType.continuous)
+                Text(ReaderType.paged.localizedName).tag(ReaderType.paged)
+                Text(ReaderType.continuous.localizedName).tag(ReaderType.continuous)
             } label: {
                 Label("readerType", systemImage: "book.pages")
             }
             .disabled(respectMangaReadingDirection && manga.readingDirection == .vertical)
 
             Section("readerSettings") {
-                Picker(selection: readingDirectionSelection) {
-                    Text("leftToRight").tag(ReadingDirection.leftToRight)
-                    Text("rightToLeft").tag(ReadingDirection.rightToLeft)
+                Button {
+                    readingDirectionSelection.wrappedValue =
+                        readingDirection == .leftToRight ? .rightToLeft : .leftToRight
                 } label: {
-                    Label("readingDirection", systemImage: "arrow.left.arrow.right")
+                    Label {
+                        Text("reverseReadingDirection")
+                    } icon: {
+                        if #available(iOS 18.0, *) {
+                            Image(
+                                systemName: readingDirection == .rightToLeft
+                                    ? "inset.filled.lefthalf.arrow.left.rectangle"
+                                    : "inset.filled.righthalf.arrow.right.rectangle"
+                            )
+                        } else {
+                            Image(
+                                systemName: readingDirection == .rightToLeft
+                                    ? "rectangle.lefthalf.inset.filled.arrow.left"
+                                    : "rectangle.righthalf.inset.filled.arrow.right"
+                            )
+                        }
+                    }
+                    Text(readingDirection.localizedName)
                 }
                 .disabled(respectMangaReadingDirection && manga.readingDirection != nil)
-                .pickerStyle(.menu)
 
                 if readerType == .paged {
-                    Picker(selection: navigationOrientationSelection) {
-                        Text("horizontal").tag(NavigationOrientation.horizontal)
-                        Text("vertical").tag(NavigationOrientation.vertical)
+                    Button {
+                        navigationOrientationSelection.wrappedValue =
+                            navigationOrientationSelection.wrappedValue == .horizontal
+                            ? .vertical
+                            : .horizontal
                     } label: {
-                        Label("navigationOrientation", systemImage: "rectangle.portrait.rotate")
+                        Label(
+                            "switchNavigationOrientation",
+                            systemImage: "rectangle.portrait.rotate"
+                        )
+                        Text(navigationOrientationSelection.wrappedValue.localizedName)
+                    }
+
+                    Picker(selection: pageTransitionSelection) {
+                        Text(PageTransition.scroll.localizedName).tag(PageTransition.scroll)
+                        Text(PageTransition.pageCurl.localizedName).tag(PageTransition.pageCurl)
+                    } label: {
+                        Label("pageTransition", systemImage: "book.pages")
                     }
                     .pickerStyle(.menu)
                 }
@@ -699,13 +762,24 @@ struct ReaderScreen: View {
                 Toggle(isOn: tapNavigationSelection) {
                     Label("tapNavigation", systemImage: "hand.tap")
                 }
+
+                if readerType == .paged, pagedTapNavigation,
+                    navigationOrientationSelection.wrappedValue == .horizontal
+                {
+                    Toggle(isOn: followReadingDirectionSelection) {
+                        Label(
+                            TapBehavior.followReadingDirection.localizedName,
+                            systemImage: "arrow.left.arrow.right"
+                        )
+                    }
+                }
             }
 
             Section("imageGrouping") {
                 Picker(selection: imageLayoutSelection) {
-                    Text("auto").tag(ImageLayout.auto)
-                    Text("onePerRow").tag(ImageLayout.onePerRow)
-                    Text("twoPerRow").tag(ImageLayout.twoPerRow)
+                    Text(ImageLayout.auto.localizedName).tag(ImageLayout.auto)
+                    Text(ImageLayout.onePerRow.localizedName).tag(ImageLayout.onePerRow)
+                    Text(ImageLayout.twoPerRow.localizedName).tag(ImageLayout.twoPerRow)
                 } label: {
                     Label("imageLayout", systemImage: "rectangle.grid.2x2")
                 }

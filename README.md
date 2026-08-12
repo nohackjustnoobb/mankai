@@ -65,7 +65,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It
 - [ ] **Plugin Installation Deep Links** - Add plugins to Mankai through deep links.
 - [ ] **Export** - Export content from Mankai.
 - [ ] **Sharing** - Share manga as an image.
-- [ ] **Page curl animations** - Add realistic page-turning animations for a more immersive reading experience.
+- [x] **Page curl animations** - Choose realistic page-turning animations in the paged reader for a more immersive reading experience.
 - [ ] **NavigationTransition (Hero Animation)** - Add smooth hero animations between related views.
 
 ### Sync Engines
@@ -128,7 +128,7 @@ Mankai supports remote sources for browsing and reading manga stored on remote s
 Mankai provides two high-performance reading modes, both implemented in UIKit to ensure smooth scrolling and page transitions:
 
 - **Continuous Reader**: A traditional webtoon-style vertical scrolling experience.
-- **Paged Reader**: A paginated experience supporting both vertical and horizontal reading directions.
+- **Paged Reader**: A paginated experience supporting vertical and horizontal navigation, with scroll and page-curl transition styles.
 
 ### Smart Grouping
 

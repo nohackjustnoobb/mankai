@@ -67,11 +67,12 @@ struct GeneralSettingsScreen: View {
                         set: { diskCacheSizeLimitRawValue = $0.rawValue }
                     )
                 ) {
-                    Text("500mb").tag(DiskCacheLimit.fiveHundredMB)
-                    Text("1gb").tag(DiskCacheLimit.oneGB)
-                    Text("2gb").tag(DiskCacheLimit.twoGB)
-                    Text("5gb").tag(DiskCacheLimit.fiveGB)
-                    Text("10gb").tag(DiskCacheLimit.tenGB)
+                    Text(DiskCacheLimit.fiveHundredMB.localizedName)
+                        .tag(DiskCacheLimit.fiveHundredMB)
+                    Text(DiskCacheLimit.oneGB.localizedName).tag(DiskCacheLimit.oneGB)
+                    Text(DiskCacheLimit.twoGB.localizedName).tag(DiskCacheLimit.twoGB)
+                    Text(DiskCacheLimit.fiveGB.localizedName).tag(DiskCacheLimit.fiveGB)
+                    Text(DiskCacheLimit.tenGB.localizedName).tag(DiskCacheLimit.tenGB)
                 }
 
                 LabeledContent("cacheSize") {

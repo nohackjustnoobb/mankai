@@ -36,6 +36,7 @@ enum SettingsDefaults {
 
     // Paged Reader Defaults
     static let PR_navigationOrientation: NavigationOrientation = .vertical
+    static let PR_pageTransition: PageTransition = .scroll
     static let PR_readingDirection: ReadingDirection = .rightToLeft
     static let PR_tapNavigation: Bool = true
     static let PR_tapNavigationBehavior: TapBehavior = .followReadingDirection

@@ -4695,6 +4695,22 @@
         }
       }
     },
+    "pageCurl" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page Curl"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仿真翻頁"
+          }
+        }
+      }
+    },
     "paged" : {
       "localizations" : {
         "en" : {
@@ -4723,6 +4739,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "翻頁閱讀設定"
+          }
+        }
+      }
+    },
+    "pageTransition" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page Transition"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻頁效果"
           }
         }
       }
@@ -5479,6 +5511,22 @@
         }
       }
     },
+    "reverseReadingDirection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reverse Reading Direction"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "反轉閱讀方向"
+          }
+        }
+      }
+    },
     "rightToLeft" : {
       "localizations" : {
         "en" : {
@@ -5559,6 +5607,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "校園"
+          }
+        }
+      }
+    },
+    "scroll" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "捲動"
           }
         }
       }
@@ -6209,6 +6273,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "切換"
+          }
+        }
+      }
+    },
+    "switchNavigationOrientation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Navigation Orientation"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換導航方向"
           }
         }
       }

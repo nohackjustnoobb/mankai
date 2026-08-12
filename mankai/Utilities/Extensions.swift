@@ -18,8 +18,8 @@ extension UIApplication {
 }
 
 extension Optional where Wrapped == Status {
-    var statusText: String {
-        self?.statusText ?? String(localized: "nil")
+    var localizedName: String {
+        self?.localizedName ?? String(localized: "nil")
     }
 }
 

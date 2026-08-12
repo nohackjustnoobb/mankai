@@ -93,6 +93,7 @@ struct ReaderRenderConfiguration: Equatable {
     // Paged Reader
     let tapNavigationBehavior: TapBehavior
     let navigationOrientation: NavigationOrientation
+    let pageTransition: PageTransition
 
     // Continuous Reader
     let snapToPage: Bool

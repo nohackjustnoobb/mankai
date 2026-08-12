@@ -123,9 +123,9 @@ struct PluginLibraryScreen: View {
                         .pickerStyle(.menu)
 
                         Picker("status", selection: $tempSelectedStatus) {
-                            Text(Status.any.statusText).tag(Status.any)
-                            Text(Status.onGoing.statusText).tag(Status.onGoing)
-                            Text(Status.ended.statusText).tag(Status.ended)
+                            Text(Status.any.localizedName).tag(Status.any)
+                            Text(Status.onGoing.localizedName).tag(Status.onGoing)
+                            Text(Status.ended.localizedName).tag(Status.ended)
                         }
                         .pickerStyle(.menu)
                     } header: {

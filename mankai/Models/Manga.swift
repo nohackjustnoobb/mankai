@@ -37,7 +37,7 @@ enum Status: Int {
     case onGoing = 1
     case ended = 2
 
-    var statusText: String {
+    var localizedName: String {
         switch self {
         case .any:
             return String(localized: "any")
