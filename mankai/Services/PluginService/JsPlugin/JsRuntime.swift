@@ -186,8 +186,20 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
     func userContentController(
         _: WKUserContentController, didReceive message: WKScriptMessage
     ) async -> (Any?, String?) {
-        let body = message.body as! [String: Any]
-        let methodStr = body["method"] as? String ?? "unknown"
+        guard let body = message.body as? [String: Any] else {
+            let error = "Invalid message body"
+            Logger.jsRuntime.error(error)
+            return (nil, error)
+        }
+
+        guard let methodStr = body["method"] as? String,
+            let method = Method(rawValue: methodStr)
+        else {
+            let error = "Invalid or missing method"
+            Logger.jsRuntime.error(error)
+            return (nil, error)
+        }
+
         Logger.jsRuntime.debug("Received message from JS: \(methodStr)")
 
         let start = Date()
@@ -197,14 +209,22 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
             )
         }
 
-        let method = Method(rawValue: body["method"] as! String)
-        let params = body["params"] as! [String: Any]
+        guard let params = body["params"] as? [String: Any] else {
+            let error = "Invalid or missing params for method: \(methodStr)"
+            Logger.jsRuntime.error(error)
+            return (nil, error)
+        }
 
         switch method {
         case .log:
-            let from = params["from"] as! String
-            let message = params["message"] as! String
-            Logger.jsRuntime.info("[\(from)] \(message)")
+            guard let from = params["from"] as? String,
+                let logMessage = params["message"] as? String
+            else {
+                let error = "Invalid or missing log parameters"
+                Logger.jsRuntime.error(error)
+                return (nil, error)
+            }
+            Logger.jsRuntime.info("[\(from)] \(logMessage)")
         case .fetch:
             do {
                 let resp = try await handleFetch(params)
@@ -212,7 +232,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 return (resp, nil)
             } catch {
                 Logger.jsRuntime.error("Fetch failed", error: error)
-                return (nil, error.localizedDescription)
+                return (nil, "Fetch failed")
             }
         case .s2t:
             let text = params["text"] as? String ?? ""
@@ -235,19 +255,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
-                )
+                return (nil, "Missing plugin ID")
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
-                        .localizedDescription
-                )
+                return (nil, "Database not available")
             }
 
             do {
@@ -257,7 +270,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 }
             } catch {
                 Logger.jsRuntime.error("Failed to save value", error: error)
-                return (nil, error.localizedDescription)
+                return (nil, "Failed to save value")
             }
         case .getValue:
             let key = params["key"] as? String ?? ""
@@ -265,19 +278,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
-                )
+                return (nil, "Missing plugin ID")
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
-                        .localizedDescription
-                )
+                return (nil, "Database not available")
             }
 
             do {
@@ -287,7 +293,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 return (kvPair?.value, nil)
             } catch {
                 Logger.jsRuntime.error("Failed to fetch value", error: error)
-                return (nil, error.localizedDescription)
+                return (nil, "Failed to fetch value")
             }
         case .removeValue:
             let key = params["key"] as? String ?? ""
@@ -295,19 +301,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
             guard let pluginId = from else {
                 Logger.jsRuntime.error("Missing pluginId")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptMissingPluginId.makeError().localizedDescription
-                )
+                return (nil, "Missing plugin ID")
             }
 
             guard let dbPool = DbService.shared.appDb else {
                 Logger.jsRuntime.error("Database not available")
-                return (
-                    nil,
-                    MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
-                        .localizedDescription
-                )
+                return (nil, "Database not available")
             }
 
             do {
@@ -318,11 +317,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 return (deleted, nil)
             } catch {
                 Logger.jsRuntime.error("Failed to remove value", error: error)
-                return (nil, error.localizedDescription)
+                return (nil, "Failed to remove value")
             }
         default:
-            Logger.jsRuntime.warning("Unexpected Method: \(methodStr)")
-            fatalError("Unexpected Method")
+            let error = "Unexpected method: \(methodStr)"
+            Logger.jsRuntime.warning(error)
+            return (nil, error)
         }
 
         return (nil, nil)

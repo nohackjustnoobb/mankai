@@ -173,24 +173,24 @@ struct DebugScreen: View {
                     Button("testJs") {
                         Task {
                             // Test LOG
-                            let _ = try! await JsRuntime.shared.execute(
+                            let _ = try? await JsRuntime.shared.execute(
                                 "console.log('Hello from JS!!!')", from: "DEBUG"
                             )
 
                             // Test Fetch
                             let result =
-                                try! await JsRuntime.shared.execute(
+                                try? await JsRuntime.shared.execute(
                                     "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
                                 ) as Any
-                            Logger.jsRuntime.debug("\(result)")
+                            Logger.jsRuntime.debug("\(result ?? "nil")")
 
                             // Test t2s/s2t
-                            let t2s = try! await JsRuntime.shared.execute(
+                            let t2s = try await JsRuntime.shared.execute(
                                 "return await t2s('繁體轉簡體')"
                             )
                             Logger.jsRuntime.debug("t2s: \(t2s ?? "nil")")
 
-                            let s2t = try! await JsRuntime.shared.execute(
+                            let s2t = try? await JsRuntime.shared.execute(
                                 "return await s2t('简体转繁体')"
                             )
                             Logger.jsRuntime.debug("s2t: \(s2t ?? "nil")")
@@ -199,23 +199,23 @@ struct DebugScreen: View {
                             let jsPlugin =
                                 PluginService.shared.plugins.first(where: { $0 is JsPlugin })
                                 as! JsPlugin
-                            let setValue = try! await JsRuntime.shared.execute(
+                            let setValue = try? await JsRuntime.shared.execute(
                                 "return await setValue('test', 'test')", from: "DEBUG",
                                 plugin: jsPlugin
                             )
                             Logger.jsRuntime.debug("setValue: \(setValue ?? "nil")")
 
-                            let getValue = try! await JsRuntime.shared.execute(
+                            let getValue = try? await JsRuntime.shared.execute(
                                 "return await getValue('test')", from: "DEBUG", plugin: jsPlugin
                             )
                             Logger.jsRuntime.debug("getValue: \(getValue ?? "nil")")
 
-                            let removeValue = try! await JsRuntime.shared.execute(
+                            let removeValue = try? await JsRuntime.shared.execute(
                                 "return await removeValue('test')", from: "DEBUG", plugin: jsPlugin
                             )
                             Logger.jsRuntime.debug("removeValue: \(removeValue ?? "nil")")
 
-                            let getValueAfterRemove = try! await JsRuntime.shared.execute(
+                            let getValueAfterRemove = try? await JsRuntime.shared.execute(
                                 "return await getValue('test')", from: "DEBUG", plugin: jsPlugin
                             )
                             Logger.jsRuntime.debug(
