@@ -159,7 +159,11 @@ struct DebugScreen: View {
                 Section("plugin") {
                     TextField("json", text: $jsonInput)
                     Button("parse") {
-                        plugin = parsePluginFromJson(jsonInput)
+                        plugin = jsonInput.data(using: .utf8)
+                            .flatMap {
+                                try? JSONSerialization.jsonObject(with: $0) as? [String: Any]
+                            }
+                            .flatMap { JsPlugin.fromJson($0) }
                         if plugin == nil {
                             isError = true
                         }
@@ -271,16 +275,4 @@ struct DebugScreen: View {
             }
         }
     }
-}
-
-private func parsePluginFromJson(_ input: String) -> JsPlugin? {
-    guard let data = input.data(using: .utf8) else {
-        return nil
-    }
-
-    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        return nil
-    }
-
-    return JsPlugin.fromJson(json)
 }

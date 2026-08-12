@@ -355,6 +355,22 @@
         }
       }
     },
+    "addPlugins" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Plugins"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增插件"
+          }
+        }
+      }
+    },
     "adventure" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",

@@ -1,0 +1,207 @@
+//
+//  AddPluginsModal.swift
+//  mankai
+//
+//  Created by Travis XU on 12/8/2026.
+//
+
+import SwiftUI
+
+struct PluginImportSource: Identifiable {
+    enum Kind: String {
+        case js
+        case http
+    }
+
+    let id = UUID()
+    let kind: Kind
+    let url: URL
+}
+
+struct PluginImportRequest: Identifiable {
+    let id = UUID()
+    let sources: [PluginImportSource]
+}
+
+struct AddPluginsModal: View {
+    private struct Candidate: Identifiable {
+        let source: PluginImportSource
+        let plugin: Plugin?
+
+        var id: UUID {
+            source.id
+        }
+    }
+
+    @Environment(\.dismiss) private var dismiss
+
+    let sources: [PluginImportSource]
+
+    @State private var candidates: [Candidate] = []
+    @State private var selectedSourceIds: Set<UUID> = []
+    @State private var isLoading = true
+    @State private var isAdding = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    List(candidates) { candidate in
+                        if let plugin = candidate.plugin {
+                            Button {
+                                if selectedSourceIds.contains(candidate.id) {
+                                    selectedSourceIds.remove(candidate.id)
+                                } else {
+                                    selectedSourceIds.insert(candidate.id)
+                                }
+                            } label: {
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(
+                                        systemName: selectedSourceIds.contains(candidate.id)
+                                            ? "checkmark.circle.fill" : "circle"
+                                    )
+                                    .font(.title3)
+                                    .foregroundStyle(
+                                        selectedSourceIds.contains(candidate.id)
+                                            ? Color.accentColor : .secondary
+                                    )
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 8) {
+                                            Text(plugin.name ?? plugin.id)
+                                                .foregroundStyle(.primary)
+
+                                            Text(LocalizedStringKey(candidate.source.kind.rawValue))
+                                                .smallTagStyle()
+
+                                            if let version = plugin.version {
+                                                Text("v\(version)")
+                                                    .smallTagStyle()
+                                            }
+                                        }
+
+                                        if let description = plugin.description {
+                                            Text(description)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(2)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.red)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("failedToParsePlugin")
+                                        .foregroundStyle(.red)
+
+                                    Text(candidate.source.url.absoluteString)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("addPlugins")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("add") {
+                        addSelectedPlugins()
+                    }
+                    .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
+                }
+            }
+            .task {
+                await loadCandidates()
+            }
+            .alert(
+                "failedToAddPlugin",
+                isPresented: Binding(
+                    get: { errorMessage != nil },
+                    set: { if !$0 { errorMessage = nil } }
+                )
+            ) {
+                Button("ok", role: .cancel) {}
+            } message: {
+                if let errorMessage {
+                    Text(errorMessage)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.hidden)
+    }
+
+    private func loadCandidates() async {
+        var loadedCandidates: [Candidate] = []
+
+        for source in sources {
+            guard !Task.isCancelled else { return }
+
+            let plugin: Plugin?
+            switch source.kind {
+            case .js:
+                plugin = await JsPlugin.fromUrl(source.url.absoluteString)
+            case .http:
+                plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
+            }
+
+            loadedCandidates.append(Candidate(source: source, plugin: plugin))
+        }
+
+        guard !Task.isCancelled else { return }
+
+        candidates = loadedCandidates
+        selectedSourceIds = Set(
+            loadedCandidates.compactMap { candidate in
+                candidate.plugin == nil ? nil : candidate.id
+            }
+        )
+        isLoading = false
+    }
+
+    private func addSelectedPlugins() {
+        isAdding = true
+        defer { isAdding = false }
+
+        var failures: [(id: UUID, message: String)] = []
+
+        for candidate in candidates where selectedSourceIds.contains(candidate.id) {
+            guard let plugin = candidate.plugin else { continue }
+
+            do {
+                try PluginService.shared.addPlugin(plugin)
+            } catch {
+                let name = plugin.name ?? plugin.id
+                failures.append((candidate.id, "\(name): \(error.localizedDescription)"))
+            }
+        }
+
+        if failures.isEmpty {
+            dismiss()
+        } else {
+            selectedSourceIds = Set(failures.map(\.id))
+            errorMessage = failures.map(\.message).joined(separator: "\n")
+        }
+    }
+}

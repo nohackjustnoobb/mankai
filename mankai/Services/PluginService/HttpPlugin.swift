@@ -163,7 +163,12 @@ class HttpPlugin: Plugin {
         )
     }
 
-    static func fromUrl(_ url: URL) async -> HttpPlugin? {
+    static func fromUrl(_ urlString: String) async -> HttpPlugin? {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed) else {
+            return nil
+        }
+
         guard let (data, _) = try? await URLSession.shared.data(from: url) else {
             return nil
         }

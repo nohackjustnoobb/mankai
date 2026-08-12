@@ -14,6 +14,7 @@ struct MainScreen: View {
 
     @State private var selectedTab: Tab = .home
     @State private var importedFiles: [URL] = []
+    @State private var pluginImportRequest: PluginImportRequest?
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -41,10 +42,48 @@ struct MainScreen: View {
         .overlay(alignment: .bottom) {
             NotificationContainerView()
         }
+        .sheet(item: $pluginImportRequest) { request in
+            AddPluginsModal(sources: request.sources)
+        }
         .onOpenURL { url in
             Logger.ui.info("Received URL: \(url)")
-            selectedTab = .browse
-            importedFiles = [url]
+
+            if url.isFileURL {
+                selectedTab = .browse
+                importedFiles.append(url)
+
+                return
+            }
+
+            if url.scheme?.lowercased() == "mankai", let host = url.host?.lowercased() {
+                switch host {
+                case "add-plugins":
+                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+
+                    let plugins = (components?.queryItems ?? []).compactMap {
+                        item -> PluginImportSource? in
+                        guard
+                            let type = PluginImportSource.Kind(
+                                rawValue: item.name.lowercased()
+                            ), let value = item.value, let decodedURL = Base62.decode(value),
+                            let pluginURL = URL(string: decodedURL)
+                        else {
+                            return nil
+                        }
+
+                        return PluginImportSource(kind: type, url: pluginURL)
+                    }
+
+                    guard !plugins.isEmpty else {
+                        Logger.ui.warning("No supported plugins found in URL: \(url)")
+                        return
+                    }
+
+                    pluginImportRequest = PluginImportRequest(sources: plugins)
+                default:
+                    Logger.ui.warning("Unsupported host: \(host)")
+                }
+            }
         }
     }
 }

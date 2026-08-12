@@ -127,9 +127,14 @@ struct AddPluginModal: View {
                                     let plugin: JsPlugin?
 
                                     if useJson {
-                                        plugin = parsePluginFromJson(jsonInput)
+                                        plugin = jsonInput.data(using: .utf8)
+                                            .flatMap {
+                                                try? JSONSerialization.jsonObject(with: $0)
+                                                    as? [String: Any]
+                                            }
+                                            .flatMap { JsPlugin.fromJson($0) }
                                     } else {
-                                        plugin = await parsePluginFromUrl(urlInput)
+                                        plugin = await JsPlugin.fromUrl(urlInput)
                                     }
 
                                     guard let plugin = plugin else {
@@ -176,7 +181,7 @@ struct AddPluginModal: View {
                                         showError = true
                                     }
                                 case .httpPlugin:
-                                    guard let plugin = await parseHttpPluginFromUrl(urlInput) else {
+                                    guard let plugin = await HttpPlugin.fromUrl(urlInput) else {
                                         errorMessage = String(localized: "failedToParsePlugin")
                                         showError = true
                                         return
@@ -230,34 +235,4 @@ struct AddPluginModal: View {
             }
         }
     }
-}
-
-private func parsePluginFromJson(_ input: String) -> JsPlugin? {
-    guard let data = input.data(using: .utf8) else {
-        return nil
-    }
-
-    guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-        return nil
-    }
-
-    return JsPlugin.fromJson(json)
-}
-
-private func parsePluginFromUrl(_ urlString: String) async -> JsPlugin? {
-    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let url = URL(string: trimmed) else {
-        return nil
-    }
-
-    return await JsPlugin.fromUrl(url)
-}
-
-private func parseHttpPluginFromUrl(_ urlString: String) async -> HttpPlugin? {
-    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard let url = URL(string: trimmed) else {
-        return nil
-    }
-
-    return await HttpPlugin.fromUrl(url)
 }

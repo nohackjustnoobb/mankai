@@ -198,7 +198,12 @@ final class JsPlugin: Plugin {
         )
     }
 
-    static func fromUrl(_ url: URL) async -> JsPlugin? {
+    static func fromUrl(_ urlString: String) async -> JsPlugin? {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed) else {
+            return nil
+        }
+
         guard let (data, _) = try? await URLSession.shared.data(from: url) else {
             return nil
         }
@@ -525,13 +530,13 @@ final class JsPlugin: Plugin {
     }
 
     func checkForUpdates() async {
-        guard let updatesUrl = updatesUrl, let url = URL(string: updatesUrl) else {
+        guard let updatesUrl = updatesUrl else {
             return
         }
 
         Logger.jsPlugin.info("Checking for updates for plugin: \(id)")
 
-        guard let newPlugin = await JsPlugin.fromUrl(url) else {
+        guard let newPlugin = await JsPlugin.fromUrl(updatesUrl) else {
             Logger.jsPlugin.error("Failed to fetch update for plugin: \(id)")
             return
         }
