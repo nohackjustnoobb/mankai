@@ -13,141 +13,94 @@ private enum OverscrollType {
     case next
 }
 
-private final class OverscrollViewController: UIViewController {
+private struct OverscrollView: View {
     let type: OverscrollType
-    private let orientation: NavigationOrientation
-    private let readingDirection: ReadingDirection
-    private let availability: ReaderChapterAvailability
+    let orientation: NavigationOrientation
+    let readingDirection: ReadingDirection
+    let availability: ReaderChapterAvailability
 
-    init(
-        type: OverscrollType,
-        orientation: NavigationOrientation,
-        readingDirection: ReadingDirection,
-        availability: ReaderChapterAvailability
-    ) {
-        self.type = type
-        self.orientation = orientation
-        self.readingDirection = readingDirection
-        self.availability = availability
-        super.init(nibName: nil, bundle: nil)
+    var body: some View {
+        positionedContent
+            .background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-
-        let container = UIView()
-        container.translatesAutoresizingMaskIntoConstraints = false
-        let arrow = UIImageView()
-        arrow.translatesAutoresizingMaskIntoConstraints = false
-        arrow.tintColor = .secondaryLabel
-        arrow.contentMode = .scaleAspectFit
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.textColor = .secondaryLabel
-        label.textAlignment = .center
-        label.numberOfLines = 0
-
-        view.addSubview(container)
-        container.addSubview(arrow)
-        container.addSubview(label)
-
-        var constraints = [
-            arrow.topAnchor.constraint(equalTo: container.topAnchor),
-            arrow.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            arrow.widthAnchor.constraint(equalToConstant: 48),
-            arrow.heightAnchor.constraint(equalToConstant: 48),
-            label.topAnchor.constraint(equalTo: arrow.bottomAnchor, constant: 16),
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            label.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ]
-
+    @ViewBuilder
+    private var positionedContent: some View {
         if availability != .available {
-            constraints += [
-                container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                container.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                container.leadingAnchor.constraint(
-                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-                container.trailingAnchor.constraint(
-                    lessThanOrEqualTo: view.trailingAnchor, constant: -20),
-            ]
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if orientation == .vertical {
-            constraints += [
-                container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-                container.leadingAnchor.constraint(
-                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-                container.trailingAnchor.constraint(
-                    lessThanOrEqualTo: view.trailingAnchor, constant: -20),
-                type == .previous
-                    ? container.bottomAnchor.constraint(
-                        equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-                        constant: -40
-                    )
-                    : container.topAnchor.constraint(
-                        equalTo: view.safeAreaLayoutGuide.topAnchor,
-                        constant: 40
-                    ),
-            ]
+            content
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: type == .previous ? .bottom : .top
+                )
+                .padding(type == .previous ? .bottom : .top)
         } else {
-            constraints += [
-                container.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                container.widthAnchor.constraint(lessThanOrEqualToConstant: 200),
-            ]
-            let placeAtLeading = (readingDirection == .rightToLeft) == (type == .previous)
-            constraints.append(
-                placeAtLeading
-                    ? container.leadingAnchor.constraint(
-                        equalTo: view.safeAreaLayoutGuide.leadingAnchor,
-                        constant: 40
-                    )
-                    : container.trailingAnchor.constraint(
-                        equalTo: view.safeAreaLayoutGuide.trailingAnchor,
-                        constant: -40
-                    )
-            )
+            content
+                .frame(maxWidth: 200)
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: placeAtLeading ? .leading : .trailing
+                )
+                .padding(placeAtLeading ? .leading : .trailing)
         }
-
-        NSLayoutConstraint.activate(constraints)
-        configure(arrow: arrow, label: label)
     }
 
-    private func configure(arrow: UIImageView, label: UILabel) {
+    private var content: some View {
+        VStack(spacing: 16) {
+            Image(systemName: imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 48, height: 48)
+            Text(message)
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(Color(uiColor: .secondaryLabel))
+    }
+
+    private var placeAtLeading: Bool {
+        (readingDirection == .rightToLeft) == (type == .previous)
+    }
+
+    private var imageName: String {
         switch availability {
         case .unavailable:
-            arrow.image = UIImage(systemName: "xmark")
-            label.text =
-                type == .previous
+            return "xmark"
+        case .locked:
+            return "lock.fill"
+        case .available:
+            if orientation == .vertical {
+                return type == .previous ? "chevron.up" : "chevron.down"
+            } else if readingDirection == .rightToLeft {
+                return type == .previous ? "chevron.right" : "chevron.left"
+            } else {
+                return type == .previous ? "chevron.left" : "chevron.right"
+            }
+        }
+    }
+
+    private var message: String {
+        switch availability {
+        case .unavailable:
+            return type == .previous
                 ? String(localized: "noPreviousChapter")
                 : String(localized: "noNextChapter")
         case .locked:
-            arrow.image = UIImage(systemName: "lock.fill")
-            label.text =
-                type == .previous
+            return type == .previous
                 ? String(localized: "previousChapterIsLocked")
                 : String(localized: "nextChapterIsLocked")
         case .available:
-            if orientation == .vertical {
-                arrow.image = UIImage(systemName: type == .previous ? "chevron.up" : "chevron.down")
-            } else if readingDirection == .rightToLeft {
-                arrow.image = UIImage(
-                    systemName: type == .previous ? "chevron.right" : "chevron.left")
-            } else {
-                arrow.image = UIImage(
-                    systemName: type == .previous ? "chevron.left" : "chevron.right")
-            }
-            label.text =
-                type == .previous
+            return type == .previous
                 ? String(localized: "pullToLoadPreviousChapter")
                 : String(localized: "pullToLoadNextChapter")
         }
     }
 }
+
+private typealias OverscrollHostingController = UIHostingController<OverscrollView>
 
 private final class PagedReaderViewController: UIViewController,
     UIPageViewControllerDataSource,
@@ -397,13 +350,15 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     private func makeOverscrollViewController(type: OverscrollType) -> UIViewController {
-        OverscrollViewController(
-            type: type,
-            orientation: configuration.navigationOrientation,
-            readingDirection: configuration.readingDirection,
-            availability: type == .previous
-                ? renderState.previousChapter
-                : renderState.nextChapter
+        UIHostingController(
+            rootView: OverscrollView(
+                type: type,
+                orientation: configuration.navigationOrientation,
+                readingDirection: configuration.readingDirection,
+                availability: type == .previous
+                    ? renderState.previousChapter
+                    : renderState.nextChapter
+            )
         )
     }
 
@@ -425,7 +380,7 @@ private final class PagedReaderViewController: UIViewController,
         to viewController: UIViewController,
         before: Bool
     ) -> UIViewController? {
-        guard !(viewController is OverscrollViewController),
+        guard !(viewController is OverscrollHostingController),
             let content = viewController as? PageContentViewController
         else { return nil }
 
@@ -461,13 +416,13 @@ private final class PagedReaderViewController: UIViewController,
             return
         }
 
-        if let overscroll = visibleController as? OverscrollViewController {
+        if let overscroll = visibleController as? OverscrollHostingController {
             let availability =
-                overscroll.type == .previous
+                overscroll.rootView.type == .previous
                 ? renderState.previousChapter
                 : renderState.nextChapter
             guard availability == .available else { return }
-            actions.requestChapterStep(overscroll.type == .previous ? .previous : .next)
+            actions.requestChapterStep(overscroll.rootView.type == .previous ? .previous : .next)
             return
         }
 

@@ -5223,38 +5223,6 @@
         }
       }
     },
-    "releaseToLoadNextChapter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Release to Load Next Chapter"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鬆開載入下一話"
-          }
-        }
-      }
-    },
-    "releaseToLoadPreviousChapter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Release to Load Previous Chapter"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "鬆開載入上一話"
-          }
-        }
-      }
-    },
     "remarks" : {
       "localizations" : {
         "en" : {

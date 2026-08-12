@@ -10,11 +10,50 @@ import UIKit
 
 private let CONTINUOUS_LOADING_IMAGE_TAG = 1
 private let CONTINUOUS_ERROR_IMAGE_TAG = 2
-private let CONTINUOUS_TOP_ARROW_TAG = 3
-private let CONTINUOUS_TOP_TEXT_TAG = 4
-private let CONTINUOUS_BOTTOM_ARROW_TAG = 5
-private let CONTINUOUS_BOTTOM_TEXT_TAG = 6
 private let CONTINUOUS_OVERSCROLL_THRESHOLD: CGFloat = 80
+
+private struct ContinuousOverscrollIndicator: View {
+    let progress: Double
+    let direction: ProgressArrowDirection
+    let availability: ReaderChapterAvailability
+
+    var body: some View {
+        Group {
+            switch availability {
+            case .available:
+                ProgressArrowView(
+                    progress: progress,
+                    direction: direction,
+                    tint: Color(uiColor: .secondaryLabel),
+                    size: 48
+                )
+            case .locked:
+                statusView(
+                    systemName: "lock.fill",
+                    text: direction == .up
+                        ? String(localized: "previousChapterIsLocked")
+                        : String(localized: "nextChapterIsLocked")
+                )
+            case .unavailable:
+                statusView(
+                    systemName: "xmark",
+                    text: direction == .up
+                        ? String(localized: "noPreviousChapter")
+                        : String(localized: "noNextChapter")
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func statusView(systemName: String, text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: systemName)
+            Text(text)
+        }
+        .foregroundStyle(Color(uiColor: .secondaryLabel))
+    }
+}
 
 private struct ContinuousGroup: Equatable {
     let urls: [String]
@@ -40,6 +79,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var renderedChapterID: String?
     private var lastAppliedNavigationGeneration = -1
     private var pendingNavigationCommand: ReaderNavigationCommand?
+    private var isNavigationCommandApplicationScheduled = false
     private var lastReportedViewportSize = CGSize.zero
     private var imageViews: [String: UIView] = [:]
 
@@ -53,6 +93,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private let containerView = UIView()
     private let topOverscrollView = UIView()
     private let bottomOverscrollView = UIView()
+    private let topOverscrollController: UIHostingController<ContinuousOverscrollIndicator>
+    private let bottomOverscrollController: UIHostingController<ContinuousOverscrollIndicator>
 
     private var containerLeadingConstraint: NSLayoutConstraint!
     private var containerTopConstraint: NSLayoutConstraint!
@@ -68,6 +110,20 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         renderState = state
         self.configuration = configuration
         self.actions = actions
+        topOverscrollController = UIHostingController(
+            rootView: ContinuousOverscrollIndicator(
+                progress: 0,
+                direction: .up,
+                availability: state.previousChapter
+            )
+        )
+        bottomOverscrollController = UIHostingController(
+            rootView: ContinuousOverscrollIndicator(
+                progress: 0,
+                direction: .down,
+                availability: state.nextChapter
+            )
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -146,10 +202,26 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func enqueueNavigationCommand(from state: ReaderRenderState) {
-        guard let command = state.navigationCommand,
-            command.generation != lastAppliedNavigationGeneration
+        guard
+            let command = state.navigationCommand,
+            command.generation > lastAppliedNavigationGeneration
         else { return }
-        pendingNavigationCommand = command
+
+        if command.generation > (pendingNavigationCommand?.generation ?? -1) {
+            pendingNavigationCommand = command
+        }
+
+        guard !isNavigationCommandApplicationScheduled else { return }
+        isNavigationCommandApplicationScheduled = true
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            isNavigationCommandApplicationScheduled = false
+            guard pendingNavigationCommand != nil else { return }
+
+            view.setNeedsLayout()
+            view.layoutIfNeeded()
+        }
     }
 
     private func applyCurrentState(force: Bool) {
@@ -180,6 +252,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         guard !isResizing else { return }
 
         updateCurrentPageFromScroll()
+        updateOverscrollViews()
 
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
@@ -366,8 +439,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
             topOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
             topOverscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor),
+            topOverscrollView.widthAnchor.constraint(
+                lessThanOrEqualTo: scrollView.widthAnchor, constant: -40),
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
             bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            bottomOverscrollView.widthAnchor.constraint(
+                lessThanOrEqualTo: scrollView.widthAnchor, constant: -40),
         ])
     }
 
@@ -587,106 +664,58 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func setupOverscrollViews() {
-        let topArrow = UIImageView()
-        topArrow.translatesAutoresizingMaskIntoConstraints = false
-        topArrow.tintColor = .secondaryLabel
-        topArrow.contentMode = .scaleAspectFit
-        topArrow.tag = CONTINUOUS_TOP_ARROW_TAG
-        let topText = UILabel()
-        topText.translatesAutoresizingMaskIntoConstraints = false
-        topText.textColor = .secondaryLabel
-        topText.textAlignment = .center
-        topText.tag = CONTINUOUS_TOP_TEXT_TAG
-        topOverscrollView.addSubview(topArrow)
-        topOverscrollView.addSubview(topText)
+        topOverscrollController.sizingOptions = .intrinsicContentSize
+        bottomOverscrollController.sizingOptions = .intrinsicContentSize
+        topOverscrollController.safeAreaRegions = []
+        bottomOverscrollController.safeAreaRegions = []
 
-        let bottomArrow = UIImageView()
-        bottomArrow.translatesAutoresizingMaskIntoConstraints = false
-        bottomArrow.tintColor = .secondaryLabel
-        bottomArrow.contentMode = .scaleAspectFit
-        bottomArrow.tag = CONTINUOUS_BOTTOM_ARROW_TAG
-        let bottomText = UILabel()
-        bottomText.translatesAutoresizingMaskIntoConstraints = false
-        bottomText.textColor = .secondaryLabel
-        bottomText.textAlignment = .center
-        bottomText.tag = CONTINUOUS_BOTTOM_TEXT_TAG
-        bottomOverscrollView.addSubview(bottomArrow)
-        bottomOverscrollView.addSubview(bottomText)
+        let topIndicator = topOverscrollController.view!
+        let bottomIndicator = bottomOverscrollController.view!
+        topIndicator.translatesAutoresizingMaskIntoConstraints = false
+        bottomIndicator.translatesAutoresizingMaskIntoConstraints = false
+        topIndicator.backgroundColor = .clear
+        bottomIndicator.backgroundColor = .clear
+
+        addChild(topOverscrollController)
+        topOverscrollView.addSubview(topIndicator)
+        topOverscrollController.didMove(toParent: self)
+
+        addChild(bottomOverscrollController)
+        bottomOverscrollView.addSubview(bottomIndicator)
+        bottomOverscrollController.didMove(toParent: self)
 
         NSLayoutConstraint.activate([
-            topArrow.topAnchor.constraint(equalTo: topOverscrollView.topAnchor, constant: 8),
-            topArrow.centerXAnchor.constraint(equalTo: topOverscrollView.centerXAnchor),
-            topArrow.widthAnchor.constraint(equalToConstant: 48),
-            topArrow.heightAnchor.constraint(equalToConstant: 48),
-            topText.topAnchor.constraint(equalTo: topArrow.bottomAnchor, constant: 8),
-            topText.leadingAnchor.constraint(equalTo: topOverscrollView.leadingAnchor, constant: 8),
-            topText.trailingAnchor.constraint(
-                equalTo: topOverscrollView.trailingAnchor, constant: -8),
-            topText.bottomAnchor.constraint(equalTo: topOverscrollView.bottomAnchor, constant: -8),
+            topIndicator.topAnchor.constraint(equalTo: topOverscrollView.topAnchor),
+            topIndicator.leadingAnchor.constraint(equalTo: topOverscrollView.leadingAnchor),
+            topIndicator.trailingAnchor.constraint(equalTo: topOverscrollView.trailingAnchor),
+            topIndicator.bottomAnchor.constraint(equalTo: topOverscrollView.bottomAnchor),
 
-            bottomText.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor, constant: 8),
-            bottomText.leadingAnchor.constraint(
-                equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
-            bottomText.trailingAnchor.constraint(
-                equalTo: bottomOverscrollView.trailingAnchor, constant: -8
-            ),
-            bottomArrow.topAnchor.constraint(equalTo: bottomText.bottomAnchor, constant: 8),
-            bottomArrow.centerXAnchor.constraint(equalTo: bottomOverscrollView.centerXAnchor),
-            bottomArrow.widthAnchor.constraint(equalToConstant: 48),
-            bottomArrow.heightAnchor.constraint(equalToConstant: 48),
-            bottomArrow.bottomAnchor.constraint(
-                equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
+            bottomIndicator.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor),
+            bottomIndicator.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor),
+            bottomIndicator.trailingAnchor.constraint(equalTo: bottomOverscrollView.trailingAnchor),
+            bottomIndicator.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor),
         ])
     }
 
     private func updateOverscrollViews() {
-        updateOverscrollView(
-            topOverscrollView,
-            availability: renderState.previousChapter,
-            arrowTag: CONTINUOUS_TOP_ARROW_TAG,
-            textTag: CONTINUOUS_TOP_TEXT_TAG,
-            availableImage: "chevron.up",
-            availableText: "releaseToLoadPreviousChapter",
-            lockedText: "previousChapterIsLocked",
-            unavailableText: "noPreviousChapter"
+        let offsetY = scrollView.contentOffset.y
+        let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+        let topProgress = min(max(-offsetY / CONTINUOUS_OVERSCROLL_THRESHOLD, 0), 1)
+        let bottomProgress = min(
+            max((offsetY - maximumY) / CONTINUOUS_OVERSCROLL_THRESHOLD, 0),
+            1
         )
-        updateOverscrollView(
-            bottomOverscrollView,
-            availability: renderState.nextChapter,
-            arrowTag: CONTINUOUS_BOTTOM_ARROW_TAG,
-            textTag: CONTINUOUS_BOTTOM_TEXT_TAG,
-            availableImage: "chevron.down",
-            availableText: "releaseToLoadNextChapter",
-            lockedText: "nextChapterIsLocked",
-            unavailableText: "noNextChapter"
+
+        topOverscrollController.rootView = ContinuousOverscrollIndicator(
+            progress: Double(topProgress),
+            direction: .up,
+            availability: renderState.previousChapter
         )
-    }
-
-    private func updateOverscrollView(
-        _ overscrollView: UIView,
-        availability: ReaderChapterAvailability,
-        arrowTag: Int,
-        textTag: Int,
-        availableImage: String,
-        availableText: String.LocalizationValue,
-        lockedText: String.LocalizationValue,
-        unavailableText: String.LocalizationValue
-    ) {
-        guard let arrow = overscrollView.viewWithTag(arrowTag) as? UIImageView,
-            let label = overscrollView.viewWithTag(textTag) as? UILabel
-        else { return }
-
-        switch availability {
-        case .available:
-            arrow.image = UIImage(systemName: availableImage)
-            label.text = String(localized: availableText)
-        case .locked:
-            arrow.image = UIImage(systemName: "lock.fill")
-            label.text = String(localized: lockedText)
-        case .unavailable:
-            arrow.image = UIImage(systemName: "xmark")
-            label.text = String(localized: unavailableText)
-        }
+        bottomOverscrollController.rootView = ContinuousOverscrollIndicator(
+            progress: Double(bottomProgress),
+            direction: .down,
+            availability: renderState.nextChapter
+        )
     }
 }
 
