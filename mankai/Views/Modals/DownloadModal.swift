@@ -127,7 +127,8 @@ struct DownloadedMangaRow: View {
                     coverUrl: manga.cover,
                     plugin: DownloadPlugin.shared
                 )
-                .frame(width: 75, height: 100)
+                .aspectRatio(3 / 4, contentMode: .fit)
+                .frame(height: 100)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -178,7 +179,8 @@ struct DownloadTaskRow: View {
                 coverUrl: task.manga.cover,
                 plugin: PluginService.shared.getPlugin(task.manga.pluginId)
             )
-            .frame(width: 75, height: 100)
+            .aspectRatio(3 / 4, contentMode: .fit)
+            .frame(height: 100)
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {

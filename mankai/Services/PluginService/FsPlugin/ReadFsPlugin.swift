@@ -344,7 +344,8 @@ class ReadFsPlugin: Plugin {
                 )
             )
         }
-        mangaDict["chapters"] = chapterGroups
+        let chapterGroupsData = try JSONEncoder().encode(chapterGroups)
+        mangaDict["chapters"] = try JSONSerialization.jsonObject(with: chapterGroupsData)
 
         return DetailedManga(from: mangaDict)
     }

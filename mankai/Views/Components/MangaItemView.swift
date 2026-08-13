@@ -15,7 +15,7 @@ struct MangaItemView: View {
     var showNotRead: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .center, spacing: 8) {
             // Cover Image
             MangaCoverView(
                 coverUrl: manga.cover,
@@ -27,9 +27,10 @@ struct MangaItemView: View {
                         : nil,
                 tagColor: (saved?.updates == true ? .green.opacity(0.8) : .red.opacity(0.8))
             )
+            .aspectRatio(3 / 4, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            VStack {
+            VStack(alignment: .center) {
                 // Title
                 if let title = manga.title {
                     Text(title)
@@ -65,8 +66,10 @@ struct MangaItemView: View {
                 .foregroundColor(.secondary)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
             .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
     }
 }

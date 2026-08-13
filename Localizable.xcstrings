@@ -1483,6 +1483,22 @@
         }
       }
     },
+    "downloadFailedMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Download Failed: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 下載失敗：%@"
+          }
+        }
+      }
+    },
     "downloadQueuedMessage" : {
       "localizations" : {
         "en" : {

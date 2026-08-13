@@ -53,7 +53,7 @@ struct MangasRowListView: View {
                                     destination: MangaDetailsScreen(plugin: plugin, manga: manga)
                                 ) {
                                     MangaItemView(manga: manga, plugin: plugin)
-                                        .aspectRatio(3 / 5, contentMode: .fit)
+                                        .frame(width: horizontalSizeClass == .regular ? 144 : 120)
                                 }
                             }
                         }

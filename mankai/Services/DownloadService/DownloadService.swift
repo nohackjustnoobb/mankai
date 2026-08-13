@@ -411,6 +411,15 @@ final class DownloadService: ObservableObject {
                 } else {
                     Logger.downloadService.error("Task failed: \(error)")
                     try? await task.markFailed(error: error)
+
+                    let message = String(localized: "downloadFailedMessage")
+                    NotificationService.shared.showError(
+                        String(
+                            format: message,
+                            task.manga.title ?? task.manga.id,
+                            error.localizedDescription
+                        )
+                    )
                 }
             }
 

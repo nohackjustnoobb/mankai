@@ -114,7 +114,7 @@ final class DownloadPlugin: Plugin {
 
         if let chapters = mangaModel.chapters,
             let chaptersData = chapters.data(using: .utf8),
-            let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
+            let chapterGroups = try? JSONSerialization.jsonObject(with: chaptersData)
         {
             mangaDict["chapters"] = chapterGroups
         }

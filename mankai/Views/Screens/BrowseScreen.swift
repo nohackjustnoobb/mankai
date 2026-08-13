@@ -195,7 +195,7 @@ struct BrowseScreen: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         Color.clear
-            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .aspectRatio(3 / 4, contentMode: .fit)
             .overlay {
                 content()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

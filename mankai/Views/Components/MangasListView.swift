@@ -65,7 +65,6 @@ struct MangasListView: View {
                         destination: MangaDetailsScreen(plugin: plugin, manga: manga)
                     ) {
                         MangaItemView(manga: manga, plugin: plugin)
-                            .aspectRatio(3 / 5, contentMode: .fit)
                     }
                 }
             } else if let mangasDict = mangasDict,
@@ -89,7 +88,6 @@ struct MangasListView: View {
                                 saved: saveds?[key],
                                 showNotRead: showNotRead
                             )
-                            .aspectRatio(3 / 5, contentMode: .fit)
                         }
                     }
                 }
