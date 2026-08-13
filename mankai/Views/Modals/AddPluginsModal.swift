@@ -26,7 +26,8 @@ struct PluginImportRequest: Identifiable {
 struct AddPluginsModal: View {
     private struct Candidate: Identifiable {
         let source: PluginImportSource
-        let plugin: Plugin?
+        var plugin: Plugin?
+        var isLoading = true
 
         var id: UUID {
             source.id
@@ -45,72 +46,69 @@ struct AddPluginsModal: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
+            List(candidates) { candidate in
+                if candidate.isLoading {
                     ProgressView()
-                } else {
-                    List(candidates) { candidate in
-                        if let plugin = candidate.plugin {
-                            Button {
-                                if selectedSourceIds.contains(candidate.id) {
-                                    selectedSourceIds.remove(candidate.id)
-                                } else {
-                                    selectedSourceIds.insert(candidate.id)
-                                }
-                            } label: {
-                                HStack(alignment: .top, spacing: 12) {
-                                    Image(
-                                        systemName: selectedSourceIds.contains(candidate.id)
-                                            ? "checkmark.circle.fill" : "circle"
-                                    )
-                                    .font(.title3)
-                                    .foregroundStyle(
-                                        selectedSourceIds.contains(candidate.id)
-                                            ? Color.accentColor : .secondary
-                                    )
-
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack(spacing: 8) {
-                                            Text(plugin.name ?? plugin.id)
-                                                .foregroundStyle(.primary)
-
-                                            Text(LocalizedStringKey(candidate.source.kind.rawValue))
-                                                .smallTagStyle()
-
-                                            if let version = plugin.version {
-                                                Text("v\(version)")
-                                                    .smallTagStyle()
-                                            }
-                                        }
-
-                                        if let description = plugin.description {
-                                            Text(description)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .lineLimit(2)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else if let plugin = candidate.plugin {
+                    Button {
+                        if selectedSourceIds.contains(candidate.id) {
+                            selectedSourceIds.remove(candidate.id)
                         } else {
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(.red)
+                            selectedSourceIds.insert(candidate.id)
+                        }
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(
+                                systemName: selectedSourceIds.contains(candidate.id)
+                                    ? "checkmark.circle.fill" : "circle"
+                            )
+                            .font(.title3)
+                            .foregroundStyle(
+                                selectedSourceIds.contains(candidate.id)
+                                    ? Color.accentColor : .secondary
+                            )
 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("failedToParsePlugin")
-                                        .foregroundStyle(.red)
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 8) {
+                                    Text(plugin.name ?? plugin.id)
+                                        .foregroundStyle(.primary)
 
-                                    Text(candidate.source.url.absoluteString)
-                                        .font(.caption2)
+                                    Text(LocalizedStringKey(candidate.source.kind.rawValue))
+                                        .smallTagStyle()
+
+                                    if let version = plugin.version {
+                                        Text("v\(version)")
+                                            .smallTagStyle()
+                                    }
+                                }
+
+                                if let description = plugin.description {
+                                    Text(description)
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(2)
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.red)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("failedToParsePlugin")
+                                .foregroundStyle(.red)
+
+                            Text(candidate.source.url.absoluteString)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
                     }
                 }
@@ -153,30 +151,39 @@ struct AddPluginsModal: View {
     }
 
     private func loadCandidates() async {
-        var loadedCandidates: [Candidate] = []
+        candidates = sources.map { Candidate(source: $0) }
 
-        for source in sources {
-            guard !Task.isCancelled else { return }
+        await withTaskGroup(of: (Int, Plugin?).self) { group in
+            for (index, source) in sources.enumerated() {
+                group.addTask {
+                    let plugin: Plugin?
+                    switch source.kind {
+                    case .js:
+                        plugin = await JsPlugin.fromUrl(source.url.absoluteString)
+                    case .http:
+                        plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
+                    }
 
-            let plugin: Plugin?
-            switch source.kind {
-            case .js:
-                plugin = await JsPlugin.fromUrl(source.url.absoluteString)
-            case .http:
-                plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
+                    return (index, plugin)
+                }
             }
 
-            loadedCandidates.append(Candidate(source: source, plugin: plugin))
+            for await (index, plugin) in group {
+                guard !Task.isCancelled else {
+                    group.cancelAll()
+                    return
+                }
+
+                candidates[index].plugin = plugin
+                candidates[index].isLoading = false
+
+                if plugin != nil {
+                    selectedSourceIds.insert(candidates[index].id)
+                }
+            }
         }
 
         guard !Task.isCancelled else { return }
-
-        candidates = loadedCandidates
-        selectedSourceIds = Set(
-            loadedCandidates.compactMap { candidate in
-                candidate.plugin == nil ? nil : candidate.id
-            }
-        )
         isLoading = false
     }
 
