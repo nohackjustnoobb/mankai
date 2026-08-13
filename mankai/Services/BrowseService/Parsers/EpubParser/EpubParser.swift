@@ -167,7 +167,7 @@ final class EpubParser: Parser {
         }
 
         Logger.epubParser.debug(
-            "No compatible EPUB chapter metadata found; reparsing publication"
+            "No compatible EPUB chapter metadata found, reparsing publication"
         )
         return try await publication(for: file).pagePaths
     }

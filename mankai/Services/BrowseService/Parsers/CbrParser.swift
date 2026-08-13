@@ -172,7 +172,7 @@ final class CbrParser: Parser {
         }
 
         Logger.cbrParser.debug(
-            "No compatible chapter metadata found; reparsing archive"
+            "No compatible chapter metadata found, reparsing archive"
         )
 
         let imagePaths = try await withReadLock(for: file) { cachedArchive in

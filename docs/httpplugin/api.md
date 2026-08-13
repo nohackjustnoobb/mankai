@@ -33,7 +33,7 @@ Retrieve information about the server.
 interface ServerInfoResponse {
   id: string;
   authenticationEnabled: boolean;
-  editorEnabled?: boolean;        // default: false
+  editorEnabled?: boolean; // default: false
   name?: string;
   version?: string;
   description?: string;
@@ -108,7 +108,7 @@ interface RefreshResponse {
 
 ## Manga
 
-These endpoints return data about manga and their chapters. Lightweight manga entries (used in lists, search, and batch lookups) share the `Manga` shape defined below; the full details endpoint returns the richer `MangaResponse` shape.
+These endpoints return data about manga and their chapters. Lightweight manga entries (used in lists, search, and batch lookups) share the `Manga` shape defined below, the full details endpoint returns the richer `MangaResponse` shape.
 
 ### `GET /manga`
 
@@ -116,10 +116,10 @@ Retrieve a paginated list of manga, optionally filtered by genre and/or status.
 
 **Query Parameters**
 
-| Parameter | Type     | Default   | Required | Description                                       |
-| :-------- | :------- | :-------- | :------- | :------------------------------------------------ |
-| `page`    | `number` | `1`       | No       | The page number to retrieve.                      |
-| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                 |
+| Parameter | Type     | Default   | Required | Description                                              |
+| :-------- | :------- | :-------- | :------- | :------------------------------------------------------- |
+| `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
+| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
 | `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Ended. |
 
 **Response — `200 OK`**
@@ -136,7 +136,7 @@ interface Chapter {
 interface Manga {
   id: string;
   title?: string;
-  cover?: string;          // URL — absolute, or relative to the server's base URL
+  cover?: string; // URL — absolute, or relative to the server's base URL
   status?: Status;
   latestChapter?: Chapter;
 }
@@ -155,7 +155,7 @@ Retrieve lightweight details for a specific list of manga. This is useful for ba
 **Request Body**
 
 ```ts
-type MangaRequest = string[];   // Array of manga IDs
+type MangaRequest = string[]; // Array of manga IDs
 ```
 
 **Response — `200 OK`**
@@ -169,9 +169,9 @@ The order of entries in `chapters` is the chapter group display order. Chapter g
 
 **Path Parameters**
 
-| Parameter | Type     | Description       |
-| :-------- | :------- | :---------------- |
-| `id`      | `string` | The manga's ID.   |
+| Parameter | Type     | Description     |
+| :-------- | :------- | :-------------- |
+| `id`      | `string` | The manga's ID. |
 
 **Response — `200 OK`**
 
@@ -179,17 +179,17 @@ The order of entries in `chapters` is the chapter group display order. Chapter g
 interface MangaResponse {
   id: string;
   title?: string;
-  cover?: string;          // URL — absolute, or relative to the server's base URL
+  cover?: string; // URL — absolute, or relative to the server's base URL
   status?: Status;
   readingDirection?: ReadingDirection;
   latestChapter?: Chapter;
   description?: string;
-  updatedAt?: number;      // Unix timestamp in milliseconds
+  updatedAt?: number; // Unix timestamp in milliseconds
   authors: string[];
   genres: Genre[];
   chapters: ChapterGroup[]; // Ordered from first group to last group
   remarks?: string;
-  editable?: boolean;     // Whether this manga can be edited; defaults to true
+  editable?: boolean; // Whether this manga can be edited, defaults to true
 }
 
 enum Genre {
@@ -234,9 +234,9 @@ interface Chapter {
 }
 
 interface ChapterGroup {
-  id?: string;             // Required for editable manga, Read-only plugins may omit it
-  title: string;           // Unique within this manga
-  chapters: Chapter[];     // Increasing order: oldest/lowest chapter first
+  id?: string; // Required for editable manga, Read-only plugins may omit it
+  title: string; // Unique within this manga
+  chapters: Chapter[]; // Increasing order: oldest/lowest chapter first
 }
 ```
 
@@ -246,10 +246,10 @@ Retrieve the page images for a specific chapter. The response is a list of image
 
 **Path Parameters**
 
-| Parameter    | Type     | Description           |
-| :----------- | :------- | :-------------------- |
-| `id`         | `string` | The manga's ID.       |
-| `chapterId`  | `string` | The chapter's ID.     |
+| Parameter   | Type     | Description       |
+| :---------- | :------- | :---------------- |
+| `id`        | `string` | The manga's ID.   |
+| `chapterId` | `string` | The chapter's ID. |
 
 **Response — `200 OK`**
 

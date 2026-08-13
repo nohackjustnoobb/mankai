@@ -186,7 +186,7 @@ final class CbzParser: Parser {
         }
 
         Logger.cbzParser.debug(
-            "No compatible chapter metadata found; reparsing archive"
+            "No compatible chapter metadata found, reparsing archive"
         )
 
         let imageEntries: [Entry] = try await withReadLock(for: file) { archive in

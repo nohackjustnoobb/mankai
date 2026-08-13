@@ -199,7 +199,7 @@ Enable the version-controlled hooks once after cloning:
 git config core.hooksPath .githooks
 ```
 
-The hook stages formatter output and the updated Xcode project file automatically. If a staged Swift file or the project file has unstaged changes, the commit stops so unrelated edits are not staged silently; stage or stash those changes and retry the commit.
+The hook stages formatter output and the updated Xcode project file automatically. If a staged Swift file or the project file has unstaged changes, the commit stops so unrelated edits are not staged silently, stage or stash those changes and retry the commit.
 
 **Performance with Debugger Attached (e.g., from Xcode):**
 

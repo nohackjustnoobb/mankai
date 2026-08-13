@@ -1347,7 +1347,7 @@ struct ReaderScreen: View {
         }
 
         Logger.adjacencyModel.notice(
-            "Finished adjacency pass with \(completedCount) predictions; \(checkedPairs.count) pairs checked"
+            "Finished adjacency pass with \(completedCount) predictions, \(checkedPairs.count) pairs checked"
         )
     }
 

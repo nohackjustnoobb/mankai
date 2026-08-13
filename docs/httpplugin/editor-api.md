@@ -26,13 +26,13 @@ This specification describes the endpoints your server must implement to support
 
 ### `POST /edit/manga`
 
-Insert or update a manga entry. If the request body's `id` field is omitted, the server should generate a new ID; otherwise, the existing manga with that ID is updated.
+Insert or update a manga entry. If the request body's `id` field is omitted, the server should generate a new ID, otherwise, the existing manga with that ID is updated.
 
 **Request Body**
 
 ```ts
 interface MangaRequest {
-  id?: string;             // Omit for new manga — the server may generate its own ID.
+  id?: string; // Omit for new manga — the server may generate its own ID.
   title?: string;
   status?: Status;
   description?: string;
@@ -62,7 +62,7 @@ Delete a manga and all of its associated chapter groups, chapters, and images.
 
 ### `POST /edit/manga/:id/cover`
 
-Insert or update the cover image for a manga. The request body should be the raw image bytes; the server should infer the format from the request's `Content-Type` header (e.g. `image/png`, `image/jpeg`).
+Insert or update the cover image for a manga. The request body should be the raw image bytes, the server should infer the format from the request's `Content-Type` header (e.g. `image/png`, `image/jpeg`).
 
 **Path Parameters**
 
@@ -82,13 +82,13 @@ For editable manga, every chapter group returned by `GET /manga/:id` must includ
 
 ### `POST /edit/chapter-group`
 
-Insert or update a chapter group. Omit `id` to create a new group; otherwise, the existing group with that ID is updated.
+Insert or update a chapter group. Omit `id` to create a new group, otherwise, the existing group with that ID is updated.
 
 **Request Body**
 
 ```ts
 interface ChapterGroupRequest {
-  id?: string;             // Omit to create a new chapter group.
+  id?: string; // Omit to create a new chapter group.
   mangaId: string;
   title: string;
 }
@@ -100,9 +100,9 @@ Delete a chapter group and all of its chapters and images.
 
 **Path Parameters**
 
-| Parameter | Type     | Description              |
-| :-------- | :------- | :----------------------- |
-| `id`      | `string` | The chapter group's ID.  |
+| Parameter | Type     | Description             |
+| :-------- | :------- | :---------------------- |
+| `id`      | `string` | The chapter group's ID. |
 
 ### `GET /edit/chapter-group/:id/chapters`
 
@@ -110,9 +110,9 @@ Get the ordered list of chapters that belong to a chapter group.
 
 **Path Parameters**
 
-| Parameter | Type     | Description              |
-| :-------- | :------- | :----------------------- |
-| `id`      | `string` | The chapter group's ID.  |
+| Parameter | Type     | Description             |
+| :-------- | :------- | :---------------------- |
+| `id`      | `string` | The chapter group's ID. |
 
 **Response — `200 OK`**
 
@@ -130,13 +130,13 @@ interface Chapter {
 
 ### `POST /edit/chapter`
 
-Insert or update a chapter. Omit `id` to create a new chapter; otherwise, the existing chapter with that ID is updated.
+Insert or update a chapter. Omit `id` to create a new chapter, otherwise, the existing chapter with that ID is updated.
 
 **Request Body**
 
 ```ts
 interface ChapterUpsertRequest {
-  id?: string;             // Omit to create a new chapter.
+  id?: string; // Omit to create a new chapter.
   title: string;
   chapterGroupId: string;
 }
@@ -148,9 +148,9 @@ Delete a chapter and all of its associated images.
 
 **Path Parameters**
 
-| Parameter | Type     | Description      |
-| :-------- | :------- | :--------------- |
-| `id`      | `string` | The chapter's ID.|
+| Parameter | Type     | Description       |
+| :-------- | :------- | :---------------- |
+| `id`      | `string` | The chapter's ID. |
 
 ### `POST /edit/chapter/order`
 
@@ -159,7 +159,7 @@ Set the order of chapters within a chapter group. The request body is an ordered
 **Request Body**
 
 ```ts
-type ChapterOrderRequest = string[];   // Ordered list of chapter IDs
+type ChapterOrderRequest = string[]; // Ordered list of chapter IDs
 ```
 
 ### `POST /edit/chapter/:id/images`
@@ -168,15 +168,15 @@ Append images to the end of a chapter. Each entry in the `images` array should b
 
 **Path Parameters**
 
-| Parameter | Type     | Description      |
-| :-------- | :------- | :--------------- |
-| `id`      | `string` | The chapter's ID.|
+| Parameter | Type     | Description       |
+| :-------- | :------- | :---------------- |
+| `id`      | `string` | The chapter's ID. |
 
 **Request Body**
 
 ```ts
 interface ChapterImagesRequest {
-  images: string[];        // Array of image data, each encoded in base64.
+  images: string[]; // Array of image data, each encoded in base64.
 }
 ```
 
@@ -187,7 +187,7 @@ Delete one or more images by their full URLs. Use this when removing pages from 
 **Request Body**
 
 ```ts
-type DeleteImagesRequest = string[];   // List of image URLs to delete.
+type DeleteImagesRequest = string[]; // List of image URLs to delete.
 ```
 
 ### `POST /edit/images/order`
@@ -197,5 +197,5 @@ Set the order of images within a chapter. The request body is an ordered list of
 **Request Body**
 
 ```ts
-type ImageOrderRequest = string[];     // Ordered list of image URLs.
+type ImageOrderRequest = string[]; // Ordered list of image URLs.
 ```

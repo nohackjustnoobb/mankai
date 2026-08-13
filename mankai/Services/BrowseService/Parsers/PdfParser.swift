@@ -171,7 +171,7 @@ final class PdfParser: Parser {
         }
 
         Logger.pdfParser.debug(
-            "No compatible chapter metadata found; reparsing document"
+            "No compatible chapter metadata found, reparsing document"
         )
 
         let pageCount = try await withReadLock(for: file) { cachedDocument in

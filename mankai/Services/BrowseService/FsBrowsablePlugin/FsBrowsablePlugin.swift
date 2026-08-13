@@ -68,7 +68,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
                 shouldSync = true
             } catch {
                 Logger.fsBrowsablePlugin.warning(
-                    "Failed to write .mankai for plugin \(id); using a local-only ID: \(error)"
+                    "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
                 )
                 shouldSync = false
             }

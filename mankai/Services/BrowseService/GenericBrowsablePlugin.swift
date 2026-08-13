@@ -169,7 +169,7 @@ class GenericBrowsablePlugin: Plugin, Browsable {
     }
 
     /// Importing is backend-specific. Filesystem-backed subclasses override
-    /// this with a copy operation; network-backed subclasses can upload the
+    /// this with a copy operation, network-backed subclasses can upload the
     /// source and upload it to their own destination if supported.
     func importFile(from _: URL) async throws {
         fatalError("Not Implemented")

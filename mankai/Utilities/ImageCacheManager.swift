@@ -119,7 +119,7 @@ final class ImageCacheManager: @unchecked Sendable {
             return
         }
         let totalSize = Int64(totalSizeRaw)
-        Logger.cacheWrapper.debug("Disk cache size: \(totalSize) bytes; limit: \(limit) bytes")
+        Logger.cacheWrapper.debug("Disk cache size: \(totalSize) bytes, limit: \(limit) bytes")
 
         guard totalSize > limit else {
             Logger.cacheWrapper.debug("Skipping disk cache pruning: cache is within its limit")
@@ -148,7 +148,7 @@ final class ImageCacheManager: @unchecked Sendable {
         }
 
         Logger.cacheWrapper.debug(
-            "Disk cache exceeds its limit; found \(fileURLs.count) files to consider for pruning")
+            "Disk cache exceeds its limit, found \(fileURLs.count) files to consider for pruning")
 
         fileURLs.sort { url1, url2 in
             let d1 =
@@ -182,7 +182,7 @@ final class ImageCacheManager: @unchecked Sendable {
         }
 
         Logger.cacheWrapper.debug(
-            "Finished disk cache pruning: removed \(prunedFileCount) files; current size: \(currentSize) bytes"
+            "Finished disk cache pruning: removed \(prunedFileCount) files, current size: \(currentSize) bytes"
         )
     }
 }

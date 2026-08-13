@@ -200,7 +200,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin {
                     identity = (id: id, shouldSync: true)
                 } catch {
                     Logger.webDavBrowsablePlugin.warning(
-                        "Failed to write .mankai for plugin \(id); using a local-only ID: \(error)"
+                        "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
                     )
                     identity = (id: id, shouldSync: false)
                 }

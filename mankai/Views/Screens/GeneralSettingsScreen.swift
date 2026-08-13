@@ -185,7 +185,7 @@ struct GeneralSettingsScreen: View {
                 return
             }
 
-            // Only report the size of the clearable regular cache; index cache is
+            // Only report the size of the clearable regular cache, index cache is
             // intentionally excluded since the user cannot clear it from here.
             let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
             let size = (try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir)) ?? 0
@@ -231,7 +231,7 @@ struct GeneralSettingsScreen: View {
                 return
             }
 
-            // Only clear the regular cache; index cache must be preserved.
+            // Only clear the regular cache, index cache must be preserved.
             let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
             if fileManager.fileExists(atPath: regularCacheDir.path) {
                 do {
