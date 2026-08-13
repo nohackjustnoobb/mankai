@@ -15,6 +15,14 @@ extension UIApplication {
             .compactMap { $0 as? UIWindowScene }
             .first?.keyWindow?.bounds ?? UIScreen.main.bounds
     }
+
+    static var statusBarHeight: CGFloat? {
+        let scenes = UIApplication.shared.connectedScenes
+        let windowScene = scenes.first as? UIWindowScene
+        let window = windowScene?.windows.first
+
+        return window?.windowScene?.statusBarManager?.statusBarFrame.height
+    }
 }
 
 extension Optional where Wrapped == Status {

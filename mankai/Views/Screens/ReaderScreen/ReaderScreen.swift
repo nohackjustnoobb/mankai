@@ -179,6 +179,31 @@ private struct ReaderLegacyTabBarModifier: ViewModifier {
     }
 }
 
+private struct ReaderControlsBackgroundModifier: ViewModifier {
+    let bottomSafeAreaInset: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content
+                .padding(.horizontal)
+                .padding(.bottom)
+                .glassEffect(in: ContainerRelativeShape())
+                .padding(.horizontal, 12)
+                .padding(.bottom, max(12, bottomSafeAreaInset))
+        } else {
+            content
+                .padding(.bottom, bottomSafeAreaInset)
+                .background(.bar)
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(Color(uiColor: .separator))
+                        .frame(height: 0.5)
+                }
+        }
+    }
+}
+
 private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     let isNavigationBarHidden: Bool
     let onWillDisappear: () -> Void
@@ -632,19 +657,40 @@ struct ReaderScreen: View {
                 renderer
                     .ignoresSafeArea()
 
+                LinearGradient(
+                    colors: [
+                        Color(uiColor: .systemBackground).opacity(0.25),
+                        .clear,
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: UIApplication.statusBarHeight ?? 0)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+
                 loadOverlay
 
                 if loadPhase == .ready {
-                    controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        .offset(
-                            y: isChromeVisible
-                                ? 0
-                                : 180 + proxy.safeAreaInsets.bottom
-                        )
-                        .opacity(isChromeVisible ? 1 : 0)
-                        .allowsHitTesting(isChromeVisible)
+                    if #available(iOS 26.0, *) {
+                        GlassEffectContainer {
+                            if isChromeVisible {
+                                controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                    .frame(maxHeight: .infinity, alignment: .bottom)
+                            }
+                        }
+                        .animation(.default, value: isChromeVisible)
+                    } else {
+                        ZStack(alignment: .bottom) {
+                            if isChromeVisible {
+                                controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                    .transition(.move(edge: .bottom))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .animation(.easeInOut(duration: 0.2), value: isChromeVisible)
+                    }
                 }
             }
             .ignoresSafeArea(edges: .bottom)
@@ -893,9 +939,10 @@ struct ReaderScreen: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
-        .padding(.bottom, 12 + bottomSafeAreaInset)
-        .background(.regularMaterial)
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 25, topTrailingRadius: 25))
+        .padding(.bottom, 12)
+        .modifier(
+            ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset)
+        )
         .ignoresSafeArea(edges: .bottom)
     }
 
@@ -1025,8 +1072,14 @@ struct ReaderScreen: View {
     }
 
     private func toggleChrome() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isChromeVisible.toggle()
+        if #available(iOS 26.0, *) {
+            withAnimation {
+                isChromeVisible.toggle()
+            }
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isChromeVisible.toggle()
+            }
         }
     }
 
