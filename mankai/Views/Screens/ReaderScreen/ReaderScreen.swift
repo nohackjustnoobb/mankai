@@ -186,14 +186,16 @@ private struct ReaderControlsBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content
+                .padding()
                 .padding(.horizontal)
-                .padding(.bottom)
-                .glassEffect(in: ContainerRelativeShape())
-                .padding(.horizontal, 12)
+                .glassEffect()
+                .padding(.horizontal)
                 .padding(.bottom, max(12, bottomSafeAreaInset))
         } else {
             content
-                .padding(.bottom, bottomSafeAreaInset)
+                .padding(.horizontal, 20)
+                .padding(.top)
+                .padding(.bottom, max(12, bottomSafeAreaInset))
                 .background(.bar)
                 .overlay(alignment: .top) {
                     Rectangle()
@@ -937,12 +939,10 @@ struct ReaderScreen: View {
             )
             .disabled(urls.isEmpty)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
         .modifier(
             ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset)
         )
+        .contentShape(Rectangle())
         .ignoresSafeArea(edges: .bottom)
     }
 

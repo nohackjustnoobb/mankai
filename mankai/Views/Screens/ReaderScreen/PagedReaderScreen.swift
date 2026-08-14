@@ -17,6 +17,7 @@ private struct OverscrollView: View {
     let type: OverscrollType
     let orientation: NavigationOrientation
     let readingDirection: ReadingDirection
+    let pageTransition: PageTransition
     let availability: ReaderChapterAvailability
 
     var body: some View {
@@ -34,18 +35,16 @@ private struct OverscrollView: View {
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: .infinity,
-                    alignment: type == .previous ? .bottom : .top
+                    alignment: placeAtTop ? .top : .bottom
                 )
-                .padding(type == .previous ? .bottom : .top)
         } else {
             content
-                .frame(maxWidth: 200)
                 .frame(
                     maxWidth: .infinity,
-                    maxHeight: .infinity,
+                    maxHeight: 200,
                     alignment: placeAtLeading ? .leading : .trailing
                 )
-                .padding(placeAtLeading ? .leading : .trailing)
+                .padding()
         }
     }
 
@@ -62,7 +61,13 @@ private struct OverscrollView: View {
     }
 
     private var placeAtLeading: Bool {
-        (readingDirection == .rightToLeft) == (type == .previous)
+        let placeAtLeading = (readingDirection == .rightToLeft) == (type == .previous)
+        return pageTransition == .pageCurl ? !placeAtLeading : placeAtLeading
+    }
+
+    private var placeAtTop: Bool {
+        let placeAtTop = type == .next
+        return pageTransition == .pageCurl ? !placeAtTop : placeAtTop
     }
 
     private var imageName: String {
@@ -93,6 +98,11 @@ private struct OverscrollView: View {
                 ? String(localized: "previousChapterIsLocked")
                 : String(localized: "nextChapterIsLocked")
         case .available:
+            if pageTransition == .pageCurl {
+                return type == .previous
+                    ? String(localized: "turnToLoadPreviousChapter")
+                    : String(localized: "turnToLoadNextChapter")
+            }
             return type == .previous
                 ? String(localized: "pullToLoadPreviousChapter")
                 : String(localized: "pullToLoadNextChapter")
@@ -375,6 +385,7 @@ private final class PagedReaderViewController: UIViewController,
                 type: type,
                 orientation: configuration.navigationOrientation,
                 readingDirection: configuration.readingDirection,
+                pageTransition: configuration.pageTransition,
                 availability: type == .previous
                     ? renderState.previousChapter
                     : renderState.nextChapter

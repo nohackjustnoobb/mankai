@@ -6567,6 +6567,38 @@
         }
       }
     },
+    "turnToLoadNextChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn to Load Next Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻頁載入下一話"
+          }
+        }
+      }
+    },
+    "turnToLoadPreviousChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn to Load Previous Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "翻頁載入上一話"
+          }
+        }
+      }
+    },
     "twoPerRow" : {
       "localizations" : {
         "en" : {

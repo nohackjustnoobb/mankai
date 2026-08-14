@@ -79,6 +79,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var renderedChapterID: String?
     private var lastAppliedNavigationGeneration = -1
     private var pendingNavigationCommand: ReaderNavigationCommand?
+    private var animatedNavigationGeneration: Int?
     private var isNavigationCommandApplicationScheduled = false
     private var lastReportedViewportSize = CGSize.zero
     private var imageViews: [String: UIView] = [:]
@@ -275,7 +276,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     func scrollViewWillBeginDragging(_: UIScrollView) {
+        animatedNavigationGeneration = nil
         impactFeedback.prepare()
+    }
+
+    func scrollViewDidEndScrollingAnimation(_: UIScrollView) {
+        animatedNavigationGeneration = nil
     }
 
     func scrollViewWillEndDragging(
@@ -364,7 +370,10 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func updateCurrentPageFromScroll() {
-        guard !groups.isEmpty else { return }
+        guard pendingNavigationCommand == nil,
+            animatedNavigationGeneration == nil,
+            !groups.isEmpty
+        else { return }
         let viewportCenter = scrollView.contentOffset.y + view.bounds.height / 2
         var closestIndex = 0
         var closestDistance = CGFloat.greatestFiniteMagnitude
@@ -649,17 +658,33 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let targetY = scaledCenterY + startY - view.bounds.height / 2
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
         let clampedY = max(0, min(targetY, maximumY))
+        let targetOffset = CGPoint(x: 0, y: clampedY)
         currentGroupIndex = groupIndex
-        scrollView.setContentOffset(CGPoint(x: 0, y: clampedY), animated: command.animated)
 
         let targetGeometryIsStable = renderState.urls[...targetPage].allSatisfy { url in
             guard let image = renderState.images[url] else { return false }
             if case .loading = image { return false }
             return true
         }
-        guard targetGeometryIsStable else { return }
+        guard targetGeometryIsStable else {
+            scrollView.setContentOffset(targetOffset, animated: command.animated)
+            return
+        }
 
         lastAppliedNavigationGeneration = command.generation
+        let offsetDelta = hypot(
+            scrollView.contentOffset.x - targetOffset.x,
+            scrollView.contentOffset.y - targetOffset.y
+        )
+        if command.animated, offsetDelta > 0.5 {
+            animatedNavigationGeneration = command.generation
+        } else {
+            animatedNavigationGeneration = nil
+        }
+        scrollView.setContentOffset(
+            targetOffset,
+            animated: animatedNavigationGeneration != nil
+        )
         pendingNavigationCommand = nil
     }
 
