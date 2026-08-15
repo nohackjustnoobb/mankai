@@ -48,6 +48,10 @@ struct ProgressArrowView: View {
         normalizedProgress >= 1
     }
 
+    private var hapticProgressStep: Int {
+        Int(normalizedProgress * 10)
+    }
+
     var body: some View {
         ZStack {
             Circle()
@@ -73,8 +77,20 @@ struct ProgressArrowView: View {
         .frame(width: size, height: size)
         .scaleEffect(isComplete ? completionScale : 1)
         .animation(
-            .spring(response: 0.4, dampingFraction: 0.75),
+            .bouncy(duration: 0.5, extraBounce: 0.3),
             value: isComplete
         )
+        .sensoryFeedback(
+            .increase,
+            trigger: hapticProgressStep
+        ) { oldStep, newStep in
+            newStep > oldStep
+        }
+        .sensoryFeedback(
+            .success,
+            trigger: isComplete
+        ) { oldValue, newValue in
+            !oldValue && newValue
+        }
     }
 }

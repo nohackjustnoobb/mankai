@@ -84,9 +84,6 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var lastReportedViewportSize = CGSize.zero
     private var imageViews: [String: UIView] = [:]
 
-    private var hasTriggeredTopHaptic = false
-    private var hasTriggeredBottomHaptic = false
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     private var isResizing = false
 
     private let scrollView = UIScrollView()
@@ -254,30 +251,10 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         updateCurrentPageFromScroll()
         updateOverscrollViews()
-
-        let offsetY = scrollView.contentOffset.y
-        let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-
-        if offsetY < -CONTINUOUS_OVERSCROLL_THRESHOLD,
-            !hasTriggeredTopHaptic,
-            renderState.previousChapter == .available
-        {
-            impactFeedback.impactOccurred()
-            hasTriggeredTopHaptic = true
-        }
-
-        if offsetY > maximumY + CONTINUOUS_OVERSCROLL_THRESHOLD,
-            !hasTriggeredBottomHaptic,
-            renderState.nextChapter == .available
-        {
-            impactFeedback.impactOccurred()
-            hasTriggeredBottomHaptic = true
-        }
     }
 
     func scrollViewWillBeginDragging(_: UIScrollView) {
         animatedNavigationGeneration = nil
-        impactFeedback.prepare()
     }
 
     func scrollViewDidEndScrollingAnimation(_: UIScrollView) {
@@ -350,11 +327,6 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate _: Bool) {
-        defer {
-            hasTriggeredTopHaptic = false
-            hasTriggeredBottomHaptic = false
-        }
-
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
 
@@ -447,13 +419,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             containerHeightConstraint,
 
             topOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            topOverscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor),
-            topOverscrollView.widthAnchor.constraint(
-                lessThanOrEqualTo: scrollView.widthAnchor, constant: -40),
+            topOverscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -24),
+            topOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            bottomOverscrollView.widthAnchor.constraint(
-                lessThanOrEqualTo: scrollView.widthAnchor, constant: -40),
+            bottomOverscrollView.topAnchor.constraint(
+                equalTo: scrollView.bottomAnchor, constant: 24),
+            bottomOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
         ])
     }
 
