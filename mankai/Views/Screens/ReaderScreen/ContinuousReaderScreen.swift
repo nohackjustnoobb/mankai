@@ -55,6 +55,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var containerWidthConstraint: NSLayoutConstraint!
     private var containerHeightConstraint: NSLayoutConstraint!
     private var contentHeightConstraint: NSLayoutConstraint!
+    private var topOverscrollPositionConstraint: NSLayoutConstraint!
+    private var bottomOverscrollPositionConstraint: NSLayoutConstraint!
 
     init(
         state: ReaderRenderState,
@@ -102,6 +104,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
+        updateOverscrollLayout()
         updateImageViews()
     }
 
@@ -367,6 +370,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         containerWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 0)
         containerHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
         contentHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: 0)
+        topOverscrollPositionConstraint = topOverscrollView.bottomAnchor.constraint(
+            equalTo: scrollView.topAnchor
+        )
+        bottomOverscrollPositionConstraint = bottomOverscrollView.topAnchor.constraint(
+            equalTo: scrollView.bottomAnchor
+        )
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -387,13 +396,23 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             containerHeightConstraint,
 
             topOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            topOverscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -24),
+            topOverscrollPositionConstraint,
             topOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            bottomOverscrollView.topAnchor.constraint(
-                equalTo: scrollView.bottomAnchor, constant: 24),
+            bottomOverscrollPositionConstraint,
             bottomOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
         ])
+
+        updateOverscrollLayout()
+    }
+
+    private func updateOverscrollLayout() {
+        topOverscrollPositionConstraint.constant = -readerOverscrollLayoutSpacing(
+            safeAreaInset: view.safeAreaInsets.top
+        )
+        bottomOverscrollPositionConstraint.constant = readerOverscrollLayoutSpacing(
+            safeAreaInset: view.safeAreaInsets.bottom
+        )
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
@@ -645,11 +664,20 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private func updateOverscrollViews() {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let topProgress = min(max(-offsetY / READER_OVERSCROLL_THRESHOLD, 0), 1)
-        let bottomProgress = min(
-            max((offsetY - maximumY) / READER_OVERSCROLL_THRESHOLD, 0),
-            1
+        let topDistance = readerVisibleOverscrollDistance(
+            max(-offsetY, 0),
+            spacing: readerOverscrollLayoutSpacing(
+                safeAreaInset: view.safeAreaInsets.top
+            )
         )
+        let bottomDistance = readerVisibleOverscrollDistance(
+            max(offsetY - maximumY, 0),
+            spacing: readerOverscrollLayoutSpacing(
+                safeAreaInset: view.safeAreaInsets.bottom
+            )
+        )
+        let topProgress = min(topDistance / READER_OVERSCROLL_THRESHOLD, 1)
+        let bottomProgress = min(bottomDistance / READER_OVERSCROLL_THRESHOLD, 1)
 
         topOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(topProgress),

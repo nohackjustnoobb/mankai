@@ -9,6 +9,22 @@ import SwiftUI
 import UIKit
 
 let READER_OVERSCROLL_THRESHOLD: CGFloat = 80
+let READER_OVERSCROLL_MINIMUM_SPACING: CGFloat = 24
+let READER_OVERSCROLL_INDICATOR_SIZE: CGFloat = 48
+
+func readerOverscrollLayoutSpacing(safeAreaInset: CGFloat) -> CGFloat {
+    max(
+        max(READER_OVERSCROLL_MINIMUM_SPACING, safeAreaInset) - safeAreaInset,
+        READER_OVERSCROLL_INDICATOR_SIZE * (1.4 - 1) / 2
+    )
+}
+
+func readerVisibleOverscrollDistance(
+    _ distance: CGFloat,
+    spacing: CGFloat
+) -> CGFloat {
+    max(distance - spacing, 0)
+}
 
 struct ReaderRoute: Identifiable, Hashable {
     let plugin: Plugin
@@ -81,7 +97,8 @@ struct ReaderOverscrollIndicator: View {
                     progress: progress,
                     direction: direction,
                     tint: Color(uiColor: .secondaryLabel),
-                    size: 48
+                    size: READER_OVERSCROLL_INDICATOR_SIZE,
+                    completionScale: 1.2
                 )
             case .locked:
                 statusContent(

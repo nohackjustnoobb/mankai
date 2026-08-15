@@ -122,6 +122,7 @@ private final class PagedReaderViewController: UIViewController,
     private let leadingOverscrollController: UIHostingController<ReaderOverscrollIndicator>
     private let trailingOverscrollController: UIHostingController<ReaderOverscrollIndicator>
     private var overscrollPositionConstraints: [NSLayoutConstraint] = []
+    private var overscrollLayoutOrientation: NavigationOrientation?
     private weak var pageTransitionScrollView: UIScrollView?
     private var pageTransitionScrollObservation: NSKeyValueObservation?
     private var pageTransitionRestingOffset: CGFloat = 0
@@ -183,6 +184,13 @@ private final class PagedReaderViewController: UIViewController,
         view.addGestureRecognizer(tapGesture)
 
         applyCurrentState(force: true)
+    }
+
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        if configuration.pageTransition == .scroll {
+            updateScrollOverscrollLayout()
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -397,6 +405,12 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     private func updateScrollOverscrollLayout() {
+        guard
+            overscrollPositionConstraints.isEmpty
+                || overscrollLayoutOrientation != configuration.navigationOrientation
+        else { return }
+
+        overscrollLayoutOrientation = configuration.navigationOrientation
         NSLayoutConstraint.deactivate(overscrollPositionConstraints)
 
         if configuration.navigationOrientation == .vertical {
@@ -406,7 +420,7 @@ private final class PagedReaderViewController: UIViewController,
                 ),
                 leadingOverscrollView.bottomAnchor.constraint(
                     equalTo: pageContainerScrollView.topAnchor,
-                    constant: -24
+                    constant: -READER_OVERSCROLL_MINIMUM_SPACING
                 ),
                 leadingOverscrollView.widthAnchor.constraint(
                     equalTo: pageContainerScrollView.widthAnchor,
@@ -416,7 +430,7 @@ private final class PagedReaderViewController: UIViewController,
                 ),
                 trailingOverscrollView.topAnchor.constraint(
                     equalTo: pageContainerScrollView.bottomAnchor,
-                    constant: 24
+                    constant: READER_OVERSCROLL_MINIMUM_SPACING
                 ),
                 trailingOverscrollView.widthAnchor.constraint(
                     equalTo: pageContainerScrollView.widthAnchor
@@ -429,7 +443,7 @@ private final class PagedReaderViewController: UIViewController,
                 ),
                 leadingOverscrollView.trailingAnchor.constraint(
                     equalTo: pageContainerScrollView.leadingAnchor,
-                    constant: -24
+                    constant: -READER_OVERSCROLL_MINIMUM_SPACING
                 ),
                 leadingOverscrollView.heightAnchor.constraint(
                     equalTo: pageContainerScrollView.heightAnchor
@@ -439,7 +453,7 @@ private final class PagedReaderViewController: UIViewController,
                 ),
                 trailingOverscrollView.leadingAnchor.constraint(
                     equalTo: pageContainerScrollView.trailingAnchor,
-                    constant: 24
+                    constant: READER_OVERSCROLL_MINIMUM_SPACING
                 ),
                 trailingOverscrollView.heightAnchor.constraint(
                     equalTo: pageContainerScrollView.heightAnchor
@@ -472,13 +486,22 @@ private final class PagedReaderViewController: UIViewController,
         let trailingIsAtBoundary =
             usesHorizontalRightToLeftNavigation ? isAtFirstGroup : isAtLastGroup
 
+        let visibleLeadingOverscrollDistance = readerVisibleOverscrollDistance(
+            leadingOverscrollDistance,
+            spacing: READER_OVERSCROLL_MINIMUM_SPACING
+        )
+        let visibleTrailingOverscrollDistance = readerVisibleOverscrollDistance(
+            trailingOverscrollDistance,
+            spacing: READER_OVERSCROLL_MINIMUM_SPACING
+        )
+
         let leadingProgress =
             leadingIsAtBoundary
-            ? min(leadingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
+            ? min(visibleLeadingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
             : 0
         let trailingProgress =
             trailingIsAtBoundary
-            ? min(trailingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
+            ? min(visibleTrailingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
             : 0
 
         leadingOverscrollView.isHidden = !leadingIsAtBoundary

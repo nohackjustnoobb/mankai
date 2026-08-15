@@ -25,6 +25,19 @@ enum ProgressArrowDirection {
             return "arrow.right"
         }
     }
+
+    fileprivate var progressStartAngle: Angle {
+        switch self {
+        case .up:
+            return .degrees(-90)
+        case .down:
+            return .degrees(90)
+        case .left:
+            return .degrees(180)
+        case .right:
+            return .zero
+        }
+    }
 }
 
 struct ProgressArrowView: View {
@@ -48,6 +61,17 @@ struct ProgressArrowView: View {
         normalizedProgress >= 1
     }
 
+    private var strokeProgress: Double {
+        normalizedProgress / 2
+    }
+
+    private var progressStrokeStyle: StrokeStyle {
+        StrokeStyle(
+            lineWidth: lineWidth,
+            lineCap: .round
+        )
+    }
+
     private var hapticProgressStep: Int {
         Int(normalizedProgress * 10)
     }
@@ -59,15 +83,12 @@ struct ProgressArrowView: View {
                 .opacity(isComplete ? 1 : 0)
 
             Circle()
-                .trim(from: 0, to: normalizedProgress)
-                .stroke(
-                    tint,
-                    style: StrokeStyle(
-                        lineWidth: lineWidth,
-                        lineCap: .round
-                    )
+                .trim(
+                    from: 0.5 - strokeProgress,
+                    to: 0.5 + strokeProgress
                 )
-                .rotationEffect(.degrees(-90))
+                .stroke(tint, style: progressStrokeStyle)
+                .rotationEffect(direction.progressStartAngle)
                 .opacity(isInProgress ? 1 : 0)
 
             Image(systemName: direction.systemImageName)
