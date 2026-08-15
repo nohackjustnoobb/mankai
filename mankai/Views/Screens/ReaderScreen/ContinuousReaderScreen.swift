@@ -10,50 +10,6 @@ import UIKit
 
 private let CONTINUOUS_LOADING_IMAGE_TAG = 1
 private let CONTINUOUS_ERROR_IMAGE_TAG = 2
-private let CONTINUOUS_OVERSCROLL_THRESHOLD: CGFloat = 80
-
-private struct ContinuousOverscrollIndicator: View {
-    let progress: Double
-    let direction: ProgressArrowDirection
-    let availability: ReaderChapterAvailability
-
-    var body: some View {
-        Group {
-            switch availability {
-            case .available:
-                ProgressArrowView(
-                    progress: progress,
-                    direction: direction,
-                    tint: Color(uiColor: .secondaryLabel),
-                    size: 48
-                )
-            case .locked:
-                statusView(
-                    systemName: "lock.fill",
-                    text: direction == .up
-                        ? String(localized: "previousChapterIsLocked")
-                        : String(localized: "nextChapterIsLocked")
-                )
-            case .unavailable:
-                statusView(
-                    systemName: "xmark",
-                    text: direction == .up
-                        ? String(localized: "noPreviousChapter")
-                        : String(localized: "noNextChapter")
-                )
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func statusView(systemName: String, text: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemName)
-            Text(text)
-        }
-        .foregroundStyle(Color(uiColor: .secondaryLabel))
-    }
-}
 
 private struct ContinuousGroup: Equatable {
     let urls: [String]
@@ -91,8 +47,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private let containerView = UIView()
     private let topOverscrollView = UIView()
     private let bottomOverscrollView = UIView()
-    private let topOverscrollController: UIHostingController<ContinuousOverscrollIndicator>
-    private let bottomOverscrollController: UIHostingController<ContinuousOverscrollIndicator>
+    private let topOverscrollController: UIHostingController<ReaderOverscrollIndicator>
+    private let bottomOverscrollController: UIHostingController<ReaderOverscrollIndicator>
 
     private var containerLeadingConstraint: NSLayoutConstraint!
     private var containerTopConstraint: NSLayoutConstraint!
@@ -109,16 +65,18 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         self.configuration = configuration
         self.actions = actions
         topOverscrollController = UIHostingController(
-            rootView: ContinuousOverscrollIndicator(
+            rootView: ReaderOverscrollIndicator(
                 progress: 0,
                 direction: .up,
+                step: .previous,
                 availability: state.previousChapter
             )
         )
         bottomOverscrollController = UIHostingController(
-            rootView: ContinuousOverscrollIndicator(
+            rootView: ReaderOverscrollIndicator(
                 progress: 0,
                 direction: .down,
+                step: .next,
                 availability: state.nextChapter
             )
         )
@@ -133,8 +91,11 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        setupGestures()
         setupConstraints()
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        scrollView.addGestureRecognizer(tapGesture)
+
         applyCurrentState(force: true)
         enqueueNavigationCommand(from: renderState)
     }
@@ -227,7 +188,14 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         renderedRevision = renderState.revision
         renderedChapterID = renderState.chapterID
         groups = renderState.groups.map { ContinuousGroup(urls: $0.urls) }
-        removeStaleImageViews()
+
+        let activeURLs = Set(renderState.urls)
+        let staleURLs = imageViews.keys.filter { !activeURLs.contains($0) }
+        for url in staleURLs {
+            imageViews[url]?.removeFromSuperview()
+            imageViews[url] = nil
+        }
+
         updateOverscrollViews()
         view.setNeedsLayout()
     }
@@ -330,11 +298,11 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
 
-        if offsetY < -CONTINUOUS_OVERSCROLL_THRESHOLD,
+        if offsetY < -READER_OVERSCROLL_THRESHOLD,
             renderState.previousChapter == .available
         {
             actions.requestChapterStep(.previous)
-        } else if offsetY > maximumY + CONTINUOUS_OVERSCROLL_THRESHOLD,
+        } else if offsetY > maximumY + READER_OVERSCROLL_THRESHOLD,
             renderState.nextChapter == .available
         {
             actions.requestChapterStep(.next)
@@ -428,11 +396,6 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         ])
     }
 
-    private func setupGestures() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        scrollView.addGestureRecognizer(tapGesture)
-    }
-
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
         let location = gesture.location(in: scrollView)
         let width = scrollView.bounds.width
@@ -515,32 +478,6 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         }
     }
 
-    private func removeStaleImageViews() {
-        let activeURLs = Set(renderState.urls)
-        let staleURLs = imageViews.keys.filter { !activeURLs.contains($0) }
-        for url in staleURLs {
-            imageViews[url]?.removeFromSuperview()
-            imageViews[url] = nil
-        }
-    }
-
-    private func calculateImageRatios() -> [String: CGFloat] {
-        renderState.images.compactMapValues { state in
-            guard case .success(let image) = state else { return nil }
-            return image.size.width / image.size.height
-        }
-    }
-
-    private func calculateModeRatio(from ratios: [String: CGFloat]) -> CGFloat {
-        guard !ratios.isEmpty else { return 1 }
-        var counts: [CGFloat: Int] = [:]
-        for ratio in ratios.values {
-            counts[(ratio * 100).rounded() / 100, default: 0] += 1
-        }
-        let maximumCount = counts.values.max() ?? 0
-        return counts.filter { $0.value == maximumCount }.keys.min() ?? 1
-    }
-
     private func calculateFrames(
         ratios: [String: CGFloat],
         mode: CGFloat
@@ -592,8 +529,20 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             return
         }
 
-        let ratios = calculateImageRatios()
-        let mode = calculateModeRatio(from: ratios)
+        let ratios = renderState.images.compactMapValues { state -> CGFloat? in
+            guard case .success(let image) = state else { return nil }
+            return image.size.width / image.size.height
+        }
+        var roundedRatioCounts: [CGFloat: Int] = [:]
+        for ratio in ratios.values {
+            roundedRatioCounts[(ratio * 100).rounded() / 100, default: 0] += 1
+        }
+        let maximumRatioCount = roundedRatioCounts.values.max() ?? 0
+        let mode =
+            roundedRatioCounts
+            .filter { $0.value == maximumRatioCount }
+            .keys
+            .min() ?? 1
         let (frames, finalY) = calculateFrames(ratios: ratios, mode: mode)
 
         for url in renderState.urls {
@@ -696,20 +645,22 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private func updateOverscrollViews() {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let topProgress = min(max(-offsetY / CONTINUOUS_OVERSCROLL_THRESHOLD, 0), 1)
+        let topProgress = min(max(-offsetY / READER_OVERSCROLL_THRESHOLD, 0), 1)
         let bottomProgress = min(
-            max((offsetY - maximumY) / CONTINUOUS_OVERSCROLL_THRESHOLD, 0),
+            max((offsetY - maximumY) / READER_OVERSCROLL_THRESHOLD, 0),
             1
         )
 
-        topOverscrollController.rootView = ContinuousOverscrollIndicator(
+        topOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(topProgress),
             direction: .up,
+            step: .previous,
             availability: renderState.previousChapter
         )
-        bottomOverscrollController.rootView = ContinuousOverscrollIndicator(
+        bottomOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(bottomProgress),
             direction: .down,
+            step: .next,
             availability: renderState.nextChapter
         )
     }

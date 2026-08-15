@@ -466,6 +466,21 @@ struct ReaderScreen: View {
         ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout
     }
 
+    private var pagedTapBehavior: TapBehavior {
+        TapBehavior(rawValue: pagedTapBehaviorRawValue)
+            ?? SettingsDefaults.PR_tapNavigationBehavior
+    }
+
+    private var pagedNavigationOrientation: NavigationOrientation {
+        NavigationOrientation(rawValue: pagedOrientationRawValue)
+            ?? SettingsDefaults.PR_navigationOrientation
+    }
+
+    private var pagedPageTransition: PageTransition {
+        PageTransition(rawValue: pagedTransitionRawValue)
+            ?? SettingsDefaults.PR_pageTransition
+    }
+
     private var readerTypeSelection: Binding<ReaderType> {
         Binding(
             get: { readerType },
@@ -478,9 +493,7 @@ struct ReaderScreen: View {
 
     private var imageLayoutSelection: Binding<ImageLayout> {
         Binding(
-            get: {
-                ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout
-            },
+            get: { imageLayout },
             set: { imageLayout in
                 scheduleCurrentPageNavigationCommand()
                 imageLayoutRawValue = imageLayout.rawValue
@@ -531,12 +544,7 @@ struct ReaderScreen: View {
 
     private var followReadingDirectionSelection: Binding<Bool> {
         Binding(
-            get: {
-                let behavior =
-                    TapBehavior(rawValue: pagedTapBehaviorRawValue)
-                    ?? SettingsDefaults.PR_tapNavigationBehavior
-                return behavior == .followReadingDirection
-            },
+            get: { pagedTapBehavior == .followReadingDirection },
             set: { isEnabled in
                 pagedTapBehaviorRawValue =
                     isEnabled
@@ -548,10 +556,7 @@ struct ReaderScreen: View {
 
     private var navigationOrientationSelection: Binding<NavigationOrientation> {
         Binding(
-            get: {
-                NavigationOrientation(rawValue: pagedOrientationRawValue)
-                    ?? SettingsDefaults.PR_navigationOrientation
-            },
+            get: { pagedNavigationOrientation },
             set: { orientation in
                 scheduleCurrentPageNavigationCommand()
                 pagedOrientationRawValue = orientation.rawValue
@@ -561,10 +566,7 @@ struct ReaderScreen: View {
 
     private var pageTransitionSelection: Binding<PageTransition> {
         Binding(
-            get: {
-                PageTransition(rawValue: pagedTransitionRawValue)
-                    ?? SettingsDefaults.PR_pageTransition
-            },
+            get: { pagedPageTransition },
             set: { transition in
                 scheduleCurrentPageNavigationCommand()
                 pagedTransitionRawValue = transition.rawValue
@@ -589,12 +591,9 @@ struct ReaderScreen: View {
                 ? continuousTapNavigation
                 : pagedTapNavigation,
 
-            tapNavigationBehavior: TapBehavior(rawValue: pagedTapBehaviorRawValue)
-                ?? SettingsDefaults.PR_tapNavigationBehavior,
-            navigationOrientation: NavigationOrientation(rawValue: pagedOrientationRawValue)
-                ?? SettingsDefaults.PR_navigationOrientation,
-            pageTransition: PageTransition(rawValue: pagedTransitionRawValue)
-                ?? SettingsDefaults.PR_pageTransition,
+            tapNavigationBehavior: pagedTapBehavior,
+            navigationOrientation: pagedNavigationOrientation,
+            pageTransition: pagedPageTransition,
 
             snapToPage: continuousSnapToPage,
             softSnap: continuousSoftSnap
@@ -610,8 +609,8 @@ struct ReaderScreen: View {
             groups: groups,
             currentPage: currentPage,
             navigationCommand: navigationCommand,
-            previousChapter: chapterAvailability(at: currentChapterIndex - 1),
-            nextChapter: chapterAvailability(at: currentChapterIndex + 1)
+            previousChapter: previousChapterAvailability,
+            nextChapter: nextChapterAvailability
         )
     }
 
@@ -868,7 +867,10 @@ struct ReaderScreen: View {
             ProgressView()
                 .controlSize(.large)
         case .failed:
-            Button(action: retryChapter) {
+            Button {
+                retryGeneration += 1
+                loadPhase = .loading
+            } label: {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 44))
@@ -885,12 +887,15 @@ struct ReaderScreen: View {
     }
 
     private func controls(bottomSafeAreaInset: CGFloat) -> some View {
-        VStack(spacing: 10) {
+        let pageCount = max(urls.count, 1)
+        let displayedPage = min(currentPage + 1, pageCount)
+
+        return VStack(spacing: 10) {
             HStack {
                 controlButton(
                     systemImage: "chevron.left.to.line",
                     label: "previousChapter",
-                    enabled: chapterAvailability(at: currentChapterIndex - 1) == .available
+                    enabled: previousChapterAvailability == .available
                 ) {
                     stepChapter(.previous)
                 }
@@ -906,7 +911,7 @@ struct ReaderScreen: View {
                 Button {
                     isShowingChapters = true
                 } label: {
-                    Text("\(min(currentPage + 1, max(urls.count, 1))) / \(max(urls.count, 1))")
+                    Text("\(displayedPage) / \(pageCount)")
                         .frame(minWidth: 72)
                 }
                 .buttonStyle(.plain)
@@ -923,7 +928,7 @@ struct ReaderScreen: View {
                 controlButton(
                     systemImage: "chevron.right.to.line",
                     label: "nextChapter",
-                    enabled: chapterAvailability(at: currentChapterIndex + 1) == .available
+                    enabled: nextChapterAvailability == .available
                 ) {
                     stepChapter(.next)
                 }
@@ -931,10 +936,10 @@ struct ReaderScreen: View {
 
             Slider(
                 value: Binding(
-                    get: { Double(min(currentPage + 1, max(urls.count, 1))) },
+                    get: { Double(displayedPage) },
                     set: { requestPage(Int($0.rounded()) - 1, animated: false) }
                 ),
-                in: 1...Double(max(urls.count, 1)),
+                in: 1...Double(pageCount),
                 step: 1
             )
             .disabled(urls.isEmpty)
@@ -965,6 +970,14 @@ struct ReaderScreen: View {
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {
         guard chapters.indices.contains(index) else { return .unavailable }
         return chapters[index].locked == true ? .locked : .available
+    }
+
+    private var previousChapterAvailability: ReaderChapterAvailability {
+        chapterAvailability(at: currentChapterIndex - 1)
+    }
+
+    private var nextChapterAvailability: ReaderChapterAvailability {
+        chapterAvailability(at: currentChapterIndex + 1)
     }
 
     private func canStepGroup(_ step: ReaderStep) -> Bool {
@@ -1063,11 +1076,6 @@ struct ReaderScreen: View {
         forceSaveCurrentPosition()
         currentChapterIndex = index
         pendingInitialPage = 0
-        loadPhase = .loading
-    }
-
-    private func retryChapter() {
-        retryGeneration += 1
         loadPhase = .loading
     }
 

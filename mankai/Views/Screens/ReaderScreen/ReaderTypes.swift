@@ -5,7 +5,10 @@
 //  Created by Travis XU on 7/8/2026.
 //
 
+import SwiftUI
 import UIKit
+
+let READER_OVERSCROLL_THRESHOLD: CGFloat = 80
 
 struct ReaderRoute: Identifiable, Hashable {
     let plugin: Plugin
@@ -53,7 +56,7 @@ struct ReaderGroup: Identifiable, Hashable {
     }
 }
 
-enum ReaderStep {
+enum ReaderStep: Equatable {
     case previous
     case next
 }
@@ -62,6 +65,61 @@ enum ReaderChapterAvailability: Equatable {
     case unavailable
     case locked
     case available
+}
+
+struct ReaderOverscrollIndicator: View {
+    let progress: Double
+    let direction: ProgressArrowDirection
+    let step: ReaderStep
+    let availability: ReaderChapterAvailability
+
+    var body: some View {
+        Group {
+            switch availability {
+            case .available:
+                ProgressArrowView(
+                    progress: progress,
+                    direction: direction,
+                    tint: Color(uiColor: .secondaryLabel),
+                    size: 48
+                )
+            case .locked:
+                statusContent(
+                    systemName: "lock.fill",
+                    text: step == .previous
+                        ? String(localized: "previousChapterIsLocked")
+                        : String(localized: "nextChapterIsLocked")
+                )
+            case .unavailable:
+                statusContent(
+                    systemName: "xmark",
+                    text: step == .previous
+                        ? String(localized: "noPreviousChapter")
+                        : String(localized: "noNextChapter")
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func statusContent(systemName: String, text: String) -> some View {
+        switch direction {
+        case .left, .right:
+            VStack(spacing: 8) {
+                Image(systemName: systemName)
+                Text(text)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 80)
+            .foregroundStyle(Color(uiColor: .secondaryLabel))
+        case .up, .down:
+            HStack(spacing: 8) {
+                Image(systemName: systemName)
+                Text(text)
+            }
+            .foregroundStyle(Color(uiColor: .secondaryLabel))
+        }
+    }
 }
 
 struct ReaderNavigationCommand: Equatable {
