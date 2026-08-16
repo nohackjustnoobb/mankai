@@ -96,18 +96,6 @@ struct SelectChaptersModal: View {
                     }
                 }
 
-                ToolbarItem(placement: .principal) {
-                    VStack {
-                        Text("selectChapters")
-                            .font(.headline)
-                        if totalSelectedCount > 0 {
-                            Text("\(totalSelectedCount) selected")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
                 ToolbarItem(placement: .confirmationAction) {
                     Button("download") {
                         let payload = buildDownloadPayload()
@@ -117,6 +105,11 @@ struct SelectChaptersModal: View {
                     .disabled(totalSelectedCount == 0)
                 }
             }
+            .navigationTitleWithSubtitle(
+                title: Text("selectChapters"),
+                subtitle: totalSelectedCount > 0
+                    ? Text("\(totalSelectedCount) selected") : nil
+            )
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)

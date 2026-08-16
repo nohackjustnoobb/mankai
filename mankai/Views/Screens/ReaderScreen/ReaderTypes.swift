@@ -96,7 +96,6 @@ struct ReaderOverscrollIndicator: View {
                 ProgressArrowView(
                     progress: progress,
                     direction: direction,
-                    tint: Color(uiColor: .secondaryLabel),
                     size: READER_OVERSCROLL_INDICATOR_SIZE,
                     completionScale: 1.2
                 )

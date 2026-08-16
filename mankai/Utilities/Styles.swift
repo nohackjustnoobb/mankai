@@ -7,6 +7,74 @@
 
 import SwiftUI
 
+struct NavigationTitleSubtitleModifier<LegacyContent: View>: ViewModifier {
+    let title: Text
+    let subtitle: Text?
+    let legacyContent: () -> LegacyContent
+
+    init(
+        title: Text,
+        subtitle: Text?,
+        @ViewBuilder legacyContent: @escaping () -> LegacyContent
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.legacyContent = legacyContent
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            if let subtitle {
+                content
+                    .navigationTitle(title)
+                    .navigationSubtitle(subtitle)
+            } else {
+                content.navigationTitle(title)
+            }
+        } else {
+            content.toolbar {
+                ToolbarItem(placement: .principal) {
+                    legacyContent()
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    func navigationTitleWithSubtitle(title: Text, subtitle: Text?) -> some View {
+        modifier(
+            NavigationTitleSubtitleModifier(title: title, subtitle: subtitle) {
+                VStack {
+                    title
+                        .font(.headline)
+
+                    if let subtitle {
+                        subtitle
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        )
+    }
+
+    func navigationTitleWithSubtitle<LegacyContent: View>(
+        title: Text,
+        subtitle: Text?,
+        @ViewBuilder legacyContent: @escaping () -> LegacyContent
+    ) -> some View {
+        modifier(
+            NavigationTitleSubtitleModifier(
+                title: title,
+                subtitle: subtitle,
+                legacyContent: legacyContent
+            )
+        )
+    }
+}
+
 struct ColorfulIconLabelStyle: LabelStyle {
     var color: Color
     var imageScale: Image.Scale = .medium

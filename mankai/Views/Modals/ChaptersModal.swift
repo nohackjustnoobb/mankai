@@ -13,6 +13,7 @@ struct ChaptersModal: View {
     let chapterGroupIndex: Int
     let record: RecordModel?
     let downloadChapters: Set<String>?
+    let allowEditing: Bool
     let onNavigateToChapter: (Chapter, Int?, Int?) -> Void
 
     private let chapterGroupTitle: String
@@ -22,6 +23,7 @@ struct ChaptersModal: View {
         plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int,
         record: RecordModel? = nil,
         downloadChapters: Set<String>? = nil,
+        allowEditing: Bool = true,
         onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
     ) {
         self.plugin = plugin
@@ -29,6 +31,7 @@ struct ChaptersModal: View {
         self.chapterGroupIndex = chapterGroupIndex
         self.record = record
         self.downloadChapters = downloadChapters
+        self.allowEditing = allowEditing
         self.onNavigateToChapter = onNavigateToChapter
 
         if manga.chapters.indices.contains(chapterGroupIndex) {
@@ -90,7 +93,6 @@ struct ChaptersModal: View {
                     }
                 }
                 .navigationBarTitleDisplayMode(.inline)
-                .navigationTitle(LocalizedStringKey(chapterGroupTitle))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         HStack {
@@ -104,7 +106,7 @@ struct ChaptersModal: View {
                                 )
                             }
 
-                            if plugin is Editable, manga.editable ?? true {
+                            if allowEditing, plugin is Editable, manga.editable ?? true {
                                 NavigationLink(destination: {
                                     UpdateChaptersModal(
                                         plugin: plugin as! any Editable,
@@ -118,22 +120,16 @@ struct ChaptersModal: View {
                         }
                     }
 
-                    ToolbarItem(placement: .principal) {
-                        VStack {
-                            Text(LocalizedStringKey(chapterGroupTitle))
-                                .font(.headline)
-                            Text("\(chapters.count) chapters")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
                     ToolbarItem(placement: .confirmationAction) {
                         Button("close") {
                             dismiss()
                         }
                     }
                 }
+                .navigationTitleWithSubtitle(
+                    title: Text(LocalizedStringKey(chapterGroupTitle)),
+                    subtitle: Text("\(chapters.count) chapters")
+                )
                 .onAppear {
                     if let record = record {
                         proxy.scrollTo(record.chapterId, anchor: .center)

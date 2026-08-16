@@ -29,6 +29,11 @@ struct UpdateChapterModal: View {
         showingErrorAlert = true
     }
 
+    private func showRenameAlert() {
+        newTitle = chapter.title ?? chapter.id
+        showingTitleAlert = true
+    }
+
     private func loadUrls() {
         Task {
             do {
@@ -186,27 +191,33 @@ struct UpdateChapterModal: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(chapter.title ?? chapter.id)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationTitleWithSubtitle(
+            title: Text("editChapter"),
+            subtitle: Text(chapter.title ?? chapter.id)
+        ) {
+            Button(action: showRenameAlert) {
+                VStack {
+                    Text("editChapter")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    HStack(spacing: 4) {
+                        Text(chapter.title ?? chapter.id)
+                            .font(.caption)
+                        Image(systemName: "pencil")
+                            .font(.caption2)
+                    }
+
+                    .foregroundColor(.secondary)
+                }
+            }
+        }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Button(action: {
-                    newTitle = chapter.title ?? chapter.id
-                    showingTitleAlert = true
-                }) {
-                    VStack {
-                        Text("editChapter")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-
-                        HStack(spacing: 4) {
-                            Text(chapter.title ?? chapter.id)
-                                .font(.caption)
-                            Image(systemName: "pencil")
-                                .font(.caption2)
-                        }
-
-                        .foregroundColor(.secondary)
+            if #available(iOS 26.0, *) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: showRenameAlert) {
+                        Image(systemName: "pencil")
                     }
                 }
             }

@@ -22,19 +22,11 @@ struct SearchScreen: View {
             }
             .padding()
         }
-        .navigationTitle("search")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack {
-                    Text("search")
-                        .font(.headline)
-                    Text(query)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
+        .navigationTitleWithSubtitle(
+            title: Text("search"),
+            subtitle: Text(query)
+        )
         .onAppear {
             updatePlugins()
         }

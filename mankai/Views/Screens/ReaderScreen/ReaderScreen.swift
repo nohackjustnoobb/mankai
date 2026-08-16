@@ -720,7 +720,8 @@ struct ReaderScreen: View {
             ChaptersModal(
                 plugin: plugin,
                 manga: manga,
-                chapterGroupIndex: chapterGroupIndex
+                chapterGroupIndex: chapterGroupIndex,
+                allowEditing: false
             ) { selectedChapter, _, _ in
                 selectChapter(selectedChapter)
                 isShowingChapters = false

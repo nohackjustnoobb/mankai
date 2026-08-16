@@ -6,7 +6,6 @@
 //
 
 import CoreGraphics
-import SwiftUI
 import UIKit
 
 extension UIApplication {
@@ -38,12 +37,6 @@ extension UIDevice {
 
     static var isIPhone: Bool {
         UIDevice.current.userInterfaceIdiom == .phone
-    }
-}
-
-extension View {
-    func apply<V: View>(@ViewBuilder _ block: (Self) -> V) -> V {
-        block(self)
     }
 }
 

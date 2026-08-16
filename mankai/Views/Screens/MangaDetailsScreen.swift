@@ -194,6 +194,7 @@ struct MangaDetailsScreen: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal)
                         .padding(.horizontal)
+                        .frame(maxWidth: 400)
 
                     Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
                         .font(.title2)
@@ -227,6 +228,7 @@ struct MangaDetailsScreen: View {
                     }
                 }
                 .textCase(.none)
+                .frame(maxWidth: .infinity)
             }
             .listRowInsets(EdgeInsets())
             .padding(.top)
@@ -385,115 +387,125 @@ struct MangaDetailsScreen: View {
         }
     }
 
+    private func chapterRow(_ chapter: Chapter) -> some View {
+        let chapterTitle = chapter.title ?? chapter.id
+        let isDownloaded = downloadedChapterIds?.contains(chapter.id) == true
+        let isCurrentChapter = record?.chapterId == chapter.id
+        let chapterIcon = (chapter.locked ?? false) ? "lock.fill" : "chevron.right"
+
+        return Button(action: {
+            navigateToChapter(chapter)
+        }) {
+            HStack {
+                Text(chapterTitle)
+                    .foregroundColor(.primary)
+
+                if isDownloaded {
+                    Image(systemName: "network.slash")
+                        .foregroundColor(.secondary)
+                }
+
+                if isCurrentChapter {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .foregroundColor(.accentColor)
+                }
+
+                Spacer()
+                Image(systemName: chapterIcon)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .disabled(chapter.locked ?? false)
+    }
+
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {
-                HStack(spacing: 0) {
-                    info
-                        .frame(maxWidth: 400)
+                GeometryReader { geometry in
+                    let infoWidth = max(400, geometry.size.width / 3)
+                    let chaptersWidth = max(0, geometry.size.width - infoWidth)
 
-                    if let selectedChapterGroup {
-                        let chapters = selectedChapterGroup.chapters
-                        ScrollViewReader { proxy in
-                            List {
-                                Section {
-                                    if chapters.isEmpty {
-                                        Text("noChaptersAvailable")
-                                            .foregroundStyle(.secondary)
-                                    } else {
-                                        ForEach(
-                                            isReversed ? chapters.reversed() : chapters, id: \.id
-                                        ) {
-                                            chapter in
-                                            Button(action: {
-                                                navigateToChapter(chapter)
-                                            }) {
-                                                HStack {
-                                                    Text(chapter.title ?? chapter.id)
-                                                        .foregroundColor(.primary)
+                    HStack(spacing: 0) {
+                        info
+                            .frame(minWidth: 400)
+                            .frame(width: infoWidth)
 
-                                                    if downloadedChapterIds?.contains(chapter.id)
-                                                        == true
-                                                    {
-                                                        Image(systemName: "network.slash")
-                                                            .foregroundColor(.secondary)
-                                                    }
-
-                                                    if let record = record,
-                                                        record.chapterId == chapter.id
-                                                    {
-                                                        Image(systemName: "clock.arrow.circlepath")
-                                                            .foregroundColor(.accentColor)
-                                                    }
-
-                                                    Spacer()
-                                                    Image(
-                                                        systemName: (chapter.locked ?? false)
-                                                            ? "lock.fill" : "chevron.right"
-                                                    )
-                                                    .foregroundColor(.secondary)
-                                                }
-                                            }
-                                            .disabled(chapter.locked ?? false)
-                                        }
-                                    }
-
-                                } header: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(LocalizedStringKey(selectedChapterGroup.title))
-                                            Text("\(chapters.count) chapters")
-                                                .font(.caption)
+                        if let selectedChapterGroup {
+                            let chapters = selectedChapterGroup.chapters
+                            let displayedChapters: [Chapter] =
+                                isReversed
+                                ? Array(chapters.reversed())
+                                : chapters
+                            ScrollViewReader { proxy in
+                                List {
+                                    Section {
+                                        if chapters.isEmpty {
+                                            Text("noChaptersAvailable")
                                                 .foregroundStyle(.secondary)
-                                        }
-
-                                        Spacer()
-
-                                        HStack {
-                                            Button(action: {
-                                                isReversed.toggle()
-                                            }) {
-                                                Image(
-                                                    systemName: isReversed
-                                                        ? "arrow.up"
-                                                        : "arrow.down"
-                                                )
-                                                .font(.headline)
+                                        } else {
+                                            ForEach(displayedChapters, id: \.id) { chapter in
+                                                chapterRow(chapter)
                                             }
-                                            .buttonStyle(.plain)
+                                        }
+                                    } header: {
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text(LocalizedStringKey(selectedChapterGroup.title))
+                                                Text("\(chapters.count) chapters")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
 
-                                            if plugin is Editable,
-                                                detailedManga?.editable ?? true
-                                            {
+                                            Spacer()
+
+                                            HStack {
                                                 Button(action: {
-                                                    isUpdateChaptersModalPresented = true
+                                                    isReversed.toggle()
                                                 }) {
-                                                    Image(systemName: "pencil")
-                                                        .font(.headline)
+                                                    Image(
+                                                        systemName: isReversed
+                                                            ? "arrow.up"
+                                                            : "arrow.down"
+                                                    )
+                                                    .font(.headline)
                                                 }
                                                 .buttonStyle(.plain)
+
+                                                if plugin is Editable,
+                                                    detailedManga?.editable ?? true
+                                                {
+                                                    Button(action: {
+                                                        isUpdateChaptersModalPresented = true
+                                                    }) {
+                                                        Image(systemName: "pencil")
+                                                            .font(.headline)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .onAppear {
-                                scrollToRecord(proxy: proxy)
-                            }
-                            .onChange(of: record, initial: false) { _, _ in
-                                scrollToRecord(proxy: proxy)
-                            }
-                            .onChange(of: selectedChapterGroupIndex) {
-                                if let record = record {
-                                    proxy.scrollTo(record.chapterId, anchor: .center)
+                                .frame(maxWidth: .infinity)
+                                .onAppear {
+                                    scrollToRecord(proxy: proxy)
+                                }
+                                .onChange(of: record, initial: false) { _, _ in
+                                    scrollToRecord(proxy: proxy)
+                                }
+                                .onChange(of: selectedChapterGroupIndex) {
+                                    if let record = record {
+                                        proxy.scrollTo(record.chapterId, anchor: .center)
+                                    }
                                 }
                             }
+                            .frame(width: chaptersWidth)
+                        } else {
+                            ProgressView()
+                                .frame(width: chaptersWidth)
+                                .frame(maxHeight: .infinity)
+                                .background(Color(.systemGroupedBackground))
                         }
-                    } else {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(.systemGroupedBackground))
                     }
                 }
             } else {
@@ -502,7 +514,6 @@ struct MangaDetailsScreen: View {
         }
         .listSectionSpacing(0)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
         .sheet(isPresented: $showingChaptersModal) {
             [mangaData, selectedChapterGroupIndex] in
             if let mangaData = mangaData,
@@ -584,16 +595,6 @@ struct MangaDetailsScreen: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack {
-                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
-                        .font(.headline)
-                    Text(plugin.name ?? plugin.id)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             ToolbarItemGroup(placement: .primaryAction) {
                 if plugin.canDownload, mangaData == nil || detailedManga != nil {
                     Button(action: { isSelectChaptersModalPresented = true }) {
@@ -608,6 +609,10 @@ struct MangaDetailsScreen: View {
                 }
             }
         }
+        .navigationTitleWithSubtitle(
+            title: Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id),
+            subtitle: Text(plugin.name ?? plugin.id)
+        )
         .onAppear {
             loadDetailedManga()
             updateRecord()
@@ -625,13 +630,10 @@ struct MangaDetailsScreen: View {
         .onReceive(HistoryService.shared.objectWillChange) {
             updateRecord()
         }
-        .apply {
-            if horizontalSizeClass == .regular {
-                $0.toolbarBackground(.visible, for: .navigationBar)
-            } else {
-                $0
-            }
-        }
+        .toolbarBackground(
+            horizontalSizeClass == .regular ? .visible : .automatic,
+            for: .navigationBar
+        )
     }
 
     private func loadDetailedManga() {

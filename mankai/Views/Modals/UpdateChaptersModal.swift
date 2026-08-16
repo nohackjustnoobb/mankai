@@ -108,68 +108,63 @@ struct UpdateChaptersModal: View {
         }
     }
 
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    Button("add") {
-                        showingAddAlert = true
+    @ViewBuilder
+    private var chapterList: some View {
+        List {
+            Section {
+                Button("add") {
+                    showingAddAlert = true
+                }
+                .padding(.horizontal, 20)
+
+                ForEach(chapters, id: \.id) { chapter in
+                    NavigationLink(destination: {
+                        UpdateChapterModal(
+                            plugin: plugin,
+                            manga: manga,
+                            chapter: chapter,
+                            onRename: { id, title in
+                                renameChapter(for: id, to: title)
+                            }
+                        )
+                    }) {
+                        Text(chapter.title ?? chapter.id)
+                            .foregroundColor(.primary)
                     }
                     .padding(.horizontal, 20)
-
-                    ForEach(chapters, id: \.id) { chapter in
-                        NavigationLink(destination: {
-                            UpdateChapterModal(
-                                plugin: plugin,
-                                manga: manga,
-                                chapter: chapter,
-                                onRename: { id, title in
-                                    renameChapter(for: id, to: title)
-                                }
-                            )
-                        }) {
-                            Text(chapter.title ?? chapter.id)
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                    .onMove(perform: moveChapter)
-                    .onDelete(perform: deleteChapter)
-                } header: {
-                    Text("editChaptersInstructions")
-                        .font(.caption)
-                        .textCase(.none)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom)
                 }
-                .listRowInsets(EdgeInsets())
+                .onMove(perform: moveChapter)
+                .onDelete(perform: deleteChapter)
+            } header: {
+                Text("editChaptersInstructions")
+                    .font(.caption)
+                    .textCase(.none)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom)
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .apply {
-                if isRootOfSheet {
-                    $0
-                        .navigationTitle(LocalizedStringKey(chapterGroupTitle ?? ""))
-                        .toolbar {
-                            ToolbarItem(placement: .principal) {
-                                VStack {
-                                    Text("editChapters")
-                                        .font(.headline)
-                                    Text(LocalizedStringKey(chapterGroupTitle ?? ""))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+            .listRowInsets(EdgeInsets())
+        }
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button("close") {
-                                    dismiss()
-                                }
+    var body: some View {
+        NavigationView {
+            if isRootOfSheet {
+                chapterList
+                    .navigationTitleWithSubtitle(
+                        title: Text("editChapters"),
+                        subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+                    )
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("close") {
+                                dismiss()
                             }
                         }
-                } else {
-                    $0
-                }
+                    }
+            } else {
+                chapterList
             }
         }
         .alert("addChapter", isPresented: $showingAddAlert) {
@@ -210,18 +205,10 @@ struct UpdateChaptersModal: View {
             Text(errorMessage)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(LocalizedStringKey(chapterGroupTitle ?? ""))
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack {
-                    Text("editChapters")
-                        .font(.headline)
-                    Text(LocalizedStringKey(chapterGroupTitle ?? ""))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
+        .navigationTitleWithSubtitle(
+            title: Text("editChapters"),
+            subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+        )
         .task {
             do {
                 guard chapterGroupTitle != nil else {

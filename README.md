@@ -13,12 +13,13 @@
 <!-- [![Swift](https://img.shields.io/badge/swift-F54A2A?style=for-the-badge&logo=swift&logoColor=white)](https://developer.apple.com/swift/) -->
 
 [![GitHub License](https://img.shields.io/github/license/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/blob/master/LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/commits/master)
-[![GitHub stars](https://img.shields.io/github/stars/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/stargazers)
+[![Version](https://img.shields.io/github/v/tag/nohackjustnoobb/mankai?style=for-the-badge&label=version)](https://github.com/nohackjustnoobb/mankai/tags)
+[![Supported iOS/iPadOS](https://img.shields.io/badge/iOS%2FiPadOS-17.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/ios/)
+[![Supported macOS](https://img.shields.io/badge/macOS%20Catalyst-14.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)](https://developer.apple.com/mac-catalyst/)
 
 </div>
 
-Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
+Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and macOS via Mac Catalyst. It supports iOS and iPadOS 17.0 or later and macOS 14.0 or later, and is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
 
 ![Demo](assets/demo.png)
 

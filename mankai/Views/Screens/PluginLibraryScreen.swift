@@ -86,7 +86,6 @@ struct PluginLibraryScreen: View {
                 proxy.scrollTo("mangasList", anchor: .top)
             }
         }
-        .navigationTitle("library")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchQuery, prompt: "searchManga") {
             ForEach(searchSuggestions, id: \.self) { suggestion in
@@ -173,16 +172,6 @@ struct PluginLibraryScreen: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack {
-                    Text(plugin.name ?? plugin.id)
-                        .font(.headline)
-                    Text("library")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     showingFilters = true
@@ -200,6 +189,10 @@ struct PluginLibraryScreen: View {
                 }
             }
         }
+        .navigationTitleWithSubtitle(
+            title: Text(plugin.name ?? plugin.id),
+            subtitle: Text("library")
+        )
         .onAppear {
             loadList()
         }
