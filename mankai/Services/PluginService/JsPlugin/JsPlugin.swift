@@ -375,15 +375,19 @@ final class JsPlugin: Plugin {
         return suggestions
     }
 
-    override func search(_ query: String, page: UInt) async throws -> [Manga] {
-        Logger.jsPlugin.debug("Searching for: \(query), page: \(page) (plugin: \(id))")
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
+        -> [Manga]
+    {
+        Logger.jsPlugin.debug(
+            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status) (plugin: \(id))"
+        )
 
         if _scripts[.search] == nil {
             fatalError("Script for search is not defined")
         }
 
         let script =
-            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\"\(query)\",\(page));"
+            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\"\(query)\",\(page),\"\(genre.rawValue)\",\(status.rawValue));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {

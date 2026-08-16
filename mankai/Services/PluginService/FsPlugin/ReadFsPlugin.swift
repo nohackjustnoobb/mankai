@@ -369,8 +369,12 @@ class ReadFsPlugin: Plugin {
         }
     }
 
-    override func search(_ query: String, page: UInt) async throws -> [Manga] {
-        Logger.fsPlugin.debug("Searching for: \(query), page: \(page)")
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
+        -> [Manga]
+    {
+        Logger.fsPlugin.debug(
+            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status)"
+        )
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for search")
             throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
@@ -381,9 +385,23 @@ class ReadFsPlugin: Plugin {
             let offset = Int((page - 1) * ReadFsPluginConstants.pageLimit)
             let limit = Int(ReadFsPluginConstants.pageLimit)
 
-            let mangas =
-                try FsMangaModel
+            var query =
+                FsMangaModel
                 .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+
+            // Filter by genre if not "all"
+            if genre != .all {
+                let genreQuery = "%\(genre.rawValue.lowercased())%"
+                query = query.filter(sql: "LOWER(genres) LIKE ?", arguments: [genreQuery])
+            }
+
+            // Filter by status if not "any"
+            if status != .any {
+                query = query.filter(Column("status") == Int(status.rawValue))
+            }
+
+            let mangas =
+                try query
                 .limit(limit, offset: offset)
                 .fetchAll(db)
 

@@ -104,7 +104,9 @@ struct PluginLibraryScreen: View {
             searchTask?.cancel()
         }
         .navigationDestination(isPresented: $navigateToSearch) {
-            PluginSearchScreen(plugin: plugin, query: searchQuery)
+            PluginSearchScreen(
+                plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus
+            )
         }
         .sheet(isPresented: $showingFilters) {
             NavigationView {

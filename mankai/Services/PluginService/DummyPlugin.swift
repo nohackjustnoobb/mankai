@@ -31,7 +31,9 @@ final class DummyPlugin: Plugin {
         throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 
-    override func search(_: String, page _: UInt) async throws -> [Manga] {
+    override func search(_: String, page _: UInt, genre _: Genre, status _: Status) async throws
+        -> [Manga]
+    {
         throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
     }
 

@@ -389,10 +389,18 @@ class HttpPlugin: Plugin {
         return try [String].decoded(from: data)
     }
 
-    override func search(_ query: String, page: UInt) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
+        -> [Manga]
+    {
         try await setup()
         let (data, _) = try await authManager.get(
-            path: "/search", query: ["query": query, "page": String(page)]
+            path: "/search",
+            query: [
+                "query": query,
+                "page": String(page),
+                "genre": genre.rawValue,
+                "status": String(status.rawValue),
+            ]
         )
         return try [Manga].decoded(from: data)
     }

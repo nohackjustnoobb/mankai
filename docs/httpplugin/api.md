@@ -164,8 +164,7 @@ Returns the same `MangaListResponse` shape as [`GET /manga`](#get-manga).
 
 ### `GET /manga/:id`
 
-Retrieve full details for a single manga, including its description, authors, genres, and the complete list of chapters grouped by chapter group.
-The order of entries in `chapters` is the chapter group display order. Chapter group titles must be unique within a manga.
+Retrieve full details for a single manga, including its description, authors, genres, and the complete list of chapters grouped by chapter group. The order of entries in `chapters` is the chapter group display order. Chapter group titles must be unique within a manga.
 
 **Path Parameters**
 
@@ -266,10 +265,12 @@ Search for manga by title.
 
 **Query Parameters**
 
-| Parameter | Type     | Default | Required | Description                  |
-| :-------- | :------- | :------ | :------- | :--------------------------- |
-| `query`   | `string` | `null`  | Yes      | The search query string.     |
-| `page`    | `number` | `1`     | No       | The page number to retrieve. |
+| Parameter | Type     | Default   | Required | Description                                              |
+| :-------- | :------- | :-------- | :------- | :------------------------------------------------------- |
+| `query`   | `string` | `null`    | Yes      | The search query string.                                 |
+| `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
+| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
+| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Ended. |
 
 **Response — `200 OK`**
 

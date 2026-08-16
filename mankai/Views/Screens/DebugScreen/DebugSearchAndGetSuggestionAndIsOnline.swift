@@ -50,7 +50,7 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
             suggestions = try! await plugin.getSuggestions("mankai")
             Logger.jsPlugin.debug("suggestions: \(suggestions as Any)")
 
-            mangas = try! await plugin.search("mankai", page: 1)
+            mangas = try! await plugin.search("mankai", page: 1, genre: .all, status: .any)
             Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
         .navigationTitle("getList")

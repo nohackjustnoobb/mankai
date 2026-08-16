@@ -102,7 +102,8 @@ Mankai is designed to be extensible. It supports three types of plugins, each se
 
 This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
 
-- **Plugins Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
+- **Documentation**: [JavaScript Plugin API](docs/jsplugin/api.md)
+- **Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
 
 ### File System Plugin (FsPlugin)
 

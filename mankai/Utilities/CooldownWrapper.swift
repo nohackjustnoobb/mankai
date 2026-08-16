@@ -237,11 +237,13 @@ class CooldownWrapper: Plugin {
         return try await plugin.getSuggestions(query)
     }
 
-    override func search(_ query: String, page: UInt) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
+        -> [Manga]
+    {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler, before: "search"
         )
-        return try await plugin.search(query, page: page)
+        return try await plugin.search(query, page: page, genre: genre, status: status)
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {

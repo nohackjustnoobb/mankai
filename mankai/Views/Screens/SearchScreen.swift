@@ -51,7 +51,7 @@ struct PluginSearchMangasRowListView: View {
     func loadMangas() {
         Task {
             do {
-                mangas = try await plugin.search(query, page: 1)
+                mangas = try await plugin.search(query, page: 1, genre: .all, status: .any)
             } catch {
                 errorMessage = error.localizedDescription
                 showErrorAlert = true

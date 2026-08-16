@@ -231,9 +231,11 @@ class Plugin: Identifiable, ObservableObject {
     /// - Parameters:
     ///   - query: The search query string.
     ///   - page: The page number for pagination.
+    ///   - genre: The genre to filter by.
+    ///   - status: The status to filter by.
     /// - Returns: A list of `Manga` objects matching the query.
     /// - Throws: An error if the search fails.
-    func search(_: String, page _: UInt) async throws -> [Manga] {
+    func search(_: String, page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
