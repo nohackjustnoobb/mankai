@@ -376,7 +376,7 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.getSuggestion]!) return await \(_funcName[.getSuggestion]!)(\"\(query)\");"
+            "\(_scriptsNoExport[.getSuggestion]!) return await \(_funcName[.getSuggestion]!)(\(JsRuntime.javascriptStringLiteral(query)));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let suggestions = result as? [String] else {
@@ -398,7 +398,7 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\"\(query)\",\(page),\"\(genre.rawValue)\",\(status.rawValue));"
+            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -418,7 +418,7 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\"\(genre.rawValue)\",\(status.rawValue));"
+            "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
@@ -456,12 +456,11 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.getDetailedManga]!) return JSON.stringify(await \(_funcName[.getDetailedManga]!)(\"\(id)\"));"
+            "\(_scriptsNoExport[.getDetailedManga]!) return await \(_funcName[.getDetailedManga]!)(\(JsRuntime.javascriptStringLiteral(id)));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
-        guard let detailedMangaJson = result as? String,
-            let detailedMangaData = detailedMangaJson.data(using: .utf8),
-            let detailedMangaResult = try? DetailedManga.decoded(from: detailedMangaData)
+        guard let detailedMangaJson = result as? [String: Any],
+            let detailedMangaResult = try? DetailedManga.decoded(from: detailedMangaJson)
         else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForDetailedManga.makeError()
         }
@@ -508,7 +507,7 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.getImage]!) return await \(_funcName[.getImage]!)(\"\(url)\");"
+            "\(_scriptsNoExport[.getImage]!) return await \(_funcName[.getImage]!)(\(JsRuntime.javascriptStringLiteral(url)));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         if let imageBase64Encoded = result as? String {

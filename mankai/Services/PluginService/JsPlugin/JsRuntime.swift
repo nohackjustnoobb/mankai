@@ -23,6 +23,16 @@ enum Method: String {
 final class JsRuntime: NSObject {
     static let shared = JsRuntime()
 
+    static func javascriptStringLiteral(_ value: String) -> String {
+        guard let data = try? JSONEncoder().encode(value),
+            let literal = String(data: data, encoding: .utf8)
+        else {
+            return "\"\""
+        }
+
+        return literal
+    }
+
     private lazy var jsLog: String = loadScript("log")
     private lazy var jsFetch: String = loadScript("fetch")
     private lazy var jsOpenCC: String = loadScript("opencc")
@@ -113,14 +123,14 @@ final class JsRuntime: NSObject {
             // inject getValue and setValue
             injectedJs += jsStorage
             injectedJs += """
-                const getValue = (key) => _getValue(key, "\(plugin.id)");
-                const setValue = (key, value) => _setValue(key, value, "\(plugin.id)");
-                const removeValue = (key) => _removeValue(key, "\(plugin.id)");
+                const getValue = (key) => _getValue(key, \(Self.javascriptStringLiteral(plugin.id)));
+                const setValue = (key, value) => _setValue(key, value, \(Self.javascriptStringLiteral(plugin.id)));
+                const removeValue = (key) => _removeValue(key, \(Self.javascriptStringLiteral(plugin.id)));
                 """
         }
 
         var from = plugin?.id ?? from
-        from = from == nil ? "undefined" : "\"\(from!)\""
+        from = from.map(Self.javascriptStringLiteral) ?? "undefined"
 
         // Override console.log
         injectedJs += "console.log = (...m) => _log(m.join(' '), \(from!));"
