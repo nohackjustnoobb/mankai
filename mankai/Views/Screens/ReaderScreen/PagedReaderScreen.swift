@@ -372,8 +372,6 @@ private final class PagedReaderViewController: UIViewController,
         let trailingIndicator = trailingOverscrollController.view!
         leadingIndicator.translatesAutoresizingMaskIntoConstraints = false
         trailingIndicator.translatesAutoresizingMaskIntoConstraints = false
-        leadingIndicator.backgroundColor = .clear
-        trailingIndicator.backgroundColor = .clear
 
         addChild(leadingOverscrollController)
         leadingOverscrollView.addSubview(leadingIndicator)
@@ -486,22 +484,19 @@ private final class PagedReaderViewController: UIViewController,
         let trailingIsAtBoundary =
             usesHorizontalRightToLeftNavigation ? isAtFirstGroup : isAtLastGroup
 
-        let visibleLeadingOverscrollDistance = readerVisibleOverscrollDistance(
-            leadingOverscrollDistance,
-            spacing: READER_OVERSCROLL_MINIMUM_SPACING
-        )
-        let visibleTrailingOverscrollDistance = readerVisibleOverscrollDistance(
-            trailingOverscrollDistance,
-            spacing: READER_OVERSCROLL_MINIMUM_SPACING
-        )
-
         let leadingProgress =
             leadingIsAtBoundary
-            ? min(visibleLeadingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
+            ? readerOverscrollProgress(
+                leadingOverscrollDistance,
+                spacing: READER_OVERSCROLL_MINIMUM_SPACING
+            )
             : 0
         let trailingProgress =
             trailingIsAtBoundary
-            ? min(visibleTrailingOverscrollDistance / READER_OVERSCROLL_THRESHOLD, 1)
+            ? readerOverscrollProgress(
+                trailingOverscrollDistance,
+                spacing: READER_OVERSCROLL_MINIMUM_SPACING
+            )
             : 0
 
         leadingOverscrollView.isHidden = !leadingIsAtBoundary
@@ -547,8 +542,6 @@ private final class PagedReaderViewController: UIViewController,
             }).first
         else { return }
 
-        pageViewController.view.backgroundColor = .clear
-        transitionScrollView.backgroundColor = .clear
         pageTransitionScrollView = transitionScrollView
         transitionScrollView.panGestureRecognizer.addTarget(
             self,
@@ -616,9 +609,15 @@ private final class PagedReaderViewController: UIViewController,
             updateOverscrollDistances(from: transitionScrollView)
 
             let requestedStep: ReaderStep?
-            if leadingOverscrollDistance > READER_OVERSCROLL_THRESHOLD {
+            if readerOverscrollProgress(
+                leadingOverscrollDistance,
+                spacing: READER_OVERSCROLL_MINIMUM_SPACING
+            ) >= 1 {
                 requestedStep = usesHorizontalRightToLeftNavigation ? .next : .previous
-            } else if trailingOverscrollDistance > READER_OVERSCROLL_THRESHOLD {
+            } else if readerOverscrollProgress(
+                trailingOverscrollDistance,
+                spacing: READER_OVERSCROLL_MINIMUM_SPACING
+            ) >= 1 {
                 requestedStep = usesHorizontalRightToLeftNavigation ? .previous : .next
             } else {
                 requestedStep = nil

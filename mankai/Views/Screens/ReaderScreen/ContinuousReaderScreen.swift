@@ -300,12 +300,21 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate _: Bool) {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+        let topSpacing = readerOverscrollLayoutSpacing(
+            safeAreaInset: view.safeAreaInsets.top
+        )
+        let bottomSpacing = readerOverscrollLayoutSpacing(
+            safeAreaInset: view.safeAreaInsets.bottom
+        )
 
-        if offsetY < -READER_OVERSCROLL_THRESHOLD,
+        if readerOverscrollProgress(max(-offsetY, 0), spacing: topSpacing) >= 1,
             renderState.previousChapter == .available
         {
             actions.requestChapterStep(.previous)
-        } else if offsetY > maximumY + READER_OVERSCROLL_THRESHOLD,
+        } else if readerOverscrollProgress(
+            max(offsetY - maximumY, 0),
+            spacing: bottomSpacing
+        ) >= 1,
             renderState.nextChapter == .available
         {
             actions.requestChapterStep(.next)
@@ -637,8 +646,6 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let bottomIndicator = bottomOverscrollController.view!
         topIndicator.translatesAutoresizingMaskIntoConstraints = false
         bottomIndicator.translatesAutoresizingMaskIntoConstraints = false
-        topIndicator.backgroundColor = .clear
-        bottomIndicator.backgroundColor = .clear
 
         addChild(topOverscrollController)
         topOverscrollView.addSubview(topIndicator)
@@ -664,20 +671,18 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private func updateOverscrollViews() {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let topDistance = readerVisibleOverscrollDistance(
+        let topProgress = readerOverscrollProgress(
             max(-offsetY, 0),
             spacing: readerOverscrollLayoutSpacing(
                 safeAreaInset: view.safeAreaInsets.top
             )
         )
-        let bottomDistance = readerVisibleOverscrollDistance(
+        let bottomProgress = readerOverscrollProgress(
             max(offsetY - maximumY, 0),
             spacing: readerOverscrollLayoutSpacing(
                 safeAreaInset: view.safeAreaInsets.bottom
             )
         )
-        let topProgress = min(topDistance / READER_OVERSCROLL_THRESHOLD, 1)
-        let bottomProgress = min(bottomDistance / READER_OVERSCROLL_THRESHOLD, 1)
 
         topOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(topProgress),

@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-let READER_OVERSCROLL_THRESHOLD: CGFloat = 80
+let READER_OVERSCROLL_THRESHOLD: CGFloat = 65
 let READER_OVERSCROLL_MINIMUM_SPACING: CGFloat = 24
 let READER_OVERSCROLL_INDICATOR_SIZE: CGFloat = 48
 
@@ -19,11 +19,15 @@ func readerOverscrollLayoutSpacing(safeAreaInset: CGFloat) -> CGFloat {
     )
 }
 
-func readerVisibleOverscrollDistance(
+func readerOverscrollProgress(
     _ distance: CGFloat,
     spacing: CGFloat
 ) -> CGFloat {
-    max(distance - spacing, 0)
+    let visibleDistance = max(distance - spacing, 0)
+    return min(
+        visibleDistance / READER_OVERSCROLL_THRESHOLD,
+        1
+    )
 }
 
 struct ReaderRoute: Identifiable, Hashable {
