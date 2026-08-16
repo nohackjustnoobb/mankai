@@ -517,6 +517,24 @@
         }
       }
     },
+    "batchMangas" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batch Manga Lookup"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "批次查詢漫畫"
+          }
+        }
+      }
+    },
     "bookmark" : {
       "localizations" : {
         "en" : {
@@ -745,6 +763,22 @@
         }
       }
     },
+    "capabilities" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capabilities"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "功能"
+          }
+        }
+      }
+    },
     "changeCover" : {
       "localizations" : {
         "en" : {
@@ -757,6 +791,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "更換封面"
+          }
+        }
+      }
+    },
+    "chapter" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "章節"
           }
         }
       }
@@ -3613,6 +3665,60 @@
         }
       }
     },
+    "list" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫列表"
+          }
+        }
+      }
+    },
+    "listByGenre" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List by Genre"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按類型篩選列表"
+          }
+        }
+      }
+    },
+    "listByStatus" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List by Status"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按狀態篩選列表"
+          }
+        }
+      }
+    },
     "localDir" : {
       "localizations" : {
         "en" : {
@@ -3723,6 +3829,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "漫畫"
+          }
+        }
+      }
+    },
+    "mangaDetails" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga Details"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫詳細資料"
           }
         }
       }
@@ -4641,6 +4765,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "連載中"
+          }
+        }
+      }
+    },
+    "onlineCheck" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Online Check"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "線上狀態檢查"
           }
         }
       }
@@ -5671,6 +5813,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "搜尋"
+          }
+        }
+      }
+    },
+    "searchByGenre" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Genre"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按類型篩選搜尋"
+          }
+        }
+      }
+    },
+    "searchByStatus" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Status"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按狀態篩選搜尋"
           }
         }
       }

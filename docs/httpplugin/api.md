@@ -41,6 +41,7 @@ interface ServerInfoResponse {
   repository?: string;
   availableGenres?: string[];
   cooldown?: Cooldown;
+  capabilities?: PluginCapability[];
 }
 
 interface Cooldown {
@@ -48,9 +49,25 @@ interface Cooldown {
   getImage?: number;
   getImageConcurrency?: number;
 }
+
+type PluginCapability =
+  | "onlineCheck"
+  | "suggestions"
+  | "list"
+  | "listByGenre"
+  | "listByStatus"
+  | "search"
+  | "searchByGenre"
+  | "searchByStatus"
+  | "mangaDetails"
+  | "batchMangas"
+  | "chapter"
+  | "image";
 ```
 
 `default` is the optional minimum delay between non-image plugin calls, expressed in milliseconds. `getImage` configures a separate minimum delay between image calls. `getImageConcurrency` optionally limits the number of concurrent image requests.
+
+The optional `capabilities` field defaults to all capabilities when omitted.
 
 ## Authentication (Optional)
 

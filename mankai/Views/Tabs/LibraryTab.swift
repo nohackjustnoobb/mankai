@@ -49,7 +49,11 @@ struct LibraryTab: View {
             .onChange(of: hideBuiltInPlugins) {
                 updatePlugins()
             }
-            .searchable(text: $query, prompt: "searchManga") {
+            .capabilitySearchable(
+                enabled: pluginService.plugins.contains(where: { $0.supports(.search) }),
+                text: $query,
+                prompt: "searchManga"
+            ) {
                 ForEach(searchSuggestions, id: \.self) { suggestion in
                     Label(suggestion, systemImage: "magnifyingglass")
                         .foregroundColor(.secondary)
@@ -86,6 +90,8 @@ struct LibraryTab: View {
 
     private func updatePlugins() {
         plugins = pluginService.plugins.filter { plugin in
+            guard plugin.supports(.list) else { return false }
+
             if hideBuiltInPlugins, plugin is AppDirPlugin {
                 return false
             }
@@ -115,7 +121,8 @@ struct LibraryTab: View {
             var allSuggestions: Set<String> = []
 
             // Get suggestions from all available plugins
-            for plugin in pluginService.plugins {
+            for plugin in pluginService.plugins
+            where plugin.supports(.search) && plugin.supports(.suggestions) {
                 guard !Task.isCancelled else { break }
 
                 do {
@@ -136,8 +143,26 @@ struct LibraryTab: View {
     }
 
     private func performSearch() {
-        guard !query.isEmpty else { return }
+        guard !query.isEmpty,
+            pluginService.plugins.contains(where: { $0.supports(.search) })
+        else { return }
         navigateToSearch = true
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func capabilitySearchable<Suggestions: View>(
+        enabled: Bool,
+        text: Binding<String>,
+        prompt: LocalizedStringKey,
+        @ViewBuilder suggestions: () -> Suggestions
+    ) -> some View {
+        if enabled {
+            searchable(text: text, prompt: prompt, suggestions: suggestions)
+        } else {
+            self
+        }
     }
 }
 
@@ -148,6 +173,11 @@ private struct PluginListMangasRowListView: View {
     @State private var errorMessage = ""
 
     func loadMangas() {
+        guard plugin.supportsList() else {
+            mangas = []
+            return
+        }
+
         Task {
             do {
                 mangas = try await plugin.getList(page: 1, genre: .all, status: .any)

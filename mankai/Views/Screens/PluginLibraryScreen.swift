@@ -27,8 +27,24 @@ struct PluginLibraryScreen: View {
     @State private var searchTask: Task<Void, Never>? = nil
     @State private var navigateToSearch: Bool = false
 
+    private var supportsGenreFilter: Bool {
+        plugin.supports(.list) && plugin.supports(.listByGenre)
+    }
+
+    private var supportsStatusFilter: Bool {
+        plugin.supports(.list) && plugin.supports(.listByStatus)
+    }
+
     private var hasActiveFilters: Bool {
         selectedGenre != .all || selectedStatus != .any
+    }
+
+    init(plugin: Plugin, selectedGenre: Genre = .all) {
+        self.plugin = plugin
+        let normalizedGenre =
+            plugin.supports(.list) && plugin.supports(.listByGenre) ? selectedGenre : .all
+        _selectedGenre = State(initialValue: normalizedGenre)
+        _tempSelectedGenre = State(initialValue: normalizedGenre)
     }
 
     private var allMangas: [Manga] {
@@ -87,7 +103,11 @@ struct PluginLibraryScreen: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchQuery, prompt: "searchManga") {
+        .capabilitySearchable(
+            enabled: plugin.supports(.search),
+            text: $searchQuery,
+            prompt: "searchManga"
+        ) {
             ForEach(searchSuggestions, id: \.self) { suggestion in
                 Label(suggestion, systemImage: "magnifyingglass")
                     .foregroundColor(.secondary)
@@ -112,23 +132,27 @@ struct PluginLibraryScreen: View {
             NavigationView {
                 List {
                     Section {
-                        Picker("genre", selection: $tempSelectedGenre) {
-                            Text(LocalizedStringKey(Genre.all.rawValue))
-                                .tag(Genre.all)
+                        if supportsGenreFilter {
+                            Picker("genre", selection: $tempSelectedGenre) {
+                                Text(LocalizedStringKey(Genre.all.rawValue))
+                                    .tag(Genre.all)
 
-                            ForEach(plugin.availableGenres, id: \.self) { genre in
-                                Text(LocalizedStringKey(genre.rawValue))
-                                    .tag(genre)
+                                ForEach(plugin.availableGenres, id: \.self) { genre in
+                                    Text(LocalizedStringKey(genre.rawValue))
+                                        .tag(genre)
+                                }
                             }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
 
-                        Picker("status", selection: $tempSelectedStatus) {
-                            Text(Status.any.localizedName).tag(Status.any)
-                            Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                            Text(Status.ended.localizedName).tag(Status.ended)
+                        if supportsStatusFilter {
+                            Picker("status", selection: $tempSelectedStatus) {
+                                Text(Status.any.localizedName).tag(Status.any)
+                                Text(Status.onGoing.localizedName).tag(Status.onGoing)
+                                Text(Status.ended.localizedName).tag(Status.ended)
+                            }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
                     } header: {
                         Spacer(minLength: 0)
                     }
@@ -174,18 +198,20 @@ struct PluginLibraryScreen: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    showingFilters = true
-                }) {
-                    ZStack {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
+            if supportsGenreFilter || supportsStatusFilter {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        showingFilters = true
+                    }) {
+                        ZStack {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
 
-                        if hasActiveFilters {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 8, y: -8)
+                            if hasActiveFilters {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 8, y: -8)
+                            }
                         }
                     }
                 }
@@ -206,7 +232,7 @@ struct PluginLibraryScreen: View {
     }
 
     private func loadList() {
-        if isLoading {
+        if isLoading || !plugin.supportsList(genre: selectedGenre, status: selectedStatus) {
             return
         }
 
@@ -258,12 +284,15 @@ struct PluginLibraryScreen: View {
     }
 
     private func setFilters(genre: Genre, status: Status) {
-        if selectedGenre != genre {
-            selectedGenre = genre
+        let normalizedGenre = supportsGenreFilter ? genre : .all
+        let normalizedStatus = supportsStatusFilter ? status : .any
+
+        if selectedGenre != normalizedGenre {
+            selectedGenre = normalizedGenre
         }
 
-        if selectedStatus != status {
-            selectedStatus = status
+        if selectedStatus != normalizedStatus {
+            selectedStatus = normalizedStatus
         }
 
         loadList()
@@ -278,7 +307,7 @@ struct PluginLibraryScreen: View {
     private func getSearchSuggestions(for query: String) {
         searchTask?.cancel()
 
-        guard !query.isEmpty else {
+        guard plugin.supports(.search), plugin.supports(.suggestions), !query.isEmpty else {
             searchSuggestions = []
             return
         }
@@ -299,7 +328,7 @@ struct PluginLibraryScreen: View {
     }
 
     private func performSearch() {
-        guard !searchQuery.isEmpty else { return }
+        guard plugin.supports(.search), !searchQuery.isEmpty else { return }
         navigateToSearch = true
     }
 }

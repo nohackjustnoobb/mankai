@@ -22,6 +22,15 @@ struct SearchScreen: View {
             }
             .padding()
         }
+        .overlay {
+            if plugins.isEmpty {
+                ContentUnavailableView(
+                    "noPluginAvailable",
+                    systemImage: "puzzlepiece.extension",
+                    description: Text("noPluginAvailableDescription")
+                )
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(
             title: Text("search"),
@@ -36,7 +45,7 @@ struct SearchScreen: View {
     }
 
     private func updatePlugins() {
-        plugins = pluginService.plugins
+        plugins = pluginService.plugins.filter { $0.supports(.search) }
     }
 }
 
@@ -49,6 +58,11 @@ struct PluginSearchMangasRowListView: View {
     @State private var errorMessage = ""
 
     func loadMangas() {
+        guard plugin.supportsSearch() else {
+            mangas = []
+            return
+        }
+
         Task {
             do {
                 mangas = try await plugin.search(query, page: 1, genre: .all, status: .any)

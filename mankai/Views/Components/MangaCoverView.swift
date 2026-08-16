@@ -82,25 +82,21 @@ struct MangaCoverView: View {
         isLoading = true
 
         Task {
-            do {
-                let data = try await plugin.getImage(coverUrl)
-
+            if plugin.supports(.image),
+                let data = try? await plugin.getImage(coverUrl)
+            {
                 self.image = TempImage(data: data).uiImage(
                     downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
                     retainData: false
                 )
-                self.isLoading = false
-            } catch {
-                // try offline
-                if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                    self.image = TempImage(data: data).uiImage(
-                        downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
-                        retainData: false
-                    )
-                }
-
-                self.isLoading = false
+            } else if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
+                self.image = TempImage(data: data).uiImage(
+                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
+                    retainData: false
+                )
             }
+
+            self.isLoading = false
         }
     }
 }

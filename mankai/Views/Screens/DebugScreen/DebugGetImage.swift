@@ -65,6 +65,7 @@ struct DebugGetImage: View {
             }
         }
         .task {
+            guard plugin.supports(.image) else { return }
             imageData = try! await plugin.getImage(url)
             Logger.jsPlugin.debug("imageData count: \(imageData?.count ?? 0)")
         }

@@ -35,6 +35,11 @@ struct UpdateChapterModal: View {
     }
 
     private func loadUrls() {
+        guard plugin.supports(.chapter) else {
+            urls = []
+            return
+        }
+
         Task {
             do {
                 urls = try await plugin.getChapter(manga: manga, chapter: chapter)
@@ -48,6 +53,8 @@ struct UpdateChapterModal: View {
     }
 
     private func loadImages() {
+        guard plugin.supports(.image) else { return }
+
         if let urls = urls {
             for url in urls {
                 if images[url] != nil {

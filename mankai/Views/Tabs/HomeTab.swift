@@ -114,7 +114,8 @@ struct HomeTab: View {
                                 keys: filteredOrders,
                                 records: records,
                                 saveds: saveds,
-                                showNotRead: true
+                                showNotRead: true,
+                                allowUnsupportedDetailsNavigation: isDownloadsMode
                             )
                         }
                         .padding()

@@ -20,9 +20,15 @@ struct DebugGetChapter: View {
                 List {
                     Section("urls") {
                         ForEach(urls, id: \.self) { url in
-                            NavigationLink(destination: {
-                                DebugGetImage(plugin: plugin, url: url)
-                            }) {
+                            if plugin.supports(.image) {
+                                NavigationLink(destination: {
+                                    DebugGetImage(plugin: plugin, url: url)
+                                }) {
+                                    Text(url)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            } else {
                                 Text(url)
                                     .lineLimit(1)
                                     .truncationMode(.middle)
@@ -36,6 +42,10 @@ struct DebugGetChapter: View {
             }
         }
         .task {
+            guard plugin.supports(.chapter) else {
+                urls = []
+                return
+            }
             urls = try! await plugin.getChapter(manga: manga, chapter: chapter)
             Logger.jsPlugin.debug("urls: \(urls ?? [])")
         }

@@ -62,7 +62,7 @@ final class DownloadTask: Identifiable, ObservableObject {
             throw MankaiErrorCode.downloadPluginNotFound.makeError()
         }
 
-        guard plugin.canDownload else {
+        guard plugin.supportsDownloads else {
             Logger.downloadService.warning("Downloads are disabled for plugin: \(plugin.id)")
             throw MankaiErrorCode.downloadDisabled.makeError()
         }
@@ -240,7 +240,7 @@ final class DownloadService: ObservableObject {
         Logger.downloadService.debug(
             "Queuing download for \(manga.title ?? manga.id), \(chaptersCount) chapters")
 
-        guard plugin.canDownload else {
+        guard plugin.supportsDownloads else {
             Logger.downloadService.warning("Downloads are disabled for plugin: \(plugin.id)")
             throw MankaiErrorCode.downloadDisabled.makeError()
         }

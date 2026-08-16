@@ -158,6 +158,8 @@ private enum ReaderGrouping {
     }
 }
 
+private struct ReaderSourceCapabilityError: Error {}
+
 private struct ReaderSavedPosition: Equatable {
     let chapterID: String
     let page: Int
@@ -438,6 +440,19 @@ struct ReaderScreen: View {
     private var currentChapter: Chapter? {
         guard chapters.indices.contains(currentChapterIndex) else { return nil }
         return chapters[currentChapterIndex]
+    }
+
+    private var downloadedChapterIds: Set<String> {
+        Set(
+            downloadManga?.chapters.flatMap { group in
+                group.chapters.filter { $0.locked != true }.map(\.id)
+            } ?? []
+        )
+    }
+
+    private func canRead(_ chapter: Chapter) -> Bool {
+        downloadedChapterIds.contains(chapter.id)
+            || (chapter.locked != true && plugin.supportsRemoteReading)
     }
 
     private var readerType: ReaderType {
@@ -721,6 +736,8 @@ struct ReaderScreen: View {
                 plugin: plugin,
                 manga: manga,
                 chapterGroupIndex: chapterGroupIndex,
+                downloadChapters: downloadedChapterIds,
+                canReadRemotely: plugin.supportsRemoteReading,
                 allowEditing: false
             ) { selectedChapter, _, _ in
                 selectChapter(selectedChapter)
@@ -970,7 +987,7 @@ struct ReaderScreen: View {
 
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {
         guard chapters.indices.contains(index) else { return .unavailable }
-        return chapters[index].locked == true ? .locked : .available
+        return canRead(chapters[index]) ? .available : .locked
     }
 
     private var previousChapterAvailability: ReaderChapterAvailability {
@@ -1070,7 +1087,7 @@ struct ReaderScreen: View {
     }
 
     private func selectChapter(_ selectedChapter: Chapter) {
-        guard selectedChapter.locked != true,
+        guard canRead(selectedChapter),
             let index = chapters.firstIndex(where: { $0.id == selectedChapter.id })
         else { return }
 
@@ -1099,7 +1116,7 @@ struct ReaderScreen: View {
 
     @MainActor
     private func loadChapter(for key: ReaderChapterLoadKey) async {
-        guard let chapter = currentChapter, chapter.id == key.chapterID, chapter.locked != true
+        guard let chapter = currentChapter, chapter.id == key.chapterID, canRead(chapter)
         else {
             loadPhase = .failed
             return
@@ -1189,6 +1206,9 @@ struct ReaderScreen: View {
             }
         }
 
+        guard plugin.supports(.chapter) else {
+            throw ReaderSourceCapabilityError()
+        }
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
@@ -1233,6 +1253,9 @@ struct ReaderScreen: View {
     private func imageData(for url: String) async throws -> Data {
         if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
             return try await DownloadPlugin.shared.getImage(url)
+        }
+        guard plugin.supports(.image) else {
+            throw ReaderSourceCapabilityError()
         }
         return try await plugin.getImage(url)
     }

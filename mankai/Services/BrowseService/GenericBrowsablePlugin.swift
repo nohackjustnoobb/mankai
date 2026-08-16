@@ -35,6 +35,10 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         Genre.allCases
     }
 
+    override var capabilities: [PluginCapability] {
+        [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image]
+    }
+
     override var canDownload: Bool {
         false
     }

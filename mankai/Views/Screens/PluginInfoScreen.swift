@@ -21,6 +21,10 @@ struct PluginInfoScreen: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    private var supportedCapabilities: [PluginCapability] {
+        PluginCapability.allCases.filter(plugin.supports)
+    }
+
     var body: some View {
         Group {
             List {
@@ -75,6 +79,22 @@ struct PluginInfoScreen: View {
                             WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
                                 genre in
                                 Text(LocalizedStringKey(genre.rawValue))
+                                    .genreTagStyle()
+                            }
+                        }
+                    }
+
+                    if supportedCapabilities.isEmpty {
+                        LabeledContent("capabilities") {
+                            Text("none")
+                                .italic()
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("capabilities")
+                            WrappingHStack(supportedCapabilities, id: \.self, lineSpacing: 8) {
+                                capability in
+                                Text(LocalizedStringKey(capability.rawValue))
                                     .genreTagStyle()
                             }
                         }

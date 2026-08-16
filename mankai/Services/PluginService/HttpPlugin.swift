@@ -26,6 +26,8 @@ private struct HttpPluginMetadata {
     @DecodingDefault([])
     let configs: [Config]
     let cooldown: Cooldown?
+    @DecodingDefault(PluginCapability.allCases)
+    let capabilities: [PluginCapability]
 }
 
 class HttpPlugin: Plugin {
@@ -37,6 +39,7 @@ class HttpPlugin: Plugin {
     private var _repository: String?
     private var _availableGenres: [Genre]
     private var _cooldown: Cooldown?
+    private var _capabilities: [PluginCapability]
 
     override var id: String {
         _id
@@ -68,6 +71,10 @@ class HttpPlugin: Plugin {
 
     override var cooldown: Cooldown? {
         _cooldown
+    }
+
+    override var capabilities: [PluginCapability] {
+        _capabilities
     }
 
     override var configs: [Config] {
@@ -105,7 +112,8 @@ class HttpPlugin: Plugin {
         authors: [String] = [],
         repository: String? = nil,
         availableGenres: [Genre] = [],
-        cooldown: Cooldown? = nil
+        cooldown: Cooldown? = nil,
+        capabilities: [PluginCapability] = PluginCapability.allCases
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
         _id = id
@@ -121,6 +129,7 @@ class HttpPlugin: Plugin {
         _repository = repository
         _availableGenres = availableGenres
         _cooldown = cooldown
+        _capabilities = capabilities
     }
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
@@ -144,7 +153,8 @@ class HttpPlugin: Plugin {
                 id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
                 name: metadata.name, version: metadata.version, description: metadata.description,
                 authors: metadata.authors, repository: metadata.repository,
-                availableGenres: metadata.availableGenres, cooldown: metadata.cooldown
+                availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
+                capabilities: metadata.capabilities
             )
         }
 
@@ -159,7 +169,8 @@ class HttpPlugin: Plugin {
             id: metadata.id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled,
             name: metadata.name, version: metadata.version, description: metadata.description,
             authors: metadata.authors, repository: metadata.repository,
-            availableGenres: metadata.availableGenres, cooldown: metadata.cooldown
+            availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
+            capabilities: metadata.capabilities
         )
     }
 
@@ -291,6 +302,7 @@ class HttpPlugin: Plugin {
             _repository = metadata.repository
             _availableGenres = metadata.availableGenres
             _authenticationEnabled = metadata.authenticationEnabled ?? false
+            _capabilities = metadata.capabilities
 
             try savePlugin()
             isMetaUpdated = true
@@ -334,7 +346,8 @@ class HttpPlugin: Plugin {
             authenticationEnabled: authenticationEnabled,
             editorEnabled: self is EditableHttpPlugin,
             configs: configs,
-            cooldown: cooldown
+            cooldown: cooldown,
+            capabilities: capabilities
         )
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {

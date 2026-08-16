@@ -106,7 +106,8 @@ struct UpdateMangaContent: View {
         guard !isCreatingManga,
             let coverUrl = manga.cover,
             !coverUrl.isEmpty,
-            let plugin = plugins.first(where: { $0.id == plugin })
+            let plugin = plugins.first(where: { $0.id == plugin }),
+            plugin.supports(.image)
         else {
             coverImageData = nil
             return

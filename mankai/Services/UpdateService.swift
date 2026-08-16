@@ -106,6 +106,13 @@ final class UpdateService: ObservableObject {
                 continue  // Skip if plugin doesn't exist
             }
 
+            guard plugin.supports(.batchMangas) else {
+                Logger.updateService.debug(
+                    "Skipping updates for plugin without batch manga support: \(pluginId)"
+                )
+                continue
+            }
+
             // Get manga IDs for this plugin
             let mangaIds = pluginSaveds.map { $0.mangaId }
 

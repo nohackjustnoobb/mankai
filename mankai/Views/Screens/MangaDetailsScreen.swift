@@ -59,6 +59,17 @@ struct MangaDetailsScreen: View {
         return mangaData.chapters[selectedChapterGroupIndex]
     }
 
+    private var hasReadableChapter: Bool {
+        mangaData?.chapters
+            .flatMap(\.chapters)
+            .contains(where: canRead) == true
+    }
+
+    private func canRead(_ chapter: Chapter) -> Bool {
+        downloadedChapterIds?.contains(chapter.id) == true
+            || (chapter.locked != true && plugin.supportsRemoteReading)
+    }
+
     init(plugin: Plugin, manga: Manga) {
         self.plugin = plugin
         self.manga = manga
@@ -76,7 +87,8 @@ struct MangaDetailsScreen: View {
         _ chapter: Chapter, page: Int? = nil, chapterGroupIndex: Int? = nil
     ) {
         guard let mangaData,
-            let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex
+            let readerChapterGroupIndex = chapterGroupIndex ?? selectedChapterGroupIndex,
+            canRead(chapter)
         else { return }
 
         showingChaptersModal = false
@@ -112,7 +124,7 @@ struct MangaDetailsScreen: View {
         if let record = record, let mangaData = mangaData {
             for (groupIndex, group) in mangaData.chapters.enumerated() {
                 if let chapter = group.chapters.first(where: {
-                    $0.id == record.chapterId
+                    $0.id == record.chapterId && canRead($0)
                 }) {
                     navigateToChapter(
                         chapter, page: record.page, chapterGroupIndex: groupIndex
@@ -123,10 +135,12 @@ struct MangaDetailsScreen: View {
         }
 
         if let mangaData = mangaData {
-            if let group = mangaData.chapters.first,
-                let chapter = group.chapters.first
+            if let groupIndex = mangaData.chapters.firstIndex(where: {
+                $0.chapters.contains(where: canRead)
+            }),
+                let chapter = mangaData.chapters[groupIndex].chapters.first(where: canRead)
             {
-                navigateToChapter(chapter, chapterGroupIndex: 0)
+                navigateToChapter(chapter, chapterGroupIndex: groupIndex)
             }
         }
     }
@@ -210,18 +224,25 @@ struct MangaDetailsScreen: View {
                         HStack(spacing: 4) {
                             HStack(spacing: 4) {
                                 ForEach(authors, id: \.self) { author in
-                                    Button(action: {
-                                        searchQuery = author
-                                        showPluginSearchScreen = true
-                                    }) {
+                                    if plugin.supports(.search) {
+                                        Button(action: {
+                                            searchQuery = author
+                                            showPluginSearchScreen = true
+                                        }) {
+                                            Text(author)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    } else {
                                         Text(author)
                                             .foregroundStyle(.secondary)
                                     }
                                 }
                             }
 
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.primary.opacity(0.7))
+                            if plugin.supports(.search) {
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.primary.opacity(0.7))
+                            }
                         }
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -263,6 +284,7 @@ struct MangaDetailsScreen: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .frame(maxWidth: .infinity)
+                        .disabled(!hasReadableChapter)
 
                         Button(action: handleBookmarkAction) {
                             HStack {
@@ -319,14 +341,19 @@ struct MangaDetailsScreen: View {
             {
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
-                        Button(action: {
-                            selectedGenre = genre
-                            showPluginLibraryScreen = true
-                        }) {
+                        if plugin.supportsList(genre: genre) {
+                            Button(action: {
+                                selectedGenre = genre
+                                showPluginLibraryScreen = true
+                            }) {
+                                Text(LocalizedStringKey(genre.rawValue))
+                                    .genreTagStyle()
+                            }
+                            .buttonStyle(.borderless)
+                        } else {
                             Text(LocalizedStringKey(genre.rawValue))
                                 .genreTagStyle()
                         }
-                        .buttonStyle(.borderless)
                     }
                     .padding()
                     .listRowInsets(EdgeInsets())
@@ -391,7 +418,8 @@ struct MangaDetailsScreen: View {
         let chapterTitle = chapter.title ?? chapter.id
         let isDownloaded = downloadedChapterIds?.contains(chapter.id) == true
         let isCurrentChapter = record?.chapterId == chapter.id
-        let chapterIcon = (chapter.locked ?? false) ? "lock.fill" : "chevron.right"
+        let isAvailable = canRead(chapter)
+        let chapterIcon = isAvailable ? "chevron.right" : "lock.fill"
 
         return Button(action: {
             navigateToChapter(chapter)
@@ -415,7 +443,7 @@ struct MangaDetailsScreen: View {
                     .foregroundColor(.secondary)
             }
         }
-        .disabled(chapter.locked ?? false)
+        .disabled(!isAvailable)
     }
 
     var body: some View {
@@ -525,6 +553,7 @@ struct MangaDetailsScreen: View {
                     chapterGroupIndex: selectedChapterGroupIndex,
                     record: record,
                     downloadChapters: downloadedChapterIds,
+                    canReadRemotely: plugin.supportsRemoteReading,
                     onNavigateToChapter: navigateToChapter
                 )
             }
@@ -596,7 +625,7 @@ struct MangaDetailsScreen: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                if plugin.canDownload, mangaData == nil || detailedManga != nil {
+                if plugin.supportsDownloads, mangaData == nil || detailedManga != nil {
                     Button(action: { isSelectChaptersModalPresented = true }) {
                         Image(systemName: "arrow.down.circle")
                     }
@@ -640,17 +669,21 @@ struct MangaDetailsScreen: View {
         Task {
             var cachedError: Error?
 
-            do {
-                detailedManga = try await plugin.getDetailedManga(manga.id)
-                selectedChapterGroupIndex = detailedManga!.chapters.isEmpty ? nil : 0
-            } catch {
-                detailedManga = nil
+            if plugin.supports(.mangaDetails) {
+                do {
+                    detailedManga = try await plugin.getDetailedManga(manga.id)
+                    selectedChapterGroupIndex = detailedManga!.chapters.isEmpty ? nil : 0
+                } catch {
+                    detailedManga = nil
 
-                // If the plugin is editable, there is a high chance that it is deleted
-                if !(plugin is Editable) {
-                    Logger.ui.error("Failed to load detailed manga", error: error)
-                    cachedError = error
+                    // If the plugin is editable, there is a high chance that it is deleted
+                    if !(plugin is Editable) {
+                        Logger.ui.error("Failed to load detailed manga", error: error)
+                        cachedError = error
+                    }
                 }
+            } else {
+                detailedManga = nil
             }
 
             do {

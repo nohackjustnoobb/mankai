@@ -103,7 +103,7 @@ struct SmallTagModifier: ViewModifier {
             .padding(.vertical, 2)
             .foregroundStyle(.secondary)
             .foregroundColor(.secondary)
-            .background(Color.secondary.opacity(0.2))
+            .background(Color(.tertiarySystemGroupedBackground))
             .cornerRadius(4)
     }
 }
@@ -116,7 +116,7 @@ struct GenreTagModifier: ViewModifier {
             .padding(.vertical, 6)
             .foregroundStyle(.secondary)
             .foregroundColor(.secondary)
-            .background(Color.secondary.opacity(0.2))
+            .background(Color(.tertiarySystemGroupedBackground))
             .cornerRadius(8)
     }
 }

@@ -44,14 +44,20 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
             }
         }
         .task {
-            isOnline = try! await plugin.isOnline()
-            Logger.jsPlugin.debug("isOnline: \(isOnline as Any)")
+            if plugin.supports(.onlineCheck) {
+                isOnline = try! await plugin.isOnline()
+                Logger.jsPlugin.debug("isOnline: \(isOnline as Any)")
+            }
 
-            suggestions = try! await plugin.getSuggestions("mankai")
-            Logger.jsPlugin.debug("suggestions: \(suggestions as Any)")
+            if plugin.supports(.search), plugin.supports(.suggestions) {
+                suggestions = try! await plugin.getSuggestions("mankai")
+                Logger.jsPlugin.debug("suggestions: \(suggestions as Any)")
+            }
 
-            mangas = try! await plugin.search("mankai", page: 1, genre: .all, status: .any)
-            Logger.jsPlugin.debug("mangas: \(mangas as Any)")
+            if plugin.supportsSearch() {
+                mangas = try! await plugin.search("mankai", page: 1, genre: .all, status: .any)
+                Logger.jsPlugin.debug("mangas: \(mangas as Any)")
+            }
         }
         .navigationTitle("getList")
     }

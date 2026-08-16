@@ -46,6 +46,20 @@ type ScriptName =
   | "getChapter"
   | "getImage";
 
+type PluginCapability =
+  | "onlineCheck"
+  | "suggestions"
+  | "list"
+  | "listByGenre"
+  | "listByStatus"
+  | "search"
+  | "searchByGenre"
+  | "searchByStatus"
+  | "mangaDetails"
+  | "batchMangas"
+  | "chapter"
+  | "image";
+
 interface JsPluginManifest {
   id: string;
   name?: string;
@@ -59,6 +73,7 @@ interface JsPluginManifest {
   configs?: Config[];
   getImageHeaders?: Record<string, string>;
   cooldown?: Cooldown;
+  capabilities?: PluginCapability[];
 }
 ```
 
@@ -78,6 +93,7 @@ interface JsPluginManifest {
 | `configs`         | `Config[]`               | User-configurable values exposed to the scripts. Defaults to `[]`.                                                      |
 | `getImageHeaders` | `Record<string, string>` | If present, Mankai downloads every image URL with these native request headers and does not call the `getImage` script. |
 | `cooldown`        | `Cooldown`               | Optional request throttling and image concurrency limits.                                                               |
+| `capabilities`    | `PluginCapability[]`     | Operations supported by the plugin. Defaults to all capabilities.                                                       |
 
 ### Script format
 
@@ -97,6 +113,12 @@ The marker must use the form `export{functionName as default};`. Mankai removes 
 The manifest parser does not reject a missing script, but invoking a missing callback fails at runtime. A complete plugin normally provides all callbacks listed below, unless it uses `getImageHeaders` instead of `getImage`.
 
 ## Callback scripts
+
+The optional `capabilities` field accepts the values listed below. If it is omitted, all values are enabled. A plugin can use it to advertise only the operations it implements, so the app can avoid invoking unsupported callbacks.
+
+```text
+onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, mangaDetails, batchMangas, chapter, image
+```
 
 The keys and function signatures are:
 
@@ -247,12 +269,11 @@ interface DetailedManga {
   genres?: Genre[];
   chapters?: ChapterGroup[];
   remarks?: string;
-  editable?: boolean;
   meta?: string;
 }
 ```
 
-`authors`, `genres`, and `chapters` default to empty arrays when omitted from a detailed manga. `editable` is only descriptive for a JavaScript plugin, JavaScript plugins do not implement Mankai's editing interface.
+`authors`, `genres`, and `chapters` default to empty arrays when omitted from a detailed manga.
 
 ### Genres
 

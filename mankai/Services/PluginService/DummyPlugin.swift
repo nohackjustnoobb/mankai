@@ -14,6 +14,10 @@ final class DummyPlugin: Plugin {
         _id
     }
 
+    override var capabilities: [PluginCapability] {
+        []
+    }
+
     init(_ id: String) {
         _id = id
     }

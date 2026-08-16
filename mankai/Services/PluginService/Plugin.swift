@@ -88,6 +88,25 @@ struct Cooldown: Codable {
     var getImageConcurrency: Int?
 }
 
+/// Features that a plugin can support.
+///
+/// Plugins currently support every capability by default. A plugin can later
+/// provide a smaller list to disable features it does not implement.
+enum PluginCapability: String, Codable, CaseIterable {
+    case onlineCheck
+    case suggestions
+    case list
+    case listByGenre
+    case listByStatus
+    case search
+    case searchByGenre
+    case searchByStatus
+    case mangaDetails
+    case batchMangas
+    case chapter
+    case image
+}
+
 class Plugin: Identifiable, ObservableObject {
     // MARK: - Metadata
 
@@ -131,6 +150,14 @@ class Plugin: Identifiable, ObservableObject {
 
     var cooldown: Cooldown? {
         nil
+    }
+
+    /// Operations supported by the plugin.
+    ///
+    /// Plugins that do not provide capability metadata support every operation
+    /// by default. Plugins can override this with a smaller list.
+    var capabilities: [PluginCapability] {
+        PluginCapability.allCases
     }
 
     /// Whether manga sourced from this plugin should be synced across devices.
@@ -286,6 +313,51 @@ class Plugin: Identifiable, ObservableObject {
 }
 
 extension Plugin {
+    /// Returns whether the plugin advertises support for a capability.
+    func supports(_ capability: PluginCapability) -> Bool {
+        capabilities.contains(capability)
+    }
+
+    /// Returns whether the plugin can service a list request with the supplied filters.
+    /// Filter capabilities augment, rather than replace, the base list capability.
+    func supportsList(genre: Genre = .all, status: Status = .any) -> Bool {
+        guard supports(.list) else { return false }
+
+        if genre != .all, !supports(.listByGenre) {
+            return false
+        }
+        if status != .any, !supports(.listByStatus) {
+            return false
+        }
+
+        return true
+    }
+
+    /// Returns whether the plugin can service a search request with the supplied filters.
+    /// Filter capabilities augment, rather than replace, the base search capability.
+    func supportsSearch(genre: Genre = .all, status: Status = .any) -> Bool {
+        guard supports(.search) else { return false }
+
+        if genre != .all, !supports(.searchByGenre) {
+            return false
+        }
+        if status != .any, !supports(.searchByStatus) {
+            return false
+        }
+
+        return true
+    }
+
+    /// Whether the source can resolve chapters and fetch their images.
+    var supportsRemoteReading: Bool {
+        supports(.chapter) && supports(.image)
+    }
+
+    /// Whether new offline downloads can be created from this source.
+    var supportsDownloads: Bool {
+        canDownload && supportsRemoteReading
+    }
+
     func getManga(id: String) async throws -> Manga {
         let mangas = try await getMangas([id])
 

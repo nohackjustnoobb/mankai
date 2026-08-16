@@ -25,6 +25,14 @@ struct PluginSearchScreen: View {
     @State private var errorMessage = ""
     @State private var searchTask: Task<Void, Never>?
 
+    private var supportsGenreFilter: Bool {
+        plugin.supports(.search) && plugin.supports(.searchByGenre)
+    }
+
+    private var supportsStatusFilter: Bool {
+        plugin.supports(.search) && plugin.supports(.searchByStatus)
+    }
+
     private var hasActiveFilters: Bool {
         selectedGenre != .all || selectedStatus != .any
     }
@@ -37,10 +45,14 @@ struct PluginSearchScreen: View {
     init(plugin: Plugin, query: String, genre: Genre = .all, status: Status = .any) {
         self.plugin = plugin
         self.query = query
-        _selectedGenre = State(initialValue: genre)
-        _selectedStatus = State(initialValue: status)
-        _tempSelectedGenre = State(initialValue: genre)
-        _tempSelectedStatus = State(initialValue: status)
+        let normalizedGenre =
+            plugin.supports(.search) && plugin.supports(.searchByGenre) ? genre : .all
+        let normalizedStatus =
+            plugin.supports(.search) && plugin.supports(.searchByStatus) ? status : .any
+        _selectedGenre = State(initialValue: normalizedGenre)
+        _selectedStatus = State(initialValue: normalizedStatus)
+        _tempSelectedGenre = State(initialValue: normalizedGenre)
+        _tempSelectedStatus = State(initialValue: normalizedStatus)
     }
 
     var body: some View {
@@ -79,18 +91,20 @@ struct PluginSearchScreen: View {
             subtitle: Text(query)
         )
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    showingFilters = true
-                }) {
-                    ZStack {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
+            if supportsGenreFilter || supportsStatusFilter {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        showingFilters = true
+                    }) {
+                        ZStack {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
 
-                        if hasActiveFilters {
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 8, y: -8)
+                            if hasActiveFilters {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 8, y: -8)
+                            }
                         }
                     }
                 }
@@ -100,23 +114,27 @@ struct PluginSearchScreen: View {
             NavigationView {
                 List {
                     Section {
-                        Picker("genre", selection: $tempSelectedGenre) {
-                            Text(LocalizedStringKey(Genre.all.rawValue))
-                                .tag(Genre.all)
+                        if supportsGenreFilter {
+                            Picker("genre", selection: $tempSelectedGenre) {
+                                Text(LocalizedStringKey(Genre.all.rawValue))
+                                    .tag(Genre.all)
 
-                            ForEach(plugin.availableGenres, id: \.self) { genre in
-                                Text(LocalizedStringKey(genre.rawValue))
-                                    .tag(genre)
+                                ForEach(plugin.availableGenres, id: \.self) { genre in
+                                    Text(LocalizedStringKey(genre.rawValue))
+                                        .tag(genre)
+                                }
                             }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
 
-                        Picker("status", selection: $tempSelectedStatus) {
-                            Text(Status.any.localizedName).tag(Status.any)
-                            Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                            Text(Status.ended.localizedName).tag(Status.ended)
+                        if supportsStatusFilter {
+                            Picker("status", selection: $tempSelectedStatus) {
+                                Text(Status.any.localizedName).tag(Status.any)
+                                Text(Status.onGoing.localizedName).tag(Status.onGoing)
+                                Text(Status.ended.localizedName).tag(Status.ended)
+                            }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
                     } header: {
                         Spacer(minLength: 0)
                     }
@@ -182,11 +200,13 @@ struct PluginSearchScreen: View {
     }
 
     private func setFilters(genre: Genre, status: Status) {
-        guard selectedGenre != genre || selectedStatus != status else { return }
+        let normalizedGenre = supportsGenreFilter ? genre : .all
+        let normalizedStatus = supportsStatusFilter ? status : .any
+        guard selectedGenre != normalizedGenre || selectedStatus != normalizedStatus else { return }
 
         searchTask?.cancel()
-        selectedGenre = genre
-        selectedStatus = status
+        selectedGenre = normalizedGenre
+        selectedStatus = normalizedStatus
         mangas = [:]
         isLoading = false
         search()
@@ -199,7 +219,7 @@ struct PluginSearchScreen: View {
     }
 
     private func search() {
-        if isLoading {
+        if isLoading || !plugin.supportsSearch(genre: selectedGenre, status: selectedStatus) {
             return
         }
 

@@ -165,7 +165,7 @@ struct HistoryItemView: View {
         }
 
         // If not found locally, try fetching from plugin
-        if manga == nil, let plugin = plugin {
+        if manga == nil, let plugin = plugin, plugin.supports(.batchMangas) {
             Task {
                 do {
                     manga = try await plugin.getManga(id: record.mangaId)

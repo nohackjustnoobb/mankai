@@ -18,6 +18,7 @@ struct MangasListView: View {
     let records: [String: RecordModel]?
     let saveds: [String: SavedModel]?
     let showNotRead: Bool
+    let allowUnsupportedDetailsNavigation: Bool
 
     /// Simple initializer for single plugin case
     init(mangas: [Manga], plugin: Plugin) {
@@ -29,6 +30,7 @@ struct MangasListView: View {
         records = nil
         saveds = nil
         showNotRead = false
+        allowUnsupportedDetailsNavigation = false
     }
 
     /// Complex initializer for multiple plugins with records and saved states
@@ -38,7 +40,8 @@ struct MangasListView: View {
         keys: [String],
         records: [String: RecordModel]? = nil,
         saveds: [String: SavedModel]? = nil,
-        showNotRead: Bool = false
+        showNotRead: Bool = false,
+        allowUnsupportedDetailsNavigation: Bool = false
     ) {
         self.mangas = nil
         plugin = nil
@@ -48,6 +51,7 @@ struct MangasListView: View {
         self.records = records
         self.saveds = saveds
         self.showNotRead = showNotRead
+        self.allowUnsupportedDetailsNavigation = allowUnsupportedDetailsNavigation
     }
 
     var body: some View {
@@ -61,9 +65,13 @@ struct MangasListView: View {
             if let mangas = mangas, let plugin = plugin {
                 // Simple case: array of mangas with single plugin
                 ForEach(mangas, id: \.id) { manga in
-                    NavigationLink(
-                        destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                    ) {
+                    if plugin.supports(.mangaDetails) {
+                        NavigationLink(
+                            destination: MangaDetailsScreen(plugin: plugin, manga: manga)
+                        ) {
+                            MangaItemView(manga: manga, plugin: plugin)
+                        }
+                    } else {
                         MangaItemView(manga: manga, plugin: plugin)
                     }
                 }
@@ -76,11 +84,23 @@ struct MangasListView: View {
                     if let manga = mangasDict[key],
                         let plugin = pluginsDict[key]
                     {
-                        NavigationLink(
-                            destination: MangaDetailsScreen(
-                                plugin: plugin, manga: manga
-                            )
-                        ) {
+                        if plugin.supports(.mangaDetails)
+                            || allowUnsupportedDetailsNavigation
+                        {
+                            NavigationLink(
+                                destination: MangaDetailsScreen(
+                                    plugin: plugin, manga: manga
+                                )
+                            ) {
+                                MangaItemView(
+                                    manga: manga,
+                                    plugin: plugin,
+                                    record: records?[key],
+                                    saved: saveds?[key],
+                                    showNotRead: showNotRead
+                                )
+                            }
+                        } else {
                             MangaItemView(
                                 manga: manga,
                                 plugin: plugin,

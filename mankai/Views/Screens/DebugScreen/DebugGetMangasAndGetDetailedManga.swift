@@ -125,13 +125,19 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                 Section(group.title) {
                                     ForEach(group.chapters, id: \.id) {
                                         chapter in
-                                        NavigationLink(
-                                            destination: DebugGetChapter(
-                                                plugin: plugin,
-                                                manga: detailedManga,
-                                                chapter: chapter
-                                            )
-                                        ) {
+                                        if plugin.supports(.chapter) {
+                                            NavigationLink(
+                                                destination: DebugGetChapter(
+                                                    plugin: plugin,
+                                                    manga: detailedManga,
+                                                    chapter: chapter
+                                                )
+                                            ) {
+                                                Text(chapterText(chapter))
+                                                    .frame(
+                                                        maxWidth: .infinity, alignment: .leading)
+                                            }
+                                        } else {
                                             Text(chapterText(chapter))
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                         }
@@ -144,11 +150,15 @@ struct DebugGetMangasAndGetDetailedManga: View {
             }
         }
         .task {
-            manga = try! await plugin.getMangas([mangaId]).first
-            Logger.jsPlugin.debug("manga: \(manga ?? "nil" as Any)")
+            if plugin.supports(.batchMangas) {
+                manga = try! await plugin.getMangas([mangaId]).first
+                Logger.jsPlugin.debug("manga: \(manga ?? "nil" as Any)")
+            }
 
-            detailedManga = try! await plugin.getDetailedManga(mangaId)
-            Logger.jsPlugin.debug("detailedManga: \(detailedManga ?? "nil" as Any)")
+            if plugin.supports(.mangaDetails) {
+                detailedManga = try! await plugin.getDetailedManga(mangaId)
+                Logger.jsPlugin.debug("detailedManga: \(detailedManga ?? "nil" as Any)")
+            }
         }
     }
 }

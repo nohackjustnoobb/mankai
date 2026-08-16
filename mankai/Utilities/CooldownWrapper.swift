@@ -161,6 +161,10 @@ class CooldownWrapper: Plugin {
         plugin.cooldown
     }
 
+    override var capabilities: [PluginCapability] {
+        plugin.capabilities
+    }
+
     override var shouldSync: Bool {
         plugin.shouldSync
     }

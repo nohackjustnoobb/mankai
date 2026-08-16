@@ -13,6 +13,7 @@ struct ChaptersModal: View {
     let chapterGroupIndex: Int
     let record: RecordModel?
     let downloadChapters: Set<String>?
+    let canReadRemotely: Bool
     let allowEditing: Bool
     let onNavigateToChapter: (Chapter, Int?, Int?) -> Void
 
@@ -23,6 +24,7 @@ struct ChaptersModal: View {
         plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int,
         record: RecordModel? = nil,
         downloadChapters: Set<String>? = nil,
+        canReadRemotely: Bool = true,
         allowEditing: Bool = true,
         onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
     ) {
@@ -31,6 +33,7 @@ struct ChaptersModal: View {
         self.chapterGroupIndex = chapterGroupIndex
         self.record = record
         self.downloadChapters = downloadChapters
+        self.canReadRemotely = canReadRemotely
         self.allowEditing = allowEditing
         self.onNavigateToChapter = onNavigateToChapter
 
@@ -58,6 +61,9 @@ struct ChaptersModal: View {
                         } else {
                             ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
                                 chapter in
+                                let isDownloaded = downloadChapters?.contains(chapter.id) == true
+                                let isAvailable =
+                                    isDownloaded || (chapter.locked != true && canReadRemotely)
                                 Button(action: {
                                     onNavigateToChapter(chapter, nil, chapterGroupIndex)
                                 }) {
@@ -65,9 +71,7 @@ struct ChaptersModal: View {
                                         Text(chapter.title ?? chapter.id)
                                             .foregroundColor(.primary)
 
-                                        if let downloadChapters = downloadChapters,
-                                            downloadChapters.contains(chapter.id)
-                                        {
+                                        if isDownloaded {
                                             Image(systemName: "network.slash")
                                                 .foregroundColor(.secondary)
                                         }
@@ -79,13 +83,12 @@ struct ChaptersModal: View {
 
                                         Spacer()
                                         Image(
-                                            systemName: (chapter.locked ?? false)
-                                                ? "lock.fill" : "chevron.right"
+                                            systemName: isAvailable ? "chevron.right" : "lock.fill"
                                         )
                                         .foregroundColor(.secondary)
                                     }
                                 }
-                                .disabled(chapter.locked ?? false)
+                                .disabled(!isAvailable)
                             }
                         }
                     } header: {
