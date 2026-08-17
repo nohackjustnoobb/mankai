@@ -112,7 +112,6 @@ struct HistoryItemView: View {
                     HStack(spacing: 12) {
                         MangaCoverView(coverUrl: manga?.cover, plugin: plugin)
                             .aspectRatio(3 / 4, contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(manga?.title ?? record.mangaId)

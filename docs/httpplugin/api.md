@@ -137,7 +137,7 @@ Retrieve a paginated list of manga, optionally filtered by genre and/or status.
 | :-------- | :------- | :-------- | :------- | :------------------------------------------------------- |
 | `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
 | `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
-| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Ended. |
+| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
 
 **Response — `200 OK`**
 
@@ -161,7 +161,7 @@ interface Manga {
 enum Status {
   Any = 0,
   OnGoing = 1,
-  Ended = 2,
+  Completed = 2,
 }
 ```
 
@@ -234,7 +234,7 @@ enum Genre {
 enum Status {
   Any = 0,
   OnGoing = 1,
-  Ended = 2,
+  Completed = 2,
 }
 
 enum ReadingDirection {
@@ -287,7 +287,7 @@ Search for manga by title.
 | `query`   | `string` | `null`    | Yes      | The search query string.                                 |
 | `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
 | `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
-| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Ended. |
+| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
 
 **Response — `200 OK`**
 

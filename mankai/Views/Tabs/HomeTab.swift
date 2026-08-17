@@ -11,7 +11,7 @@ import SwiftUI
 private enum HomeMangaStatus: String, CaseIterable {
     case all
     case onGoing
-    case ended
+    case completed
     case updated
 }
 
@@ -141,7 +141,7 @@ struct HomeTab: View {
                         Picker("status", selection: $status) {
                             Text("all").tag(HomeMangaStatus.all)
                             Text("onGoing").tag(HomeMangaStatus.onGoing)
-                            Text("ended").tag(HomeMangaStatus.ended)
+                            Text("mangaCompleted").tag(HomeMangaStatus.completed)
                             Text("updated").tag(HomeMangaStatus.updated)
                         }
                         .disabled(isDownloadsMode)
@@ -384,8 +384,8 @@ struct HomeTab: View {
                         return true
                     case .onGoing:
                         return manga.status == .onGoing
-                    case .ended:
-                        return manga.status == .ended
+                    case .completed:
+                        return manga.status == .completed
                     case .updated:
                         return saved.updates
                     }

@@ -35,7 +35,7 @@ enum Genre: String, Codable, CaseIterable {
 enum Status: Int {
     case any = 0
     case onGoing = 1
-    case ended = 2
+    case completed = 2
 
     var localizedName: String {
         switch self {
@@ -43,8 +43,8 @@ enum Status: Int {
             return String(localized: "any")
         case .onGoing:
             return String(localized: "onGoing")
-        case .ended:
-            return String(localized: "ended")
+        case .completed:
+            return String(localized: "mangaCompleted")
         }
     }
 }

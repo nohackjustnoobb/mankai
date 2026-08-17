@@ -205,7 +205,6 @@ struct MangaDetailsScreen: View {
                 VStack {
                     MangaCoverView(coverUrl: mangaData?.cover ?? manga.cover, plugin: plugin)
                         .aspectRatio(3 / 4, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal)
                         .padding(.horizontal)
                         .frame(maxWidth: 400)

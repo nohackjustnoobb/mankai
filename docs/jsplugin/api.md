@@ -291,7 +291,7 @@ historical, sports, mature, mecha
 | :-------- | :---- |
 | `any`     | `0`   |
 | `onGoing` | `1`   |
-| `ended`   | `2`   |
+| `completed` | `2`   |
 
 ### Reading directions
 

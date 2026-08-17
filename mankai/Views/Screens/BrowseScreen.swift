@@ -232,7 +232,6 @@ struct BrowseScreen: View {
         VStack(spacing: 8) {
             thumbnailView {
                 MangaCoverView(coverUrl: manga.cover, plugin: plugin)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
 
             Text(entity.name(using: manga))

@@ -20,15 +20,14 @@ struct MangaItemView: View {
             MangaCoverView(
                 coverUrl: manga.cover,
                 plugin: plugin,
-                tag: manga.status == .ended
-                    ? String(localized: "ended")
+                tag: manga.status == .completed
+                    ? String(localized: "mangaCompleted")
                     : saved?.updates == true
-                        ? String(localized: "updated")
+                        ? String(localized: "new")
                         : nil,
-                tagColor: (saved?.updates == true ? .green.opacity(0.8) : .red.opacity(0.8))
+                tagColor: (saved?.updates == true ? .green : .red)
             )
             .aspectRatio(3 / 4, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .center) {
                 // Title

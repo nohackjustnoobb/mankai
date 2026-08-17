@@ -1743,22 +1743,6 @@
         }
       }
     },
-    "ended" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ended"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已完結"
-          }
-        }
-      }
-    },
     "enterAuthorName" : {
       "localizations" : {
         "en" : {
@@ -3833,6 +3817,24 @@
         }
       }
     },
+    "mangaCompleted" : {
+      "comment" : "Used as a manga status label for a completed series.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完結"
+          }
+        }
+      }
+    },
     "mangaDetails" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
@@ -4123,6 +4125,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從未"
+          }
+        }
+      }
+    },
+    "new" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新"
           }
         }
       }

@@ -12,6 +12,7 @@ struct MangaCoverView: View {
     let plugin: Plugin?
     var tag: String? = nil
     var tagColor: Color? = nil
+    var cornerRadius: CGFloat? = nil
 
     @State private var image: UIImage?
     @State private var isLoading = false
@@ -49,26 +50,58 @@ struct MangaCoverView: View {
             }
 
             if let tag = tag, !tag.isEmpty {
-                Text(tag)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 8,
-                            bottomLeadingRadius: 0,
-                            bottomTrailingRadius: 8,
-                            topTrailingRadius: 0
-                        )
-                        .fill(tagColor ?? .green.opacity(0.8))
-                    )
+                tagView(tag)
             }
         }
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
         .onAppear {
             loadImage()
         }
+    }
+
+    @ViewBuilder
+    private func tagView(_ tag: String) -> some View {
+        let color = tagColor ?? .green
+
+        if #available(iOS 26.0, *) {
+            Text(tag)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .glassEffect(
+                    .clear.tint(color),
+                    in: RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                )
+                .padding(effectiveCornerRadius / 4)
+        } else {
+            Text(tag)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: effectiveCornerRadius,
+                        bottomLeadingRadius: 0,
+                        bottomTrailingRadius: effectiveCornerRadius,
+                        topTrailingRadius: 0,
+                    ).fill(color.opacity(0.8)))
+        }
+    }
+
+    private var effectiveCornerRadius: CGFloat {
+        if let cornerRadius {
+            return cornerRadius
+        }
+
+        if #available(iOS 26.0, *) {
+            return 12
+        }
+
+        return 8
     }
 
     private func loadImage() {

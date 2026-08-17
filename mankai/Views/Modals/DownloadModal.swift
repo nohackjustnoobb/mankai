@@ -129,7 +129,6 @@ struct DownloadedMangaRow: View {
                 )
                 .aspectRatio(3 / 4, contentMode: .fit)
                 .frame(height: 100)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(manga.title ?? manga.id)
@@ -181,7 +180,6 @@ struct DownloadTaskRow: View {
             )
             .aspectRatio(3 / 4, contentMode: .fit)
             .frame(height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(task.manga.title ?? task.manga.id)

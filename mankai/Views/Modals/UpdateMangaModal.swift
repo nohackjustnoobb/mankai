@@ -312,8 +312,8 @@ struct UpdateMangaContent: View {
                 Picker("status", selection: status) {
                     Text("onGoing")
                         .tag(Status.onGoing)
-                    Text("ended")
-                        .tag(Status.ended)
+                    Text("mangaCompleted")
+                        .tag(Status.completed)
                 }
             }
 

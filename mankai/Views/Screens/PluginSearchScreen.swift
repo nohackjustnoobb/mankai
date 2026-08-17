@@ -131,7 +131,7 @@ struct PluginSearchScreen: View {
                             Picker("status", selection: $tempSelectedStatus) {
                                 Text(Status.any.localizedName).tag(Status.any)
                                 Text(Status.onGoing.localizedName).tag(Status.onGoing)
-                                Text(Status.ended.localizedName).tag(Status.ended)
+                                Text(Status.completed.localizedName).tag(Status.completed)
                             }
                             .pickerStyle(.menu)
                         }
