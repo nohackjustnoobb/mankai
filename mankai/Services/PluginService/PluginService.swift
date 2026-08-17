@@ -68,6 +68,12 @@ final class PluginService: ObservableObject {
         for httpPlugin in httpPlugins {
             _plugins[httpPlugin.id] = wrap(httpPlugin)
         }
+
+        Task {
+            for httpPlugin in httpPlugins {
+                await httpPlugin.checkForUpdates()
+            }
+        }
     }
 
     private func wrap(_ plugin: Plugin) -> Plugin {

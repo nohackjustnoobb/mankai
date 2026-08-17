@@ -472,4 +472,44 @@ class HttpPlugin: Plugin {
         let (data, _) = try await authManager.get(path: path)
         return data
     }
+
+    func checkForUpdates() async {
+        guard let version = version else {
+            return
+        }
+
+        Logger.httpPlugin.info("Checking for updates for plugin: \(id)")
+
+        guard let newPlugin = await HttpPlugin.fromUrl(baseUrl),
+            let newVersion = newPlugin.version
+        else {
+            Logger.httpPlugin.error("Failed to fetch update for plugin: \(id)")
+            return
+        }
+
+        if newVersion != version {
+            Logger.httpPlugin.info(
+                "Updating plugin: \(id) from version \(version) to \(newVersion)"
+            )
+
+            do {
+                _name = newPlugin._name
+                _version = newPlugin._version
+                _description = newPlugin._description
+                _authors = newPlugin._authors
+                _repository = newPlugin._repository
+                _availableGenres = newPlugin._availableGenres
+                _cooldown = newPlugin._cooldown
+                _capabilities = newPlugin._capabilities
+                _authenticationEnabled = newPlugin._authenticationEnabled
+
+                try savePlugin()
+                Logger.httpPlugin.info("Plugin updated successfully: \(id)")
+            } catch {
+                Logger.httpPlugin.error("Failed to save updated plugin: \(id)", error: error)
+            }
+        } else {
+            Logger.httpPlugin.info("Plugin is up to date: \(id)")
+        }
+    }
 }
