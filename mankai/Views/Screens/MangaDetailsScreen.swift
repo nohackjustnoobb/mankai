@@ -223,7 +223,7 @@ struct MangaDetailsScreen: View {
                         HStack(spacing: 4) {
                             HStack(spacing: 4) {
                                 ForEach(authors, id: \.self) { author in
-                                    if plugin.supports(.search) {
+                                    if plugin.supportsSearch(isAuthor: true) {
                                         Button(action: {
                                             searchQuery = author
                                             showPluginSearchScreen = true
@@ -238,7 +238,7 @@ struct MangaDetailsScreen: View {
                                 }
                             }
 
-                            if plugin.supports(.search) {
+                            if plugin.supportsSearch(isAuthor: true) {
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(.primary.opacity(0.7))
                             }
@@ -619,7 +619,9 @@ struct MangaDetailsScreen: View {
         }
         .navigationDestination(isPresented: $showPluginSearchScreen) {
             if let searchQuery = searchQuery {
-                PluginSearchScreen(plugin: plugin, query: searchQuery)
+                PluginSearchScreen(
+                    plugin: plugin, query: searchQuery, isAuthorSearch: true
+                )
             }
         }
         .toolbar {

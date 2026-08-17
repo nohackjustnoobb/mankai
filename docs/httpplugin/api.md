@@ -59,6 +59,7 @@ type PluginCapability =
   | "search"
   | "searchByGenre"
   | "searchByStatus"
+  | "searchByAuthor"
   | "mangaDetails"
   | "batchMangas"
   | "chapter"
@@ -278,16 +279,17 @@ type ChapterResponse = string[];
 
 ### `GET /search`
 
-Search for manga by title.
+Search for manga by title or author.
 
 **Query Parameters**
 
-| Parameter | Type     | Default   | Required | Description                                              |
-| :-------- | :------- | :-------- | :------- | :------------------------------------------------------- |
-| `query`   | `string` | `null`    | Yes      | The search query string.                                 |
-| `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
-| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
-| `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
+| Parameter   | Type      | Default   | Required | Description                                                |
+| :---------- | :-------- | :-------- | :------- | :--------------------------------------------------------- |
+| `query`     | `string`  | `null`    | Yes      | The search query string.                                   |
+| `page`      | `number`  | `1`       | No       | The page number to retrieve.                               |
+| `genre`     | `string`  | `"all"`   | No       | Filter results by a single genre.                          |
+| `status`    | `number`  | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
+| `isAuthor`  | `boolean` | `false`   | No       | Search the authors field instead of the title field.       |
 
 **Response — `200 OK`**
 

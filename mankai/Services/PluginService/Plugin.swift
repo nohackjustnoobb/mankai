@@ -101,6 +101,7 @@ enum PluginCapability: String, Codable, CaseIterable {
     case search
     case searchByGenre
     case searchByStatus
+    case searchByAuthor
     case mangaDetails
     case batchMangas
     case chapter
@@ -260,9 +261,12 @@ class Plugin: Identifiable, ObservableObject {
     ///   - page: The page number for pagination.
     ///   - genre: The genre to filter by.
     ///   - status: The status to filter by.
+    ///   - isAuthor: Whether to search the author field instead of the title field.
     /// - Returns: A list of `Manga` objects matching the query.
     /// - Throws: An error if the search fails.
-    func search(_: String, page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
+    func search(
+        _: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool = false
+    ) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
@@ -335,9 +339,14 @@ extension Plugin {
 
     /// Returns whether the plugin can service a search request with the supplied filters.
     /// Filter capabilities augment, rather than replace, the base search capability.
-    func supportsSearch(genre: Genre = .all, status: Status = .any) -> Bool {
+    func supportsSearch(
+        isAuthor: Bool = false, genre: Genre = .all, status: Status = .any
+    ) -> Bool {
         guard supports(.search) else { return false }
 
+        if isAuthor, !supports(.searchByAuthor) {
+            return false
+        }
         if genre != .all, !supports(.searchByGenre) {
             return false
         }

@@ -55,7 +55,9 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
             }
 
             if plugin.supportsSearch() {
-                mangas = try! await plugin.search("mankai", page: 1, genre: .all, status: .any)
+                mangas = try! await plugin.search(
+                    "mankai", page: 1, genre: .all, status: .any, isAuthor: false
+                )
                 Logger.jsPlugin.debug("mangas: \(mangas as Any)")
             }
         }

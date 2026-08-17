@@ -10,6 +10,7 @@ import SwiftUI
 struct PluginSearchScreen: View {
     let plugin: Plugin
     let query: String
+    let isAuthorSearch: Bool
     let pluginService = PluginService.shared
 
     @State var selectedGenre: Genre
@@ -42,9 +43,13 @@ struct PluginSearchScreen: View {
         return sortedKeys.flatMap { mangas[$0] ?? [] }
     }
 
-    init(plugin: Plugin, query: String, genre: Genre = .all, status: Status = .any) {
+    init(
+        plugin: Plugin, query: String, isAuthorSearch: Bool = false,
+        genre: Genre = .all, status: Status = .any
+    ) {
         self.plugin = plugin
         self.query = query
+        self.isAuthorSearch = isAuthorSearch
         let normalizedGenre =
             plugin.supports(.search) && plugin.supports(.searchByGenre) ? genre : .all
         let normalizedStatus =
@@ -219,7 +224,11 @@ struct PluginSearchScreen: View {
     }
 
     private func search() {
-        if isLoading || !plugin.supportsSearch(genre: selectedGenre, status: selectedStatus) {
+        if isLoading
+            || !plugin.supportsSearch(
+                isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus
+            )
+        {
             return
         }
 
@@ -238,12 +247,16 @@ struct PluginSearchScreen: View {
         searchTask = Task {
             do {
                 let result = try await plugin.search(
-                    query, page: page, genre: requestGenre, status: requestStatus
+                    query, page: page, genre: requestGenre, status: requestStatus,
+                    isAuthor: isAuthorSearch
                 )
 
                 guard !Task.isCancelled,
                     requestGenre == selectedGenre,
-                    requestStatus == selectedStatus
+                    requestStatus == selectedStatus,
+                    plugin.supportsSearch(
+                        isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus
+                    )
                 else { return }
 
                 mangas[page] = result

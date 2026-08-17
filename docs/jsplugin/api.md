@@ -12,7 +12,7 @@ JavaScript plugins are read-only sources. The app loads the manifest from a URL 
 - [Callback scripts](#callback-scripts)
   - [`isOnline`](#isonline)
   - [`getSuggestion(query)`](#getsuggestionquery)
-  - [`search(query, page, genre, status)`](#searchquery-page-genre-status)
+  - [`search(query, page, genre, status, isAuthor)`](#searchquery-page-genre-status-isauthor)
   - [`getList(page, genre, status)`](#getlistpage-genre-status)
   - [`getMangas(ids)`](#getmangasids)
   - [`getDetailedManga(id)`](#getdetailedmangaid)
@@ -55,6 +55,7 @@ type PluginCapability =
   | "search"
   | "searchByGenre"
   | "searchByStatus"
+  | "searchByAuthor"
   | "mangaDetails"
   | "batchMangas"
   | "chapter"
@@ -117,7 +118,7 @@ The manifest parser does not reject a missing script, but invoking a missing cal
 The optional `capabilities` field accepts the values listed below. If it is omitted, all values are enabled. A plugin can use it to advertise only the operations it implements, so the app can avoid invoking unsupported callbacks.
 
 ```text
-onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, mangaDetails, batchMangas, chapter, image
+onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, searchByAuthor, mangaDetails, batchMangas, chapter, image
 ```
 
 The keys and function signatures are:
@@ -126,7 +127,7 @@ The keys and function signatures are:
 | :----------------- | :----------------------------------- | :-------------------------------------------------- |
 | `isOnline`         | `isOnline()`                         | `boolean`                                           |
 | `getSuggestion`    | `getSuggestion(query)`               | `string[]`                                          |
-| `search`           | `search(query, page, genre, status)` | `Manga[]`                                           |
+| `search`           | `search(query, page, genre, status, isAuthor)` | `Manga[]`                                           |
 | `getList`          | `getList(page, genre, status)`       | `Manga[]`                                           |
 | `getMangas`        | `getMangas(ids)`                     | `Manga[]`                                           |
 | `getDetailedManga` | `getDetailedManga(id)`               | `DetailedManga`                                     |
@@ -155,9 +156,9 @@ async function getSuggestion(query) {
 export { getSuggestion as default };
 ```
 
-### `search(query, page, genre, status)`
+### `search(query, page, genre, status, isAuthor)`
 
-Search for manga. `page` is a 1-based page number. `genre` is one of the strings in [Genres](#genres), and `status` is one of the numeric values in [Statuses](#statuses). Return lightweight `Manga` objects.
+Search for manga by title or author. `page` is a 1-based page number. `genre` is one of the strings in [Genres](#genres), and `status` is one of the numeric values in [Statuses](#statuses). When `isAuthor` is `true`, search the source's author field instead of its title field. Return lightweight `Manga` objects.
 
 ### `getList(page, genre, status)`
 

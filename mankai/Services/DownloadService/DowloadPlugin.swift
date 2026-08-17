@@ -176,11 +176,11 @@ final class DownloadPlugin: Plugin {
         }
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
-        -> [Manga]
-    {
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
+    ) async throws -> [Manga] {
         Logger.downloadPlugin.debug(
-            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status)"
+            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor)"
         )
         guard let db = db else {
             Logger.downloadPlugin.error("Database not available for search")
@@ -192,9 +192,10 @@ final class DownloadPlugin: Plugin {
             let offset = Int((page - 1) * DownloadPluginConstants.pageLimit)
             let limit = Int(DownloadPluginConstants.pageLimit)
 
+            let searchColumn = isAuthor ? "authors" : "title"
             var query =
                 DownloadMangaModel
-                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .filter(sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
 
             // Filter by genre if not "all"
             if genre != .all {

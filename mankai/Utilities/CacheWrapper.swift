@@ -232,14 +232,17 @@ class CacheWrapper: Plugin {
         }
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
-        -> [Manga]
-    {
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
+    ) async throws -> [Manga] {
         let cacheKey = getCacheKey(
-            for: .search, with: [query, String(page), genre.rawValue, String(status.rawValue)]
+            for: .search,
+            with: [query, String(page), genre.rawValue, String(status.rawValue), String(isAuthor)]
         )
         return try await getOrLoadCachedData(for: cacheKey) {
-            try await self.plugin.search(query, page: page, genre: genre, status: status)
+            try await self.plugin.search(
+                query, page: page, genre: genre, status: status, isAuthor: isAuthor
+            )
         }
     }
 

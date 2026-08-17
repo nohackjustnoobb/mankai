@@ -386,11 +386,11 @@ final class JsPlugin: Plugin {
         return suggestions
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
-        -> [Manga]
-    {
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
+    ) async throws -> [Manga] {
         Logger.jsPlugin.debug(
-            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status) (plugin: \(id))"
+            "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor) (plugin: \(id))"
         )
 
         if _scripts[.search] == nil {
@@ -398,7 +398,7 @@ final class JsPlugin: Plugin {
         }
 
         let script =
-            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue));"
+            "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue),\(isAuthor));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {

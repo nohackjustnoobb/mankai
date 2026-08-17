@@ -402,9 +402,9 @@ class HttpPlugin: Plugin {
         return try [String].decoded(from: data)
     }
 
-    override func search(_ query: String, page: UInt, genre: Genre, status: Status) async throws
-        -> [Manga]
-    {
+    override func search(
+        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
+    ) async throws -> [Manga] {
         try await setup()
         let (data, _) = try await authManager.get(
             path: "/search",
@@ -413,6 +413,7 @@ class HttpPlugin: Plugin {
                 "page": String(page),
                 "genre": genre.rawValue,
                 "status": String(status.rawValue),
+                "isAuthor": String(isAuthor),
             ]
         )
         return try [Manga].decoded(from: data)

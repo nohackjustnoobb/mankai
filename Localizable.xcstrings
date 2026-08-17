@@ -5835,6 +5835,24 @@
         }
       }
     },
+    "searchByAuthor" : {
+      "comment" : "Used as a plugin capability label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by Author"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按作者篩選搜尋"
+          }
+        }
+      }
+    },
     "searchByGenre" : {
       "comment" : "Used as a plugin capability label.",
       "extractionState" : "manual",
