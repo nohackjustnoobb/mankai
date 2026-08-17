@@ -19,10 +19,12 @@
 		E46469DD302264CA003786FA /* SwiftSMB in Frameworks */ = {isa = PBXBuildFile; productRef = E46469DC302264CA003786FA /* SwiftSMB */; };
 		E464751330239A9C003786FA /* ReerCodable in Frameworks */ = {isa = PBXBuildFile; productRef = E464751230239A9C003786FA /* ReerCodable */; };
 		E4840F002F42418F0029353D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4840EFF2F42418F0029353D /* InfoPlist.xcstrings */; };
-		E4851B0A302A1E3B00E78BB3 /* WebDAV in Frameworks */ = {isa = PBXBuildFile; productRef = E4851B09302A1E3B00E78BB3 /* WebDAV */; };
 		E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E4958E0F2F2FABE1004F2F4D /* Supabase */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
 		E4CAEFFC3006797500208FB4 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = E4CAEFFB3006797500208FB4 /* ZIPFoundation */; };
+		E4ED565F303371BB00F0499C /* WebDAV in Frameworks */ = {isa = PBXBuildFile; productRef = E4ED565E303371BB00F0499C /* WebDAV */; };
+		E4ED56643033720700F0499C /* SWXMLHash in Frameworks */ = {isa = PBXBuildFile; productRef = E4ED56633033720700F0499C /* SWXMLHash */; };
+		E4ED56673033735F00F0499C /* SWXMLHash in Frameworks */ = {isa = PBXBuildFile; productRef = E4ED56663033735F00F0499C /* SWXMLHash */; };
 		E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
@@ -100,12 +102,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4ED56643033720700F0499C /* SWXMLHash in Frameworks */,
 				E46452943020E344003786FA /* SwiftPackageListUI in Frameworks */,
 				E46469DD302264CA003786FA /* SwiftSMB in Frameworks */,
 				E4643183301F5A40003786FA /* UnrarKit in Frameworks */,
 				E4958E102F2FABE1004F2F4D /* Supabase in Frameworks */,
 				E464751330239A9C003786FA /* ReerCodable in Frameworks */,
-				E4851B0A302A1E3B00E78BB3 /* WebDAV in Frameworks */,
+				E4ED565F303371BB00F0499C /* WebDAV in Frameworks */,
 				E4033BA32F1BC53D00A7B886 /* OpenCC in Frameworks */,
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
 				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
@@ -117,6 +120,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4ED56673033735F00F0499C /* SWXMLHash in Frameworks */,
 				E427B77D3007F96E003649A2 /* QuickLookThumbnailing.framework in Frameworks */,
 				E4643185301F5A40003786FA /* UnrarKit in Frameworks */,
 				E427B8743007F9E2003649A2 /* ZIPFoundation in Frameworks */,
@@ -188,7 +192,8 @@
 				E46452933020E344003786FA /* SwiftPackageListUI */,
 				E46469DC302264CA003786FA /* SwiftSMB */,
 				E464751230239A9C003786FA /* ReerCodable */,
-				E4851B09302A1E3B00E78BB3 /* WebDAV */,
+				E4ED565E303371BB00F0499C /* WebDAV */,
+				E4ED56633033720700F0499C /* SWXMLHash */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -213,6 +218,7 @@
 			packageProductDependencies = (
 				E427B8733007F9E2003649A2 /* ZIPFoundation */,
 				E4643184301F5A40003786FA /* UnrarKit */,
+				E4ED56663033735F00F0499C /* SWXMLHash */,
 			);
 			productName = mankaiThumbnail;
 			productReference = E427B77B3007F96E003649A2 /* mankaiThumbnail.appex */;
@@ -256,7 +262,8 @@
 				E46452923020E344003786FA /* XCRemoteSwiftPackageReference "swift-package-list" */,
 				E46469DB302264CA003786FA /* XCRemoteSwiftPackageReference "SwiftSMB" */,
 				E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */,
-				E4851B08302A1E3B00E78BB3 /* XCRemoteSwiftPackageReference "WebDAV-Swift" */,
+				E4ED565D303371BB00F0499C /* XCRemoteSwiftPackageReference "WebDAV-Swift" */,
+				E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -453,7 +460,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -492,7 +499,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -528,7 +535,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -561,7 +568,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 55;
+				CURRENT_PROJECT_VERSION = 56;
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = mankaiThumbnail/Info.plist;
@@ -671,14 +678,6 @@
 				minimumVersion = 1.8.0;
 			};
 		};
-		E4851B08302A1E3B00E78BB3 /* XCRemoteSwiftPackageReference "WebDAV-Swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nohackjustnoobb/WebDAV-Swift";
-			requirement = {
-				kind = revision;
-				revision = 1beaae6d81a684acd20aa00d07a2bfc1fe5ce039;
-			};
-		};
 		E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -701,6 +700,22 @@
 			requirement = {
 				kind = upToNextMinorVersion;
 				minimumVersion = 0.9.20;
+			};
+		};
+		E4ED565D303371BB00F0499C /* XCRemoteSwiftPackageReference "WebDAV-Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nohackjustnoobb/WebDAV-Swift";
+			requirement = {
+				kind = revision;
+				revision = 8bde198bda09978d38e0c2033a9e09bb6a2a1362;
+			};
+		};
+		E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/drmohundro/SWXMLHash";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 8.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -751,11 +766,6 @@
 			package = E464751130239A9C003786FA /* XCRemoteSwiftPackageReference "ReerCodable" */;
 			productName = ReerCodable;
 		};
-		E4851B09302A1E3B00E78BB3 /* WebDAV */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = E4851B08302A1E3B00E78BB3 /* XCRemoteSwiftPackageReference "WebDAV-Swift" */;
-			productName = WebDAV;
-		};
 		E4958E0F2F2FABE1004F2F4D /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E4958E0E2F2FABE1004F2F4D /* XCRemoteSwiftPackageReference "supabase-swift" */;
@@ -770,6 +780,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E4CAEFFA3006797500208FB4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 			productName = ZIPFoundation;
+		};
+		E4ED565E303371BB00F0499C /* WebDAV */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4ED565D303371BB00F0499C /* XCRemoteSwiftPackageReference "WebDAV-Swift" */;
+			productName = WebDAV;
+		};
+		E4ED56633033720700F0499C /* SWXMLHash */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */;
+			productName = SWXMLHash;
+		};
+		E4ED56663033735F00F0499C /* SWXMLHash */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4ED56623033720700F0499C /* XCRemoteSwiftPackageReference "SWXMLHash" */;
+			productName = SWXMLHash;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

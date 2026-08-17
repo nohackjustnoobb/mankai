@@ -6,53 +6,50 @@
 //
 
 import Foundation
+import SWXMLHash
 
 enum ComicInfoCoverParser {
     static func frontCoverIndex(from data: Data) -> Int? {
-        let parser = XMLParser(data: data)
-        let delegate = Delegate()
-        parser.delegate = delegate
-        parser.shouldProcessNamespaces = false
+        let document = XMLHash.config { config in
+            config.detectParsingErrors = true
+        }.parse(data)
 
-        guard parser.parse() else { return nil }
-        return delegate.frontCoverIndex
+        return frontCoverIndex(in: document)
     }
 
-    private final class Delegate: NSObject, XMLParserDelegate {
-        var frontCoverIndex: Int?
-        private var inPages = false
+    private static func frontCoverIndex(in document: XMLIndexer) -> Int? {
+        var result: Int?
 
-        func parser(
-            _: XMLParser,
-            didStartElement elementName: String,
-            namespaceURI _: String?,
-            qualifiedName _: String?,
-            attributes attributeDict: [String: String] = [:]
-        ) {
-            if elementName == "Pages" {
-                inPages = true
-                return
-            }
+        for child in document.children {
+            guard let element = child.element else { continue }
 
-            guard inPages,
-                  elementName == "Page",
-                  attributeDict["Type"] == "FrontCover",
-                  let image = attributeDict["Image"],
-                  let index = Int(image)
-            else { return }
-
-            frontCoverIndex = index
-        }
-
-        func parser(
-            _: XMLParser,
-            didEndElement elementName: String,
-            namespaceURI _: String?,
-            qualifiedName _: String?
-        ) {
-            if elementName == "Pages" {
-                inPages = false
+            if element.name == "Pages" {
+                result = frontCoverIndex(inPages: child) ?? result
+            } else {
+                result = frontCoverIndex(in: child) ?? result
             }
         }
+
+        return result
+    }
+
+    private static func frontCoverIndex(inPages pages: XMLIndexer) -> Int? {
+        var result: Int?
+
+        for child in pages.children {
+            guard let element = child.element else { continue }
+
+            if element.name == "Page",
+                element.attribute(by: "Type")?.text == "FrontCover",
+                let image = element.attribute(by: "Image")?.text,
+                let index = Int(image)
+            {
+                result = index
+            }
+
+            result = frontCoverIndex(inPages: child) ?? result
+        }
+
+        return result
     }
 }

@@ -6,153 +6,161 @@
 //
 
 import Foundation
+import SWXMLHash
 
 enum EpubXMLParsers {
     static func containerRootfile(from data: Data) -> String? {
-        EpubContainerXMLParser.parse(data: data)
+        let document = EpubXML.parse(data)
+        guard EpubXML.hasRootElement(document) else { return nil }
+        return EpubContainerParser().parse(document)
     }
 
     static func packageDocument(from data: Data) -> EpubPackageDocument? {
-        EpubPackageXMLParser.parse(data: data)
+        let document = EpubXML.parse(data)
+        guard EpubXML.hasRootElement(document) else { return nil }
+
+        var parser = EpubPackageParser()
+        let package = parser.parse(document)
+        guard package.sawManifest, package.sawSpine else { return nil }
+        return package
     }
 
     static func contentImageReferences(from data: Data) -> [String]? {
-        EpubContentImageXMLParser.parse(data: data)
+        let document = EpubXML.parse(data)
+        guard EpubXML.hasRootElement(document) else { return nil }
+        var parser = EpubContentImageParser()
+        return parser.parse(document)
     }
 
     static func encryptedResourceReferences(from data: Data) -> [String]? {
-        EpubEncryptionXMLParser.parse(data: data)
+        let document = EpubXML.parse(data)
+        guard EpubXML.hasRootElement(document) else { return nil }
+        var parser = EpubEncryptionParser()
+        return parser.parse(document)
     }
 }
 
 private enum EpubXML {
-    static func localName(_ elementName: String, qualifiedName: String?) -> String {
-        let name = qualifiedName ?? elementName
-        return String(name.split(separator: ":").last ?? Substring(name)).lowercased()
+    static func parse(_ data: Data) -> XMLIndexer {
+        XMLHash.config { config in
+            config.detectParsingErrors = true
+            config.shouldProcessNamespaces = true
+        }.parse(data)
     }
 
-    static func attribute(_ attributes: [String: String], named name: String) -> String? {
-        attributes.first { key, _ in
-            String(key.split(separator: ":").last ?? Substring(key))
-                .caseInsensitiveCompare(name) == .orderedSame
-        }?.value
+    static func hasRootElement(_ document: XMLIndexer) -> Bool {
+        !document.children.isEmpty
     }
 
-    static func parser(data: Data, delegate: XMLParserDelegate) -> XMLParser {
-        let parser = XMLParser(data: data)
-        parser.delegate = delegate
-        parser.shouldProcessNamespaces = true
-        parser.shouldReportNamespacePrefixes = false
-        parser.shouldResolveExternalEntities = false
-        return parser
-    }
-}
-
-private final class EpubContainerXMLParser: NSObject, XMLParserDelegate {
-    private var rootfile: String?
-
-    static func parse(data: Data) -> String? {
-        let delegate = EpubContainerXMLParser()
-        let parser = EpubXML.parser(data: data, delegate: delegate)
-        guard parser.parse() else { return nil }
-        return delegate.rootfile
+    static func localName(_ node: XMLIndexer) -> String {
+        localName(node.element?.name ?? "")
     }
 
-    func parser(
-        _: XMLParser,
-        didStartElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?,
-        attributes attributeDict: [String: String] = [:]
-    ) {
-        guard rootfile == nil,
-            EpubXML.localName(elementName, qualifiedName: qName) == "rootfile",
-            let path = EpubXML.attribute(attributeDict, named: "full-path"),
-            !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else { return }
-        rootfile = path
+    static func localName(_ name: String) -> String {
+        String(name.split(separator: ":").last ?? Substring(name)).lowercased()
+    }
+
+    static func attribute(_ node: XMLIndexer, named name: String) -> String? {
+        guard let element = node.element else { return nil }
+
+        if let value = element.attribute(by: name)?.text {
+            return value
+        }
+
+        return element.allAttributes.values.first {
+            localName($0.name).caseInsensitiveCompare(name) == .orderedSame
+        }?.text
+    }
+
+    static func text(_ node: XMLIndexer) -> String {
+        node.element?.recursiveText ?? ""
     }
 }
 
-private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
+private struct EpubContainerParser {
+    func parse(_ document: XMLIndexer) -> String? {
+        rootfile(in: document)
+    }
+
+    private func rootfile(in document: XMLIndexer) -> String? {
+        for child in document.children {
+            if EpubXML.localName(child) == "rootfile",
+                let path = EpubXML.attribute(child, named: "full-path"),
+                !path.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            {
+                return path
+            }
+
+            if let path = rootfile(in: child) {
+                return path
+            }
+        }
+        return nil
+    }
+}
+
+private struct EpubPackageParser {
     private enum Section {
         case metadata, manifest, spine, guide
     }
 
-    private enum CaptureKind {
-        case title, credit, description, subject, date, meta
-    }
-
-    private struct Capture {
-        let kind: CaptureKind
-        let id: String?
-        let property: String?
-        let refines: String?
-        var depth: Int
-        var text: String
-    }
-
     private var document = EpubPackageDocument()
-    private var section: Section?
-    private var capture: Capture?
 
-    static func parse(data: Data) -> EpubPackageDocument? {
-        let delegate = EpubPackageXMLParser()
-        let parser = EpubXML.parser(data: data, delegate: delegate)
-        guard parser.parse(), delegate.document.sawManifest, delegate.document.sawSpine else {
-            return nil
-        }
-        return delegate.document
+    mutating func parse(_ xml: XMLIndexer) -> EpubPackageDocument {
+        visit(xml, in: nil)
+        return document
     }
 
-    func parser(
-        _: XMLParser,
-        didStartElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?,
-        attributes attributeDict: [String: String] = [:]
-    ) {
-        if capture != nil {
-            capture?.depth += 1
-            return
+    private mutating func visit(_ xml: XMLIndexer, in section: Section?) {
+        for child in xml.children {
+            visitElement(child, in: section)
         }
+    }
 
-        let name = EpubXML.localName(elementName, qualifiedName: qName)
+    private mutating func visitElement(_ element: XMLIndexer, in section: Section?) {
+        let name = EpubXML.localName(element)
+
         switch name {
         case "metadata":
-            section = .metadata
-            return
+            visit(element, in: .metadata)
         case "manifest":
-            section = .manifest
             document.sawManifest = true
-            return
+            visit(element, in: .manifest)
         case "spine":
-            section = .spine
             document.sawSpine = true
             document.pageProgressionDirection = EpubXML.attribute(
-                attributeDict,
+                element,
                 named: "page-progression-direction"
             )
-            return
+            visit(element, in: .spine)
         case "guide":
-            section = .guide
-            return
+            visit(element, in: .guide)
         default:
-            break
+            visitSectionElement(element, name: name, in: section)
         }
+    }
 
+    private mutating func visitSectionElement(
+        _ element: XMLIndexer,
+        name: String,
+        in section: Section?
+    ) {
         switch section {
         case .metadata:
-            startMetadataCapture(name: name, attributes: attributeDict)
+            if captureMetadata(element, name: name) {
+                return
+            }
+            visit(element, in: .metadata)
         case .manifest where name == "item":
-            guard let id = EpubXML.attribute(attributeDict, named: "id"),
-                let href = EpubXML.attribute(attributeDict, named: "href"),
+            guard let id = EpubXML.attribute(element, named: "id"),
+                let href = EpubXML.attribute(element, named: "href"),
                 !id.isEmpty,
                 !href.isEmpty
             else { return }
-            let mediaType = EpubXML.attribute(attributeDict, named: "media-type") ?? ""
+
+            let mediaType = EpubXML.attribute(element, named: "media-type") ?? ""
             let properties = Set(
-                (EpubXML.attribute(attributeDict, named: "properties") ?? "")
+                (EpubXML.attribute(element, named: "properties") ?? "")
                     .split(whereSeparator: \.isWhitespace)
                     .map { $0.lowercased() }
             )
@@ -165,74 +173,57 @@ private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
                 )
             )
         case .spine where name == "itemref":
-            if let idref = EpubXML.attribute(attributeDict, named: "idref"), !idref.isEmpty {
+            if let idref = EpubXML.attribute(element, named: "idref"), !idref.isEmpty {
                 document.spineItemIds.append(idref)
             }
         case .guide where name == "reference":
-            let types = (EpubXML.attribute(attributeDict, named: "type") ?? "")
+            let types = (EpubXML.attribute(element, named: "type") ?? "")
                 .split(whereSeparator: \.isWhitespace)
                 .map { $0.lowercased() }
             if document.guideCoverHref == nil,
                 types.contains("cover"),
-                let href = EpubXML.attribute(attributeDict, named: "href"),
+                let href = EpubXML.attribute(element, named: "href"),
                 !href.isEmpty
             {
                 document.guideCoverHref = href
             }
         default:
-            break
+            visit(element, in: section)
         }
     }
 
-    func parser(_: XMLParser, foundCharacters string: String) {
-        capture?.text += string
-    }
+    private mutating func captureMetadata(_ element: XMLIndexer, name: String) -> Bool {
+        let id = EpubXML.attribute(element, named: "id")
 
-    func parser(_: XMLParser, foundCDATA CDATABlock: Data) {
-        if let string = String(data: CDATABlock, encoding: .utf8) {
-            capture?.text += string
-        }
-    }
-
-    func parser(
-        _: XMLParser,
-        didEndElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?
-    ) {
-        if capture != nil {
-            capture?.depth -= 1
-            if capture?.depth == 0, let completed = capture {
-                finishCapture(completed)
-                capture = nil
-            }
-            return
-        }
-
-        switch EpubXML.localName(elementName, qualifiedName: qName) {
-        case "metadata", "manifest", "spine", "guide":
-            section = nil
-        default:
-            break
-        }
-    }
-
-    private func startMetadataCapture(name: String, attributes: [String: String]) {
-        let id = EpubXML.attribute(attributes, named: "id")
         switch name {
         case "title":
-            beginCapture(.title, id: id)
+            let value = EpubXML.text(element).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !value.isEmpty {
+                document.titles.append(EpubTextValue(id: id, value: value))
+            }
         case "creator", "contributor":
-            beginCapture(.credit, id: id)
+            appendNonEmpty(
+                EpubXML.text(element),
+                to: &document.credits
+            )
         case "description":
-            beginCapture(.description, id: id)
+            appendNonEmpty(
+                EpubXML.text(element),
+                to: &document.descriptions
+            )
         case "subject":
-            beginCapture(.subject, id: id)
+            appendNonEmpty(
+                EpubXML.text(element),
+                to: &document.subjects
+            )
         case "date":
-            beginCapture(.date, id: id)
+            appendNonEmpty(
+                EpubXML.text(element),
+                to: &document.dateValues
+            )
         case "meta":
-            let legacyName = EpubXML.attribute(attributes, named: "name")
-            let legacyContent = EpubXML.attribute(attributes, named: "content")
+            let legacyName = EpubXML.attribute(element, named: "name")
+            let legacyContent = EpubXML.attribute(element, named: "content")
             if document.legacyCoverId == nil,
                 legacyName?.caseInsensitiveCompare("cover") == .orderedSame,
                 let legacyContent,
@@ -241,136 +232,84 @@ private final class EpubPackageXMLParser: NSObject, XMLParserDelegate {
                 document.legacyCoverId = legacyContent
             }
 
-            if let property = EpubXML.attribute(attributes, named: "property"),
+            if let property = EpubXML.attribute(element, named: "property"),
                 !property.isEmpty
             {
-                beginCapture(
-                    .meta,
-                    id: id,
-                    property: property,
-                    refines: EpubXML.attribute(attributes, named: "refines")
-                )
-            }
-        default:
-            break
-        }
-    }
-
-    private func beginCapture(
-        _ kind: CaptureKind,
-        id: String?,
-        property: String? = nil,
-        refines: String? = nil
-    ) {
-        capture = Capture(
-            kind: kind,
-            id: id,
-            property: property,
-            refines: refines,
-            depth: 1,
-            text: ""
-        )
-    }
-
-    private func finishCapture(_ capture: Capture) {
-        let value = capture.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else { return }
-
-        switch capture.kind {
-        case .title:
-            document.titles.append(EpubTextValue(id: capture.id, value: value))
-        case .credit:
-            document.credits.append(value)
-        case .description:
-            document.descriptions.append(value)
-        case .subject:
-            document.subjects.append(value)
-        case .date:
-            document.dateValues.append(value)
-        case .meta:
-            if let property = capture.property {
-                document.metaValues.append(
-                    EpubMetaValue(
-                        property: property,
-                        refines: capture.refines,
-                        value: value
+                let value = EpubXML.text(element).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !value.isEmpty {
+                    document.metaValues.append(
+                        EpubMetaValue(
+                            property: property,
+                            refines: EpubXML.attribute(element, named: "refines"),
+                            value: value
+                        )
                     )
-                )
-            }
-        }
-    }
-}
-
-private final class EpubContentImageXMLParser: NSObject, XMLParserDelegate {
-    private var references: [String] = []
-
-    static func parse(data: Data) -> [String]? {
-        let delegate = EpubContentImageXMLParser()
-        let parser = EpubXML.parser(data: data, delegate: delegate)
-        guard parser.parse() else { return nil }
-        return delegate.references
-    }
-
-    func parser(
-        _: XMLParser,
-        didStartElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?,
-        attributes attributeDict: [String: String] = [:]
-    ) {
-        switch EpubXML.localName(elementName, qualifiedName: qName) {
-        case "img":
-            if let src = EpubXML.attribute(attributeDict, named: "src"), !src.isEmpty {
-                references.append(src)
-            }
-        case "image":
-            if let href = EpubXML.attribute(attributeDict, named: "href"), !href.isEmpty {
-                references.append(href)
+                }
             }
         default:
-            break
+            return false
+        }
+
+        return true
+    }
+
+    private func appendNonEmpty(_ value: String, to values: inout [String]) {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            values.append(trimmed)
         }
     }
 }
 
-private final class EpubEncryptionXMLParser: NSObject, XMLParserDelegate {
-    private var encryptedDataDepth = 0
+private struct EpubContentImageParser {
     private var references: [String] = []
 
-    static func parse(data: Data) -> [String]? {
-        let delegate = EpubEncryptionXMLParser()
-        let parser = EpubXML.parser(data: data, delegate: delegate)
-        guard parser.parse() else { return nil }
-        return delegate.references
+    mutating func parse(_ document: XMLIndexer) -> [String] {
+        visit(document)
+        return references
     }
 
-    func parser(
-        _: XMLParser,
-        didStartElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?,
-        attributes attributeDict: [String: String] = [:]
-    ) {
-        let name = EpubXML.localName(elementName, qualifiedName: qName)
-        if name == "encrypteddata" {
-            encryptedDataDepth += 1
-        } else if name == "cipherreference",
-            encryptedDataDepth > 0,
-            let uri = EpubXML.attribute(attributeDict, named: "uri"),
-            !uri.isEmpty
-        {
-            references.append(uri)
+    private mutating func visit(_ document: XMLIndexer) {
+        for child in document.children {
+            switch EpubXML.localName(child) {
+            case "img":
+                if let src = EpubXML.attribute(child, named: "src"), !src.isEmpty {
+                    references.append(src)
+                }
+            case "image":
+                if let href = EpubXML.attribute(child, named: "href"), !href.isEmpty {
+                    references.append(href)
+                }
+            default:
+                break
+            }
+            visit(child)
         }
     }
+}
 
-    func parser(
-        _: XMLParser,
-        didEndElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName qName: String?
-    ) {
-        if EpubXML.localName(elementName, qualifiedName: qName) == "encrypteddata" {
-            encryptedDataDepth = max(0, encryptedDataDepth - 1)
+private struct EpubEncryptionParser {
+    private var references: [String] = []
+
+    mutating func parse(_ document: XMLIndexer) -> [String] {
+        visit(document, insideEncryptedData: false)
+        return references
+    }
+
+    private mutating func visit(_ document: XMLIndexer, insideEncryptedData: Bool) {
+        for child in document.children {
+            let name = EpubXML.localName(child)
+            let isInsideEncryptedData = insideEncryptedData || name == "encrypteddata"
+
+            if name == "cipherreference",
+                isInsideEncryptedData,
+                let uri = EpubXML.attribute(child, named: "uri"),
+                !uri.isEmpty
+            {
+                references.append(uri)
+            }
+
+            visit(child, insideEncryptedData: isInsideEncryptedData)
         }
     }
 }

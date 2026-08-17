@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SWXMLHash
 
 enum ComicArchiveSupport {
     /// Image extensions supported as pages inside comic book archives.
@@ -147,95 +148,75 @@ struct ComicInfo {
     var frontCoverIndex: Int?
 }
 
-/// A lenient SAX parser for `ComicInfo.xml`. Only the elements relevant to the
+/// A lenient parser for `ComicInfo.xml`. Only the elements relevant to the
 /// comic archive parsers are collected.
-final class ComicInfoParser: NSObject, XMLParserDelegate {
+final class ComicInfoParser {
     private var info = ComicInfo()
-    private var text = ""
-    private var currentElement: String?
-    private var inPages = false
     private var frontCoverIndex: Int?
 
     static func parse(data: Data) -> ComicInfo? {
-        let parser = XMLParser(data: data)
-        let delegate = ComicInfoParser()
-        parser.delegate = delegate
-        parser.shouldProcessNamespaces = false
-        guard parser.parse() else { return nil }
-        var info = delegate.info
-        info.frontCoverIndex = delegate.frontCoverIndex
-        return info
+        let document = XMLHash.config { config in
+            config.detectParsingErrors = true
+        }.parse(data)
+        guard !document.children.isEmpty else { return nil }
+
+        let parser = ComicInfoParser()
+        parser.visit(document, inPages: false)
+        parser.info.frontCoverIndex = parser.frontCoverIndex
+        return parser.info
     }
 
-    func parser(
-        _: XMLParser,
-        didStartElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName _: String?,
-        attributes attributeDict: [String: String] = [:]
-    ) {
-        currentElement = elementName
-        text = ""
+    private func visit(_ document: XMLIndexer, inPages: Bool) {
+        for child in document.children {
+            guard let element = child.element else { continue }
+            let name = element.name
 
-        if elementName == "Pages" {
-            inPages = true
-            return
-        }
-
-        if inPages, elementName == "Page" {
-            let type = attributeDict["Type"] ?? "Story"
-            if type == "FrontCover", let image = attributeDict["Image"], let index = Int(image) {
-                frontCoverIndex = index
+            if name == "Pages" {
+                visit(child, inPages: true)
+                continue
             }
-        }
-    }
 
-    func parser(_: XMLParser, foundCharacters string: String) {
-        text += string
-    }
+            if inPages {
+                if name == "Page",
+                    element.attribute(by: "Type")?.text == "FrontCover",
+                    let image = element.attribute(by: "Image")?.text,
+                    let index = Int(image)
+                {
+                    frontCoverIndex = index
+                }
+                visit(child, inPages: true)
+                continue
+            }
 
-    func parser(
-        _: XMLParser,
-        didEndElement elementName: String,
-        namespaceURI _: String?,
-        qualifiedName _: String?
-    ) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if elementName == "Pages" {
-            inPages = false
-        } else if !inPages, let current = currentElement, elementName == current {
-            switch current {
+            let text = element.recursiveText.trimmingCharacters(in: .whitespacesAndNewlines)
+            switch name {
             case "Title":
-                info.title = trimmed
+                info.title = text
             case "Series":
-                info.series = trimmed
+                info.series = text
             case "Summary":
-                info.summary = trimmed
+                info.summary = text
             case "Writer":
-                info.writer = trimmed
+                info.writer = text
             case "Penciller":
-                info.penciller = trimmed
+                info.penciller = text
             case "Inker":
-                info.inker = trimmed
+                info.inker = text
             case "Colorist":
-                info.colorist = trimmed
+                info.colorist = text
             case "Letterer":
-                info.letterer = trimmed
+                info.letterer = text
             case "CoverArtist":
-                info.coverArtist = trimmed
+                info.coverArtist = text
             case "Editor":
-                info.editor = trimmed
+                info.editor = text
             case "Translator":
-                info.translator = trimmed
+                info.translator = text
             case "Manga":
-                info.manga = trimmed
+                info.manga = text
             default:
-                break
+                visit(child, inPages: false)
             }
         }
-
-        currentElement = nil
-        text = ""
     }
 }
