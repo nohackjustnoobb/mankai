@@ -124,8 +124,11 @@ struct BrowseTab: View {
                 AddBrowsableFolderModal()
             }
             .navigationDestination(item: $importDestinationPluginId) { pluginId in
-                if let plugin = browseService.getPlugin(pluginId) {
-                    BrowseScreen(plugin: plugin, path: plugin.importsPath)
+                if let plugin = browseService.getImportablePlugin(pluginId) {
+                    BrowseScreen(
+                        plugin: plugin,
+                        entry: plugin.importsEntity
+                    )
                 }
             }
         }

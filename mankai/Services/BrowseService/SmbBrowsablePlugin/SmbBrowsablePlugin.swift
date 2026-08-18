@@ -152,8 +152,17 @@ actor SmbSession {
     }
 }
 
-final class SmbBrowsablePlugin: GenericBrowsablePlugin {
+final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
     let configuration: SmbConnectionConfiguration
+
+    var importsEntity: Entity {
+        Entity(
+            path: "imports",
+            displayName: "imports",
+            name: "imports",
+            type: .directory
+        )
+    }
 
     private let pluginName: String?
     private let _shouldSync: Bool
@@ -422,8 +431,8 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         }
     }
 
-    override func importFile(from source: URL) async throws {
-        let importsPath = self.importsPath
+    func importFile(from source: URL) async throws {
+        let importPath = importsEntity.path
         let needsScopeAccess = source.startAccessingSecurityScopedResource()
         defer {
             if needsScopeAccess {
@@ -432,23 +441,23 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin {
         }
 
         try await session.withConnectedConnection { connection in
-            if try connection.itemExists(at: importsPath) != .directory {
+            if try connection.itemExists(at: importPath) != .directory {
                 do {
-                    try connection.makeDirectory(at: importsPath, makePath: true)
+                    try connection.makeDirectory(at: importPath, makePath: true)
                 } catch {
-                    guard try connection.itemExists(at: importsPath) == .directory else {
+                    guard try connection.itemExists(at: importPath) == .directory else {
                         throw error
                     }
                 }
             }
 
-            let existingEntries = try connection.listDirectory(at: importsPath)
+            let existingEntries = try connection.listDirectory(at: importPath)
             let existingNames = Set(existingEntries.map(\.name))
             let fileName = BrowsableFileUtilities.uniqueFileName(
                 for: source,
                 existingNames: existingNames
             )
-            let remotePath = "\(importsPath)/\(fileName)"
+            let remotePath = "\(importPath)/\(fileName)"
             try connection.uploadFile(local: source, remote: remotePath) { _, _, _, _ in
                 !Task.isCancelled
             }

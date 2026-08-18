@@ -164,8 +164,17 @@ actor WebDavSession {
     }
 }
 
-final class WebDavBrowsablePlugin: GenericBrowsablePlugin {
+final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
     let configuration: WebDavConnectionConfiguration
+
+    var importsEntity: Entity {
+        Entity(
+            path: "imports",
+            displayName: "imports",
+            name: "imports",
+            type: .directory
+        )
+    }
 
     private let pluginName: String?
     private let _shouldSync: Bool
@@ -409,7 +418,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin {
         }
     }
 
-    override func importFile(from source: URL) async throws {
+    func importFile(from source: URL) async throws {
         let needsScopeAccess = source.startAccessingSecurityScopedResource()
         defer {
             if needsScopeAccess {
@@ -418,20 +427,21 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin {
         }
 
         let rootFiles = try await session.list(path: "")
-        if !rootFiles.contains(where: { $0.fileName == importsPath && $0.isDirectory }) {
-            try await session.createFolder(path: importsPath)
+        let importPath = importsEntity.path
+        if !rootFiles.contains(where: { $0.fileName == importPath && $0.isDirectory }) {
+            try await session.createFolder(path: importPath)
         }
 
-        let existingFiles = try await session.list(path: importsPath)
+        let existingFiles = try await session.list(path: importPath)
         let existingNames = Set(existingFiles.map(\.fileName))
         let fileName = BrowsableFileUtilities.uniqueFileName(
             for: source,
             existingNames: existingNames
         )
-        try await session.upload(file: source, path: "\(importsPath)/\(fileName)")
+        try await session.upload(file: source, path: "\(importPath)/\(fileName)")
         try Task.checkCancellation()
 
-        let importedFiles = try await session.list(path: importsPath)
+        let importedFiles = try await session.list(path: importPath)
         guard importedFiles.contains(where: { $0.fileName == fileName && !$0.isDirectory }) else {
             throw MankaiErrorCode.browseWebDavRequestFailed.makeError()
         }

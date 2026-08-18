@@ -8,48 +8,30 @@
 import Foundation
 import SwiftUI
 
-enum EntityType {
-    case book(path: String, fileType: String)
-    case directory(path: String)
-
-    /// Name of the entity in the browse view.
-    var name: String {
-        switch self {
-        case .book(let path, _):
-            return (path as NSString).lastPathComponent
-        case .directory(let path):
-            return (path as NSString).lastPathComponent
-        }
+struct Entity {
+    enum Kind {
+        case book(fileType: String)
+        case directory
     }
+
+    let path: String
+    let displayName: String
+    let name: String
+    let type: Kind
 
     /// Display name for a file after its manga metadata has been parsed.
-    func name(using manga: DetailedManga?) -> String {
-        switch self {
-        case .book(let path, _):
-            guard let manga else {
-                return (path as NSString).lastPathComponent
-            }
-
-            let allChapters = manga.chapters.flatMap(\.chapters)
-            if allChapters.count == 1,
-                let chapterTitle = allChapters.first?.title
-            {
-                return chapterTitle
-            }
-            return manga.title ?? (path as NSString).lastPathComponent
-        case .directory(let path):
-            return (path as NSString).lastPathComponent
+    func displayName(using manga: DetailedManga?) -> String {
+        guard case .book(_) = type, let manga else {
+            return displayName
         }
-    }
 
-    /// The actual file name of the entity.
-    var fileName: String {
-        switch self {
-        case .book(let path, _):
-            return (path as NSString).lastPathComponent
-        case .directory(let path):
-            return (path as NSString).lastPathComponent
+        let allChapters = manga.chapters.flatMap(\.chapters)
+        if allChapters.count == 1,
+            let chapterTitle = allChapters.first?.title
+        {
+            return chapterTitle
         }
+        return manga.title ?? displayName
     }
 }
 
@@ -63,11 +45,8 @@ protocol Browsable {
     /// The file extensions supported by this plugin.
     var supportedExtensions: [String] { get }
 
-    /// The directory inside the plugin used for files imported via the file importer.
-    var importsPath: String { get }
-
     /// Returns the entities at the given path.
-    func getEntities(path: String?) async throws -> [EntityType]
+    func getEntities(path: String?) async throws -> [Entity]
 
     /// Parses a supported manga file at the given path.
     func parseFile(path: String, fileType: String) async throws -> DetailedManga
@@ -77,8 +56,14 @@ protocol Browsable {
     /// non-filesystem plugins.
     /// - Parameter path: A path relative to the plugin's root, or `nil` for the root.
     func absoluteURL(for path: String?) -> URL?
+}
 
-    /// Imports a file from the given URL into the plugin's `importsDir`.
+/// A plugin that can receive files from the system file importer.
+protocol Importable {
+    /// The directory entity inside the plugin used for imported files.
+    var importsEntity: Entity { get }
+
+    /// Imports a file from the given URL into the plugin's import directory.
     ///
     /// The caller is responsible for ensuring the source resource is accessible
     /// (e.g. by starting security-scoped access if needed).
@@ -88,6 +73,7 @@ protocol Browsable {
 }
 
 typealias BrowsablePlugin = Browsable & Plugin
+typealias ImportableBrowsablePlugin = Browsable & Importable & Plugin
 
 final class BrowseService: ObservableObject {
     static let shared = BrowseService()
@@ -111,6 +97,11 @@ final class BrowseService: ObservableObject {
         let appDir = AppDirBrowsablePlugin.shared
         let others = _plugins.values.filter { $0.id != appDir.id }.sorted { $0.id < $1.id }
         return [appDir] + others
+    }
+
+    /// A list of plugins that can receive files from the system file importer.
+    var importablePlugins: [ImportableBrowsablePlugin] {
+        plugins.compactMap { $0 as? ImportableBrowsablePlugin }
     }
 
     private func loadFsBrowablePlugins() {
@@ -149,6 +140,11 @@ final class BrowseService: ObservableObject {
     /// - Returns: The `BrowsablePlugin` instance if found, otherwise `nil`.
     func getPlugin(_ id: String) -> BrowsablePlugin? {
         return _plugins[id]
+    }
+
+    /// Retrieves an importable plugin by its identifier.
+    func getImportablePlugin(_ id: String) -> ImportableBrowsablePlugin? {
+        _plugins[id] as? ImportableBrowsablePlugin
     }
 
     /// Adds a new plugin to the service.

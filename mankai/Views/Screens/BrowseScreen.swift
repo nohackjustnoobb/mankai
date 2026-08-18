@@ -9,12 +9,12 @@ import SwiftUI
 
 struct BrowseScreen: View {
     let plugin: BrowsablePlugin
-    let path: String?
+    let entry: Entity?
     let systemImageColor: Color?
 
     @Environment(\.openURL) private var openURL
 
-    @State private var entities: [EntityType] = []
+    @State private var entities: [Entity] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
     @State private var isParsing: Bool = false
@@ -22,9 +22,13 @@ struct BrowseScreen: View {
     @State private var parsingPaths: Set<String> = []
     @State private var parseErrors: [String: String] = [:]
 
-    init(plugin: BrowsablePlugin, path: String? = nil, systemImageColor: Color? = nil) {
+    init(
+        plugin: BrowsablePlugin,
+        entry: Entity? = nil,
+        systemImageColor: Color? = nil
+    ) {
         self.plugin = plugin
-        self.path = path
+        self.entry = entry
         self.systemImageColor = systemImageColor ?? plugin.systemImageColor
     }
 
@@ -37,16 +41,16 @@ struct BrowseScreen: View {
                 spacing: 20
             ) {
                 ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
-                    switch entity {
-                    case .directory(let dirPath):
+                    switch entity.type {
+                    case .directory:
                         NavigationLink(
-                            destination: BrowseScreen(plugin: plugin, path: dirPath)
+                            destination: BrowseScreen(plugin: plugin, entry: entity)
                         ) {
                             directoryView(entity: entity)
                         }
                         .buttonStyle(.plain)
-                    case .book(let path, _):
-                        if let manga = parsedMangas[path] {
+                    case .book:
+                        if let manga = parsedMangas[entity.path] {
                             NavigationLink(
                                 destination: MangaDetailsScreen(
                                     plugin: plugin,
@@ -59,8 +63,8 @@ struct BrowseScreen: View {
                         } else {
                             filePlaceholderView(
                                 entity: entity,
-                                isParsing: parsingPaths.contains(path),
-                                errorMessage: parseErrors[path]
+                                isParsing: parsingPaths.contains(entity.path),
+                                errorMessage: parseErrors[entity.path]
                             )
                         }
                     }
@@ -108,14 +112,14 @@ struct BrowseScreen: View {
     }
 
     private var navigationTitle: String {
-        if let path = path, !path.isEmpty {
-            return (path as NSString).lastPathComponent
+        if let entry {
+            return entry.displayName
         }
         return plugin.name ?? plugin.id
     }
 
     private var folderURL: URL? {
-        plugin.absoluteURL(for: path)
+        plugin.absoluteURL(for: entry?.path)
     }
 
     private func openInFilesApp() {
@@ -138,13 +142,13 @@ struct BrowseScreen: View {
 
         Task {
             do {
-                let result = try await plugin.getEntities(path: path)
+                let result = try await plugin.getEntities(path: entry?.path)
                 let sorted = result.sorted { lhs, rhs in
-                    switch (lhs, rhs) {
+                    switch (lhs.type, rhs.type) {
                     case (.directory, .book): return true
                     case (.book, .directory): return false
                     default:
-                        return lhs.fileName.localizedStandardCompare(rhs.fileName)
+                        return lhs.name.localizedStandardCompare(rhs.name)
                             == .orderedAscending
                     }
                 }
@@ -155,7 +159,8 @@ struct BrowseScreen: View {
                 }
 
                 for entity in sorted {
-                    guard case .book(let filePath, let fileType) = entity else { continue }
+                    guard case .book(let fileType) = entity.type else { continue }
+                    let filePath = entity.path
 
                     await MainActor.run {
                         _ = self.parsingPaths.insert(filePath)
@@ -202,7 +207,7 @@ struct BrowseScreen: View {
             }
     }
 
-    private func directoryView(entity: EntityType) -> some View {
+    private func directoryView(entity: Entity) -> some View {
         VStack(spacing: 8) {
             thumbnailView {
                 Image("FolderIcon")
@@ -219,7 +224,7 @@ struct BrowseScreen: View {
                     .compositingGroup()
             }
 
-            Text(entity.name)
+            Text(entity.displayName)
                 .font(.caption)
                 .foregroundColor(.primary)
                 .lineLimit(2)
@@ -228,13 +233,13 @@ struct BrowseScreen: View {
         }
     }
 
-    private func mangaView(manga: DetailedManga, entity: EntityType) -> some View {
+    private func mangaView(manga: DetailedManga, entity: Entity) -> some View {
         VStack(spacing: 8) {
             thumbnailView {
                 MangaCoverView(coverUrl: manga.cover, plugin: plugin)
             }
 
-            Text(entity.name(using: manga))
+            Text(entity.displayName(using: manga))
                 .font(.caption)
                 .foregroundColor(.primary)
                 .lineLimit(2)
@@ -244,12 +249,12 @@ struct BrowseScreen: View {
     }
 
     private func filePlaceholderView(
-        entity: EntityType,
+        entity: Entity,
         isParsing: Bool,
         errorMessage: String?
     ) -> some View {
         let fileType: String
-        if case .book(_, let type) = entity {
+        if case .book(let type) = entity.type {
             fileType = type
         } else {
             fileType = ""
@@ -290,7 +295,7 @@ struct BrowseScreen: View {
                 }
             }
 
-            Text(entity.name)
+            Text(entity.displayName)
                 .font(.caption)
                 .foregroundColor(.primary)
                 .lineLimit(2)

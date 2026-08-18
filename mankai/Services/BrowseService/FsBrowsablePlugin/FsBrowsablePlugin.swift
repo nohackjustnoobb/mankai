@@ -8,7 +8,16 @@
 import Foundation
 import GRDB
 
-class FsBrowsablePlugin: GenericBrowsablePlugin {
+class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
+    var importsEntity: Entity {
+        Entity(
+            path: "imports",
+            displayName: "imports",
+            name: "imports",
+            type: .directory
+        )
+    }
+
     override var name: String? {
         pluginName ?? dirName
     }
@@ -20,7 +29,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
     private lazy var dirName: String = url.lastPathComponent
 
     private var importsDir: URL {
-        url.appendingPathComponent(importsPath, isDirectory: true)
+        url.appendingPathComponent(importsEntity.path, isDirectory: true)
     }
 
     init(url: URL, id: String, name: String?, shouldSync: Bool = true) {
@@ -247,7 +256,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin {
         return sourceURL
     }
 
-    override func importFile(from source: URL) async throws {
+    func importFile(from source: URL) async throws {
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: importsDir, withIntermediateDirectories: true)
 

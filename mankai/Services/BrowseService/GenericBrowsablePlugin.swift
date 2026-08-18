@@ -70,10 +70,6 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         extensionsIndex.keys.sorted()
     }
 
-    var importsPath: String {
-        "imports"
-    }
-
     private let _id: String
     let parsers: [String: Parser]
 
@@ -170,13 +166,6 @@ class GenericBrowsablePlugin: Plugin, Browsable {
     /// Files app.
     func absoluteURL(for _: String?) -> URL? {
         nil
-    }
-
-    /// Importing is backend-specific. Filesystem-backed subclasses override
-    /// this with a copy operation, network-backed subclasses can upload the
-    /// source and upload it to their own destination if supported.
-    func importFile(from _: URL) async throws {
-        fatalError("Not Implemented")
     }
 
     // MARK: - Route helpers
@@ -599,14 +588,21 @@ class GenericBrowsablePlugin: Plugin, Browsable {
 
     // MARK: - Browsable methods
 
-    func getEntities(path: String? = "") async throws -> [EntityType] {
+    func getEntities(path: String? = "") async throws -> [Entity] {
         Logger.browseService.debug("Getting entities for path: \(path ?? "root")")
         let entries = try await entries(path: path)
-        var entities: [EntityType] = []
+        var entities: [Entity] = []
 
         for entry in entries.sorted(by: { $0.fileName < $1.fileName }) {
             if entry.isDirectory {
-                entities.append(.directory(path: entry.path))
+                entities.append(
+                    Entity(
+                        path: entry.path,
+                        displayName: entry.fileName,
+                        name: entry.fileName,
+                        type: .directory
+                    )
+                )
                 continue
             }
             guard entry.isRegularFile else { continue }
@@ -614,7 +610,14 @@ class GenericBrowsablePlugin: Plugin, Browsable {
             let ext = (entry.path as NSString).pathExtension.lowercased()
             guard parser(forExtension: ext) != nil else { continue }
 
-            entities.append(.book(path: entry.path, fileType: ext))
+            entities.append(
+                Entity(
+                    path: entry.path,
+                    displayName: entry.fileName,
+                    name: entry.fileName,
+                    type: .book(fileType: ext)
+                )
+            )
         }
 
         return entities

@@ -12,7 +12,7 @@ struct ImportsModal: View {
     @ObservedObject private var browseService = BrowseService.shared
     @Environment(\.dismiss) private var dismiss
 
-    var onImport: ((BrowsablePlugin) -> Void)?
+    var onImport: ((ImportableBrowsablePlugin) -> Void)?
     var initialFiles: [URL]
 
     @State private var selectedFiles: [URL]
@@ -22,7 +22,10 @@ struct ImportsModal: View {
     @State private var importError: String?
     @State private var showingError = false
 
-    init(initialFiles: [URL] = [], onImport: ((BrowsablePlugin) -> Void)? = nil) {
+    init(
+        initialFiles: [URL] = [],
+        onImport: ((ImportableBrowsablePlugin) -> Void)? = nil
+    ) {
         self.initialFiles = initialFiles
         self.onImport = onImport
         _selectedFiles = State(initialValue: initialFiles)
@@ -38,8 +41,8 @@ struct ImportsModal: View {
         }
     }
 
-    private var selectedPlugin: BrowsablePlugin? {
-        browseService.getPlugin(selectedPluginId)
+    private var selectedPlugin: ImportableBrowsablePlugin? {
+        browseService.getImportablePlugin(selectedPluginId)
     }
 
     var body: some View {
@@ -70,7 +73,7 @@ struct ImportsModal: View {
 
                 Section("importTo") {
                     Picker("folder", selection: $selectedPluginId) {
-                        ForEach(browseService.plugins, id: \.id) { plugin in
+                        ForEach(browseService.importablePlugins, id: \.id) { plugin in
                             Text(plugin.name ?? plugin.id)
                                 .tag(plugin.id)
                         }
