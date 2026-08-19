@@ -32,13 +32,14 @@ struct ImportsModal: View {
     }
 
     private var supportedContentTypes: [UTType] {
-        AppDirBrowsablePlugin.shared.supportedExtensions.compactMap { ext in
-            if ext == "epub" {
-                return .epub
-            }
+        (selectedPlugin?.supportedExtensions ?? AppDirBrowsablePlugin.shared.supportedExtensions)
+            .compactMap { ext in
+                if ext == "epub" {
+                    return .epub
+                }
 
-            return UTType(filenameExtension: ext)
-        }
+                return UTType(filenameExtension: ext)
+            }
     }
 
     private var selectedPlugin: ImportableBrowsablePlugin? {

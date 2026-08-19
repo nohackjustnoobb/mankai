@@ -42,9 +42,6 @@ protocol Browsable {
     /// The color of the system image used to represent this plugin.
     var systemImageColor: Color { get }
 
-    /// The file extensions supported by this plugin.
-    var supportedExtensions: [String] { get }
-
     /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [Entity]
 
@@ -60,6 +57,9 @@ protocol Browsable {
 
 /// A plugin that can receive files from the system file importer.
 protocol Importable {
+    /// The file extensions accepted by this importable plugin.
+    var supportedExtensions: [String] { get }
+
     /// The directory entity inside the plugin used for imported files.
     var importsEntity: Entity { get }
 
