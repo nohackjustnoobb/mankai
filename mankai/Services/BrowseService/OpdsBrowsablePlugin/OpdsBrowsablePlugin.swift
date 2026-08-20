@@ -15,8 +15,8 @@ import SwiftUI
 
 struct OpdsConnectionConfiguration {
     let catalogURL: URL
-    let username: String?
-    let password: String?
+    var username: String?
+    var password: String?
 
     init(catalogURL: String, username: String? = nil, password: String? = nil) throws {
         let trimmedURL = catalogURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -78,10 +78,14 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
     private static let pseMaxWidth = 2000
 
     private let _id: String
-    let configuration: OpdsConnectionConfiguration
-    private let pluginName: String?
+    var configuration: OpdsConnectionConfiguration {
+        didSet {
+            session = OpdsSession(configuration: configuration)
+        }
+    }
+    var pluginName: String?
     private let _shouldSync: Bool
-    private let session: OpdsSession
+    private var session: OpdsSession
     private let parsers: [String: Parser]
     private let mimeTypes: [String: Parser]
 

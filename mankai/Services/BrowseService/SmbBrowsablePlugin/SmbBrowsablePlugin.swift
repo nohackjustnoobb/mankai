@@ -13,8 +13,8 @@ struct SmbConnectionConfiguration {
     let host: String
     let port: Int
     let share: String
-    let username: String?
-    let password: String?
+    var username: String?
+    var password: String?
 
     init(
         host: String,
@@ -153,7 +153,15 @@ actor SmbSession {
 }
 
 final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
-    let configuration: SmbConnectionConfiguration
+    var configuration: SmbConnectionConfiguration {
+        didSet {
+            let previousSession = session
+            session = SmbSession(configuration: configuration)
+            Task {
+                await previousSession.disconnect()
+            }
+        }
+    }
 
     var importsEntity: Entity {
         Entity(
@@ -164,9 +172,9 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    private let pluginName: String?
+    var pluginName: String?
     private let _shouldSync: Bool
-    private let session: SmbSession
+    private var session: SmbSession
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("smb", isDirectory: true)
         .appendingPathComponent(id, isDirectory: true)

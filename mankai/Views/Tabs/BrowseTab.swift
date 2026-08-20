@@ -15,6 +15,7 @@ struct BrowseTab: View {
     @State private var pluginPendingDeletion: BrowsablePlugin?
     @State private var showingImportsModal = false
     @State private var importDestinationPluginId: String?
+    @State private var editDestinationPluginId: String?
 
     init(importedFiles: Binding<[URL]>) {
         _importedFiles = importedFiles
@@ -34,13 +35,21 @@ struct BrowseTab: View {
                             )
                             .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
                         }
-                        .swipeActions(edge: .trailing) {
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             if !(plugin is AppDirBrowsablePlugin) {
                                 Button(role: .destructive) {
                                     pluginPendingDeletion = plugin
                                 } label: {
                                     Label("remove", systemImage: "trash")
                                 }
+
+                                Button {
+                                    editDestinationPluginId = plugin.id
+                                } label: {
+                                    Label("edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+
                             }
                         }
                     }
@@ -57,7 +66,7 @@ struct BrowseTab: View {
                     }
                     .buttonStyle(.plain)
                 } footer: {
-                    Text("swipeToRemoveFolder")
+                    Text("swipeToEditOrRemoveFolder")
                 }
             }
             .toolbar {
@@ -129,6 +138,11 @@ struct BrowseTab: View {
                         plugin: plugin,
                         entry: plugin.importsEntity
                     )
+                }
+            }
+            .navigationDestination(item: $editDestinationPluginId) { pluginId in
+                if let plugin = browseService.plugins.first(where: { $0.id == pluginId }) {
+                    FolderInfoScreen(plugin: plugin)
                 }
             }
         }

@@ -11,8 +11,8 @@ import WebDAV
 
 struct WebDavConnectionConfiguration {
     let baseURL: URL
-    let username: String?
-    let password: String?
+    var username: String?
+    var password: String?
 
     init(baseURL: String, username: String? = nil, password: String? = nil) throws {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -165,7 +165,11 @@ actor WebDavSession {
 }
 
 final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
-    let configuration: WebDavConnectionConfiguration
+    var configuration: WebDavConnectionConfiguration {
+        didSet {
+            session = WebDavSession(configuration: configuration)
+        }
+    }
 
     var importsEntity: Entity {
         Entity(
@@ -176,9 +180,9 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    private let pluginName: String?
+    var pluginName: String?
     private let _shouldSync: Bool
-    private let session: WebDavSession
+    private var session: WebDavSession
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
         .appendingPathComponent("webdav", isDirectory: true)
         .appendingPathComponent(id, isDirectory: true)

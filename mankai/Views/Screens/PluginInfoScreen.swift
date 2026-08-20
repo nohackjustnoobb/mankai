@@ -101,6 +101,18 @@ struct PluginInfoScreen: View {
                     }
                 }
 
+                Section("sync") {
+                    LabeledContent("syncAcrossDevices") {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(plugin.shouldSync ? Color.green : Color.red)
+                                .frame(width: 8, height: 8)
+                            Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
                 if !plugin.configs.isEmpty {
                     Section("configs") {
                         ForEach(plugin.configs, id: \.key) { config in

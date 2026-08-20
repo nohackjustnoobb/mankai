@@ -30,15 +30,6 @@ struct SettingsTab: View {
                     }
 
                     NavigationLink(
-                        destination: PluginSettingsScreen()
-                    ) {
-                        Label("plugins", systemImage: "puzzlepiece.extension.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
-                    }
-                }
-
-                Section {
-                    NavigationLink(
                         destination: HistoryScreen()
                     ) {
                         Label(
@@ -56,6 +47,22 @@ struct SettingsTab: View {
                             systemImage: "arrow.triangle.2.circlepath"
                         )
                         .labelStyle(ColorfulIconLabelStyle(color: .blue))
+                    }
+                }
+
+                Section {
+                    NavigationLink(
+                        destination: PluginSettingsScreen()
+                    ) {
+                        Label("plugins", systemImage: "puzzlepiece.extension.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
+                    }
+
+                    NavigationLink(
+                        destination: FolderSettingsScreen()
+                    ) {
+                        Label("folders", systemImage: "folder.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
                 }
 

@@ -1663,6 +1663,22 @@
         }
       }
     },
+    "edit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯"
+          }
+        }
+      }
+    },
     "editable" : {
       "localizations" : {
         "en" : {
@@ -2337,6 +2353,22 @@
         }
       }
     },
+    "failedToSaveFolder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Save Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存資料夾失敗"
+          }
+        }
+      }
+    },
     "failedToSearchManga" : {
       "localizations" : {
         "en" : {
@@ -2511,6 +2543,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "資料夾"
+          }
+        }
+      }
+    },
+    "folders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料夾"
+          }
+        }
+      }
+    },
+    "foldersDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage the folders and catalogs available in Browse."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理「瀏覽」中可用的資料夾和目錄。"
           }
         }
       }
@@ -5870,13 +5934,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bookmark"
+            "value" : "Save"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "收藏"
+            "value" : "儲存"
           }
         }
       }
@@ -6225,6 +6289,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        }
+      }
+    },
+    "share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共用資料夾"
           }
         }
       }
@@ -6603,18 +6683,18 @@
         }
       }
     },
-    "swipeToRemoveFolder" : {
+    "swipeToEditOrRemoveFolder" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Swipe left to remove a folder"
+            "value" : "Swipe left to edit or remove a folder"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向左滑動以移除資料夾"
+            "value" : "向左滑動以編輯或移除資料夾"
           }
         }
       }
@@ -6667,6 +6747,22 @@
         }
       }
     },
+    "syncAcrossDevices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sync across devices"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跨裝置同步"
+          }
+        }
+      }
+    },
     "syncDescription" : {
       "localizations" : {
         "en" : {
@@ -6679,6 +6775,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定你的漫畫書櫃如何在裝置間同步。"
+          }
+        }
+      }
+    },
+    "syncDisabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabled"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已停用"
+          }
+        }
+      }
+    },
+    "syncEnabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabled"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已啟用"
           }
         }
       }

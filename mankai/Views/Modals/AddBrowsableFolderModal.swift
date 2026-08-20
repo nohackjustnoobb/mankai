@@ -22,6 +22,19 @@ struct AddBrowsableFolderModal: View {
         var id: String {
             rawValue
         }
+
+        var localizedName: String {
+            switch self {
+            case .filesystem:
+                String(localized: "fs")
+            case .smb:
+                String(localized: "smb")
+            case .webdav:
+                String(localized: "webdav")
+            case .opds:
+                String(localized: "opds")
+            }
+        }
     }
 
     @State private var selectedFolderType: FolderType = .filesystem
@@ -81,20 +94,8 @@ struct AddBrowsableFolderModal: View {
                 Section {
                     Picker("folderType", selection: $selectedFolderType) {
                         ForEach(FolderType.allCases) { type in
-                            switch type {
-                            case .filesystem:
-                                Text("fs")
-                                    .tag(type)
-                            case .smb:
-                                Text("smb")
-                                    .tag(type)
-                            case .webdav:
-                                Text("webdav")
-                                    .tag(type)
-                            case .opds:
-                                Text("opds")
-                                    .tag(type)
-                            }
+                            Text(type.localizedName)
+                                .tag(type)
                         }
                     }
                     .disabled(isProcessing)

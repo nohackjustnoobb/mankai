@@ -23,7 +23,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
     }
 
     let url: URL
-    private let pluginName: String?
+    var pluginName: String?
     private let _shouldSync: Bool
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
