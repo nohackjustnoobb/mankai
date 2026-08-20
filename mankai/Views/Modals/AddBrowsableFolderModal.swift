@@ -17,6 +17,7 @@ struct AddBrowsableFolderModal: View {
         case filesystem
         case smb
         case webdav
+        case opds
 
         var id: String {
             rawValue
@@ -44,6 +45,11 @@ struct AddBrowsableFolderModal: View {
     @State private var webDavUsername = ""
     @State private var webDavPassword = ""
 
+    // OPDS state
+    @State private var opdsCatalogURL = ""
+    @State private var opdsUsername = ""
+    @State private var opdsPassword = ""
+
     @State private var isLoadingShares = false
     @State private var isAdding = false
     @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
@@ -64,6 +70,8 @@ struct AddBrowsableFolderModal: View {
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .webdav:
             return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .opds:
+            return !opdsCatalogURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -83,12 +91,20 @@ struct AddBrowsableFolderModal: View {
                             case .webdav:
                                 Text("webdav")
                                     .tag(type)
+                            case .opds:
+                                Text("opds")
+                                    .tag(type)
                             }
                         }
                     }
                     .disabled(isProcessing)
                 } footer: {
-                    Text("pluginIdSyncHint")
+                    switch selectedFolderType {
+                    case .opds:
+                        Text("opdsPluginIdSyncHint")
+                    default:
+                        Text("pluginIdSyncHint")
+                    }
                 }
 
                 Section("displayName") {
@@ -103,6 +119,8 @@ struct AddBrowsableFolderModal: View {
                     smbConfiguration
                 case .webdav:
                     webDavConfiguration
+                case .opds:
+                    opdsConfiguration
                 }
             }
             .navigationTitle("addFolder")
@@ -215,6 +233,31 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
+    private var opdsConfiguration: some View {
+        Section {
+            TextField("catalogUrl", text: $opdsCatalogURL)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.URL)
+                .disabled(isProcessing)
+
+            TextField("username", text: $opdsUsername)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textContentType(.username)
+                .disabled(isProcessing)
+
+            SecureField("password", text: $opdsPassword)
+                .textContentType(.password)
+                .disabled(isProcessing)
+        } header: {
+            Text("opdsSettings")
+        } footer: {
+            Text("opdsSettingsFooter")
+        }
+    }
+
     private var shareSelection: some View {
         List {
             if shares.isEmpty {
@@ -301,6 +344,17 @@ struct AddBrowsableFolderModal: View {
         case .webdav:
             Button {
                 addWebDavFolder()
+            } label: {
+                if isAdding {
+                    ProgressView()
+                } else {
+                    Text("add")
+                }
+            }
+            .disabled(!canContinue)
+        case .opds:
+            Button {
+                addOpdsPlugin()
             } label: {
                 if isAdding {
                     ProgressView()
@@ -412,6 +466,27 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = WebDavSession(configuration: configuration)
                 let plugin = try await WebDavBrowsablePlugin(session: session, name: name)
+                try browseService.addPlugin(plugin)
+                dismiss()
+            } catch {
+                presentError(error)
+            }
+        }
+    }
+
+    private func addOpdsPlugin() {
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let configuration = try OpdsConnectionConfiguration(
+                    catalogURL: opdsCatalogURL,
+                    username: opdsUsername,
+                    password: opdsPassword
+                )
+                let session = OpdsSession(configuration: configuration)
+                let plugin = try await OpdsBrowsablePlugin(session: session, name: name)
                 try browseService.addPlugin(plugin)
                 dismiss()
             } catch {

@@ -52,6 +52,7 @@ final class DbService {
                 try FsBrowsablePluginModel.createTable(db)
                 try SmbBrowsablePluginModel.createTable(db)
                 try WebDavBrowsablePluginModel.createTable(db)
+                try OpdsBrowsablePluginModel.createTable(db)
             }
 
             Logger.dbService.info("appDb initialized successfully")
@@ -173,5 +174,69 @@ final class DbService {
     func closeBrowsablePluginDb() {
         browsablePluginDb = nil
         Logger.dbService.debug("Closed browsablePluginDb pool")
+    }
+
+    private var opdsBrowsablePluginDb: DatabasePool?
+
+    func openOpdsBrowsablePluginDb() -> DatabasePool? {
+        if let db = opdsBrowsablePluginDb {
+            return db
+        }
+
+        guard
+            let cacheURL = FileManager.default.urls(
+                for: .cachesDirectory, in: .userDomainMask
+            ).first
+        else {
+            Logger.dbService.error("Could not find cache directory for OPDS database")
+            return nil
+        }
+
+        let directory =
+            cacheURL
+            .appendingPathComponent(CacheDirectory.index)
+            .appendingPathComponent("opdsbrowsableplugin")
+        let path = directory.appendingPathComponent("data.db").path(
+            percentEncoded: false
+        )
+        Logger.dbService.debug("Opening opdsBrowsablePluginDb at \(path)")
+
+        do {
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true
+            )
+        } catch {
+            Logger.dbService.error(
+                "Failed to create OPDS database directory at \(directory.path(percentEncoded: false))",
+                error: error
+            )
+            return nil
+        }
+
+        var config = Configuration()
+        config.busyMode = .timeout(5.0)
+
+        do {
+            let pool = try DatabasePool(path: path, configuration: config)
+            try pool.write { db in
+                try OpdsBrowsableBookModel.createTable(db)
+            }
+
+            opdsBrowsablePluginDb = pool
+            Logger.dbService.info("opdsBrowsablePluginDb initialized successfully")
+            return pool
+        } catch {
+            Logger.dbService.error(
+                "Failed to initialize opdsBrowsablePluginDb",
+                error: error
+            )
+            return nil
+        }
+    }
+
+    func closeOpdsBrowsablePluginDb() {
+        opdsBrowsablePluginDb = nil
+        Logger.dbService.debug("Closed opdsBrowsablePluginDb pool")
     }
 }

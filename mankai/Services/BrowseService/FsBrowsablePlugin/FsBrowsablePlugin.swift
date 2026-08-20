@@ -32,13 +32,13 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
         url.appendingPathComponent(importsEntity.path, isDirectory: true)
     }
 
-    init(url: URL, id: String, name: String?, shouldSync: Bool = true) {
+    init(url: URL, id: String, name: String?, shouldSync: Bool = true) throws {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
-        super.init(id: id)
+        try super.init(id: id)
 
         if !(self is AppDirBrowsablePlugin) {
             isAccessingSecurityScopedResource = url.startAccessingSecurityScopedResource()
@@ -83,7 +83,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
             }
         }
 
-        self.init(url: url, id: id, name: name, shouldSync: shouldSync)
+        try self.init(url: url, id: id, name: name, shouldSync: shouldSync)
     }
 
     deinit {
@@ -144,7 +144,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
                     url.stopAccessingSecurityScopedResource()
                 }
 
-                results.append(
+                try results.append(
                     FsBrowsablePlugin(
                         url: url,
                         id: model.id,

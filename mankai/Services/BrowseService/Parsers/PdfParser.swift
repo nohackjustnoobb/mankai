@@ -107,6 +107,10 @@ final class PdfParser: Parser {
         ["pdf"]
     }
 
+    override var supportedMimeTypes: [String] {
+        ["application/pdf"]
+    }
+
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.pdfParser.debug("Parsing document: \(file.fileName)")
 

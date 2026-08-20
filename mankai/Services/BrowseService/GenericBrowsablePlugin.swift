@@ -31,6 +31,10 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         _id
     }
 
+    var systemImageName: String {
+        "folder.fill"
+    }
+
     override var availableGenres: [Genre] {
         Genre.allCases
     }
@@ -43,27 +47,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         false
     }
 
-    var systemImageName: String {
-        "folder.fill"
-    }
-
-    private static let systemImagePalette: [Color] = [
-        .red, .orange, .yellow, .green, .mint,
-        .teal, .cyan, .blue, .indigo, .purple,
-        .pink, .brown,
-    ]
-
-    private lazy var _systemImageColor: Color = {
-        var hash: UInt64 = 5381
-        for byte in _id.utf8 {
-            hash = (hash &<< 5) &+ hash &+ UInt64(byte)
-        }
-        let index = Int(hash % UInt64(Self.systemImagePalette.count))
-        return Self.systemImagePalette[index]
-    }()
-
     var systemImageColor: Color {
-        _systemImageColor
+        BrowsablePluginStyle.systemImageColor(for: _id)
     }
 
     var supportedExtensions: [String] {
@@ -98,8 +83,12 @@ class GenericBrowsablePlugin: Plugin, Browsable {
     /// than an entry inside the backend source.
     private static let coverCachePrefix = "book-cover:"
 
-    init(id: String, parsers: [Parser]? = nil) {
-        _id = id
+    init(id: String, parsers: [Parser]? = nil) throws {
+        let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedId.isEmpty else {
+            throw MankaiErrorCode.browseInvalidPlugin.makeError()
+        }
+        _id = trimmedId
 
         if let parsers {
             var parserIndex: [String: Parser] = [:]

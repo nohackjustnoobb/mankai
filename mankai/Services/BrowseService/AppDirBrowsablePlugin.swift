@@ -9,9 +9,9 @@ import Foundation
 import SwiftUI
 
 final class AppDirBrowsablePlugin: FsBrowsablePlugin {
-    static let shared = AppDirBrowsablePlugin()
+    static let shared = try! AppDirBrowsablePlugin()
 
-    private init() {
+    private init() throws {
         let fileManager = FileManager.default
         let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
             .first!.appendingPathComponent("books")
@@ -29,7 +29,7 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
             "AppDirBrowsablePlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
         )
 
-        super.init(url: mangaDir, id: "mankai.books", name: nil)
+        try super.init(url: mangaDir, id: "mankai.books", name: nil)
     }
 
     override var shouldSync: Bool {

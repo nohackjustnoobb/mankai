@@ -5,11 +5,6 @@
 //  Created by Travis XU on 14/7/2026.
 //
 
-// This follows the RFC-CBZ specification by hyugogirubato (https://github.com/hyugogirubato/cbz/blob/main/docs/RFC-CBZ.md),
-// which itself derives from the ComicInfo schema originally introduced by ComicRack and now governed by the anansi-project (https://github.com/anansi-project/comicinfo).
-// Since this is an independent implementation, it may differ from the reference ComicRack/anansi-project implementation.
-// Both referenced projects (RFC-CBZ and comicinfo) are released under the MIT License.
-
 import Foundation
 import ZIPFoundation
 
@@ -105,6 +100,10 @@ final class CbzParser: Parser {
 
     override var supportedExtensions: [String] {
         ["cbz"]
+    }
+
+    override var supportedMimeTypes: [String] {
+        ["application/vnd.comicbook+zip", "application/x-cbz"]
     }
 
     override func parse(file: ParserFile) async throws -> DetailedManga {

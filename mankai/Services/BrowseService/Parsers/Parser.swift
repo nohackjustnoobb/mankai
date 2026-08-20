@@ -59,6 +59,11 @@ class Parser {
         fatalError("Not Implemented")
     }
 
+    /// The MIME types supported by this parser.
+    var supportedMimeTypes: [String] {
+        fatalError("Not Implemented")
+    }
+
     /// Parses the supplied file and returns a DetailedManga object.
     ///
     /// Note: The caller will override the `id` to "\(parserId)://\(hash):\(relativeURL)".

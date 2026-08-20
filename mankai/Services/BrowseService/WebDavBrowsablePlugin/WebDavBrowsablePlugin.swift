@@ -238,18 +238,13 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: WebDavSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedId.isEmpty else {
-            throw MankaiErrorCode.browseWebDavInvalidPlugin.makeError()
-        }
-
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? WebDavSession(configuration: configuration)
 
-        super.init(id: trimmedId)
+        try super.init(id: id)
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 

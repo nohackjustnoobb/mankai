@@ -779,6 +779,22 @@
         }
       }
     },
+    "catalogUrl" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catalog URL"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目錄網址"
+          }
+        }
+      }
+    },
     "changeCover" : {
       "localizations" : {
         "en" : {
@@ -3054,6 +3070,22 @@
         }
       }
     },
+    "invalidBrowsablePlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Browsable Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "瀏覽插件無效"
+          }
+        }
+      }
+    },
     "invalidCredentials" : {
       "localizations" : {
         "en" : {
@@ -3178,6 +3210,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "漫畫或章節格式無效"
+          }
+        }
+      }
+    },
+    "invalidOpdsPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid OPDS Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDS插件無效"
           }
         }
       }
@@ -4801,6 +4849,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "線上狀態檢查"
+          }
+        }
+      }
+    },
+    "opds" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDS"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDS"
+          }
+        }
+      }
+    },
+    "opdsPluginIdSyncHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The OPDS catalog's ID is used to keep the plugin ID consistent across devices. If the catalog does not provide an ID, this plugin will use a local ID and its records will not sync."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件會使用OPDS目錄提供的ID，確保在不同裝置間保持一致。若目錄未提供ID，插件會使用僅限本機的ID，相關紀錄將不會同步。"
+          }
+        }
+      }
+    },
+    "opdsSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDS Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OPDS設定"
+          }
+        }
+      }
+    },
+    "opdsSettingsFooter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the full HTTP or HTTPS URL of the OPDS catalog. Username and password are optional."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入OPDS目錄的完整HTTP或HTTPS網址。使用者名稱和密碼可選。"
           }
         }
       }

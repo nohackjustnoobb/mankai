@@ -10,10 +10,12 @@ import Foundation
 enum MankaiErrorDomain: String {
     case readerAdjacency = "app.mankai.reader.adjacency"
     case auth = "app.mankai.auth"
+    case browse = "app.mankai.browse"
     case browseArchive = "app.mankai.browse.archive"
     case browseFilesystem = "app.mankai.browse.filesystem"
     case browseSmb = "app.mankai.browse.smb"
     case browseWebDav = "app.mankai.browse.webdav"
+    case browseOpds = "app.mankai.browse.opds"
     case browsePdf = "app.mankai.browse.pdf"
     case browseEpub = "app.mankai.browse.epub"
     case chapter = "app.mankai.chapter"
@@ -35,10 +37,12 @@ enum MankaiErrorDomain: String {
         switch self {
         case .readerAdjacency: return 10
         case .auth: return 20
+        case .browse: return 29
         case .browseArchive: return 30
         case .browseFilesystem: return 31
         case .browseSmb: return 34
         case .browseWebDav: return 35
+        case .browseOpds: return 36
         case .browsePdf: return 32
         case .browseEpub: return 33
         case .chapter: return 40
@@ -86,6 +90,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case authInvalidUrl
     case authRequestFailed
 
+    case browseInvalidPlugin
     case browseArchiveNoImagesFoundInArchive
     case browseArchiveEntryNotFound
     case browseFilesystemFailedToAccessFolder
@@ -99,6 +104,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseWebDavInvalidConnectionConfiguration
     case browseWebDavInvalidPlugin
     case browseWebDavRequestFailed
+    case browseOpdsInvalidPlugin
     case browsePdfInvalidDocument
     case browsePdfPasswordProtectedDocument
     case browsePdfNoPagesFound
@@ -195,6 +201,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .authInvalidUrl: .init(domain: .auth, code: 11, messageKey: "invalidUrl"),
         .authRequestFailed: .init(domain: .auth, code: 12, messageKey: "httpRequestFailed"),
 
+        .browseInvalidPlugin: .init(
+            domain: .browse, code: 1, messageKey: "invalidBrowsablePlugin"),
         .browseArchiveNoImagesFoundInArchive: .init(
             domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
         .browseArchiveEntryNotFound: .init(
@@ -223,6 +231,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .browseWebDav, code: 2, messageKey: "invalidWebDavPlugin"),
         .browseWebDavRequestFailed: .init(
             domain: .browseWebDav, code: 3, messageKey: "webDavRequestFailed"),
+        .browseOpdsInvalidPlugin: .init(
+            domain: .browseOpds, code: 1, messageKey: "invalidOpdsPlugin"),
         .browsePdfInvalidDocument: .init(
             domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
         .browsePdfPasswordProtectedDocument: .init(

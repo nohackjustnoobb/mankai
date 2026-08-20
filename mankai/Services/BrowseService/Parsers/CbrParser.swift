@@ -101,6 +101,14 @@ final class CbrParser: Parser {
         ["cbr"]
     }
 
+    override var supportedMimeTypes: [String] {
+        [
+            "application/vnd.comicbook-rar",
+            "application/x-cbr",
+            "application/x-rar-compressed",
+        ]
+    }
+
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.cbrParser.debug("Parsing archive: \(file.fileName)")
 

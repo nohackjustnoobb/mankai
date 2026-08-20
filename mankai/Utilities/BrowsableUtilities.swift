@@ -1,5 +1,5 @@
 //
-//  BrowsableFileUtilities.swift
+//  BrowsableUtilities.swift
 //  mankai
 //
 //  Created by Travis XU on 10/8/2026.
@@ -7,6 +7,7 @@
 
 import CryptoKit
 import Foundation
+import SwiftUI
 
 /// Coordinates parser downloads that target the same local cache file.
 actor ParserFileDownloadRegistry {
@@ -109,5 +110,50 @@ enum BrowsableFileUtilities {
         if fileManager.fileExists(atPath: directory.path(percentEncoded: false)) {
             try fileManager.removeItem(at: directory)
         }
+    }
+}
+
+enum BrowsableMangaUtilities {
+    static func genres(from values: [String]) -> [Genre] {
+        var seen = Set<Genre>()
+        var result: [Genre] = []
+
+        for value in values {
+            let normalizedValue = normalizedGenreName(value)
+            guard
+                let genre = Genre.allCases.first(where: {
+                    $0 != .all && normalizedGenreName($0.rawValue) == normalizedValue
+                }),
+                seen.insert(genre).inserted
+            else {
+                continue
+            }
+            result.append(genre)
+        }
+        return result
+    }
+
+    private static func normalizedGenreName(_ value: String) -> String {
+        value.lowercased().unicodeScalars
+            .filter(CharacterSet.alphanumerics.contains)
+            .map(String.init)
+            .joined()
+    }
+}
+
+enum BrowsablePluginStyle {
+    static let systemImagePalette: [Color] = [
+        .red, .orange, .yellow, .green, .mint,
+        .teal, .cyan, .blue, .indigo, .purple,
+        .pink, .brown,
+    ]
+
+    static func systemImageColor(for id: String) -> Color {
+        var hash: UInt64 = 5381
+        for byte in id.utf8 {
+            hash = (hash &<< 5) &+ hash &+ UInt64(byte)
+        }
+        let index = Int(hash % UInt64(systemImagePalette.count))
+        return systemImagePalette[index]
     }
 }

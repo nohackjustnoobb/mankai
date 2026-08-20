@@ -98,6 +98,10 @@ final class EpubParser: Parser {
         ["epub"]
     }
 
+    override var supportedMimeTypes: [String] {
+        ["application/epub+zip"]
+    }
+
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.epubParser.debug("Parsing EPUB: \(file.fileName)")
         let publication = try await publication(for: file)
@@ -107,7 +111,7 @@ final class EpubParser: Parser {
         manga.cover = publication.coverPath
         manga.description = publication.description
         manga.authors = publication.credits
-        manga.genres = Self.genres(from: publication.subjects)
+        manga.genres = BrowsableMangaUtilities.genres(from: publication.subjects)
         manga.updatedAt = publication.modifiedAt
         manga.readingDirection = publication.readingDirection
 
@@ -216,29 +220,5 @@ final class EpubParser: Parser {
                 data.append(chunk)
             })
         return data
-    }
-
-    private static func genres(from subjects: [String]) -> [Genre] {
-        var seen = Set<Genre>()
-        var result: [Genre] = []
-
-        for subject in subjects {
-            let normalizedSubject = normalizedGenreName(subject)
-            guard
-                let genre = Genre.allCases.first(where: {
-                    $0 != .all && normalizedGenreName($0.rawValue) == normalizedSubject
-                }),
-                seen.insert(genre).inserted
-            else { continue }
-            result.append(genre)
-        }
-        return result
-    }
-
-    private static func normalizedGenreName(_ value: String) -> String {
-        value.lowercased().unicodeScalars
-            .filter(CharacterSet.alphanumerics.contains)
-            .map(String.init)
-            .joined()
     }
 }

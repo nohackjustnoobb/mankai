@@ -224,18 +224,13 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: SmbSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedId.isEmpty else {
-            throw MankaiErrorCode.browseSmbInvalidPlugin.makeError()
-        }
-
         let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? SmbSession(configuration: configuration)
 
-        super.init(id: trimmedId)
+        try super.init(id: id)
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 

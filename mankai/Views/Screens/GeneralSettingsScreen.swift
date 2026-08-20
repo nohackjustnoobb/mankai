@@ -264,6 +264,7 @@ struct GeneralSettingsScreen: View {
             let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
 
             DbService.shared.closeBrowsablePluginDb()
+            DbService.shared.closeOpdsBrowsablePluginDb()
 
             if fileManager.fileExists(atPath: indexCacheDir.path) {
                 do {

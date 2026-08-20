@@ -88,6 +88,7 @@ final class BrowseService: ObservableObject {
         loadFsBrowablePlugins()
         loadSmbBrowsablePlugins()
         loadWebDavBrowsablePlugins()
+        loadOpdsBrowsablePlugins()
     }
 
     private var _plugins: [String: BrowsablePlugin] = [:]
@@ -131,6 +132,17 @@ final class BrowseService: ObservableObject {
             "Loaded \(webDavBrowsablePlugins.count) WebDAV browsable plugins")
 
         for plugin in webDavBrowsablePlugins {
+            _plugins[plugin.id] = plugin
+        }
+    }
+
+    private func loadOpdsBrowsablePlugins() {
+        Logger.browseService.debug("Loading OPDS browsable plugins")
+        let opdsBrowsablePlugins = OpdsBrowsablePlugin.loadPlugins()
+        Logger.browseService.info(
+            "Loaded \(opdsBrowsablePlugins.count) OPDS browsable plugins")
+
+        for plugin in opdsBrowsablePlugins {
             _plugins[plugin.id] = plugin
         }
     }

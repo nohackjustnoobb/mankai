@@ -51,7 +51,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 ## Features
 
 - **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
-- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders or [remote shares](#remote-sources).
+- **Local and Network Collections**: Read [CBZ, CBR, EPUB, and PDF files](#parsers) from local folders, [remote shares, or OPDS catalogs](#remote-sources).
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
@@ -76,6 +76,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 ### Integrations
 
 - [ ] **Komga** - Support for the Komga API.
+- [x] **OPDS 1.2** - Open Publication Distribution System catalog support.
 - [x] **SMB** - Server Message Block support.
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.
 - [ ] **NFS** - Network File System support.
@@ -120,10 +121,11 @@ This plugin is designed for external providers to use Mankai as a reader and, op
 
 Mankai supports remote sources for browsing and reading manga stored on remote services.
 
-| Protocol   | Description                                                                                                        | Test Environment                                                    |
-| :--------- | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
-| **SMB**    | Browse and read manga from an SMB share, with optional username and password authentication.                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba) |
-| **WebDAV** | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication. | [hacdias/webdav](https://github.com/hacdias/webdav)                 |
+| Protocol     | Description                                                                                                                                        | Test Environment                                                                           |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| **OPDS 1.2** | Browse OPDS 1.2 catalogs over HTTP or HTTPS with optional username and password authentication. Supports OPDS Page Streaming Extension (OPDS-PSE). | [Komga](https://github.com/gotson/komga), [calibre](https://github.com/kovidgoyal/calibre) |
+| **SMB**      | Browse and read manga from an SMB share, with optional username and password authentication.                                                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba)                        |
+| **WebDAV**   | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                                 | [hacdias/webdav](https://github.com/hacdias/webdav)                                        |
 
 ## Reader
 
