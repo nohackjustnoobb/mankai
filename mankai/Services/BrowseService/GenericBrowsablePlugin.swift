@@ -31,6 +31,8 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         _id
     }
 
+    var displayName: String?
+
     var systemImageName: String {
         "folder.fill"
     }

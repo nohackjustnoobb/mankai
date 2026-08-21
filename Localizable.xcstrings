@@ -2568,13 +2568,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manage the folders and catalogs available in Browse."
+            "value" : "Manage the folders and catalogs available in Browse, including adding new locations, configuring existing ones, removing locations, and more."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "管理「瀏覽」中可用的資料夾和目錄。"
+            "value" : "管理「瀏覽」中可用的資料夾和目錄，包括新增位置、設定現有位置、移除不再需要的位置等操作。"
           }
         }
       }

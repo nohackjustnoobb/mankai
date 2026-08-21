@@ -19,11 +19,10 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
     }
 
     override var name: String? {
-        pluginName ?? dirName
+        displayName ?? dirName
     }
 
     let url: URL
-    var pluginName: String?
     private let _shouldSync: Bool
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
@@ -35,10 +34,9 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
     init(url: URL, id: String, name: String?, shouldSync: Bool = true) throws {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
         try super.init(id: id)
+        displayName = name.trimmed
 
         if !(self is AppDirBrowsablePlugin) {
             isAccessingSecurityScopedResource = url.startAccessingSecurityScopedResource()
@@ -174,7 +172,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
         try db.write { db in
             try FsBrowsablePluginModel(
                 id: id,
-                name: pluginName,
+                name: displayName,
                 bookmarkData: bookmarkData,
                 shouldSync: shouldSync
             ).save(db)

@@ -8,27 +8,47 @@
 import SwiftUI
 
 struct FolderInfoScreen: View {
-    let plugin: BrowsablePlugin
-    private let editablePlugin: (any EditableFolderPlugin)?
+    @State private var plugin: BrowsablePlugin
 
     @ObservedObject private var browseService = BrowseService.shared
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
-    @State private var credentialsForm: FolderCredentials
+    @State private var username: String
+    @State private var password: String
 
     @State private var errorTitle: LocalizedStringKey = "failedToSaveFolder"
     @State private var errorMessage: String?
     @State private var showingRemoveConfirmation = false
 
     init(plugin: BrowsablePlugin) {
-        self.plugin = plugin
-        editablePlugin = plugin as? any EditableFolderPlugin
+        _plugin = State(initialValue: plugin)
 
-        _name = State(initialValue: editablePlugin?.pluginName ?? "")
-        _credentialsForm = State(
-            initialValue: editablePlugin?.credentials ?? FolderCredentials()
-        )
+        _name = State(initialValue: plugin.displayName ?? "")
+
+        let credentials: (username: String?, password: String?)
+        switch plugin {
+        case let smbPlugin as SmbBrowsablePlugin:
+            credentials = (
+                username: smbPlugin.configuration.username,
+                password: smbPlugin.configuration.password
+            )
+        case let webDavPlugin as WebDavBrowsablePlugin:
+            credentials = (
+                username: webDavPlugin.configuration.username,
+                password: webDavPlugin.configuration.password
+            )
+        case let opdsPlugin as OpdsBrowsablePlugin:
+            credentials = (
+                username: opdsPlugin.configuration.username,
+                password: opdsPlugin.configuration.password
+            )
+        default:
+            credentials = (username: nil, password: nil)
+        }
+
+        _username = State(initialValue: credentials.username ?? "")
+        _password = State(initialValue: credentials.password ?? "")
     }
 
     private var isEditable: Bool {
@@ -179,30 +199,49 @@ struct FolderInfoScreen: View {
 
     @ViewBuilder
     private var credentialFields: some View {
-        TextField("username", text: $credentialsForm.username)
+        TextField("username", text: $username)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .textContentType(.username)
-            .onChange(of: credentialsForm.username, initial: false) {
+            .onChange(of: username, initial: false) {
                 saveSettings()
             }
 
-        SecureField("password", text: $credentialsForm.password)
+        SecureField("password", text: $password)
             .textContentType(.password)
-            .onChange(of: credentialsForm.password, initial: false) {
+            .onChange(of: password, initial: false) {
                 saveSettings()
             }
     }
 
     private func saveSettings() {
-        guard let editablePlugin else { return }
-
         do {
-            editablePlugin.pluginName = Optional(name).trimmed
-            if editablePlugin.credentials != nil {
-                editablePlugin.credentials = credentialsForm
+            plugin.displayName = Optional(name).trimmed
+
+            let trimmedUsername = Optional(username).trimmed
+            let trimmedPassword = Optional(password).trimmed
+
+            switch plugin {
+            case let smbPlugin as SmbBrowsablePlugin:
+                var configuration = smbPlugin.configuration
+                configuration.username = trimmedUsername
+                configuration.password = trimmedPassword
+                smbPlugin.configuration = configuration
+            case let webDavPlugin as WebDavBrowsablePlugin:
+                var configuration = webDavPlugin.configuration
+                configuration.username = trimmedUsername
+                configuration.password = trimmedPassword
+                webDavPlugin.configuration = configuration
+            case let opdsPlugin as OpdsBrowsablePlugin:
+                var configuration = opdsPlugin.configuration
+                configuration.username = trimmedUsername
+                configuration.password = trimmedPassword
+                opdsPlugin.configuration = configuration
+            default:
+                break
             }
-            try editablePlugin.savePlugin()
+
+            try plugin.savePlugin()
         } catch {
             presentError(error)
         }
@@ -225,66 +264,3 @@ struct FolderInfoScreen: View {
         errorMessage = error.localizedDescription
     }
 }
-
-// TODO: refactor this shit
-
-private struct FolderCredentials {
-    var username: String
-    var password: String
-
-    init(username: String? = nil, password: String? = nil) {
-        self.username = username ?? ""
-        self.password = password ?? ""
-    }
-}
-
-private protocol EditableFolderPlugin: AnyObject {
-    var pluginName: String? { get set }
-
-    var credentials: FolderCredentials? { get set }
-
-    func savePlugin() throws
-}
-
-extension FsBrowsablePlugin: EditableFolderPlugin {
-    fileprivate var credentials: FolderCredentials? {
-        get { nil }
-        set {}
-    }
-}
-
-private protocol FolderCredentialConfiguration {
-    var username: String? { get set }
-    var password: String? { get set }
-}
-
-extension SmbConnectionConfiguration: FolderCredentialConfiguration {}
-extension WebDavConnectionConfiguration: FolderCredentialConfiguration {}
-extension OpdsConnectionConfiguration: FolderCredentialConfiguration {}
-
-private protocol AuthenticatedFolderPlugin: EditableFolderPlugin {
-    associatedtype ConnectionConfiguration: FolderCredentialConfiguration
-
-    var configuration: ConnectionConfiguration { get set }
-}
-
-extension AuthenticatedFolderPlugin {
-    fileprivate var credentials: FolderCredentials? {
-        get {
-            FolderCredentials(
-                username: configuration.username,
-                password: configuration.password
-            )
-        }
-        set {
-            guard let newValue else { return }
-
-            configuration.username = Optional(newValue.username).trimmed
-            configuration.password = Optional(newValue.password).trimmed
-        }
-    }
-}
-
-extension SmbBrowsablePlugin: AuthenticatedFolderPlugin {}
-extension WebDavBrowsablePlugin: AuthenticatedFolderPlugin {}
-extension OpdsBrowsablePlugin: AuthenticatedFolderPlugin {}

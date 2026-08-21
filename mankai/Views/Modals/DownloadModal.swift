@@ -41,7 +41,7 @@ struct DownloadModal: View {
                             Section {
                                 ForEach(downloadedMangas) { manga in
                                     DownloadedMangaRow(manga: manga, navigate: navigate)
-                                        .swipeActions {
+                                        .swipeActions(allowsFullSwipe: false) {
                                             Button(role: .destructive) {
                                                 mangaToDelete = manga
                                                 showDeleteConfirmation = true

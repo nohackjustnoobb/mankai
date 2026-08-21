@@ -172,7 +172,6 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    var pluginName: String?
     private let _shouldSync: Bool
     private var session: SmbSession
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
@@ -232,13 +231,12 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: SmbSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? SmbSession(configuration: configuration)
 
         try super.init(id: id)
+        displayName = name.trimmed
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
@@ -272,7 +270,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
     }
 
     override var name: String? {
-        pluginName ?? (port == 445 ? "\(host)/\(share)" : "\(host):\(port)/\(share)")
+        displayName ?? (port == 445 ? "\(host)/\(share)" : "\(host):\(port)/\(share)")
     }
 
     override var tags: [String] {
@@ -346,7 +344,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
         let model = SmbBrowsablePluginModel(
             id: id,
-            name: pluginName,
+            name: displayName,
             host: host,
             port: port,
             share: share,

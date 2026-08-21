@@ -36,6 +36,11 @@ struct Entity {
 }
 
 protocol Browsable {
+    /// An optional user-defined display name for the plugin.
+    ///
+    /// When `nil`, the plugin uses its backend-specific default name.
+    var displayName: String? { get set }
+
     /// The name of the system image used to represent this plugin.
     var systemImageName: String { get }
 

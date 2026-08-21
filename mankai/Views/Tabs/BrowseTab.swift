@@ -35,13 +35,14 @@ struct BrowseTab: View {
                             )
                             .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
                         }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        .swipeActions(allowsFullSwipe: false) {
                             if !(plugin is AppDirBrowsablePlugin) {
                                 Button(role: .destructive) {
                                     pluginPendingDeletion = plugin
                                 } label: {
                                     Label("remove", systemImage: "trash")
                                 }
+                                .labelStyle(.iconOnly)
 
                                 Button {
                                     editDestinationPluginId = plugin.id
@@ -49,6 +50,7 @@ struct BrowseTab: View {
                                     Label("edit", systemImage: "pencil")
                                 }
                                 .tint(.blue)
+                                .labelStyle(.iconOnly)
 
                             }
                         }

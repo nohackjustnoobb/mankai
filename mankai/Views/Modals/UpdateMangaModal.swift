@@ -331,7 +331,7 @@ struct UpdateMangaContent: View {
                                     .foregroundColor(.red)
                             }
                         }
-                        .swipeActions(edge: .trailing) {
+                        .swipeActions(allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 manga.authors.removeAll { $0 == author }
                             } label: {
@@ -365,7 +365,7 @@ struct UpdateMangaContent: View {
                                     .foregroundColor(.red)
                             }
                         }
-                        .swipeActions(edge: .trailing) {
+                        .swipeActions(allowsFullSwipe: false) {
                             Button(role: .destructive) {
                                 manga.genres.removeAll { $0 == genre }
                             } label: {
@@ -413,7 +413,7 @@ struct UpdateMangaContent: View {
                                         .foregroundColor(.red)
                                 }
                             }
-                            .swipeActions(edge: .trailing) {
+                            .swipeActions(allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     chapterGroupIndexToRemove = chapterGroupIndex
                                     showingRemoveChapterGroupAlert = true

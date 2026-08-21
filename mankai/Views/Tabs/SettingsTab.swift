@@ -55,7 +55,7 @@ struct SettingsTab: View {
                         destination: PluginSettingsScreen()
                     ) {
                         Label("plugins", systemImage: "puzzlepiece.extension.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
+                            .labelStyle(ColorfulIconLabelStyle(color: .red))
                     }
 
                     NavigationLink(

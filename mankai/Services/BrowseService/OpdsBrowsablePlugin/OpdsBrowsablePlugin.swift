@@ -83,7 +83,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
             session = OpdsSession(configuration: configuration)
         }
     }
-    var pluginName: String?
+    var displayName: String?
     private let _shouldSync: Bool
     private var session: OpdsSession
     private let parsers: [String: Parser]
@@ -108,7 +108,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
     }
 
     override var name: String? {
-        pluginName ?? configuration.catalogURL.host ?? configuration.catalogURL.absoluteString
+        displayName ?? configuration.catalogURL.host ?? configuration.catalogURL.absoluteString
     }
 
     override var shouldSync: Bool {
@@ -161,8 +161,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
         }
 
         self._id = trimmedId
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
+        self.displayName = name.trimmed
         self._shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? OpdsSession(configuration: configuration)
@@ -317,7 +316,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
 
         let model = OpdsBrowsablePluginModel(
             id: id,
-            name: pluginName,
+            name: displayName,
             catalogURL: configuration.catalogURL.absoluteString,
             username: configuration.username,
             password: configuration.password,

@@ -180,7 +180,6 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    var pluginName: String?
     private let _shouldSync: Bool
     private var session: WebDavSession
     private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
@@ -242,13 +241,12 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: WebDavSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        pluginName = trimmedName?.isEmpty == false ? trimmedName : nil
         _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? WebDavSession(configuration: configuration)
 
         try super.init(id: id)
+        displayName = name.trimmed
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
@@ -269,8 +267,8 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
     }
 
     override var name: String? {
-        if let pluginName {
-            return pluginName
+        if let displayName {
+            return displayName
         }
 
         let host = baseURL.host ?? baseURL.absoluteString
@@ -347,7 +345,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
         let model = WebDavBrowsablePluginModel(
             id: id,
-            name: pluginName,
+            name: displayName,
             baseURL: baseURL.absoluteString,
             username: username,
             password: password,
