@@ -4,17 +4,16 @@
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
           "fill" : "automatic",
           "glass" : true,
-          "image-name" : "icon.png",
+          "hidden" : false,
+          "image-name" : "icon.svg",
           "name" : "icon",
-          "opacity" : 1,
           "position" : {
-            "scale" : 0.35,
+            "scale" : 1.85,
             "translation-in-points" : [
-              -1.32000000000005,
-              -7.259999999999991
+              0,
+              0
             ]
           }
         }
