@@ -10,8 +10,6 @@ import SwiftUI
 struct PluginSettingsScreen: View {
     @State private var showModal = false
     @ObservedObject var pluginService: PluginService = .shared
-    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
-        SettingsDefaults.hideBuiltInPlugins
 
     var body: some View {
         List {
@@ -20,10 +18,6 @@ struct PluginSettingsScreen: View {
                 title: String(localized: "plugins"),
                 description: String(localized: "pluginsDescription")
             )
-
-            Section {
-                Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins)
-            }
 
             ForEach(
                 pluginService.plugins.sorted { plugin1, plugin2 in

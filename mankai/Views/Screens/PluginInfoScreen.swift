@@ -11,6 +11,8 @@ import WrappingHStack
 
 struct PluginInfoScreen: View {
     @ObservedObject var plugin: Plugin
+    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
+        SettingsDefaults.hideBuiltInPlugins
 
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
@@ -110,6 +112,12 @@ struct PluginInfoScreen: View {
                             Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
                                 .foregroundColor(.secondary)
                         }
+                    }
+                }
+
+                if plugin is AppDirPlugin {
+                    Section {
+                        Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins)
                     }
                 }
 

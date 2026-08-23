@@ -10,6 +10,8 @@ import SwiftUI
 struct SearchScreen: View {
     let query: String
     let pluginService = PluginService.shared
+    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
+        SettingsDefaults.hideBuiltInPlugins
 
     @State private var plugins: [Plugin] = []
 
@@ -42,10 +44,15 @@ struct SearchScreen: View {
         .onReceive(pluginService.objectWillChange) {
             updatePlugins()
         }
+        .onChange(of: hideBuiltInPlugins) {
+            updatePlugins()
+        }
     }
 
     private func updatePlugins() {
-        plugins = pluginService.plugins.filter { $0.supports(.search) }
+        plugins = pluginService.plugins.filter { plugin in
+            plugin.supports(.search) && (!hideBuiltInPlugins || !(plugin is AppDirPlugin))
+        }
     }
 }
 

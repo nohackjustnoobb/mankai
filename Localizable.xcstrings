@@ -2735,13 +2735,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hide Built-in Plugins"
+            "value" : "Hide from Library and Search"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "隱藏內建插件"
+            "value" : "在書庫與搜尋中隱藏"
           }
         }
       }
@@ -6321,22 +6321,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示除錯畫面"
-          }
-        }
-      }
-    },
-    "showPlugins" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show Plugins"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示插件"
           }
         }
       }

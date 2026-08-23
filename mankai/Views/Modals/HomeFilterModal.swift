@@ -11,6 +11,7 @@ struct HomeFilterModal: View {
     @Binding var isPresented: Bool
     @Binding var showPlugins: [String]
     let availablePlugins: [Plugin]
+    let availableFolders: [BrowsablePlugin]
     let onReset: () -> Void
     let onApply: () -> Void
 
@@ -20,12 +21,14 @@ struct HomeFilterModal: View {
         isPresented: Binding<Bool>,
         showPlugins: Binding<[String]>,
         availablePlugins: [Plugin],
+        availableFolders: [BrowsablePlugin],
         onReset: @escaping () -> Void,
         onApply: @escaping () -> Void
     ) {
         _isPresented = isPresented
         _showPlugins = showPlugins
         self.availablePlugins = availablePlugins
+        self.availableFolders = availableFolders
         self.onReset = onReset
         self.onApply = onApply
         _tempShowPlugins = State(initialValue: showPlugins.wrappedValue)
@@ -34,23 +37,18 @@ struct HomeFilterModal: View {
     var body: some View {
         NavigationView {
             List {
-                Section("showPlugins") {
-                    ForEach(availablePlugins, id: \.id) { plugin in
-                        Button(action: {
-                            if tempShowPlugins.contains(plugin.id) {
-                                tempShowPlugins.removeAll { $0 == plugin.id }
-                            } else {
-                                tempShowPlugins.append(plugin.id)
-                            }
-                        }) {
-                            HStack {
-                                Text(plugin.name ?? plugin.id)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                if tempShowPlugins.contains(plugin.id) {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
+                if !availablePlugins.isEmpty {
+                    Section("plugins") {
+                        ForEach(availablePlugins, id: \.id) { plugin in
+                            filterButton(for: plugin)
+                        }
+                    }
+                }
+
+                if !availableFolders.isEmpty {
+                    Section("folders") {
+                        ForEach(availableFolders, id: \.id) { folder in
+                            filterButton(for: folder)
                         }
                     }
                 }
@@ -91,6 +89,25 @@ struct HomeFilterModal: View {
         .presentationDetents([.medium])
         .onAppear {
             tempShowPlugins = showPlugins
+        }
+    }
+
+    private func filterButton(for plugin: Plugin) -> some View {
+        Button {
+            if tempShowPlugins.contains(plugin.id) {
+                tempShowPlugins.removeAll { $0 == plugin.id }
+            } else {
+                tempShowPlugins.append(plugin.id)
+            }
+        } label: {
+            HStack {
+                Text(plugin.name ?? plugin.id)
+                    .foregroundColor(.primary)
+                Spacer()
+                if tempShowPlugins.contains(plugin.id) {
+                    Image(systemName: "checkmark")
+                }
+            }
         }
     }
 }

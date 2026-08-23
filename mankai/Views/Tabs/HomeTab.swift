@@ -80,7 +80,15 @@ struct HomeTab: View {
     }
 
     private var availablePlugins: [Plugin] {
-        return allPlugins.values.sorted { plugin1, plugin2 in
+        return pluginService.plugins.sorted { plugin1, plugin2 in
+            let name1 = plugin1.name ?? plugin1.id
+            let name2 = plugin2.name ?? plugin2.id
+            return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
+        }
+    }
+
+    private var availableFolders: [BrowsablePlugin] {
+        return browseService.plugins.sorted { plugin1, plugin2 in
             let name1 = plugin1.name ?? plugin1.id
             let name2 = plugin2.name ?? plugin2.id
             return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
@@ -239,6 +247,7 @@ struct HomeTab: View {
                     isPresented: $showingFilters,
                     showPlugins: $showPlugins,
                     availablePlugins: availablePlugins,
+                    availableFolders: availableFolders,
                     onReset: resetFilters,
                     onApply: filterManga
                 )

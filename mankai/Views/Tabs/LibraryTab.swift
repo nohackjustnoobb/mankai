@@ -48,9 +48,10 @@ struct LibraryTab: View {
             }
             .onChange(of: hideBuiltInPlugins) {
                 updatePlugins()
+                getSearchSuggestions(for: query)
             }
             .capabilitySearchable(
-                enabled: pluginService.plugins.contains(where: { $0.supports(.search) }),
+                enabled: !searchablePlugins.isEmpty,
                 text: $query,
                 prompt: "searchManga"
             ) {
@@ -121,8 +122,7 @@ struct LibraryTab: View {
             var allSuggestions: Set<String> = []
 
             // Get suggestions from all available plugins
-            for plugin in pluginService.plugins
-            where plugin.supports(.search) && plugin.supports(.suggestions) {
+            for plugin in searchablePlugins where plugin.supports(.suggestions) {
                 guard !Task.isCancelled else { break }
 
                 do {
@@ -143,10 +143,14 @@ struct LibraryTab: View {
     }
 
     private func performSearch() {
-        guard !query.isEmpty,
-            pluginService.plugins.contains(where: { $0.supports(.search) })
-        else { return }
+        guard !query.isEmpty, !searchablePlugins.isEmpty else { return }
         navigateToSearch = true
+    }
+
+    private var searchablePlugins: [Plugin] {
+        pluginService.plugins.filter { plugin in
+            plugin.supports(.search) && (!hideBuiltInPlugins || !(plugin is AppDirPlugin))
+        }
     }
 }
 
