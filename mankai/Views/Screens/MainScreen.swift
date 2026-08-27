@@ -18,6 +18,9 @@ struct MainScreen: View {
     @State private var pluginImportRequest: PluginImportRequest?
     @State private var lastCheckedPasteboardChangeCount: Int?
 
+    @AppStorage(SettingsKey.checkClipboard.rawValue) private var checkClipboard: Bool =
+        SettingsDefaults.checkClipboard
+
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -64,6 +67,7 @@ struct MainScreen: View {
         }
         .onChange(of: scenePhase, initial: true) { _, newPhase in
             guard newPhase == .active else { return }
+            guard checkClipboard else { return }
 
             let pasteboard = UIPasteboard.general
             let changeCount = pasteboard.changeCount

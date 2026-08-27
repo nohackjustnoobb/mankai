@@ -941,6 +941,22 @@
         }
       }
     },
+    "checkClipboard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Clipboard"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "檢查剪貼簿"
+          }
+        }
+      }
+    },
     "clear" : {
       "localizations" : {
         "en" : {

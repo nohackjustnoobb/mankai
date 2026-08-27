@@ -16,6 +16,8 @@ struct GeneralSettingsScreen: View {
         SettingsDefaults.showDebugScreen
     @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
         SettingsDefaults.downsampleImages
+    @AppStorage(SettingsKey.checkClipboard.rawValue) private var checkClipboard: Bool =
+        SettingsDefaults.checkClipboard
     @ObservedObject private var updateService = UpdateService.shared
     @State private var cacheSize: String = ""
     @State private var indexCacheSize: String = ""
@@ -132,6 +134,10 @@ struct GeneralSettingsScreen: View {
                 }
             } header: {
                 Text("index")
+            }
+
+            Section {
+                Toggle("checkClipboard", isOn: $checkClipboard)
             }
 
             Section("about") {

@@ -11,6 +11,7 @@ enum SettingsKey: String {
     case hideBuiltInPlugins
     case showDebugScreen
     case downsampleImages
+    case checkClipboard
 
     /// Cache Settings
     case inMemoryCacheItemCount
