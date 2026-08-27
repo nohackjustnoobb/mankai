@@ -12,7 +12,7 @@ enum SettingsDefaults {
     static let hideBuiltInPlugins: Bool = false
     static let showDebugScreen: Bool = false
     static let downsampleImages: Bool = true
-    static let checkClipboard: Bool = true
+    static let checkClipboard: Bool = false
 
     // Cache Settings
     static let inMemoryCacheItemCount: Int = 100
