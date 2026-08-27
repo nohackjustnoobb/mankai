@@ -22,7 +22,8 @@ enum SettingsDefaults {
     static let imageLayout: ImageLayout = .auto
     static let respectMangaReadingDirection: Bool = true
     static let smartGrouping: Bool = false
-    static let smartGroupingSensitivity: Double = 0.5
+    static let smartGroupingPrior: Double? = nil
+    static let smartGroupingThreshold: Double? = nil
 
     /// Default Reader
     static var readerType: ReaderType {

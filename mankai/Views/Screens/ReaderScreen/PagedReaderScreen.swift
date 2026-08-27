@@ -999,7 +999,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
 
             switch images[url] ?? .loading {
             case .success(let image):
-                imageView.image = image.uiImage(retainData: true)
+                imageView.image = image.uiImage()
                 imageView.isHidden = false
                 loadingIndicator.stopAnimating()
                 errorIcon.isHidden = true

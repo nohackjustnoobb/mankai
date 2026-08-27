@@ -4209,6 +4209,22 @@
         }
       }
     },
+    "modelDefault" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model Default"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模型預設值"
+          }
+        }
+      }
+    },
     "name" : {
       "localizations" : {
         "en" : {
@@ -6373,34 +6389,66 @@
         }
       }
     },
-    "smartGroupingSensitivity" : {
+    "smartGroupingPrior" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Smart Grouping Sensitivity"
+            "value" : "Smart Grouping Prior"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "智能分組敏感度"
+            "value" : "智能分組先驗機率"
           }
         }
       }
     },
-    "smartGroupingSensitivityDescription" : {
+    "smartGroupingPriorDescription" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Higher sensitivity will tend to group pages together and lower sensitivity will tend to split pages apart."
+            "value" : "The expected proportion of neighboring page pairs that belong together. Higher values make grouping more likely."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "數值越高，越容易將頁面分在一起。數值越低，越容易將頁面分開。"
+            "value" : "預期相鄰頁面屬於同一組的比例。數值越高，越容易將頁面分在一起。"
+          }
+        }
+      }
+    },
+    "smartGroupingThreshold" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart Grouping Threshold"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能分組閾值"
+          }
+        }
+      }
+    },
+    "smartGroupingThresholdDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The minimum model probability required to group two pages. Higher values require stronger confidence."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將兩頁分在一起所需的最低模型機率。數值越高，所需的可信度越高。"
           }
         }
       }

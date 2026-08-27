@@ -60,7 +60,7 @@ enum ReaderLoadPhase: Equatable {
 
 enum ReaderImageState {
     case loading
-    case success(TempImage)
+    case success(AppImage)
     case failed
 }
 

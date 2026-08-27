@@ -22,7 +22,8 @@ enum SettingsKey: String {
     case imageLayout
     case respectMangaReadingDirection
     case smartGrouping
-    case smartGroupingSensitivity
+    case smartGroupingPrior
+    case smartGroupingThreshold
 
     // Continuous Reader
     case CR_readingDirection

@@ -17,9 +17,28 @@ struct ReaderSettingsScreen: View {
             SettingsDefaults.respectMangaReadingDirection
     @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping: Bool =
         SettingsDefaults.smartGrouping
-    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
-        Double =
-            SettingsDefaults.smartGroupingSensitivity
+    @State private var smartGroupingPrior: Double? =
+        (UserDefaults.standard.object(
+            forKey: SettingsKey.smartGroupingPrior.rawValue
+        ) as? NSNumber)?.doubleValue
+    @State private var smartGroupingThreshold: Double? =
+        (UserDefaults.standard.object(
+            forKey: SettingsKey.smartGroupingThreshold.rawValue
+        ) as? NSNumber)?.doubleValue
+
+    private var smartGroupingPriorSliderValue: Binding<Double> {
+        Binding(
+            get: { smartGroupingPrior ?? SGConstants.DEFAULT_PRIOR },
+            set: { smartGroupingPrior = $0 }
+        )
+    }
+
+    private var smartGroupingThresholdSliderValue: Binding<Double> {
+        Binding(
+            get: { smartGroupingThreshold ?? SGConstants.DEFAULT_THRESHOLD },
+            set: { smartGroupingThreshold = $0 }
+        )
+    }
 
     var body: some View {
         List {
@@ -58,13 +77,59 @@ struct ReaderSettingsScreen: View {
 
                 if smartGrouping {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("smartGroupingSensitivity")
+                        HStack {
+                            Text("smartGroupingPrior")
+                            Spacer()
+                            if let smartGroupingPrior {
+                                Text(
+                                    smartGroupingPrior,
+                                    format: .percent.precision(.fractionLength(1))
+                                )
+                                .foregroundStyle(.secondary)
+                                Button("reset", systemImage: "arrow.counterclockwise") {
+                                    self.smartGroupingPrior = nil
+                                }
+                                .labelStyle(.iconOnly)
+                            } else {
+                                Text("modelDefault")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                         Slider(
-                            value: $smartGroupingSensitivity,
-                            in: 0...1,
-                            step: 0.1
+                            value: smartGroupingPriorSliderValue,
+                            in: 0.001...0.999,
+                            step: 0.001
                         )
-                        Text("smartGroupingSensitivityDescription")
+                        Text("smartGroupingPriorDescription")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("smartGroupingThreshold")
+                            Spacer()
+                            if let smartGroupingThreshold {
+                                Text(
+                                    smartGroupingThreshold,
+                                    format: .percent.precision(.fractionLength(0))
+                                )
+                                .foregroundStyle(.secondary)
+                                Button("reset", systemImage: "arrow.counterclockwise") {
+                                    self.smartGroupingThreshold = nil
+                                }
+                                .labelStyle(.iconOnly)
+                            } else {
+                                Text("modelDefault")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        Slider(
+                            value: smartGroupingThresholdSliderValue,
+                            in: 0...1,
+                            step: 0.01
+                        )
+                        Text("smartGroupingThresholdDescription")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -111,8 +176,23 @@ struct ReaderSettingsScreen: View {
             guard !isEnabled else { return }
 
             Task {
-                await AdjacencyModelWrapper.shared.unloadImmediately()
+                await EncoderWrapper.shared.unloadImmediately()
+                await ClassifierWrapper.shared.unloadImmediately()
             }
+        }
+        .onChange(of: smartGroupingPrior) { _, value in
+            updateSmartGroupingOverride(value, for: .smartGroupingPrior)
+        }
+        .onChange(of: smartGroupingThreshold) { _, value in
+            updateSmartGroupingOverride(value, for: .smartGroupingThreshold)
+        }
+    }
+
+    private func updateSmartGroupingOverride(_ value: Double?, for key: SettingsKey) {
+        if let value {
+            UserDefaults.standard.set(value, forKey: key.rawValue)
+        } else {
+            UserDefaults.standard.removeObject(forKey: key.rawValue)
         }
     }
 }

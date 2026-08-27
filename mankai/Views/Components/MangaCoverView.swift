@@ -17,9 +17,6 @@ struct MangaCoverView: View {
     @State private var image: UIImage?
     @State private var isLoading = false
 
-    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
-        SettingsDefaults.downsampleImages
-
     var body: some View {
         ZStack(alignment: .topLeading) {
             if let image = image {
@@ -118,15 +115,9 @@ struct MangaCoverView: View {
             if plugin.supports(.image),
                 let data = try? await plugin.getImage(coverUrl)
             {
-                self.image = TempImage(data: data).uiImage(
-                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
-                    retainData: false
-                )
+                self.image = AppImage(data: data, generateEmbedding: false).uiImage()
             } else if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                self.image = TempImage(data: data).uiImage(
-                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
-                    retainData: false
-                )
+                self.image = AppImage(data: data, generateEmbedding: false).uiImage()
             }
 
             self.isLoading = false

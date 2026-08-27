@@ -23,19 +23,11 @@ private struct ReaderAdjacencyKey: Hashable {
 private struct ReaderAdjacencyPair {
     let firstURL: String
     let secondURL: String
-    let leftImage: TempImage
-    let rightImage: TempImage
+    let leftImage: AppImage
+    let rightImage: AppImage
 
     var key: String {
         ReaderGrouping.pairKey(firstURL, secondURL)
-    }
-
-    var urls: [String] {
-        [firstURL, secondURL]
-    }
-
-    var images: [TempImage] {
-        [leftImage, rightImage]
     }
 }
 
@@ -44,7 +36,6 @@ private struct ReaderGroupingKey: Equatable {
     let imageLayout: ImageLayout
     let readingDirection: ReadingDirection
     let smartGrouping: Bool
-    let sensitivity: Double
     let viewportWidth: Int
     let viewportHeight: Int
 }
@@ -72,8 +63,7 @@ private enum ReaderGrouping {
         images: [String: ReaderImageState],
         defaultGroupSize: Int,
         smartGrouping: Bool,
-        smartGroupingSensitivity: Double,
-        adjacencyScores: [String: Double]
+        adjacencyPredictions: [String: Bool]
     ) -> [ReaderGroup] {
         var groups: [ReaderGroup] = []
         var index = 0
@@ -93,8 +83,7 @@ private enum ReaderGrouping {
                     url,
                     nextURL,
                     smartGrouping: smartGrouping,
-                    sensitivity: smartGroupingSensitivity,
-                    adjacencyScores: adjacencyScores
+                    adjacencyPredictions: adjacencyPredictions
                 ) {
                     groups.append(ReaderGroup(urls: [url, nextURL]))
                     index += 2
@@ -114,8 +103,7 @@ private enum ReaderGrouping {
                         candidateURL,
                         urls[candidateIndex + 1],
                         smartGrouping: smartGrouping,
-                        sensitivity: smartGroupingSensitivity,
-                        adjacencyScores: adjacencyScores
+                        adjacencyPredictions: adjacencyPredictions
                     )
                 {
                     break
@@ -150,11 +138,10 @@ private enum ReaderGrouping {
         _ firstURL: String,
         _ secondURL: String,
         smartGrouping: Bool,
-        sensitivity: Double,
-        adjacencyScores: [String: Double]
+        adjacencyPredictions: [String: Bool]
     ) -> Bool {
         guard smartGrouping else { return false }
-        return adjacencyScores[pairKey(firstURL, secondURL), default: 0] > (1 - sensitivity)
+        return adjacencyPredictions[pairKey(firstURL, secondURL), default: false]
     }
 }
 
@@ -166,7 +153,7 @@ private struct ReaderSavedPosition: Equatable {
 }
 
 private enum ReaderImageLoadResult {
-    case success(String, TempImage)
+    case success(String, AppImage)
     case failed(String)
 }
 
@@ -359,11 +346,6 @@ struct ReaderScreen: View {
     private var respectMangaReadingDirection = SettingsDefaults.respectMangaReadingDirection
     @AppStorage(SettingsKey.smartGrouping.rawValue)
     private var smartGrouping = SettingsDefaults.smartGrouping
-    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue)
-    private var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
-    @AppStorage(SettingsKey.downsampleImages.rawValue)
-    private var downsampleImages = SettingsDefaults.downsampleImages
-
     /// Continuous Reader
     @AppStorage(SettingsKey.CR_readingDirection.rawValue)
     private var continuousDirectionRawValue = SettingsDefaults.CR_readingDirection.rawValue
@@ -394,7 +376,7 @@ struct ReaderScreen: View {
     @State private var images: [String: ReaderImageState] = [:]
     @State private var imageLoadingFinished = false
     @State private var groups: [ReaderGroup] = []
-    @State private var adjacencyScores: [String: Double] = [:]
+    @State private var adjacencyPredictions: [String: Bool] = [:]
     @State private var checkedPairs: Set<String> = []
     @State private var currentPage = 0
     @State private var contentRevision = 0
@@ -661,7 +643,6 @@ struct ReaderScreen: View {
             imageLayout: imageLayout,
             readingDirection: readingDirection,
             smartGrouping: smartGrouping,
-            sensitivity: smartGroupingSensitivity,
             viewportWidth: Int(viewportSize.width.rounded()),
             viewportHeight: Int(viewportSize.height.rounded())
         )
@@ -756,7 +737,7 @@ struct ReaderScreen: View {
         .onChange(of: groupingKey) { oldValue, _ in
             if oldValue.readingDirection != readingDirection {
                 checkedPairs.removeAll()
-                adjacencyScores.removeAll()
+                adjacencyPredictions.removeAll()
             }
             regroup(keepCurrentPageVisible: true)
         }
@@ -1127,7 +1108,7 @@ struct ReaderScreen: View {
         images = [:]
         imageLoadingFinished = false
         groups = []
-        adjacencyScores = [:]
+        adjacencyPredictions = [:]
         checkedPairs = []
         currentPage = 0
         navigationCommand = nil
@@ -1157,12 +1138,12 @@ struct ReaderScreen: View {
             pendingInitialPage = nil
             requestPage(min(max(requestedPage, 0), loadedURLs.count - 1), animated: false)
 
-            let retainImageData = smartGrouping && readingDirection != .vertical
+            let generateEmbeddings = smartGrouping && readingDirection != .vertical
 
             await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
                 for url in loadedURLs {
                     taskGroup.addTask {
-                        await loadImage(url: url, retainData: retainImageData)
+                        await loadImage(url: url, generateEmbedding: generateEmbeddings)
                     }
                 }
 
@@ -1212,24 +1193,16 @@ struct ReaderScreen: View {
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
-    private func loadImage(url: String, retainData: Bool) async -> ReaderImageLoadResult {
+    private func loadImage(url: String, generateEmbedding: Bool) async -> ReaderImageLoadResult {
         for retry in 0...3 {
             do {
                 try Task.checkCancellation()
                 let data = try await imageData(for: url)
 
-                let targetSize =
-                    viewportSize == .zero
-                    ? UIApplication.windowBounds.size
-                    : viewportSize
-                let image = TempImage(data: data)
-                let uiImage = image.uiImage(
-                    downsampledTo: downsampleImages ? targetSize : nil,
-                    retainData: retainData
+                return .success(
+                    url,
+                    AppImage(data: data, generateEmbedding: generateEmbedding)
                 )
-                if uiImage != nil {
-                    return .success(url, image)
-                }
             } catch is CancellationError {
                 return .failed(url)
             } catch {
@@ -1260,31 +1233,6 @@ struct ReaderScreen: View {
         return try await plugin.getImage(url)
     }
 
-    private func restoreImageData(url: String) async -> Data? {
-        for retry in 0...3 {
-            do {
-                try Task.checkCancellation()
-                return try await imageData(for: url)
-            } catch is CancellationError {
-                return nil
-            } catch {
-                if retry == 3 {
-                    Logger.ui.error("Failed to restore reader image data", error: error)
-                }
-            }
-
-            guard retry < 3 else { break }
-            let delay = UInt64(1 << retry) * 1_000_000_000
-            do {
-                try await Task.sleep(nanoseconds: delay)
-            } catch {
-                return nil
-            }
-        }
-
-        return nil
-    }
-
     @MainActor
     private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
         guard key.enabled, key.imagesSettled, key.chapterLoadKey == chapterLoadKey else { return }
@@ -1310,52 +1258,27 @@ struct ReaderScreen: View {
             "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages"
         )
 
-        let requiredURLs = Set(pairs.flatMap(\.urls))
-        for url in urls where requiredURLs.contains(url) {
-            guard case .success(let image) = images[url], !image.hasAnalysisSource else {
-                continue
-            }
-
-            guard let data = await restoreImageData(url: url) else { continue }
-            guard !Task.isCancelled, adjacencyKey == key else { return }
-            image.restoreSourceData(data)
-        }
-
-        var remainingImageUses: [ObjectIdentifier: Int] = [:]
-        for image in pairs.flatMap(\.images) {
-            remainingImageUses[ObjectIdentifier(image), default: 0] += 1
-        }
-
-        for state in images.values {
-            guard case .success(let image) = state,
-                remainingImageUses[ObjectIdentifier(image)] == nil
-            else { continue }
-            image.releaseData()
-        }
-
         var completedCount = 0
 
         for pair in pairs {
             do {
                 guard
-                    let leftCIImage = consumeCIImage(
-                        from: pair.leftImage,
-                        remainingUses: &remainingImageUses
-                    ),
-                    let rightCIImage = consumeCIImage(
-                        from: pair.rightImage,
-                        remainingUses: &remainingImageUses
-                    )
+                    let leftEmbedding = await pair.leftImage.imageEmbedding(),
+                    let rightEmbedding = await pair.rightImage.imageEmbedding()
                 else {
                     Logger.adjacencyModel.error(
-                        "Missing retained image data for adjacency pair \(pair.key)"
+                        "Missing image embedding for adjacency pair \(pair.key)"
                     )
                     continue
                 }
 
-                let score = try await AdjacencyModelWrapper.shared.predict(
-                    image1: leftCIImage,
-                    image2: rightCIImage
+                let prediction = try await ClassifierWrapper.shared.predict(
+                    embedding1: leftEmbedding.right,
+                    embedding2: rightEmbedding.left
+                )
+                Logger.adjacencyModel.notice(
+                    "Prediction for \(pair.key): rawLogit=\(prediction.rawLogit), "
+                        + "probability=\(prediction.probability), label=\(prediction.label)"
                 )
 
                 guard !Task.isCancelled, adjacencyKey == key else {
@@ -1365,7 +1288,7 @@ struct ReaderScreen: View {
                     return
                 }
                 checkedPairs.insert(pair.key)
-                adjacencyScores[pair.key] = score
+                adjacencyPredictions[pair.key] = prediction.label == 1
                 completedCount += 1
                 regroup(keepCurrentPageVisible: true)
             } catch is CancellationError {
@@ -1383,27 +1306,6 @@ struct ReaderScreen: View {
         )
     }
 
-    private func consumeCIImage(
-        from image: TempImage,
-        remainingUses: inout [ObjectIdentifier: Int]
-    ) -> CIImage? {
-        let identifier = ObjectIdentifier(image)
-        guard let remainingUseCount = remainingUses[identifier], remainingUseCount > 0 else {
-            return nil
-        }
-
-        let hasFutureUse = remainingUseCount > 1
-        guard let ciImage = image.ciImage(retainData: hasFutureUse) else { return nil }
-
-        if hasFutureUse {
-            remainingUses[identifier] = remainingUseCount - 1
-        } else {
-            remainingUses.removeValue(forKey: identifier)
-        }
-
-        return ciImage
-    }
-
     private func regroup(keepCurrentPageVisible: Bool = false) {
         let currentURL = urls.indices.contains(currentPage) ? urls[currentPage] : nil
         groups = ReaderGrouping.makeGroups(
@@ -1411,8 +1313,7 @@ struct ReaderScreen: View {
             images: images,
             defaultGroupSize: defaultGroupSize,
             smartGrouping: smartGrouping && readingDirection != .vertical,
-            smartGroupingSensitivity: smartGroupingSensitivity,
-            adjacencyScores: adjacencyScores
+            adjacencyPredictions: adjacencyPredictions
         )
         contentRevision += 1
 
