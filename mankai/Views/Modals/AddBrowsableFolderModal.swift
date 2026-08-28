@@ -16,6 +16,7 @@ struct AddBrowsableFolderModal: View {
     enum FolderType: String, CaseIterable, Identifiable {
         case filesystem
         case smb
+        case nfs
         case webdav
         case opds
 
@@ -29,6 +30,8 @@ struct AddBrowsableFolderModal: View {
                 String(localized: "fs")
             case .smb:
                 String(localized: "smb")
+            case .nfs:
+                String(localized: "nfs")
             case .webdav:
                 String(localized: "webdav")
             case .opds:
@@ -53,6 +56,12 @@ struct AddBrowsableFolderModal: View {
     @State private var selectedShare: SMB.Share?
     @State private var showingShareSelection = false
 
+    // NFS state
+    @State private var nfsHost = ""
+    @State private var exports: [String] = []
+    @State private var selectedExport: String?
+    @State private var showingExportSelection = false
+
     // WebDAV state
     @State private var webDavServerURL = ""
     @State private var webDavUsername = ""
@@ -64,12 +73,13 @@ struct AddBrowsableFolderModal: View {
     @State private var opdsPassword = ""
 
     @State private var isLoadingShares = false
+    @State private var isLoadingExports = false
     @State private var isAdding = false
     @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
     @State private var errorMessage: String?
 
     private var isProcessing: Bool {
-        isLoadingShares || isAdding
+        isLoadingShares || isLoadingExports || isAdding
     }
 
     private var canContinue: Bool {
@@ -81,6 +91,8 @@ struct AddBrowsableFolderModal: View {
         case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .nfs:
+            return !nfsHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .webdav:
             return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .opds:
@@ -118,6 +130,8 @@ struct AddBrowsableFolderModal: View {
                     filesystemConfiguration
                 case .smb:
                     smbConfiguration
+                case .nfs:
+                    nfsConfiguration
                 case .webdav:
                     webDavConfiguration
                 case .opds:
@@ -152,6 +166,9 @@ struct AddBrowsableFolderModal: View {
             }
             .navigationDestination(isPresented: $showingShareSelection) {
                 shareSelection
+            }
+            .navigationDestination(isPresented: $showingExportSelection) {
+                exportSelection
             }
         }
         .alert(errorTitle, isPresented: errorIsPresented) {
@@ -206,6 +223,15 @@ struct AddBrowsableFolderModal: View {
             Text("smbSettings")
         } footer: {
             Text("smbSettingsFooter")
+        }
+    }
+
+    private var nfsConfiguration: some View {
+        Section("nfsSettings") {
+            TextField("server", text: $nfsHost)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .disabled(isProcessing)
         }
     }
 
@@ -317,6 +343,56 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
+    private var exportSelection: some View {
+        List {
+            if exports.isEmpty {
+                ContentUnavailableView(
+                    "noNfsExports",
+                    systemImage: "externaldrive.badge.xmark",
+                    description: Text("noNfsExportsDescription")
+                )
+            } else {
+                Section {
+                    ForEach(exports, id: \.self) { export in
+                        Button {
+                            selectedExport = export
+                        } label: {
+                            HStack {
+                                Label(export, systemImage: "externaldrive.fill")
+                                Spacer()
+                                if selectedExport == export {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .navigationTitle("selectExport")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(isAdding)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    addNfsFolder()
+                } label: {
+                    if isAdding {
+                        ProgressView()
+                    } else {
+                        Text("add")
+                    }
+                }
+                .disabled(selectedExport == nil || isProcessing)
+            }
+        }
+    }
+
     @ViewBuilder
     private var primaryAction: some View {
         switch selectedFolderType {
@@ -339,6 +415,17 @@ struct AddBrowsableFolderModal: View {
                     ProgressView()
                 } else {
                     Text("selectShare")
+                }
+            }
+            .disabled(!canContinue)
+        case .nfs:
+            Button {
+                discoverExports()
+            } label: {
+                if isLoadingExports || isAdding {
+                    ProgressView()
+                } else {
+                    Text("selectExport")
                 }
             }
             .disabled(!canContinue)
@@ -410,6 +497,28 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
+    private func discoverExports() {
+        isLoadingExports = true
+        Task { @MainActor in
+            defer { isLoadingExports = false }
+
+            do {
+                let discoveredExports = try await NfsSession.discoverExports(host: nfsHost)
+                exports = discoveredExports
+                if discoveredExports.count == 1 {
+                    selectedExport = discoveredExports[0]
+                    addNfsFolder()
+                    return
+                }
+
+                selectedExport = nil
+                showingExportSelection = true
+            } catch {
+                presentError(error, title: "failedToDiscoverNfsExports")
+            }
+        }
+    }
+
     private func addFilesystemFolder() {
         guard let selectedFolder else { return }
 
@@ -446,6 +555,28 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = SmbSession(configuration: configuration)
                 let plugin = try await SmbBrowsablePlugin(session: session, name: name)
+                try browseService.addPlugin(plugin)
+                dismiss()
+            } catch {
+                presentError(error)
+            }
+        }
+    }
+
+    private func addNfsFolder() {
+        guard let selectedExport else { return }
+
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let configuration = try NfsConnectionConfiguration(
+                    host: nfsHost,
+                    export: selectedExport
+                )
+                let session = NfsSession(configuration: configuration)
+                let plugin = try await NfsBrowsablePlugin(session: session, name: name)
                 try browseService.addPlugin(plugin)
                 dismiss()
             } catch {

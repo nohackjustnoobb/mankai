@@ -92,6 +92,7 @@ final class BrowseService: ObservableObject {
         // Load plugins from db
         loadFsBrowablePlugins()
         loadSmbBrowsablePlugins()
+        loadNfsBrowsablePlugins()
         loadWebDavBrowsablePlugins()
         loadOpdsBrowsablePlugins()
     }
@@ -126,6 +127,16 @@ final class BrowseService: ObservableObject {
         Logger.browseService.info("Loaded \(smbBrowsablePlugins.count) SMB browsable plugins")
 
         for plugin in smbBrowsablePlugins {
+            _plugins[plugin.id] = plugin
+        }
+    }
+
+    private func loadNfsBrowsablePlugins() {
+        Logger.browseService.debug("Loading NFS browsable plugins")
+        let nfsBrowsablePlugins = NfsBrowsablePlugin.loadPlugins()
+        Logger.browseService.info("Loaded \(nfsBrowsablePlugins.count) NFS browsable plugins")
+
+        for plugin in nfsBrowsablePlugins {
             _plugins[plugin.id] = plugin
         }
     }

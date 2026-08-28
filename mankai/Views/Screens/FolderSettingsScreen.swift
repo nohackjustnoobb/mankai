@@ -68,6 +68,8 @@ private func folderTypeName(for plugin: BrowsablePlugin) -> String {
         return String(localized: "fs")
     case is SmbBrowsablePlugin:
         return String(localized: "smb")
+    case is NfsBrowsablePlugin:
+        return String(localized: "nfs")
     case is WebDavBrowsablePlugin:
         return String(localized: "webdav")
     case is OpdsBrowsablePlugin:

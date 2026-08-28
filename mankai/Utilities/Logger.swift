@@ -34,6 +34,7 @@ enum LogCategory: String {
     case fsBrowsablePlugin = "FsBrowsablePlugin"
     case appDirBrowsablePlugin = "AppDirBrowsablePlugin"
     case smbBrowsablePlugin = "SmbBrowsablePlugin"
+    case nfsBrowsablePlugin = "NfsBrowsablePlugin"
     case webDavBrowsablePlugin = "WebDavBrowsablePlugin"
     case opdsBrowsablePlugin = "OpdsBrowsablePlugin"
     case cbzParser = "CbzParser"
@@ -208,6 +209,7 @@ extension Logger {
     static let fsBrowsablePlugin = Logger(category: .fsBrowsablePlugin)
     static let appDirBrowsablePlugin = Logger(category: .appDirBrowsablePlugin)
     static let smbBrowsablePlugin = Logger(category: .smbBrowsablePlugin)
+    static let nfsBrowsablePlugin = Logger(category: .nfsBrowsablePlugin)
     static let webDavBrowsablePlugin = Logger(category: .webDavBrowsablePlugin)
     static let opdsBrowsablePlugin = Logger(category: .opdsBrowsablePlugin)
     static let cbzParser = Logger(category: .cbzParser)

@@ -68,6 +68,8 @@ struct FolderInfoScreen: View {
             "fs"
         case is SmbBrowsablePlugin:
             "smb"
+        case is NfsBrowsablePlugin:
+            "nfs"
         case is WebDavBrowsablePlugin:
             "webdav"
         case is OpdsBrowsablePlugin:
@@ -136,6 +138,18 @@ struct FolderInfoScreen: View {
                     }
 
                     credentialFields
+                }
+            case let nfsPlugin as NfsBrowsablePlugin:
+                Section("nfsSettings") {
+                    LabeledContent("server") {
+                        Text(nfsPlugin.host)
+                    }
+
+                    LabeledContent("export") {
+                        Text(nfsPlugin.export)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
                 }
             case let webDavPlugin as WebDavBrowsablePlugin:
                 Section("webdavSettings") {

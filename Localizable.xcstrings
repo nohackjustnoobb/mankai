@@ -1903,6 +1903,22 @@
         }
       }
     },
+    "export" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出目錄"
+          }
+        }
+      }
+    },
     "extra" : {
       "comment" : "Used as a chapter group label.",
       "extractionState" : "manual",
@@ -2077,6 +2093,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除已收藏漫畫失敗"
+          }
+        }
+      }
+    },
+    "failedToDiscoverNfsExports" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Find NFS Exports"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到NFS匯出目錄"
           }
         }
       }
@@ -3294,6 +3326,38 @@
         }
       }
     },
+    "invalidNfsConnectionConfiguration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid NFS Connection Configuration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的NFS連線設定"
+          }
+        }
+      }
+    },
+    "invalidNfsPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid NFS Folder"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的NFS資料夾"
+          }
+        }
+      }
+    },
     "invalidOpdsPlugin" : {
       "localizations" : {
         "en" : {
@@ -4321,6 +4385,38 @@
         }
       }
     },
+    "nfs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NFS"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NFS"
+          }
+        }
+      }
+    },
+    "nfsSettings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NFS Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NFS設定"
+          }
+        }
+      }
+    },
     "nil" : {
       "localizations" : {
         "en" : {
@@ -4621,6 +4717,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "沒有下一話"
+          }
+        }
+      }
+    },
+    "noNfsExports" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No NFS Exports"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有NFS匯出目錄"
+          }
+        }
+      }
+    },
+    "noNfsExportsDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This server did not return any exported directories."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此伺服器沒有傳回任何匯出目錄。"
           }
         }
       }
@@ -6175,6 +6303,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到所選插件"
+          }
+        }
+      }
+    },
+    "selectExport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Export"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇匯出目錄"
           }
         }
       }

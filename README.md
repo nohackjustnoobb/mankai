@@ -79,7 +79,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - [x] **OPDS 1.2** - Open Publication Distribution System catalog support.
 - [x] **SMB** - Server Message Block support.
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.
-- [ ] **NFS** - Network File System support.
+- [x] **NFS** - Network File System support.
 - [ ] **FTP** - File Transfer Protocol support.
 - [ ] **SFTP** - SSH File Transfer Protocol support.
 
@@ -125,6 +125,7 @@ Mankai supports remote sources for browsing and reading manga stored on remote s
 | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
 | **OPDS 1.2** | Browse OPDS 1.2 catalogs over HTTP or HTTPS with optional username and password authentication. Supports OPDS Page Streaming Extension (OPDS-PSE). | [Komga](https://github.com/gotson/komga), [calibre](https://github.com/kovidgoyal/calibre) |
 | **SMB**      | Browse and read manga from an SMB share, with optional username and password authentication.                                                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba)                        |
+| **NFS**      | Browse, read, and import manga from an exported NFS directory.                                                                                     | nfs-kernel-server                                                                          |
 | **WebDAV**   | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                                 | [hacdias/webdav](https://github.com/hacdias/webdav)                                        |
 
 ## Reader
