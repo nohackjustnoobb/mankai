@@ -44,7 +44,7 @@ final class UpdateService: ObservableObject {
         } catch {
             Logger.updateService.error("Update failed", error: error)
             if case .online = Reach().connectionStatus() {
-                let message = String(localized: "failedToUpdateLibrary")
+                let message = String(localized: "failedToUpdateLibraryFormat")
                 NotificationService.shared.showError(
                     String(format: message, error.localizedDescription))
             }
@@ -171,7 +171,7 @@ final class UpdateService: ObservableObject {
                 Logger.updateService.error(
                     "Error checking updates for plugin \(pluginId)", error: error)
                 if case .online = Reach().connectionStatus() {
-                    let message = String(localized: "failedToCheckUpdatesForPlugin")
+                    let message = String(localized: "failedToCheckUpdatesForPluginFormat")
                     NotificationService.shared.showWarning(String(format: message, pluginId))
                 }
 

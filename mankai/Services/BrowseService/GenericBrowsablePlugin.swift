@@ -26,7 +26,7 @@ struct BrowsableEntry {
 ///
 /// Subclasses provide the backend-specific operations through `entries(path:)`
 /// and `parserFile(relativePath:cacheKey:)`.
-class GenericBrowsablePlugin: Plugin, Browsable {
+class GenericBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConvertible {
     override var id: String {
         _id
     }
@@ -57,8 +57,18 @@ class GenericBrowsablePlugin: Plugin, Browsable {
         extensionsIndex.keys.sorted()
     }
 
-    private let _id: String
+    private var _id: String
+    private var _shouldSync: Bool
     let parsers: [String: Parser]
+
+    override var shouldSync: Bool {
+        _shouldSync
+    }
+
+    func convertToLocalPlugin() {
+        _id = UUID().uuidString
+        _shouldSync = false
+    }
 
     /// On-disk cache of route-neutral parsed manga (JSON-encoded
     /// `DetailedManga`), keyed by plugin, parser, and content hash. The
@@ -85,12 +95,13 @@ class GenericBrowsablePlugin: Plugin, Browsable {
     /// than an entry inside the backend source.
     private static let coverCachePrefix = "book-cover:"
 
-    init(id: String, parsers: [Parser]? = nil) throws {
+    init(id: String, shouldSync: Bool = true, parsers: [Parser]? = nil) throws {
         let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedId.isEmpty else {
             throw MankaiErrorCode.browseInvalidPlugin.makeError()
         }
         _id = trimmedId
+        _shouldSync = shouldSync
 
         if let parsers {
             var parserIndex: [String: Parser] = [:]

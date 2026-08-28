@@ -80,6 +80,16 @@ protocol Importable {
 typealias BrowsablePlugin = Browsable & Plugin
 typealias ImportableBrowsablePlugin = Browsable & Importable & Plugin
 
+protocol LocalBrowsablePluginConvertible {
+    func convertToLocalPlugin()
+}
+
+enum BrowsePluginAddConflictResolution {
+    case reject
+    case overwrite
+    case makeLocal
+}
+
 final class BrowseService: ObservableObject {
     static let shared = BrowseService()
 
@@ -176,20 +186,68 @@ final class BrowseService: ObservableObject {
     }
 
     /// Adds a new plugin to the service.
-    /// - Parameter plugin: The `BrowsablePlugin` instance to add.
+    /// - Parameters:
+    ///   - plugin: The `BrowsablePlugin` instance to add.
+    ///   - conflictResolution: How to handle an existing plugin with the same identifier.
     /// - Throws: An error if saving the plugin fails.
-    func addPlugin(_ plugin: BrowsablePlugin) throws {
-        Logger.browseService.debug("Adding plugin: \(plugin.id)")
-        _plugins[plugin.id] = plugin
+    func addPlugin(
+        _ plugin: BrowsablePlugin,
+        conflictResolution: BrowsePluginAddConflictResolution = .reject
+    ) throws {
+        let originalPluginID = plugin.id
+        let existingPlugin = _plugins[originalPluginID]
+        var shouldOverwriteExisting = false
 
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
+        if existingPlugin != nil {
+            switch conflictResolution {
+            case .reject:
+                Logger.browseService.warning("Plugin ID already exists: \(plugin.id)")
+                throw MankaiErrorCode.pluginDuplicateId.makeError(
+                    messageArguments: [plugin.id],
+                    additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id]
+                )
+            case .overwrite:
+                shouldOverwriteExisting = true
+            case .makeLocal:
+                guard let convertible = plugin as? LocalBrowsablePluginConvertible else {
+                    throw MankaiErrorCode.browseInvalidPlugin.makeError()
+                }
+                convertible.convertToLocalPlugin()
+            }
         }
 
+        if plugin.id != originalPluginID, _plugins[plugin.id] != nil {
+            Logger.browseService.warning("Local plugin ID already exists: \(plugin.id)")
+            throw MankaiErrorCode.pluginDuplicateId.makeError(
+                messageArguments: [plugin.id],
+                additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id]
+            )
+        }
+
+        Logger.browseService.debug("Adding plugin: \(plugin.id)")
         do {
+            if shouldOverwriteExisting, let existingPlugin {
+                try existingPlugin.deletePlugin()
+            }
             try plugin.savePlugin()
+            _plugins[plugin.id] = plugin
+
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
+
             Logger.browseService.info("Plugin added successfully: \(plugin.id)")
         } catch {
+            if shouldOverwriteExisting, let existingPlugin {
+                do {
+                    try existingPlugin.savePlugin()
+                } catch {
+                    Logger.browseService.error(
+                        "Failed to restore overwritten plugin: \(originalPluginID)",
+                        error: error
+                    )
+                }
+            }
             Logger.browseService.error("Failed to save plugin: \(plugin.id)", error: error)
             throw error
         }

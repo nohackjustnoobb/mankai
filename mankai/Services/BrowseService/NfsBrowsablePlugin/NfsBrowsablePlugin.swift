@@ -317,11 +317,12 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    private let _shouldSync: Bool
     private var session: NfsSession
-    private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
-        .appendingPathComponent("nfs", isDirectory: true)
-        .appendingPathComponent(id, isDirectory: true)
+    private var temporaryDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("nfs", isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+    }
 
     /// Creates a new NFS plugin after mounting the export and resolving its identity.
     convenience init(session: NfsSession, name: String?) async throws {
@@ -377,11 +378,10 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: NfsSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? NfsSession(configuration: configuration)
 
-        try super.init(id: id)
+        try super.init(id: id, shouldSync: shouldSync)
         displayName = name.trimmed
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
@@ -417,10 +417,6 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var canDownload: Bool {
         false
-    }
-
-    override var shouldSync: Bool {
-        _shouldSync
     }
 
     static func loadPlugins() -> [NfsBrowsablePlugin] {

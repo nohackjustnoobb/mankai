@@ -23,7 +23,6 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
     }
 
     let url: URL
-    private let _shouldSync: Bool
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
 
@@ -34,8 +33,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
     init(url: URL, id: String, name: String?, shouldSync: Bool = true) throws {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
         self.url = url
-        _shouldSync = shouldSync
-        try super.init(id: id)
+        try super.init(id: id, shouldSync: shouldSync)
         displayName = name.trimmed
 
         if !(self is AppDirBrowsablePlugin) {
@@ -177,10 +175,6 @@ class FsBrowsablePlugin: GenericBrowsablePlugin, Importable {
                 shouldSync: shouldSync
             ).save(db)
         }
-    }
-
-    override var shouldSync: Bool {
-        _shouldSync
     }
 
     override func deletePlugin() throws {

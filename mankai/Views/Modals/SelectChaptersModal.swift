@@ -108,7 +108,12 @@ struct SelectChaptersModal: View {
             .navigationTitleWithSubtitle(
                 title: Text("selectChapters"),
                 subtitle: totalSelectedCount > 0
-                    ? Text("\(totalSelectedCount) selected") : nil
+                    ? Text(
+                        String(
+                            format: String(localized: "selectedChapterCountFormat"),
+                            totalSelectedCount
+                        )
+                    ) : nil
             )
         }
         .presentationDetents([.medium, .large])
@@ -166,13 +171,23 @@ struct SelectChaptersModal: View {
                         Text(LocalizedStringKey(groupTitle))
                             .foregroundColor(.primary)
 
-                        Text("\(chapters.count) chapters")
-                            .smallTagStyle()
+                        Text(
+                            String(
+                                format: String(localized: "chapterCountFormat"),
+                                chapters.count
+                            )
+                        )
+                        .smallTagStyle()
                     }
 
-                    Text("\(selectedSelectableCount) selected")
-                        .font(.caption)
-                        .foregroundColor(.accentColor)
+                    Text(
+                        String(
+                            format: String(localized: "selectedChapterCountFormat"),
+                            selectedSelectableCount
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundColor(.accentColor)
                 }
 
                 Spacer()

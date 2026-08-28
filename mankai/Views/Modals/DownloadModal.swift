@@ -136,9 +136,14 @@ struct DownloadedMangaRow: View {
                         .lineLimit(1)
 
                     if let chapterCount = totalChapterCount {
-                        Text("\(chapterCount) chapters")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        Text(
+                            String(
+                                format: String(localized: "chapterCountFormat"),
+                                chapterCount
+                            )
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                     }
                 }
 

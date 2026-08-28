@@ -39,10 +39,6 @@ struct OpdsFeed {
     let entries: [OpdsEntry]
 }
 
-enum OpdsParserError: Error {
-    case invalidDocument
-}
-
 enum OpdsParser {
     private static let acquisitionRelation = "http://opds-spec.org/acquisition"
     private static let imageRelation = "http://opds-spec.org/image"
@@ -59,14 +55,14 @@ enum OpdsParser {
         }.parse(data)
 
         if case .parsingError = document {
-            throw OpdsParserError.invalidDocument
+            throw MankaiErrorCode.browseOpdsInvalidDocument.makeError()
         }
 
         guard document.children.count == 1,
             let feed = document.children.first?.element,
             localName(feed.name) == "feed"
         else {
-            throw OpdsParserError.invalidDocument
+            throw MankaiErrorCode.browseOpdsInvalidDocument.makeError()
         }
 
         let feedChildren = feed.children.compactMap { $0 as? XMLElement }
@@ -91,7 +87,7 @@ enum OpdsParser {
             break
         }
         guard let selfURL else {
-            throw OpdsParserError.invalidDocument
+            throw MankaiErrorCode.browseOpdsInvalidDocument.makeError()
         }
 
         let feedEntry = OpdsNavigationEntry(

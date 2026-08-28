@@ -7,6 +7,11 @@
 
 import Foundation
 
+enum PluginAddConflictResolution: Equatable {
+    case reject
+    case overwrite
+}
+
 final class PluginService: ObservableObject {
     /// The shared singleton instance of `PluginService`.
     static let shared = PluginService()
@@ -98,20 +103,48 @@ final class PluginService: ObservableObject {
     }
 
     /// Adds a new plugin to the service.
-    /// - Parameter plugin: The `Plugin` instance to add.
+    /// - Parameters:
+    ///   - plugin: The `Plugin` instance to add.
+    ///   - conflictResolution: How to handle an existing plugin with the same identifier.
     /// - Throws: An error if saving the plugin fails.
-    func addPlugin(_ plugin: Plugin) throws {
+    func addPlugin(
+        _ plugin: Plugin,
+        conflictResolution: PluginAddConflictResolution = .reject
+    ) throws {
         Logger.pluginService.debug("Adding plugin: \(plugin.id)")
-        _plugins[plugin.id] = wrap(plugin)
 
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
+        let existingPlugin = _plugins[plugin.id]
+        if existingPlugin != nil, conflictResolution == .reject {
+            Logger.pluginService.warning("Plugin ID already exists: \(plugin.id)")
+            throw MankaiErrorCode.pluginDuplicateId.makeError(
+                messageArguments: [plugin.id],
+                additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id]
+            )
         }
 
         do {
+            if let existingPlugin {
+                try existingPlugin.deletePlugin()
+            }
             try plugin.savePlugin()
+            _plugins[plugin.id] = wrap(plugin)
+
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
+
             Logger.pluginService.info("Plugin added successfully: \(plugin.id)")
         } catch {
+            if let existingPlugin {
+                do {
+                    try existingPlugin.savePlugin()
+                } catch {
+                    Logger.pluginService.error(
+                        "Failed to restore overwritten plugin: \(plugin.id)",
+                        error: error
+                    )
+                }
+            }
             Logger.pluginService.error("Failed to save plugin: \(plugin.id)", error: error)
             throw error
         }

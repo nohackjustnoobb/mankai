@@ -77,6 +77,7 @@ struct AddBrowsableFolderModal: View {
     @State private var isAdding = false
     @State private var errorTitle: LocalizedStringKey = "failedToAddFolder"
     @State private var errorMessage: String?
+    @State private var duplicatePlugin: BrowsablePlugin?
 
     private var isProcessing: Bool {
         isLoadingShares || isLoadingExports || isAdding
@@ -178,6 +179,30 @@ struct AddBrowsableFolderModal: View {
         } message: {
             if let errorMessage {
                 Text(errorMessage)
+            }
+        }
+        .alert(
+            "duplicatePluginTitle",
+            isPresented: duplicatePluginIsPresented
+        ) {
+            Button("overwrite", role: .destructive) {
+                resolveDuplicatePlugin(with: .overwrite)
+            }
+            Button("addAsLocalPlugin") {
+                resolveDuplicatePlugin(with: .makeLocal)
+            }
+            Button("cancel", role: .cancel) {
+                duplicatePlugin = nil
+            }
+        } message: {
+            if let duplicatePlugin {
+                Text(
+                    String(
+                        format: String(localized: "duplicateBrowsablePluginIdMessageFormat"),
+                        locale: .current,
+                        duplicatePlugin.id
+                    )
+                )
             }
         }
     }
@@ -528,8 +553,7 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let plugin = try FsBrowsablePlugin(url: selectedFolder, name: name)
-                try browseService.addPlugin(plugin)
-                dismiss()
+                addPlugin(plugin)
             } catch {
                 presentError(error)
             }
@@ -555,8 +579,7 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = SmbSession(configuration: configuration)
                 let plugin = try await SmbBrowsablePlugin(session: session, name: name)
-                try browseService.addPlugin(plugin)
-                dismiss()
+                addPlugin(plugin)
             } catch {
                 presentError(error)
             }
@@ -577,8 +600,7 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = NfsSession(configuration: configuration)
                 let plugin = try await NfsBrowsablePlugin(session: session, name: name)
-                try browseService.addPlugin(plugin)
-                dismiss()
+                addPlugin(plugin)
             } catch {
                 presentError(error)
             }
@@ -598,8 +620,7 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = WebDavSession(configuration: configuration)
                 let plugin = try await WebDavBrowsablePlugin(session: session, name: name)
-                try browseService.addPlugin(plugin)
-                dismiss()
+                addPlugin(plugin)
             } catch {
                 presentError(error)
             }
@@ -619,8 +640,7 @@ struct AddBrowsableFolderModal: View {
                 )
                 let session = OpdsSession(configuration: configuration)
                 let plugin = try await OpdsBrowsablePlugin(session: session, name: name)
-                try browseService.addPlugin(plugin)
-                dismiss()
+                addPlugin(plugin)
             } catch {
                 presentError(error)
             }
@@ -634,6 +654,41 @@ struct AddBrowsableFolderModal: View {
             return nil
         }
         return portValue
+    }
+
+    private var duplicatePluginIsPresented: Binding<Bool> {
+        Binding(
+            get: { duplicatePlugin != nil },
+            set: { if !$0 { duplicatePlugin = nil } }
+        )
+    }
+
+    private func addPlugin(_ plugin: BrowsablePlugin) {
+        do {
+            try browseService.addPlugin(plugin)
+            dismiss()
+        } catch let error where MankaiErrorCode.pluginDuplicateId.matches(error) {
+            duplicatePlugin = plugin
+        } catch {
+            presentError(error)
+        }
+    }
+
+    private func resolveDuplicatePlugin(
+        with conflictResolution: BrowsePluginAddConflictResolution
+    ) {
+        guard let duplicatePlugin else { return }
+        self.duplicatePlugin = nil
+
+        do {
+            try browseService.addPlugin(
+                duplicatePlugin,
+                conflictResolution: conflictResolution
+            )
+            dismiss()
+        } catch {
+            presentError(error)
+        }
     }
 
     private func presentError(

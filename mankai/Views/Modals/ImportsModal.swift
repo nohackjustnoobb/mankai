@@ -60,8 +60,13 @@ struct ImportsModal: View {
                                 Text("none")
                                     .foregroundStyle(.secondary)
                             } else {
-                                Text("\(selectedFiles.count) files")
-                                    .foregroundStyle(.secondary)
+                                Text(
+                                    String(
+                                        format: String(localized: "fileCountFormat"),
+                                        selectedFiles.count
+                                    )
+                                )
+                                .foregroundStyle(.secondary)
                             }
                         }
                     }

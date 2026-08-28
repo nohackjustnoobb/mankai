@@ -73,6 +73,7 @@ struct MankaiErrorDefinition {
 
 enum MankaiErrorUserInfoKey {
     static let httpStatusCode = "MankaiHTTPStatusCode"
+    static let pluginId = "MankaiPluginID"
 }
 
 enum MankaiErrorCode: CaseIterable, Hashable {
@@ -109,6 +110,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case browseWebDavInvalidPlugin
     case browseWebDavRequestFailed
     case browseOpdsInvalidPlugin
+    case browseOpdsInvalidDocument
     case browsePdfInvalidDocument
     case browsePdfPasswordProtectedDocument
     case browsePdfNoPagesFound
@@ -131,6 +133,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case libraryFailedToDeleteSavedManga
 
     case pluginMangaNotFound
+    case pluginDuplicateId
     case pluginDummyCannotBeUsed
     case pluginDownloadDatabaseNotAvailable
     case pluginDownloadMangaNotFound
@@ -240,6 +243,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .browseWebDav, code: 3, messageKey: "webDavRequestFailed"),
         .browseOpdsInvalidPlugin: .init(
             domain: .browseOpds, code: 1, messageKey: "invalidOpdsPlugin"),
+        .browseOpdsInvalidDocument: .init(
+            domain: .browseOpds, code: 2, messageKey: "invalidOpdsDocument"),
         .browsePdfInvalidDocument: .init(
             domain: .browsePdf, code: 1, messageKey: "invalidPdfDocument"),
         .browsePdfPasswordProtectedDocument: .init(
@@ -274,6 +279,8 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .library, code: 2, messageKey: "failedToDeleteSavedManga"),
 
         .pluginMangaNotFound: .init(domain: .plugin, code: 1, messageKey: "mangaNotFound"),
+        .pluginDuplicateId: .init(
+            domain: .plugin, code: 2, messageKey: "duplicatePluginIdMessageFormat"),
         .pluginDummyCannotBeUsed: .init(
             domain: .pluginDummy, code: 1, messageKey: "dummyPluginCannotBeUsed"),
         .pluginDownloadDatabaseNotAvailable: .init(
@@ -372,14 +379,27 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         Self.definitions[self]!
     }
 
+    var errorCode: Int {
+        definition.domain.codePrefix * 100 + definition.code
+    }
+
+    func matches(_ error: Error) -> Bool {
+        let error = error as NSError
+        return error.domain == definition.domain.rawValue && error.code == errorCode
+    }
+
     func makeError(
         messageOverride: String? = nil,
+        messageArguments: [CVarArg] = [],
         underlyingError: Error? = nil,
         additionalUserInfo: [String: Any] = [:]
     ) -> NSError {
         var userInfo = additionalUserInfo
+        let message = messageOverride ?? String(localized: definition.messageKey)
         userInfo[NSLocalizedDescriptionKey] =
-            messageOverride ?? String(localized: definition.messageKey)
+            messageArguments.isEmpty
+            ? message
+            : String(format: message, locale: .current, arguments: messageArguments)
 
         if let underlyingError {
             userInfo[NSUnderlyingErrorKey] = underlyingError
@@ -387,7 +407,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
 
         return NSError(
             domain: definition.domain.rawValue,
-            code: definition.domain.codePrefix * 100 + definition.code,
+            code: errorCode,
             userInfo: userInfo
         )
     }

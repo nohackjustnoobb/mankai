@@ -172,11 +172,12 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    private let _shouldSync: Bool
     private var session: SmbSession
-    private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
-        .appendingPathComponent("smb", isDirectory: true)
-        .appendingPathComponent(id, isDirectory: true)
+    private var temporaryDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("smb", isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+    }
 
     /// Creates a new SMB plugin using an existing session.
     convenience init(session: SmbSession, name: String?) async throws {
@@ -231,11 +232,10 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: SmbSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? SmbSession(configuration: configuration)
 
-        try super.init(id: id)
+        try super.init(id: id, shouldSync: shouldSync)
         displayName = name.trimmed
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
@@ -283,10 +283,6 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var canDownload: Bool {
         false
-    }
-
-    override var shouldSync: Bool {
-        _shouldSync
     }
 
     static func loadPlugins() -> [SmbBrowsablePlugin] {

@@ -72,19 +72,19 @@ actor OpdsSession {
     }
 }
 
-final class OpdsBrowsablePlugin: Plugin, Browsable {
+final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConvertible {
     private static let pseFileType = "pse"
     private static let imagePrefix = "opds-image:"
     private static let pseMaxWidth = 2000
 
-    private let _id: String
+    private var _id: String
     var configuration: OpdsConnectionConfiguration {
         didSet {
             session = OpdsSession(configuration: configuration)
         }
     }
     var displayName: String?
-    private let _shouldSync: Bool
+    private var _shouldSync: Bool
     private var session: OpdsSession
     private let parsers: [String: Parser]
     private let mimeTypes: [String: Parser]
@@ -94,14 +94,14 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
         let parser: Parser
     }
 
-    private lazy var temporaryDirectory: URL = {
+    private var temporaryDirectory: URL {
         let cacheName = SHA256.hash(data: Data(_id.utf8))
             .map { String(format: "%02x", $0) }
             .joined()
         return FileManager.default.temporaryDirectory
             .appendingPathComponent("opds", isDirectory: true)
             .appendingPathComponent(cacheName, isDirectory: true)
-    }()
+    }
 
     override var id: String {
         _id
@@ -113,6 +113,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable {
 
     override var shouldSync: Bool {
         _shouldSync
+    }
+
+    func convertToLocalPlugin() {
+        _id = UUID().uuidString
+        _shouldSync = false
     }
 
     override var availableGenres: [Genre] {

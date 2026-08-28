@@ -336,7 +336,7 @@ final class DownloadService: ObservableObject {
 
         Logger.downloadService.info(
             "Successfully queued download task for \(manga.title ?? manga.id)")
-        let message = String(localized: "downloadQueuedMessage")
+        let message = String(localized: "downloadQueuedMessageFormat")
         NotificationService.shared.showInfo(String(format: message, manga.title ?? manga.id))
 
         return task
@@ -398,7 +398,7 @@ final class DownloadService: ObservableObject {
 
                 Logger.downloadService.info(
                     "Successfully downloaded task for \(task.manga.title ?? task.manga.id)")
-                let message = String(localized: "downloadCompletedMessage")
+                let message = String(localized: "downloadCompletedMessageFormat")
                 NotificationService.shared.showSuccess(
                     String(format: message, task.manga.title ?? task.manga.id))
 
@@ -412,7 +412,7 @@ final class DownloadService: ObservableObject {
                     Logger.downloadService.error("Task failed: \(error)")
                     try? await task.markFailed(error: error)
 
-                    let message = String(localized: "downloadFailedMessage")
+                    let message = String(localized: "downloadFailedMessageFormat")
                     NotificationService.shared.showError(
                         String(
                             format: message,

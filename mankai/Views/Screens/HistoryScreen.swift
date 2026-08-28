@@ -123,11 +123,21 @@ struct HistoryItemView: View {
                                     Text(chapterTitle)
 
                                 } else {
-                                    Text("chapter \(record.chapterId)")
+                                    Text(
+                                        String(
+                                            format: String(localized: "chapterFormat"),
+                                            record.chapterId
+                                        )
+                                    )
                                 }
 
                                 Text("•")
-                                Text("page \(record.page + 1)")
+                                Text(
+                                    String(
+                                        format: String(localized: "historyPageFormat"),
+                                        record.page + 1
+                                    )
+                                )
                             }
                             .font(.subheadline)
                             .foregroundStyle(.secondary)

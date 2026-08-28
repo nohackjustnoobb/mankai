@@ -262,7 +262,12 @@ struct MangaDetailsScreen: View {
                         }
 
                         if let chapters = mangaData?.chapters {
-                            Text("\(chapters.flatMap(\.chapters).count) chapters")
+                            Text(
+                                String(
+                                    format: String(localized: "chapterCountFormat"),
+                                    chapters.flatMap(\.chapters).count
+                                )
+                            )
                         }
 
                         if let status = mangaData?.status {
@@ -310,12 +315,22 @@ struct MangaDetailsScreen: View {
                                     .lineLimit(1)
                             } else {
                                 Text("•")
-                                Text("chapter \(record.chapterId)")
-                                    .lineLimit(1)
+                                Text(
+                                    String(
+                                        format: String(localized: "chapterFormat"),
+                                        record.chapterId
+                                    )
+                                )
+                                .lineLimit(1)
                             }
 
                             Text("•")
-                            Text("page \((record.page + 1).description)")
+                            Text(
+                                String(
+                                    format: String(localized: "pageFormat"),
+                                    (record.page + 1).description
+                                )
+                            )
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -378,8 +393,13 @@ struct MangaDetailsScreen: View {
                                         Text(LocalizedStringKey(group.title))
                                             .foregroundColor(.primary)
 
-                                        Text("\(group.chapters.count) chapters")
-                                            .smallTagStyle()
+                                        Text(
+                                            String(
+                                                format: String(localized: "chapterCountFormat"),
+                                                group.chapters.count
+                                            )
+                                        )
+                                        .smallTagStyle()
                                     }
 
                                     if let latestChapter = group.chapters.last {
@@ -478,9 +498,15 @@ struct MangaDetailsScreen: View {
                                         HStack {
                                             VStack(alignment: .leading) {
                                                 Text(LocalizedStringKey(selectedChapterGroup.title))
-                                                Text("\(chapters.count) chapters")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
+                                                Text(
+                                                    String(
+                                                        format: String(
+                                                            localized: "chapterCountFormat"),
+                                                        chapters.count
+                                                    )
+                                                )
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
                                             }
 
                                             Spacer()

@@ -4,81 +4,6 @@
     "/" : {
       "shouldTranslate" : false
     },
-    "%lld / %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld / %2$lld"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "%lld bytes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Bytes"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld位元組"
-          }
-        }
-      }
-    },
-    "%lld chapters" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Chapters"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld話"
-          }
-        }
-      }
-    },
-    "%lld files" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld files"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 檔案"
-          }
-        }
-      }
-    },
-    "%lld selected" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld selected"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已選擇 %lld 話"
-          }
-        }
-      }
-    },
     "•" : {
       "shouldTranslate" : false
     },
@@ -255,6 +180,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "新增"
+          }
+        }
+      }
+    },
+    "addAsLocalPlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add as Local Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入為本機插件"
           }
         }
       }
@@ -635,6 +576,22 @@
         }
       }
     },
+    "byteCountFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Bytes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld位元組"
+          }
+        }
+      }
+    },
     "cache" : {
       "localizations" : {
         "en" : {
@@ -829,7 +786,23 @@
         }
       }
     },
-    "chapter %@" : {
+    "chapterCountFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Chapters"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld話"
+          }
+        }
+      }
+    },
+    "chapterFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1311,7 +1284,7 @@
         }
       }
     },
-    "dataSize: %lld bytes" : {
+    "dataSizeMessageFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1503,7 +1476,7 @@
         }
       }
     },
-    "downloadCompletedMessage" : {
+    "downloadCompletedMessageFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1567,7 +1540,7 @@
         }
       }
     },
-    "downloadFailedMessage" : {
+    "downloadFailedMessageFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1583,7 +1556,7 @@
         }
       }
     },
-    "downloadQueuedMessage" : {
+    "downloadQueuedMessageFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1675,6 +1648,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法使用虛擬插件"
+          }
+        }
+      }
+    },
+    "duplicateBrowsablePluginIdMessageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A plugin with the ID “%@” already exists. You can overwrite it or add the new plugin as a local plugin that does not sync across devices."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID為「%@」的插件已存在。你可以覆寫該插件，或將新插件加入為不跨裝置同步的本機插件。"
+          }
+        }
+      }
+    },
+    "duplicatePluginIdMessageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A plugin with the ID “%@” already exists. Do you want to overwrite it?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID為「%@」的插件已存在。要覆寫嗎？"
+          }
+        }
+      }
+    },
+    "duplicatePluginTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate Plugin ID"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件ID重複"
           }
         }
       }
@@ -2033,7 +2054,7 @@
         }
       }
     },
-    "failedToCheckUpdatesForPlugin" : {
+    "failedToCheckUpdatesForPluginFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2449,7 +2470,7 @@
         }
       }
     },
-    "failedToSync" : {
+    "failedToSyncFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2460,7 +2481,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "同步失敗：％@"
+            "value" : "同步失敗：%@"
           }
         }
       }
@@ -2481,7 +2502,7 @@
         }
       }
     },
-    "failedToUpdateLibrary" : {
+    "failedToUpdateLibraryFormat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2543,6 +2564,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "同人"
+          }
+        }
+      }
+    },
+    "fileCountFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld files"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 檔案"
           }
         }
       }
@@ -2824,6 +2861,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "歷史記錄"
+          }
+        }
+      }
+    },
+    "historyPageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "page %lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %lld 頁"
           }
         }
       }
@@ -3354,6 +3407,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無效的NFS資料夾"
+          }
+        }
+      }
+    },
+    "invalidOpdsDocument" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid OPDS Document"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的OPDS檔案"
           }
         }
       }
@@ -5175,34 +5244,18 @@
         }
       }
     },
-    "page %@" : {
+    "overwrite" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Page %@"
+            "value" : "Overwrite"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第 %@ 頁"
-          }
-        }
-      }
-    },
-    "page %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "page %lld"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %lld 頁"
+            "value" : "覆寫"
           }
         }
       }
@@ -5251,6 +5304,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "翻頁閱讀設定"
+          }
+        }
+      }
+    },
+    "pageFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %@ 頁"
           }
         }
       }
@@ -5686,6 +5755,17 @@
           }
         }
       }
+    },
+    "readerPageProgressFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "readerSettings" : {
       "localizations" : {
@@ -6287,6 +6367,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇章節"
+          }
+        }
+      }
+    },
+    "selectedChapterCountFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selected"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選擇 %lld 話"
           }
         }
       }
@@ -7344,9 +7440,6 @@
         }
       }
     },
-    "v%@" : {
-      "shouldTranslate" : false
-    },
     "version" : {
       "localizations" : {
         "en" : {
@@ -7362,6 +7455,17 @@
           }
         }
       }
+    },
+    "versionFormat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v%@"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "vertical" : {
       "localizations" : {

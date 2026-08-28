@@ -33,6 +33,7 @@ struct AddPluginModal: View {
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @State private var isProcessing: Bool = false
+    @State private var duplicatePlugin: Plugin?
 
     var body: some View {
         NavigationView {
@@ -143,13 +144,7 @@ struct AddPluginModal: View {
                                         return
                                     }
 
-                                    do {
-                                        try PluginService.shared.addPlugin(plugin)
-                                        dismiss()
-                                    } catch {
-                                        errorMessage = error.localizedDescription
-                                        showError = true
-                                    }
+                                    addPlugin(plugin)
                                 case .fsPlugin:
                                     guard let selectedFolder = selectedFolder else {
                                         errorMessage = String(localized: "noFolderSelected")
@@ -174,8 +169,7 @@ struct AddPluginModal: View {
                                             plugin = try ReadWriteFsPlugin(url: selectedFolder)
                                         }
 
-                                        try PluginService.shared.addPlugin(plugin)
-                                        dismiss()
+                                        addPlugin(plugin)
                                     } catch {
                                         errorMessage = error.localizedDescription
                                         showError = true
@@ -187,13 +181,7 @@ struct AddPluginModal: View {
                                         return
                                     }
 
-                                    do {
-                                        try PluginService.shared.addPlugin(plugin)
-                                        dismiss()
-                                    } catch {
-                                        errorMessage = error.localizedDescription
-                                        showError = true
-                                    }
+                                    addPlugin(plugin)
                                 }
                             }
                         }
@@ -233,6 +221,61 @@ struct AddPluginModal: View {
             } message: {
                 Text(errorMessage)
             }
+            .alert(
+                "duplicatePluginTitle",
+                isPresented: duplicatePluginIsPresented
+            ) {
+                Button("overwrite", role: .destructive) {
+                    overwriteDuplicatePlugin()
+                }
+                Button("cancel", role: .cancel) {
+                    duplicatePlugin = nil
+                }
+            } message: {
+                if let duplicatePlugin {
+                    Text(
+                        String(
+                            format: String(localized: "duplicatePluginIdMessageFormat"),
+                            duplicatePlugin.id
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private var duplicatePluginIsPresented: Binding<Bool> {
+        Binding(
+            get: { duplicatePlugin != nil },
+            set: { if !$0 { duplicatePlugin = nil } }
+        )
+    }
+
+    private func addPlugin(_ plugin: Plugin) {
+        do {
+            try PluginService.shared.addPlugin(plugin)
+            dismiss()
+        } catch let error where MankaiErrorCode.pluginDuplicateId.matches(error) {
+            duplicatePlugin = plugin
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
+    private func overwriteDuplicatePlugin() {
+        guard let duplicatePlugin else { return }
+        self.duplicatePlugin = nil
+
+        do {
+            try PluginService.shared.addPlugin(
+                duplicatePlugin,
+                conflictResolution: .overwrite
+            )
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
         }
     }
 }

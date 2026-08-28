@@ -929,8 +929,14 @@ struct ReaderScreen: View {
                 Button {
                     isShowingChapters = true
                 } label: {
-                    Text("\(displayedPage) / \(pageCount)")
-                        .frame(minWidth: 72)
+                    Text(
+                        String(
+                            format: String(localized: "readerPageProgressFormat"),
+                            displayedPage,
+                            pageCount
+                        )
+                    )
+                    .frame(minWidth: 72)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.accent)

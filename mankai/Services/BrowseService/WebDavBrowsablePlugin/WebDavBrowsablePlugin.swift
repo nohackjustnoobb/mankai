@@ -180,11 +180,12 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         )
     }
 
-    private let _shouldSync: Bool
     private var session: WebDavSession
-    private lazy var temporaryDirectory = FileManager.default.temporaryDirectory
-        .appendingPathComponent("webdav", isDirectory: true)
-        .appendingPathComponent(id, isDirectory: true)
+    private var temporaryDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("webdav", isDirectory: true)
+            .appendingPathComponent(id, isDirectory: true)
+    }
 
     /// Creates a new WebDAV plugin after validating the connection and resolving its identity.
     convenience init(session: WebDavSession, name: String?) async throws {
@@ -241,11 +242,10 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: WebDavSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        _shouldSync = shouldSync
         self.configuration = configuration
         self.session = session ?? WebDavSession(configuration: configuration)
 
-        try super.init(id: id)
+        try super.init(id: id, shouldSync: shouldSync)
         displayName = name.trimmed
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
@@ -286,10 +286,6 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var canDownload: Bool {
         false
-    }
-
-    override var shouldSync: Bool {
-        _shouldSync
     }
 
     static func loadPlugins() -> [WebDavBrowsablePlugin] {

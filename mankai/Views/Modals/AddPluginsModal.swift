@@ -43,6 +43,7 @@ struct AddPluginsModal: View {
     @State private var isLoading = true
     @State private var isAdding = false
     @State private var errorMessage: String?
+    @State private var duplicatePluginIDs: [String] = []
 
     var body: some View {
         NavigationStack {
@@ -78,8 +79,13 @@ struct AddPluginsModal: View {
                                         .smallTagStyle()
 
                                     if let version = plugin.version {
-                                        Text("v\(version)")
-                                            .smallTagStyle()
+                                        Text(
+                                            String(
+                                                format: String(localized: "versionFormat"),
+                                                version
+                                            )
+                                        )
+                                        .smallTagStyle()
                                     }
                                 }
 
@@ -145,6 +151,25 @@ struct AddPluginsModal: View {
                     Text(errorMessage)
                 }
             }
+            .alert(
+                "duplicatePluginTitle",
+                isPresented: duplicatePluginsArePresented
+            ) {
+                Button("overwrite", role: .destructive) {
+                    duplicatePluginIDs = []
+                    performAddSelectedPlugins(overwriteDuplicates: true)
+                }
+                Button("cancel", role: .cancel) {
+                    duplicatePluginIDs = []
+                }
+            } message: {
+                Text(
+                    String(
+                        format: String(localized: "duplicatePluginIdMessageFormat"),
+                        duplicatePluginIDs.joined(separator: ", ")
+                    )
+                )
+            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
@@ -188,6 +213,35 @@ struct AddPluginsModal: View {
     }
 
     private func addSelectedPlugins() {
+        var seenPluginIDs: Set<String> = []
+        var duplicateIDs: Set<String> = []
+
+        for candidate in candidates where selectedSourceIds.contains(candidate.id) {
+            guard let plugin = candidate.plugin else { continue }
+
+            if PluginService.shared.getPlugin(plugin.id) != nil
+                || !seenPluginIDs.insert(plugin.id).inserted
+            {
+                duplicateIDs.insert(plugin.id)
+            }
+        }
+
+        if !duplicateIDs.isEmpty {
+            duplicatePluginIDs = duplicateIDs.sorted()
+            return
+        }
+
+        performAddSelectedPlugins(overwriteDuplicates: false)
+    }
+
+    private var duplicatePluginsArePresented: Binding<Bool> {
+        Binding(
+            get: { !duplicatePluginIDs.isEmpty },
+            set: { if !$0 { duplicatePluginIDs = [] } }
+        )
+    }
+
+    private func performAddSelectedPlugins(overwriteDuplicates: Bool) {
         isAdding = true
         defer { isAdding = false }
 
@@ -197,7 +251,10 @@ struct AddPluginsModal: View {
             guard let plugin = candidate.plugin else { continue }
 
             do {
-                try PluginService.shared.addPlugin(plugin)
+                try PluginService.shared.addPlugin(
+                    plugin,
+                    conflictResolution: overwriteDuplicates ? .overwrite : .reject
+                )
             } catch {
                 let name = plugin.name ?? plugin.id
                 failures.append((candidate.id, "\(name): \(error.localizedDescription)"))

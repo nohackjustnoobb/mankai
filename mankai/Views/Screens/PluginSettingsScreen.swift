@@ -46,8 +46,13 @@ struct PluginSettingsScreen: View {
                             }
 
                             if let version = plugin.version {
-                                Text("v\(version)")
-                                    .smallTagStyle()
+                                Text(
+                                    String(
+                                        format: String(localized: "versionFormat"),
+                                        version
+                                    )
+                                )
+                                .smallTagStyle()
                             }
 
                             if plugin is Editable,

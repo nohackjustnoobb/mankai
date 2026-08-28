@@ -131,7 +131,12 @@ struct ChaptersModal: View {
                 }
                 .navigationTitleWithSubtitle(
                     title: Text(LocalizedStringKey(chapterGroupTitle)),
-                    subtitle: Text("\(chapters.count) chapters")
+                    subtitle: Text(
+                        String(
+                            format: String(localized: "chapterCountFormat"),
+                            chapters.count
+                        )
+                    )
                 )
                 .onAppear {
                     if let record = record {

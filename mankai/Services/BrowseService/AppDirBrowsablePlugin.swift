@@ -29,11 +29,7 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
             "AppDirBrowsablePlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
         )
 
-        try super.init(url: mangaDir, id: "mankai.books", name: nil)
-    }
-
-    override var shouldSync: Bool {
-        false
+        try super.init(url: mangaDir, id: "mankai.books", name: nil, shouldSync: false)
     }
 
     override var name: String? {
