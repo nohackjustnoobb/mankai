@@ -73,14 +73,13 @@ struct NfsConnectionConfiguration {
     }
 }
 
-struct NfsEntry {
-    let name: String
-    let isDirectory: Bool
-    let isRegularFile: Bool
-}
-
 /// Owns one mounted NFS client and remounts the export after a failed operation.
-actor NfsSession {
+actor NfsSession: BrowsableSession {
+    typealias Config = NfsConnectionConfiguration
+
+    static let backendName = "NFS"
+    static let logger = Logger.nfsBrowsablePlugin
+
     nonisolated let configuration: NfsConnectionConfiguration
 
     private var client: NFSClient?
@@ -120,7 +119,7 @@ actor NfsSession {
         }
     }
 
-    func list(path: String) async throws -> [NfsEntry] {
+    func list(path: String) async throws -> [BrowsableSessionEntry] {
         let client = try await connectedClient()
         let nfsPath = path.isEmpty ? "/" : path
 
@@ -135,7 +134,7 @@ actor NfsSession {
             return values.compactMap { value in
                 guard let name = value[.nameKey] as? String else { return nil }
                 let type = value[.fileResourceTypeKey] as? URLFileResourceType
-                return NfsEntry(
+                return BrowsableSessionEntry(
                     name: name,
                     isDirectory: type == .directory,
                     isRegularFile: type == .regular
@@ -147,7 +146,7 @@ actor NfsSession {
         }
     }
 
-    func downloadData(path: String) async throws -> Data {
+    func download(path: String) async throws -> Data {
         let client = try await connectedClient()
         do {
             return try await withCheckedThrowingContinuation { continuation in
@@ -305,54 +304,17 @@ actor NfsSession {
     }
 }
 
-final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
-    let configuration: NfsConnectionConfiguration
-
-    var importsEntity: Entity {
-        Entity(
-            path: "imports",
-            displayName: "imports",
-            name: "imports",
-            type: .directory
-        )
-    }
-
-    private var session: NfsSession
-    private var temporaryDirectory: URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("nfs", isDirectory: true)
-            .appendingPathComponent(id, isDirectory: true)
-    }
+final class NfsBrowsablePlugin:
+    GenericBrowsablePlugin<NfsConnectionConfiguration, NfsSession>
+{
 
     /// Creates a new NFS plugin after mounting the export and resolving its identity.
     convenience init(session: NfsSession, name: String?) async throws {
         do {
-            let rootEntries = try await session.list(path: "")
-            let identity: (id: String, shouldSync: Bool)
-
-            if rootEntries.contains(where: { $0.name == ".mankai" && $0.isRegularFile }) {
-                let data = try await session.downloadData(path: ".mankai")
-                guard let value = String(data: data, encoding: .utf8) else {
-                    throw MankaiErrorCode.browseNfsInvalidPlugin.makeError()
-                }
-
-                let id = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !id.isEmpty else {
-                    throw MankaiErrorCode.browseNfsInvalidPlugin.makeError()
-                }
-                identity = (id: id, shouldSync: true)
-            } else {
-                let id = UUID().uuidString
-                do {
-                    try await session.upload(data: Data(id.utf8), path: ".mankai")
-                    identity = (id: id, shouldSync: true)
-                } catch {
-                    Logger.nfsBrowsablePlugin.warning(
-                        "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-                    )
-                    identity = (id: id, shouldSync: false)
-                }
-            }
+            let identity = try await BrowsableFileUtilities.resolveIdentity(
+                using: session,
+                invalidPluginError: MankaiErrorCode.browseNfsInvalidPlugin.makeError()
+            )
 
             try self.init(
                 id: identity.id,
@@ -378,12 +340,14 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: NfsSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        self.configuration = configuration
-        self.session = session ?? NfsSession(configuration: configuration)
-
-        try super.init(id: id, shouldSync: shouldSync)
-        displayName = name.trimmed
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try super.init(
+            id: id,
+            name: name,
+            configuration: configuration,
+            session: session,
+            temporaryDirectoryName: "nfs",
+            shouldSync: shouldSync
+        )
     }
 
     var host: String {
@@ -392,15 +356,6 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     var export: String {
         configuration.export
-    }
-
-    deinit {
-        let session = session
-        let temporaryDirectory = temporaryDirectory
-        Task {
-            await session.disconnect()
-        }
-        try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     override var name: String? {
@@ -413,10 +368,6 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var systemImageName: String {
         "network"
-    }
-
-    override var canDownload: Bool {
-        false
     }
 
     static func loadPlugins() -> [NfsBrowsablePlugin] {
@@ -491,96 +442,6 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin, Importable {
             try NfsBrowsablePluginModel.deleteOne(db, key: id)
         }
         try super.deletePlugin()
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
-
-        let session = session
-        Task {
-            await session.disconnect()
-        }
     }
 
-    // MARK: - NFS backend hooks
-
-    override func entries(path: String?) async throws -> [BrowsableEntry] {
-        let remotePath = path ?? ""
-        let entries = try await session.list(path: remotePath)
-
-        return entries.compactMap { entry in
-            guard !entry.name.isEmpty, !entry.name.hasPrefix(".") else {
-                return nil
-            }
-
-            let entryPath = remotePath.isEmpty ? entry.name : "\(remotePath)/\(entry.name)"
-            return BrowsableEntry(
-                path: entryPath,
-                isDirectory: entry.isDirectory,
-                isRegularFile: entry.isRegularFile
-            )
-        }
-    }
-
-    override func parserFile(relativePath: String, cacheKey: String) async throws -> ParserFile {
-        NfsParserFile(
-            cacheKey: cacheKey,
-            remotePath: relativePath,
-            fileName: (relativePath as NSString).lastPathComponent,
-            session: session,
-            temporaryDirectory: temporaryDirectory
-        )
-    }
-
-    override func hashFile(relativePath: String) async throws -> String {
-        let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
-        let fileURL = try await file.getUrl()
-        return try BrowsableFileUtilities.sha256(of: fileURL)
-    }
-
-    override func isOnline() async throws -> Bool {
-        do {
-            _ = try await session.list(path: "")
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    func importFile(from source: URL) async throws {
-        let needsScopeAccess = source.startAccessingSecurityScopedResource()
-        defer {
-            if needsScopeAccess {
-                source.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        let importPath = importsEntity.path
-        let rootEntries = try await session.list(path: "")
-        if !rootEntries.contains(where: { $0.name == importPath && $0.isDirectory }) {
-            do {
-                try await session.createDirectory(path: importPath)
-            } catch {
-                let refreshedEntries = try await session.list(path: "")
-                guard
-                    refreshedEntries.contains(where: {
-                        $0.name == importPath && $0.isDirectory
-                    })
-                else {
-                    throw error
-                }
-            }
-        }
-
-        let existingEntries = try await session.list(path: importPath)
-        let existingNames = Set(existingEntries.map(\.name))
-        let fileName = BrowsableFileUtilities.uniqueFileName(
-            for: source,
-            existingNames: existingNames
-        )
-        try await session.upload(file: source, path: "\(importPath)/\(fileName)")
-        try Task.checkCancellation()
-
-        let importedEntries = try await session.list(path: importPath)
-        guard importedEntries.contains(where: { $0.name == fileName && $0.isRegularFile }) else {
-            throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
-        }
-    }
 }

@@ -57,7 +57,12 @@ struct SmbConnectionConfiguration {
 }
 
 /// Owns one authenticated SMB session and recreates it after a connection failure.
-actor SmbSession {
+actor SmbSession: BrowsableSession {
+    typealias Config = SmbConnectionConfiguration
+
+    static let backendName = "SMB"
+    static let logger = Logger.smbBrowsablePlugin
+
     nonisolated let configuration: SmbConnectionConfiguration
     private var connection: SMB.Connection?
     private var connectionTask: Task<Void, Error>?
@@ -95,6 +100,71 @@ actor SmbSession {
         connectionTask?.cancel()
         connectionTask = nil
         invalidateConnection()
+    }
+
+    func list(path: String) async throws -> [BrowsableSessionEntry] {
+        try await withConnectedConnection { connection in
+            try connection.listDirectory(at: path).map { entry in
+                let isDirectory = entry.stat.type == .directory
+                return BrowsableSessionEntry(
+                    name: entry.name,
+                    isDirectory: isDirectory,
+                    isRegularFile: !isDirectory
+                )
+            }
+        }
+    }
+
+    func download(path: String) async throws -> Data {
+        try await withConnectedConnection { connection in
+            try connection.loadFile(at: path)
+        }
+    }
+
+    func download(path: String, to localURL: URL) async throws {
+        try await withConnectedConnection { connection in
+            try connection.downloadFile(remote: path, local: localURL) {
+                completed, total, _, _ in
+                let progress = total > 0 ? Double(completed) / Double(total) : 1
+                Logger.smbBrowsablePlugin.debug(
+                    "Downloading \(path): \(Int(progress * 100))%"
+                )
+                return !Task.isCancelled
+            }
+            try Task.checkCancellation()
+        }
+    }
+
+    func upload(data: Data, path: String) async throws {
+        try await withConnectedConnection { connection in
+            try connection.dumpToFile(data, to: path)
+        }
+    }
+
+    func upload(file: URL, path: String) async throws {
+        try await withConnectedConnection { connection in
+            try connection.uploadFile(local: file, remote: path) { _, _, _, _ in
+                !Task.isCancelled
+            }
+            try Task.checkCancellation()
+        }
+    }
+
+    func createDirectory(path: String) async throws {
+        try await withConnectedConnection { connection in
+            try connection.makeDirectory(at: path, makePath: true)
+        }
+    }
+
+    func isOnline() async -> Bool {
+        do {
+            _ = try await withConnectedConnection { connection in
+                try connection.echo()
+            }
+            return true
+        } catch {
+            return false
+        }
     }
 
     func withConnectedConnection<T>(
@@ -152,61 +222,17 @@ actor SmbSession {
     }
 }
 
-final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
-    var configuration: SmbConnectionConfiguration {
-        didSet {
-            let previousSession = session
-            session = SmbSession(configuration: configuration)
-            Task {
-                await previousSession.disconnect()
-            }
-        }
-    }
-
-    var importsEntity: Entity {
-        Entity(
-            path: "imports",
-            displayName: "imports",
-            name: "imports",
-            type: .directory
-        )
-    }
-
-    private var session: SmbSession
-    private var temporaryDirectory: URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("smb", isDirectory: true)
-            .appendingPathComponent(id, isDirectory: true)
-    }
+final class SmbBrowsablePlugin:
+    GenericBrowsablePlugin<SmbConnectionConfiguration, SmbSession>
+{
 
     /// Creates a new SMB plugin using an existing session.
     convenience init(session: SmbSession, name: String?) async throws {
         do {
-            let identity = try await session.withConnectedConnection { connection in
-                if try connection.itemExists(at: ".mankai") == .file {
-                    let data = try connection.loadFile(at: ".mankai")
-                    guard let value = String(data: data, encoding: .utf8) else {
-                        throw MankaiErrorCode.browseSmbInvalidPlugin.makeError()
-                    }
-
-                    let id = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !id.isEmpty else {
-                        throw MankaiErrorCode.browseSmbInvalidPlugin.makeError()
-                    }
-                    return (id: id, shouldSync: true)
-                }
-
-                let id = UUID().uuidString
-                do {
-                    try connection.dumpToFile(Data(id.utf8), to: ".mankai")
-                    return (id: id, shouldSync: true)
-                } catch {
-                    Logger.smbBrowsablePlugin.warning(
-                        "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-                    )
-                    return (id: id, shouldSync: false)
-                }
-            }
+            let identity = try await BrowsableFileUtilities.resolveIdentity(
+                using: session,
+                invalidPluginError: MankaiErrorCode.browseSmbInvalidPlugin.makeError()
+            )
 
             try self.init(
                 id: identity.id,
@@ -232,12 +258,14 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: SmbSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        self.configuration = configuration
-        self.session = session ?? SmbSession(configuration: configuration)
-
-        try super.init(id: id, shouldSync: shouldSync)
-        displayName = name.trimmed
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try super.init(
+            id: id,
+            name: name,
+            configuration: configuration,
+            session: session,
+            temporaryDirectoryName: "smb",
+            shouldSync: shouldSync
+        )
     }
 
     var host: String {
@@ -260,15 +288,6 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
         configuration.password
     }
 
-    deinit {
-        let session = session
-        let temporaryDirectory = temporaryDirectory
-        Task {
-            await session.disconnect()
-        }
-        try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
-    }
-
     override var name: String? {
         displayName ?? (port == 445 ? "\(host)/\(share)" : "\(host):\(port)/\(share)")
     }
@@ -279,10 +298,6 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var systemImageName: String {
         "network"
-    }
-
-    override var canDownload: Bool {
-        false
     }
 
     static func loadPlugins() -> [SmbBrowsablePlugin] {
@@ -363,103 +378,5 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin, Importable {
             try SmbBrowsablePluginModel.deleteOne(db, key: id)
         }
         try super.deletePlugin()
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
-
-        let session = session
-        Task {
-            await session.disconnect()
-        }
     }
-
-    // MARK: - SMB backend hooks
-
-    override func entries(path: String?) async throws -> [BrowsableEntry] {
-        let remotePath = path ?? ""
-        let entries = try await session.withConnectedConnection { connection in
-            try connection.listDirectory(at: remotePath).map {
-                (
-                    name: $0.name,
-                    isDirectory: $0.stat.type == .directory
-                )
-            }
-        }
-
-        return entries.compactMap { entry in
-            guard !entry.name.hasPrefix(".") else {
-                return nil
-            }
-
-            let entryPath =
-                remotePath.isEmpty
-                ? entry.name
-                : "\(remotePath)/\(entry.name)"
-            return BrowsableEntry(
-                path: entryPath,
-                isDirectory: entry.isDirectory,
-                isRegularFile: !entry.isDirectory
-            )
-        }
-    }
-
-    override func parserFile(relativePath: String, cacheKey: String) async throws -> ParserFile {
-        return SmbParserFile(
-            cacheKey: cacheKey,
-            remotePath: relativePath,
-            fileName: (relativePath as NSString).lastPathComponent,
-            session: session,
-            temporaryDirectory: temporaryDirectory
-        )
-    }
-
-    override func hashFile(relativePath: String) async throws -> String {
-        let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
-        let fileURL = try await file.getUrl()
-        return try BrowsableFileUtilities.sha256(of: fileURL)
-    }
-
-    override func isOnline() async throws -> Bool {
-        do {
-            _ = try await session.withConnectedConnection { connection in
-                try connection.echo()
-            }
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    func importFile(from source: URL) async throws {
-        let importPath = importsEntity.path
-        let needsScopeAccess = source.startAccessingSecurityScopedResource()
-        defer {
-            if needsScopeAccess {
-                source.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        try await session.withConnectedConnection { connection in
-            if try connection.itemExists(at: importPath) != .directory {
-                do {
-                    try connection.makeDirectory(at: importPath, makePath: true)
-                } catch {
-                    guard try connection.itemExists(at: importPath) == .directory else {
-                        throw error
-                    }
-                }
-            }
-
-            let existingEntries = try connection.listDirectory(at: importPath)
-            let existingNames = Set(existingEntries.map(\.name))
-            let fileName = BrowsableFileUtilities.uniqueFileName(
-                for: source,
-                existingNames: existingNames
-            )
-            let remotePath = "\(importPath)/\(fileName)"
-            try connection.uploadFile(local: source, remote: remotePath) { _, _, _, _ in
-                !Task.isCancelled
-            }
-            try Task.checkCancellation()
-        }
-    }
-
 }

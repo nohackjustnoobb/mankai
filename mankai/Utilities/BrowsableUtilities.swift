@@ -60,6 +60,34 @@ actor ParserFileDownloadRegistry {
 }
 
 enum BrowsableFileUtilities {
+    static func resolveIdentity<Session: BrowsableSession>(
+        using session: Session,
+        invalidPluginError: @autoclosure () -> Error
+    ) async throws -> (id: String, shouldSync: Bool) {
+        if let data = try await session.fileIfExists(path: ".mankai") {
+            guard let value = String(data: data, encoding: .utf8) else {
+                throw invalidPluginError()
+            }
+
+            let id = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !id.isEmpty else {
+                throw invalidPluginError()
+            }
+            return (id: id, shouldSync: true)
+        }
+
+        let id = UUID().uuidString
+        do {
+            try await session.upload(data: Data(id.utf8), path: ".mankai")
+            return (id: id, shouldSync: true)
+        } catch {
+            Session.logger.warning(
+                "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
+            )
+            return (id: id, shouldSync: false)
+        }
+    }
+
     static func parserCacheURL(for relativePath: String, in directory: URL) -> URL {
         let hash = SHA256.hash(data: Data(relativePath.utf8))
             .map { String(format: "%02x", $0) }

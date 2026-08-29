@@ -48,7 +48,12 @@ private struct MankaiWebDavAccount: WebDAVAccount {
 }
 
 /// Serializes access to the callback-based WebDAV client.
-actor WebDavSession {
+actor WebDavSession: BrowsableSession {
+    typealias Config = WebDavConnectionConfiguration
+
+    static let backendName = "WebDAV"
+    static let logger = Logger.webDavBrowsablePlugin
+
     nonisolated let configuration: WebDavConnectionConfiguration
 
     private let client = WebDAV()
@@ -62,8 +67,10 @@ actor WebDavSession {
         )
     }
 
-    func list(path: String) async throws -> [WebDAVFile] {
-        try await withCheckedThrowingContinuation { continuation in
+    func disconnect() async {}
+
+    func list(path: String) async throws -> [BrowsableSessionEntry] {
+        let files: [WebDAVFile] = try await withCheckedThrowingContinuation { continuation in
             client.listFiles(
                 atPath: path,
                 account: account,
@@ -79,6 +86,13 @@ actor WebDavSession {
                         throwing: MankaiErrorCode.browseWebDavRequestFailed.makeError())
                 }
             }
+        }
+        return files.map { file in
+            BrowsableSessionEntry(
+                name: file.fileName,
+                isDirectory: file.isDirectory,
+                isRegularFile: !file.isDirectory
+            )
         }
     }
 
@@ -106,7 +120,7 @@ actor WebDavSession {
         return data
     }
 
-    func createFolder(path: String) async throws {
+    func createDirectory(path: String) async throws {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<Void, Error>) in
             client.createFolder(
@@ -164,60 +178,17 @@ actor WebDavSession {
     }
 }
 
-final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
-    var configuration: WebDavConnectionConfiguration {
-        didSet {
-            session = WebDavSession(configuration: configuration)
-        }
-    }
-
-    var importsEntity: Entity {
-        Entity(
-            path: "imports",
-            displayName: "imports",
-            name: "imports",
-            type: .directory
-        )
-    }
-
-    private var session: WebDavSession
-    private var temporaryDirectory: URL {
-        FileManager.default.temporaryDirectory
-            .appendingPathComponent("webdav", isDirectory: true)
-            .appendingPathComponent(id, isDirectory: true)
-    }
+final class WebDavBrowsablePlugin:
+    GenericBrowsablePlugin<WebDavConnectionConfiguration, WebDavSession>
+{
 
     /// Creates a new WebDAV plugin after validating the connection and resolving its identity.
     convenience init(session: WebDavSession, name: String?) async throws {
         do {
-            let rootFiles = try await session.list(path: "")
-            let identity: (id: String, shouldSync: Bool)
-
-            if rootFiles.contains(where: { $0.fileName == ".mankai" }) {
-                guard let data = try await session.downloadIfExists(path: ".mankai"),
-                    let value = String(data: data, encoding: .utf8)
-                else {
-                    throw MankaiErrorCode.browseWebDavInvalidPlugin.makeError()
-                }
-
-                let id = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !id.isEmpty else {
-                    throw MankaiErrorCode.browseWebDavInvalidPlugin.makeError()
-                }
-                identity = (id: id, shouldSync: true)
-            } else {
-                let id = UUID().uuidString
-                let data = Data(id.utf8)
-                do {
-                    try await session.upload(data: data, path: ".mankai")
-                    identity = (id: id, shouldSync: true)
-                } catch {
-                    Logger.webDavBrowsablePlugin.warning(
-                        "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-                    )
-                    identity = (id: id, shouldSync: false)
-                }
-            }
+            let identity = try await BrowsableFileUtilities.resolveIdentity(
+                using: session,
+                invalidPluginError: MankaiErrorCode.browseWebDavInvalidPlugin.makeError()
+            )
 
             try self.init(
                 id: identity.id,
@@ -242,12 +213,14 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
         session: WebDavSession? = nil,
         shouldSync: Bool = true
     ) throws {
-        self.configuration = configuration
-        self.session = session ?? WebDavSession(configuration: configuration)
-
-        try super.init(id: id, shouldSync: shouldSync)
-        displayName = name.trimmed
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
+        try super.init(
+            id: id,
+            name: name,
+            configuration: configuration,
+            session: session,
+            temporaryDirectoryName: "webdav",
+            shouldSync: shouldSync
+        )
     }
 
     var baseURL: URL {
@@ -260,10 +233,6 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     var password: String? {
         configuration.password
-    }
-
-    deinit {
-        try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
     override var name: String? {
@@ -282,10 +251,6 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
 
     override var systemImageName: String {
         "network"
-    }
-
-    override var canDownload: Bool {
-        false
     }
 
     static func loadPlugins() -> [WebDavBrowsablePlugin] {
@@ -362,82 +327,6 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin, Importable {
             try WebDavBrowsablePluginModel.deleteOne(db, key: id)
         }
         try super.deletePlugin()
-        try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
-    }
-
-    // MARK: - WebDAV backend hooks
-
-    override func entries(path: String?) async throws -> [BrowsableEntry] {
-        let remotePath = path ?? ""
-        let files = try await session.list(path: remotePath)
-
-        return files.compactMap { file in
-            let fileName = file.fileName
-            guard !fileName.isEmpty, !fileName.hasPrefix(".") else {
-                return nil
-            }
-
-            let entryPath = remotePath.isEmpty ? fileName : "\(remotePath)/\(fileName)"
-            return BrowsableEntry(
-                path: entryPath,
-                isDirectory: file.isDirectory,
-                isRegularFile: !file.isDirectory
-            )
-        }
-    }
-
-    override func parserFile(relativePath: String, cacheKey: String) async throws -> ParserFile {
-        WebDavParserFile(
-            cacheKey: cacheKey,
-            remotePath: relativePath,
-            fileName: (relativePath as NSString).lastPathComponent,
-            session: session,
-            temporaryDirectory: temporaryDirectory
-        )
-    }
-
-    override func hashFile(relativePath: String) async throws -> String {
-        let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
-        let fileURL = try await file.getUrl()
-        return try BrowsableFileUtilities.sha256(of: fileURL)
-    }
-
-    override func isOnline() async throws -> Bool {
-        do {
-            _ = try await session.list(path: "")
-            return true
-        } catch {
-            return false
-        }
-    }
-
-    func importFile(from source: URL) async throws {
-        let needsScopeAccess = source.startAccessingSecurityScopedResource()
-        defer {
-            if needsScopeAccess {
-                source.stopAccessingSecurityScopedResource()
-            }
-        }
-
-        let rootFiles = try await session.list(path: "")
-        let importPath = importsEntity.path
-        if !rootFiles.contains(where: { $0.fileName == importPath && $0.isDirectory }) {
-            try await session.createFolder(path: importPath)
-        }
-
-        let existingFiles = try await session.list(path: importPath)
-        let existingNames = Set(existingFiles.map(\.fileName))
-        let fileName = BrowsableFileUtilities.uniqueFileName(
-            for: source,
-            existingNames: existingNames
-        )
-        try await session.upload(file: source, path: "\(importPath)/\(fileName)")
-        try Task.checkCancellation()
-
-        let importedFiles = try await session.list(path: importPath)
-        guard importedFiles.contains(where: { $0.fileName == fileName && !$0.isDirectory }) else {
-            throw MankaiErrorCode.browseWebDavRequestFailed.makeError()
-        }
     }
 
 }
