@@ -23,8 +23,6 @@ struct MangaModel {
     }
 }
 
-extension MangaModel: TableRecord {
-    static let databaseTableName = "manga"
-}
+extension MangaModel: TableRecord { static let databaseTableName = "manga" }
 
 extension MangaModel: Codable, FetchableRecord, PersistableRecord {}

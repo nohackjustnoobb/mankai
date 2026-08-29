@@ -28,9 +28,7 @@ struct BrowsablePluginMangaModel {
         try db.create(
             index: "browsablepluginmanga_on_path_parserId_pluginId",
             on: BrowsablePluginMangaModel.databaseTableName,
-            columns: ["path", "parserId", "pluginId"],
-            ifNotExists: true
-        )
+            columns: ["path", "parserId", "pluginId"], ifNotExists: true)
     }
 }
 

@@ -9,9 +9,7 @@ import SwiftUI
 import UIKit
 
 struct MainScreen: View {
-    private enum Tab: Hashable {
-        case home, library, browse, settings
-    }
+    private enum Tab: Hashable { case home, library, browse, settings }
 
     @State private var selectedTab: Tab = .home
     @State private var importedFiles: [URL] = []
@@ -25,33 +23,15 @@ struct MainScreen: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeTab()
-                .tag(Tab.home)
-                .tabItem {
-                    Label("home", systemImage: "house")
-                }
-            LibraryTab()
-                .tag(Tab.library)
-                .tabItem {
-                    Label("library", systemImage: "books.vertical.fill")
-                }
-            BrowseTab(importedFiles: $importedFiles)
-                .tag(Tab.browse)
-                .tabItem {
-                    Label("browse", systemImage: "folder.fill")
-                }
-            SettingsTab()
-                .tag(Tab.settings)
-                .tabItem {
-                    Label("settings", systemImage: "gearshape")
-                }
+            HomeTab().tag(Tab.home).tabItem { Label("home", systemImage: "house") }
+            LibraryTab().tag(Tab.library)
+                .tabItem { Label("library", systemImage: "books.vertical.fill") }
+            BrowseTab(importedFiles: $importedFiles).tag(Tab.browse)
+                .tabItem { Label("browse", systemImage: "folder.fill") }
+            SettingsTab().tag(Tab.settings).tabItem { Label("settings", systemImage: "gearshape") }
         }
-        .overlay(alignment: .bottom) {
-            NotificationContainerView()
-        }
-        .sheet(item: $pluginImportRequest) { request in
-            AddPluginsModal(sources: request.sources)
-        }
+        .overlay(alignment: .bottom) { NotificationContainerView() }
+        .sheet(item: $pluginImportRequest) { request in AddPluginsModal(sources: request.sources) }
         .onOpenURL { url in
             Logger.ui.info("Received URL: \(url)")
 
@@ -61,9 +41,7 @@ struct MainScreen: View {
                 return
             }
 
-            if url.scheme?.lowercased() == "mankai" {
-                handleMankaiURLs([url])
-            }
+            if url.scheme?.lowercased() == "mankai" { handleMankaiURLs([url]) }
         }
         .onChange(of: scenePhase, initial: true) { _, newPhase in
             guard newPhase == .active else { return }
@@ -76,20 +54,20 @@ struct MainScreen: View {
             lastCheckedPasteboardChangeCount = changeCount
 
             var seenURLs = Set<URL>()
-            let urls = pasteboard.items.flatMap { item in
-                item.values.compactMap { value -> URL? in
-                    if let url = value as? URL {
-                        return url
-                    }
+            let urls = pasteboard.items
+                .flatMap { item in
+                    item.values.compactMap { value -> URL? in
+                        if let url = value as? URL { return url }
 
-                    guard let value = value as? String else { return nil }
-                    let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                    return URL(string: trimmedValue)
+                        guard let value = value as? String else { return nil }
+                        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                        return URL(string: trimmedValue)
+                    }
                 }
-            }.filter { url in
-                guard url.scheme?.lowercased() == "mankai" else { return false }
-                return seenURLs.insert(url).inserted
-            }
+                .filter { url in
+                    guard url.scheme?.lowercased() == "mankai" else { return false }
+                    return seenURLs.insert(url).inserted
+                }
 
             guard !urls.isEmpty else { return }
             Logger.ui.info("Found \(urls.count) Mankai URL(s) in the pasteboard")
@@ -103,22 +81,17 @@ struct MainScreen: View {
         for url in urls {
             guard let host = url.host?.lowercased() else { continue }
 
-            switch host {
-            case "add-plugins":
+            switch host { case "add-plugins":
                 let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                let sources = (components?.queryItems ?? []).compactMap {
-                    item -> PluginImportSource? in
-                    guard
-                        let type = PluginImportSource.Kind(rawValue: item.name.lowercased()),
-                        let value = item.value,
-                        let decodedURL = Base62.decode(value),
-                        let pluginURL = URL(string: decodedURL)
-                    else {
-                        return nil
-                    }
+                let sources = (components?.queryItems ?? [])
+                    .compactMap { item -> PluginImportSource? in
+                        guard let type = PluginImportSource.Kind(rawValue: item.name.lowercased()),
+                            let value = item.value, let decodedURL = Base62.decode(value),
+                            let pluginURL = URL(string: decodedURL)
+                        else { return nil }
 
-                    return PluginImportSource(kind: type, url: pluginURL)
-                }
+                        return PluginImportSource(kind: type, url: pluginURL)
+                    }
 
                 guard !sources.isEmpty else {
                     Logger.ui.warning("No supported plugins found in URL: \(url)")
@@ -126,8 +99,7 @@ struct MainScreen: View {
                 }
 
                 plugins.append(contentsOf: sources)
-            default:
-                Logger.ui.warning("Unsupported host: \(host)")
+                default: Logger.ui.warning("Unsupported host: \(host)")
             }
         }
 

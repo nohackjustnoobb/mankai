@@ -23,22 +23,15 @@ struct DebugGetChapter: View {
                             if plugin.supports(.image) {
                                 NavigationLink(destination: {
                                     DebugGetImage(plugin: plugin, url: url)
-                                }) {
-                                    Text(url)
-                                        .lineLimit(1)
-                                        .truncationMode(.middle)
-                                }
+                                }) { Text(url).lineLimit(1).truncationMode(.middle) }
                             } else {
-                                Text(url)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
+                                Text(url).lineLimit(1).truncationMode(.middle)
                             }
                         }
                     }
                 }
             } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task {

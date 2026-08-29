@@ -16,27 +16,17 @@ struct SettingsHeaderView: View {
     var body: some View {
         Section {
             VStack(alignment: .center) {
-                image
-                    .font(.title)
-                    .foregroundColor(.white)
+                image.font(.title).foregroundColor(.white)
                     .background(
-                        RoundedRectangle(cornerRadius: 14).frame(
-                            width: 56, height: 56
-                        ).foregroundColor(self.color)
+                        RoundedRectangle(cornerRadius: 14).frame(width: 56, height: 56)
+                            .foregroundColor(self.color)
                     )
                     .padding(.top, 12)
-                Text(title)
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .padding(.top, 20)
+                Text(title).font(.title3).fontWeight(.semibold).padding(.top, 20)
                     .padding(.bottom, 2)
-                Text(description)
-                    .font(.subheadline)
-                    .multilineTextAlignment(.center)
+                Text(description).font(.subheadline).multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity).padding(.vertical, 16).padding(.horizontal, 4)
         } header: {
             Spacer(minLength: 0)
         }

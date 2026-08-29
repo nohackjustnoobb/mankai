@@ -25,8 +25,6 @@ struct FsPluginModel {
     }
 }
 
-extension FsPluginModel: TableRecord {
-    static let databaseTableName = "fsplugin"
-}
+extension FsPluginModel: TableRecord { static let databaseTableName = "fsplugin" }
 
 extension FsPluginModel: Codable, FetchableRecord, PersistableRecord {}

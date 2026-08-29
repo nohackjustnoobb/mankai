@@ -34,9 +34,7 @@ struct RecordModel {
     }
 }
 
-extension RecordModel: TableRecord {
-    static let databaseTableName = "record"
-}
+extension RecordModel: TableRecord { static let databaseTableName = "record" }
 
 extension RecordModel: Codable, FetchableRecord, PersistableRecord {}
 

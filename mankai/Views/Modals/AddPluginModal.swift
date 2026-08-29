@@ -15,9 +15,7 @@ struct AddPluginModal: View {
         case fsPlugin
         case httpPlugin
 
-        var id: String {
-            rawValue
-        }
+        var id: String { rawValue }
     }
 
     @State private var selectedPluginType: PluginType = .jsPlugin
@@ -41,16 +39,9 @@ struct AddPluginModal: View {
                 Section {
                     Picker("pluginType", selection: $selectedPluginType) {
                         ForEach(PluginType.allCases) { type in
-                            switch type {
-                            case .jsPlugin:
-                                Text("js")
-                                    .tag(type)
-                            case .fsPlugin:
-                                Text("fs")
-                                    .tag(type)
-                            case .httpPlugin:
-                                Text("http")
-                                    .tag(type)
+                            switch type { case .jsPlugin: Text("js").tag(type) case .fsPlugin:
+                                Text("fs").tag(type)
+                                case .httpPlugin: Text("http").tag(type)
                             }
                         }
                     }
@@ -58,15 +49,11 @@ struct AddPluginModal: View {
 
                 if selectedPluginType == .jsPlugin {
                     Section {
-                        Toggle(isOn: $useJson) {
-                            Text("useJson")
-                        }
+                        Toggle(isOn: $useJson) { Text("useJson") }
                         if useJson {
-                            TextField("json", text: $jsonInput)
-                                .textInputAutocapitalization(.never)
+                            TextField("json", text: $jsonInput).textInputAutocapitalization(.never)
                         } else {
-                            TextField("url", text: $urlInput)
-                                .keyboardType(.URL)
+                            TextField("url", text: $urlInput).keyboardType(.URL)
                                 .textInputAutocapitalization(.never)
                         }
                     } header: {
@@ -74,9 +61,7 @@ struct AddPluginModal: View {
                     }
                 } else if selectedPluginType == .fsPlugin {
                     Section {
-                        Button(action: {
-                            showFileImporter = true
-                        }) {
+                        Button(action: { showFileImporter = true }) {
                             HStack {
                                 Text("selectFolder")
                                 Spacer()
@@ -84,8 +69,7 @@ struct AddPluginModal: View {
                                     Text(selectedFolder.lastPathComponent)
                                         .foregroundColor(.secondary)
                                 } else {
-                                    Text("none")
-                                        .foregroundColor(.secondary)
+                                    Text("none").foregroundColor(.secondary)
                                 }
                             }
                         }
@@ -98,53 +82,45 @@ struct AddPluginModal: View {
                     }
                 } else if selectedPluginType == .httpPlugin {
                     Section {
-                        TextField("url", text: $urlInput)
-                            .keyboardType(.URL)
+                        TextField("url", text: $urlInput).keyboardType(.URL)
                             .textInputAutocapitalization(.never)
                     } header: {
                         Text("httpPluginSettings")
                     }
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle("addPlugin")
+            .navigationBarTitleDisplayMode(.inline).navigationTitle("addPlugin")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("cancel")
-                    }
+                    Button(action: { dismiss() }) { Text("cancel") }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(
-                        action: {
-                            Task {
-                                isProcessing = true
-                                defer { isProcessing = false }
+                    Button(action: {
+                        Task {
+                            isProcessing = true
+                            defer { isProcessing = false }
 
-                                switch selectedPluginType {
-                                case .jsPlugin:
-                                    let plugin: JsPlugin?
+                            switch selectedPluginType { case .jsPlugin:
+                                let plugin: JsPlugin?
 
-                                    if useJson {
-                                        plugin = jsonInput.data(using: .utf8)
-                                            .flatMap {
-                                                try? JSONSerialization.jsonObject(with: $0)
-                                                    as? [String: Any]
-                                            }
-                                            .flatMap { JsPlugin.fromJson($0) }
-                                    } else {
-                                        plugin = await JsPlugin.fromUrl(urlInput)
-                                    }
+                                if useJson {
+                                    plugin = jsonInput.data(using: .utf8)
+                                        .flatMap {
+                                            try? JSONSerialization.jsonObject(with: $0)
+                                                as? [String: Any]
+                                        }
+                                        .flatMap { JsPlugin.fromJson($0) }
+                                } else {
+                                    plugin = await JsPlugin.fromUrl(urlInput)
+                                }
 
-                                    guard let plugin = plugin else {
-                                        errorMessage = String(localized: "failedToParsePlugin")
-                                        showError = true
-                                        return
-                                    }
+                                guard let plugin = plugin else {
+                                    errorMessage = String(localized: "failedToParsePlugin")
+                                    showError = true
+                                    return
+                                }
 
-                                    addPlugin(plugin)
+                                addPlugin(plugin)
                                 case .fsPlugin:
                                     guard let selectedFolder = selectedFolder else {
                                         errorMessage = String(localized: "noFolderSelected")
@@ -182,38 +158,26 @@ struct AddPluginModal: View {
                                     }
 
                                     addPlugin(plugin)
-                                }
                             }
                         }
-                    ) {
-                        if isProcessing {
-                            ProgressView()
-                        } else {
-                            Text("add")
-                        }
-                    }
+                    }) { if isProcessing { ProgressView() } else { Text("add") } }
                     .disabled(
                         isProcessing
                             || (selectedPluginType == .jsPlugin
                                 && (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
                             || (selectedPluginType == .fsPlugin && selectedFolder == nil)
-                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty)
-                    )
+                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
                 }
             }
             .fileImporter(
-                isPresented: $showFileImporter,
-                allowedContentTypes: [.folder],
+                isPresented: $showFileImporter, allowedContentTypes: [.folder],
                 allowsMultipleSelection: false
             ) { result in
-                switch result {
-                case .success(let urls):
-                    if let url = urls.first {
-                        selectedFolder = url
-                    }
-                case .failure(let error):
-                    errorMessage = error.localizedDescription
-                    showError = true
+                switch result { case .success(let urls):
+                    if let url = urls.first { selectedFolder = url }
+                    case .failure(let error):
+                        errorMessage = error.localizedDescription
+                        showError = true
                 }
             }
             .alert("failedToAddPlugin", isPresented: $showError) {
@@ -221,34 +185,22 @@ struct AddPluginModal: View {
             } message: {
                 Text(errorMessage)
             }
-            .alert(
-                "duplicatePluginTitle",
-                isPresented: duplicatePluginIsPresented
-            ) {
-                Button("overwrite", role: .destructive) {
-                    overwriteDuplicatePlugin()
-                }
-                Button("cancel", role: .cancel) {
-                    duplicatePlugin = nil
-                }
+            .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
+                Button("overwrite", role: .destructive) { overwriteDuplicatePlugin() }
+                Button("cancel", role: .cancel) { duplicatePlugin = nil }
             } message: {
                 if let duplicatePlugin {
                     Text(
                         String(
                             format: String(localized: "duplicatePluginIdMessageFormat"),
-                            duplicatePlugin.id
-                        )
-                    )
+                            duplicatePlugin.id))
                 }
             }
         }
     }
 
     private var duplicatePluginIsPresented: Binding<Bool> {
-        Binding(
-            get: { duplicatePlugin != nil },
-            set: { if !$0 { duplicatePlugin = nil } }
-        )
+        Binding(get: { duplicatePlugin != nil }, set: { if !$0 { duplicatePlugin = nil } })
     }
 
     private func addPlugin(_ plugin: Plugin) {
@@ -268,10 +220,7 @@ struct AddPluginModal: View {
         self.duplicatePlugin = nil
 
         do {
-            try PluginService.shared.addPlugin(
-                duplicatePlugin,
-                conflictResolution: .overwrite
-            )
+            try PluginService.shared.addPlugin(duplicatePlugin, conflictResolution: .overwrite)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

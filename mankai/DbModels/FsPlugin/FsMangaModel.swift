@@ -41,13 +41,9 @@ extension FsMangaModel: TableRecord {
 }
 
 extension FsMangaModel: Codable, FetchableRecord, PersistableRecord {
-    var cover: QueryInterfaceRequest<FsImageModel> {
-        request(for: FsMangaModel.cover)
-    }
+    var cover: QueryInterfaceRequest<FsImageModel> { request(for: FsMangaModel.cover) }
 
-    var chapters: QueryInterfaceRequest<FsChapterGroupModel> {
-        request(for: FsMangaModel.chapters)
-    }
+    var chapters: QueryInterfaceRequest<FsChapterGroupModel> { request(for: FsMangaModel.chapters) }
 
     var latestChapter: QueryInterfaceRequest<FsChapterModel> {
         FsChapterModel.filter(key: latestChapterId)

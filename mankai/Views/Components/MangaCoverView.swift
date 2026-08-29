@@ -24,16 +24,12 @@ struct MangaCoverView: View {
         ZStack(alignment: .topLeading) {
             if let image = image {
                 GeometryReader { proxy in
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
+                    Image(uiImage: image).resizable().scaledToFill()
+                        .frame(width: proxy.size.width, height: proxy.size.height).clipped()
                 }
 
             } else if isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemGray6))
             } else {
                 Group {
@@ -43,90 +39,61 @@ struct MangaCoverView: View {
                         Image(systemName: "exclamationmark.circle.fill")
                     }
                 }
-                .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(.systemGray6))
+                .font(.title2).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity).background(Color(.systemGray6))
             }
 
-            if let tag = tag, !tag.isEmpty {
-                tagView(tag)
-            }
+            if let tag = tag, !tag.isEmpty { tagView(tag) }
         }
-        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
-        .onAppear {
-            loadImage()
-        }
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius)).onAppear { loadImage() }
     }
 
-    @ViewBuilder
-    private func tagView(_ tag: String) -> some View {
+    @ViewBuilder private func tagView(_ tag: String) -> some View {
         let color = tagColor ?? .green
 
         if #available(iOS 26.0, *) {
-            Text(tag)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+            Text(tag).font(.caption).fontWeight(.semibold).foregroundColor(.white)
+                .padding(.horizontal, 8).padding(.vertical, 4)
                 .glassEffect(
-                    .clear.tint(color),
-                    in: RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                    .clear.tint(color), in: RoundedRectangle(cornerRadius: effectiveCornerRadius)
                 )
                 .padding(effectiveCornerRadius / 4)
         } else {
-            Text(tag)
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
+            Text(tag).font(.caption).fontWeight(.semibold).foregroundColor(.white)
+                .padding(.horizontal, 12).padding(.vertical, 4)
                 .background(
                     UnevenRoundedRectangle(
-                        topLeadingRadius: effectiveCornerRadius,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: effectiveCornerRadius,
-                        topTrailingRadius: 0,
-                    ).fill(color.opacity(0.8)))
+                        topLeadingRadius: effectiveCornerRadius, bottomLeadingRadius: 0,
+                        bottomTrailingRadius: effectiveCornerRadius, topTrailingRadius: 0
+                    )
+                    .fill(color.opacity(0.8)))
         }
     }
 
     private var effectiveCornerRadius: CGFloat {
-        if let cornerRadius {
-            return cornerRadius
-        }
+        if let cornerRadius { return cornerRadius }
 
-        if #available(iOS 26.0, *) {
-            return 12
-        }
+        if #available(iOS 26.0, *) { return 12 }
 
         return 8
     }
 
     private func loadImage() {
-        guard let coverUrl = coverUrl,
-            let plugin = plugin,
-            image == nil
-        else {
-            return
-        }
+        guard let coverUrl = coverUrl, let plugin = plugin, image == nil else { return }
 
         isLoading = true
 
         Task {
-            if plugin.supports(.image),
-                let data = try? await plugin.getImage(coverUrl)
-            {
-                self.image = TempImage(data: data).uiImage(
-                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
-                    retainData: false
-                )
+            if plugin.supports(.image), let data = try? await plugin.getImage(coverUrl) {
+                self.image = TempImage(data: data)
+                    .uiImage(
+                        downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
+                        retainData: false)
             } else if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                self.image = TempImage(data: data).uiImage(
-                    downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
-                    retainData: false
-                )
+                self.image = TempImage(data: data)
+                    .uiImage(
+                        downsampledTo: downsampleImages ? UIApplication.windowBounds.size : nil,
+                        retainData: false)
             }
 
             self.isLoading = false

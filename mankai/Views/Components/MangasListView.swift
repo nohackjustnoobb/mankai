@@ -35,13 +35,9 @@ struct MangasListView: View {
 
     /// Complex initializer for multiple plugins with records and saved states
     init(
-        mangas: [String: Manga],
-        plugins: [String: Plugin],
-        keys: [String],
-        records: [String: RecordModel]? = nil,
-        saveds: [String: SavedModel]? = nil,
-        showNotRead: Bool = false,
-        allowUnsupportedDetailsNavigation: Bool = false
+        mangas: [String: Manga], plugins: [String: Plugin], keys: [String],
+        records: [String: RecordModel]? = nil, saveds: [String: SavedModel]? = nil,
+        showNotRead: Bool = false, allowUnsupportedDetailsNavigation: Bool = false
     ) {
         self.mangas = nil
         plugin = nil
@@ -58,8 +54,7 @@ struct MangasListView: View {
         LazyVGrid(
             columns: [
                 GridItem(
-                    .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12
-                )
+                    .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12)
             ], spacing: 12
         ) {
             if let mangas = mangas, let plugin = plugin {
@@ -68,46 +63,27 @@ struct MangasListView: View {
                     if plugin.supports(.mangaDetails) {
                         NavigationLink(
                             destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                        ) {
-                            MangaItemView(manga: manga, plugin: plugin)
-                        }
+                        ) { MangaItemView(manga: manga, plugin: plugin) }
                     } else {
                         MangaItemView(manga: manga, plugin: plugin)
                     }
                 }
-            } else if let mangasDict = mangasDict,
-                let pluginsDict = pluginsDict,
-                let keys = keys
-            {
+            } else if let mangasDict = mangasDict, let pluginsDict = pluginsDict, let keys = keys {
                 // Complex case: dictionaries with keys
                 ForEach(keys, id: \.self) { key in
-                    if let manga = mangasDict[key],
-                        let plugin = pluginsDict[key]
-                    {
-                        if plugin.supports(.mangaDetails)
-                            || allowUnsupportedDetailsNavigation
-                        {
+                    if let manga = mangasDict[key], let plugin = pluginsDict[key] {
+                        if plugin.supports(.mangaDetails) || allowUnsupportedDetailsNavigation {
                             NavigationLink(
-                                destination: MangaDetailsScreen(
-                                    plugin: plugin, manga: manga
-                                )
+                                destination: MangaDetailsScreen(plugin: plugin, manga: manga)
                             ) {
                                 MangaItemView(
-                                    manga: manga,
-                                    plugin: plugin,
-                                    record: records?[key],
-                                    saved: saveds?[key],
-                                    showNotRead: showNotRead
-                                )
+                                    manga: manga, plugin: plugin, record: records?[key],
+                                    saved: saveds?[key], showNotRead: showNotRead)
                             }
                         } else {
                             MangaItemView(
-                                manga: manga,
-                                plugin: plugin,
-                                record: records?[key],
-                                saved: saveds?[key],
-                                showNotRead: showNotRead
-                            )
+                                manga: manga, plugin: plugin, record: records?[key],
+                                saved: saveds?[key], showNotRead: showNotRead)
                         }
                     }
                 }

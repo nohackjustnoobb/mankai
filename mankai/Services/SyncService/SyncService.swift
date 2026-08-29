@@ -13,8 +13,7 @@ final class SyncService: ObservableObject {
     /// The shared singleton instance of SyncService.
     static let shared = SyncService()
     /// The list of available synchronization engines.
-    static let engines: [SyncEngine] =
-        [HttpEngine.shared, SupabaseEngine.shared]
+    static let engines: [SyncEngine] = [HttpEngine.shared, SupabaseEngine.shared]
 
     private init() {
         Logger.syncService.debug("Initializing SyncService")
@@ -37,9 +36,7 @@ final class SyncService: ObservableObject {
 
     /// The currently active synchronization engine.
     var engine: SyncEngine? {
-        get {
-            _engine
-        }
+        get { _engine }
         set {
             Logger.syncService.debug("Setting sync engine: \(newValue?.id ?? "nil")")
             _engine = newValue
@@ -49,19 +46,11 @@ final class SyncService: ObservableObject {
 
             subscribeToEngine()
 
-            if newValue != nil {
-                startPeriodicSync()
-            } else {
-                stopPeriodicSync()
-            }
+            if newValue != nil { startPeriodicSync() } else { stopPeriodicSync() }
 
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self.objectWillChange.send() }
 
-            Task {
-                try? await self.onEngineChange()
-            }
+            Task { try? await self.onEngineChange() }
         }
     }
 
@@ -89,11 +78,8 @@ final class SyncService: ObservableObject {
 
     private func subscribeToEngine() {
         engineCancellable?.cancel()
-        engineCancellable = engine?.objectWillChange.sink { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.objectWillChange.send()
-            }
-        }
+        engineCancellable = engine?.objectWillChange
+            .sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }
     }
 
     private func startPeriodicSync() {
@@ -109,10 +95,7 @@ final class SyncService: ObservableObject {
         }
 
         syncTimer = Timer.scheduledTimer(withTimeInterval: syncInterval, repeats: true) {
-            [weak self] _ in
-            Task {
-                try? await self?.sync()
-            }
+            [weak self] _ in Task { try? await self?.sync() }
         }
     }
 
@@ -132,9 +115,7 @@ final class SyncService: ObservableObject {
     /// - Throws: An error if the synchronization fails.
     func sync(wait: Bool = false, showError: Bool = true) async throws {
         let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
-            if let current = syncTask {
-                return (current, true)
-            }
+            if let current = syncTask { return (current, true) }
 
             isSyncing = true
             let newTask = Task {
@@ -158,9 +139,7 @@ final class SyncService: ObservableObject {
             Logger.syncService.debug("Waiting for ongoing sync to complete")
         }
 
-        do {
-            try await task.value
-        } catch {
+        do { try await task.value } catch {
             Logger.syncService.error("Sync failed: \(error)")
 
             if showError, engine != nil, case .online = Reach().connectionStatus() {
@@ -172,9 +151,7 @@ final class SyncService: ObservableObject {
             throw error
         }
 
-        if wasAlreadyRunning {
-            Logger.syncService.debug("Ongoing sync completed, proceeding")
-        }
+        if wasAlreadyRunning { Logger.syncService.debug("Ongoing sync completed, proceeding") }
     }
 
     private func internalSync() async throws {
@@ -194,9 +171,7 @@ final class SyncService: ObservableObject {
         // Update sync time
         UserDefaults.standard.set(Date(), forKey: "SyncService.lastSyncTime")
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
         Logger.syncService.debug("Sync completed")
     }
 
@@ -209,9 +184,7 @@ final class SyncService: ObservableObject {
         try await engine.addSaveds(saveds)
     }
 
-    func addSaved(_ saved: SavedModel) async throws {
-        try await addSaveds([saved])
-    }
+    func addSaved(_ saved: SavedModel) async throws { try await addSaveds([saved]) }
 
     func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         guard let engine = engine else {

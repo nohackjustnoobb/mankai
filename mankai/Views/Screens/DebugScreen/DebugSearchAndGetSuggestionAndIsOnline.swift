@@ -17,29 +17,22 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
     var body: some View {
         Group {
             if mangas == nil && suggestions == nil && isOnline == nil {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     if let isOnline = isOnline {
                         Section("isOnline") {
-                            LabeledContent("isOnline") {
-                                Text(String(describing: isOnline))
-                            }
+                            LabeledContent("isOnline") { Text(String(describing: isOnline)) }
                         }
                     }
 
                     if let suggestions = suggestions {
                         Section("suggestions") {
-                            ForEach(suggestions, id: \.self) { item in
-                                Text(item)
-                            }
+                            ForEach(suggestions, id: \.self) { item in Text(item) }
                         }
                     }
 
-                    if let mangas = mangas {
-                        DebugMangas(mangas: mangas, plugin: plugin)
-                    }
+                    if let mangas = mangas { DebugMangas(mangas: mangas, plugin: plugin) }
                 }
             }
         }
@@ -56,8 +49,7 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
 
             if plugin.supportsSearch() {
                 mangas = try! await plugin.search(
-                    "mankai", page: 1, genre: .all, status: .any, isAuthor: false
-                )
+                    "mankai", page: 1, genre: .all, status: .any, isAuthor: false)
                 Logger.jsPlugin.debug("mangas: \(mangas as Any)")
             }
         }

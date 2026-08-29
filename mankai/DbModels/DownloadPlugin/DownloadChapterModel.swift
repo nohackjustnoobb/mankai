@@ -26,8 +26,7 @@ struct DownloadChapterModel {
             $0.column("downloaded", .boolean)
 
             $0.foreignKey(
-                ["mangaId"], references: DownloadMangaModel.databaseTableName, onDelete: .cascade
-            )
+                ["mangaId"], references: DownloadMangaModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

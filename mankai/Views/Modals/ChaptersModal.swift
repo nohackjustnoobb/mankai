@@ -21,12 +21,9 @@ struct ChaptersModal: View {
     private let chapters: [Chapter]
 
     init(
-        plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int,
-        record: RecordModel? = nil,
-        downloadChapters: Set<String>? = nil,
-        canReadRemotely: Bool = true,
-        allowEditing: Bool = true,
-        onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
+        plugin: Plugin, manga: DetailedManga, chapterGroupIndex: Int, record: RecordModel? = nil,
+        downloadChapters: Set<String>? = nil, canReadRemotely: Bool = true,
+        allowEditing: Bool = true, onNavigateToChapter: @escaping (Chapter, Int?, Int?) -> Void
     ) {
         self.plugin = plugin
         self.manga = manga
@@ -56,8 +53,7 @@ struct ChaptersModal: View {
                 List {
                     Section {
                         if chapters.isEmpty {
-                            Text("noChaptersAvailable")
-                                .foregroundStyle(.secondary)
+                            Text("noChaptersAvailable").foregroundStyle(.secondary)
                         } else {
                             ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
                                 chapter in
@@ -68,8 +64,7 @@ struct ChaptersModal: View {
                                     onNavigateToChapter(chapter, nil, chapterGroupIndex)
                                 }) {
                                     HStack {
-                                        Text(chapter.title ?? chapter.id)
-                                            .foregroundColor(.primary)
+                                        Text(chapter.title ?? chapter.id).foregroundColor(.primary)
 
                                         if isDownloaded {
                                             Image(systemName: "network.slash")
@@ -99,53 +94,32 @@ struct ChaptersModal: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         HStack {
-                            Button(action: {
-                                isReversed.toggle()
-                            }) {
-                                Image(
-                                    systemName: isReversed
-                                        ? "arrow.up"
-                                        : "arrow.down"
-                                )
+                            Button(action: { isReversed.toggle() }) {
+                                Image(systemName: isReversed ? "arrow.up" : "arrow.down")
                             }
 
                             if allowEditing, plugin is Editable, manga.editable ?? true {
                                 NavigationLink(destination: {
                                     UpdateChaptersModal(
-                                        plugin: plugin as! any Editable,
-                                        manga: manga,
-                                        chapterGroupIndex: chapterGroupIndex
-                                    )
-                                }) {
-                                    Image(systemName: "pencil")
-                                }
+                                        plugin: plugin as! any Editable, manga: manga,
+                                        chapterGroupIndex: chapterGroupIndex)
+                                }) { Image(systemName: "pencil") }
                             }
                         }
                     }
 
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("close") {
-                            dismiss()
-                        }
-                    }
+                    ToolbarItem(placement: .confirmationAction) { Button("close") { dismiss() } }
                 }
                 .navigationTitleWithSubtitle(
                     title: Text(LocalizedStringKey(chapterGroupTitle)),
                     subtitle: Text(
-                        String(
-                            format: String(localized: "chapterCountFormat"),
-                            chapters.count
-                        )
-                    )
+                        String(format: String(localized: "chapterCountFormat"), chapters.count))
                 )
                 .onAppear {
-                    if let record = record {
-                        proxy.scrollTo(record.chapterId, anchor: .center)
-                    }
+                    if let record = record { proxy.scrollTo(record.chapterId, anchor: .center) }
                 }
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
     }
 }

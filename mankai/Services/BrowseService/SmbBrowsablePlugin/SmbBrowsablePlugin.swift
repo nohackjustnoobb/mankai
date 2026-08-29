@@ -17,10 +17,7 @@ struct SmbConnectionConfiguration {
     var password: String?
 
     init(
-        host: String,
-        port: Int = 445,
-        share: String,
-        username: String? = nil,
+        host: String, port: Int = 445, share: String, username: String? = nil,
         password: String? = nil
     ) throws {
         let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -32,12 +29,8 @@ struct SmbConnectionConfiguration {
         guard (1...65535).contains(port) else {
             throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
         }
-        guard !trimmedShare.isEmpty,
-            !trimmedShare.contains("/"),
-            !trimmedShare.contains("\\")
-        else {
-            throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
-        }
+        guard !trimmedShare.isEmpty, !trimmedShare.contains("/"), !trimmedShare.contains("\\")
+        else { throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError() }
 
         self.host = trimmedHost
         self.port = port
@@ -46,9 +39,7 @@ struct SmbConnectionConfiguration {
         self.password = password.trimmed
     }
 
-    var server: SMB.Server {
-        SMB.Server(host: host, port: port)
-    }
+    var server: SMB.Server { SMB.Server(host: host, port: port) }
 
     var credentials: SMB.Credentials? {
         guard username != nil || password != nil else { return nil }
@@ -67,33 +58,19 @@ actor SmbSession: BrowsableSession {
     private var connection: SMB.Connection?
     private var connectionTask: Task<Void, Error>?
 
-    init(configuration: SmbConnectionConfiguration) {
-        self.configuration = configuration
-    }
+    init(configuration: SmbConnectionConfiguration) { self.configuration = configuration }
 
     /// Authenticates with an SMB server and returns its browsable disk shares.
-    static func discoverShares(
-        host: String,
-        port: Int,
-        username: String?,
-        password: String?
-    ) async throws -> [SMB.Share] {
+    static func discoverShares(host: String, port: Int, username: String?, password: String?)
+        async throws -> [SMB.Share]
+    {
         let configuration = try SmbConnectionConfiguration(
-            host: host,
-            port: port,
-            share: "IPC$",
-            username: username,
-            password: password
-        )
+            host: host, port: port, share: "IPC$", username: username, password: password)
 
-        return try SMB.listShares(
-            server: configuration.server,
-            credentials: configuration.credentials
-        )
-        .filter { !$0.name.isEmpty }
-        .sorted {
-            $0.name.localizedStandardCompare($1.name) == .orderedAscending
-        }
+        return
+            try SMB.listShares(server: configuration.server, credentials: configuration.credentials)
+            .filter { !$0.name.isEmpty }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     func disconnect() {
@@ -104,31 +81,24 @@ actor SmbSession: BrowsableSession {
 
     func list(path: String) async throws -> [BrowsableSessionEntry] {
         try await withConnectedConnection { connection in
-            try connection.listDirectory(at: path).map { entry in
-                let isDirectory = entry.stat.type == .directory
-                return BrowsableSessionEntry(
-                    name: entry.name,
-                    isDirectory: isDirectory,
-                    isRegularFile: !isDirectory
-                )
-            }
+            try connection.listDirectory(at: path)
+                .map { entry in
+                    let isDirectory = entry.stat.type == .directory
+                    return BrowsableSessionEntry(
+                        name: entry.name, isDirectory: isDirectory, isRegularFile: !isDirectory)
+                }
         }
     }
 
     func download(path: String) async throws -> Data {
-        try await withConnectedConnection { connection in
-            try connection.loadFile(at: path)
-        }
+        try await withConnectedConnection { connection in try connection.loadFile(at: path) }
     }
 
     func download(path: String, to localURL: URL) async throws {
         try await withConnectedConnection { connection in
-            try connection.downloadFile(remote: path, local: localURL) {
-                completed, total, _, _ in
+            try connection.downloadFile(remote: path, local: localURL) { completed, total, _, _ in
                 let progress = total > 0 ? Double(completed) / Double(total) : 1
-                Logger.smbBrowsablePlugin.debug(
-                    "Downloading \(path): \(Int(progress * 100))%"
-                )
+                Logger.smbBrowsablePlugin.debug("Downloading \(path): \(Int(progress * 100))%")
                 return !Task.isCancelled
             }
             try Task.checkCancellation()
@@ -136,16 +106,13 @@ actor SmbSession: BrowsableSession {
     }
 
     func upload(data: Data, path: String) async throws {
-        try await withConnectedConnection { connection in
-            try connection.dumpToFile(data, to: path)
+        try await withConnectedConnection { connection in try connection.dumpToFile(data, to: path)
         }
     }
 
     func upload(file: URL, path: String) async throws {
         try await withConnectedConnection { connection in
-            try connection.uploadFile(local: file, remote: path) { _, _, _, _ in
-                !Task.isCancelled
-            }
+            try connection.uploadFile(local: file, remote: path) { _, _, _, _ in !Task.isCancelled }
             try Task.checkCancellation()
         }
     }
@@ -158,35 +125,25 @@ actor SmbSession: BrowsableSession {
 
     func isOnline() async -> Bool {
         do {
-            _ = try await withConnectedConnection { connection in
-                try connection.echo()
-            }
+            _ = try await withConnectedConnection { connection in try connection.echo() }
             return true
-        } catch {
-            return false
-        }
+        } catch { return false }
     }
 
-    func withConnectedConnection<T>(
-        _ operation: (SMB.Connection) throws -> T
-    ) async throws -> T {
+    func withConnectedConnection<T>(_ operation: (SMB.Connection) throws -> T) async throws -> T {
         try await ensureConnected()
         guard let connection else {
             throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
         }
 
-        do {
-            return try operation(connection)
-        } catch {
+        do { return try operation(connection) } catch {
             invalidateConnection()
             throw error
         }
     }
 
     private func ensureConnected() async throws {
-        if connection?.isConnected == true {
-            return
-        }
+        if connection?.isConnected == true { return }
 
         if let connectionTask {
             try await connectionTask.value
@@ -210,10 +167,8 @@ actor SmbSession: BrowsableSession {
 
     private func openConnection() async throws {
         connection = try SMB.connect(
-            server: configuration.server,
-            credentials: configuration.credentials,
-            share: configuration.share
-        )
+            server: configuration.server, credentials: configuration.credentials,
+            share: configuration.share)
     }
 
     private func invalidateConnection() {
@@ -222,83 +177,54 @@ actor SmbSession: BrowsableSession {
     }
 }
 
-final class SmbBrowsablePlugin:
-    GenericBrowsablePlugin<SmbConnectionConfiguration, SmbSession>
-{
+final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguration, SmbSession> {
 
     /// Creates a new SMB plugin using an existing session.
     convenience init(session: SmbSession, name: String?) async throws {
         do {
             let identity = try await BrowsableFileUtilities.resolveIdentity(
                 using: session,
-                invalidPluginError: MankaiErrorCode.browseSmbInvalidPlugin.makeError()
-            )
+                invalidPluginError: MankaiErrorCode.browseSmbInvalidPlugin.makeError())
 
             try self.init(
-                id: identity.id,
-                name: name,
-                configuration: session.configuration,
-                session: session,
-                shouldSync: identity.shouldSync
-            )
+                id: identity.id, name: name, configuration: session.configuration, session: session,
+                shouldSync: identity.shouldSync)
         } catch {
             Logger.smbBrowsablePlugin.error(
                 "Failed to create SMB browsable plugin for \(session.configuration.host):\(session.configuration.port)/\(session.configuration.share)",
-                error: error
-            )
+                error: error)
             await session.disconnect()
             throw error
         }
     }
 
     init(
-        id: String,
-        name: String?,
-        configuration: SmbConnectionConfiguration,
-        session: SmbSession? = nil,
-        shouldSync: Bool = true
+        id: String, name: String?, configuration: SmbConnectionConfiguration,
+        session: SmbSession? = nil, shouldSync: Bool = true
     ) throws {
-        try super.init(
-            id: id,
-            name: name,
-            configuration: configuration,
-            session: session,
-            temporaryDirectoryName: "smb",
-            shouldSync: shouldSync
-        )
+        try super
+            .init(
+                id: id, name: name, configuration: configuration, session: session,
+                temporaryDirectoryName: "smb", shouldSync: shouldSync)
     }
 
-    var host: String {
-        configuration.host
-    }
+    var host: String { configuration.host }
 
-    var port: Int {
-        configuration.port
-    }
+    var port: Int { configuration.port }
 
-    var share: String {
-        configuration.share
-    }
+    var share: String { configuration.share }
 
-    var username: String? {
-        configuration.username
-    }
+    var username: String? { configuration.username }
 
-    var password: String? {
-        configuration.password
-    }
+    var password: String? { configuration.password }
 
     override var name: String? {
         displayName ?? (port == 445 ? "\(host)/\(share)" : "\(host):\(port)/\(share)")
     }
 
-    override var tags: [String] {
-        ["SMB"]
-    }
+    override var tags: [String] { ["SMB"] }
 
-    override var systemImageName: String {
-        "network"
-    }
+    override var systemImageName: String { "network" }
 
     static func loadPlugins() -> [SmbBrowsablePlugin] {
         Logger.smbBrowsablePlugin.debug("Loading SMB browsable plugins")
@@ -308,15 +234,9 @@ final class SmbBrowsablePlugin:
         }
 
         let models: [SmbBrowsablePluginModel]
-        do {
-            models = try dbPool.read { db in
-                try SmbBrowsablePluginModel.fetchAll(db)
-            }
-        } catch {
+        do { models = try dbPool.read { db in try SmbBrowsablePluginModel.fetchAll(db) } } catch {
             Logger.smbBrowsablePlugin.error(
-                "Failed to fetch SmbBrowsablePluginModels",
-                error: error
-            )
+                "Failed to fetch SmbBrowsablePluginModels", error: error)
             return []
         }
 
@@ -324,24 +244,15 @@ final class SmbBrowsablePlugin:
         for model in models {
             do {
                 let configuration = try SmbConnectionConfiguration(
-                    host: model.host,
-                    port: model.port,
-                    share: model.share,
-                    username: model.username,
-                    password: model.password
-                )
+                    host: model.host, port: model.port, share: model.share,
+                    username: model.username, password: model.password)
                 try results.append(
                     SmbBrowsablePlugin(
-                        id: model.id,
-                        name: model.name,
-                        configuration: configuration,
-                        shouldSync: model.shouldSync
-                    ))
+                        id: model.id, name: model.name, configuration: configuration,
+                        shouldSync: model.shouldSync))
             } catch {
                 Logger.smbBrowsablePlugin.error(
-                    "Failed to load SMB plugin \(model.id)",
-                    error: error
-                )
+                    "Failed to load SMB plugin \(model.id)", error: error)
             }
         }
         return results
@@ -354,18 +265,9 @@ final class SmbBrowsablePlugin:
         }
 
         let model = SmbBrowsablePluginModel(
-            id: id,
-            name: displayName,
-            host: host,
-            port: port,
-            share: share,
-            username: username,
-            password: password,
-            shouldSync: shouldSync
-        )
-        try db.write { db in
-            try model.save(db)
-        }
+            id: id, name: displayName, host: host, port: port, share: share, username: username,
+            password: password, shouldSync: shouldSync)
+        try db.write { db in try model.save(db) }
     }
 
     override func deletePlugin() throws {
@@ -374,9 +276,7 @@ final class SmbBrowsablePlugin:
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        _ = try db.write { db in
-            try SmbBrowsablePluginModel.deleteOne(db, key: id)
-        }
+        _ = try db.write { db in try SmbBrowsablePluginModel.deleteOne(db, key: id) }
         try super.deletePlugin()
     }
 }

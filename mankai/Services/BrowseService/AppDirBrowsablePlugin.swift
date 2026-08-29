@@ -13,8 +13,8 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
 
     private init() throws {
         let fileManager = FileManager.default
-        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!.appendingPathComponent("books")
+        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("books")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {
             do {
@@ -26,23 +26,16 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
         }
 
         Logger.appDirBrowsablePlugin.info(
-            "AppDirBrowsablePlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
-        )
+            "AppDirBrowsablePlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
 
         try super.init(url: mangaDir, id: "mankai.books", name: nil, shouldSync: false)
     }
 
-    override var name: String? {
-        String(localized: "localDir")
-    }
+    override var name: String? { String(localized: "localDir") }
 
-    override var systemImageName: String {
-        "iphone"
-    }
+    override var systemImageName: String { "iphone" }
 
-    override var systemImageColor: Color {
-        .accentColor
-    }
+    override var systemImageColor: Color { .accentColor }
 
     /// Built-in plugin, do nothing
     override func savePlugin() throws {}

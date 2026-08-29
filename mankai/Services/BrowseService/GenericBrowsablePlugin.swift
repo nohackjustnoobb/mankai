@@ -15,9 +15,7 @@ struct BrowsableEntry {
     let isDirectory: Bool
     let isRegularFile: Bool
 
-    var fileName: String {
-        (path as NSString).lastPathComponent
-    }
+    var fileName: String { (path as NSString).lastPathComponent }
 }
 
 /// A backend-neutral entry returned by a browsable session.
@@ -57,14 +55,10 @@ extension BrowsableSession {
         do {
             _ = try await list(path: "")
             return true
-        } catch {
-            return false
-        }
+        } catch { return false }
     }
 
-    func localURL(for _: String?) throws -> URL? {
-        nil
-    }
+    func localURL(for _: String?) throws -> URL? { nil }
 
     func fileIfExists(path: String) async throws -> Data? {
         let fileName = (path as NSString).lastPathComponent
@@ -86,12 +80,7 @@ struct BrowsableSessionParserFile<Session: BrowsableSession>: ParserFile {
     private let session: Session
     private let temporaryDirectory: URL
 
-    init(
-        cacheKey: String,
-        remotePath: String,
-        session: Session,
-        temporaryDirectory: URL
-    ) {
+    init(cacheKey: String, remotePath: String, session: Session, temporaryDirectory: URL) {
         self.cacheKey = cacheKey
         self.remotePath = remotePath
         fileName = (remotePath as NSString).lastPathComponent
@@ -99,82 +88,54 @@ struct BrowsableSessionParserFile<Session: BrowsableSession>: ParserFile {
         self.temporaryDirectory = temporaryDirectory
     }
 
-    func getContent() async throws -> Data {
-        try Data(contentsOf: try await getUrl())
-    }
+    func getContent() async throws -> Data { try Data(contentsOf: try await getUrl()) }
 
     func getUrl() async throws -> URL {
         let localURL = BrowsableFileUtilities.parserCacheURL(
-            for: remotePath,
-            in: temporaryDirectory
-        )
+            for: remotePath, in: temporaryDirectory)
         do {
             return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
                 [session, remotePath] localURL in
-                Session.logger.info(
-                    "Downloading \(Session.backendName) parser file: \(remotePath)"
-                )
+                Session.logger.info("Downloading \(Session.backendName) parser file: \(remotePath)")
                 try await session.download(path: remotePath, to: localURL)
                 try Task.checkCancellation()
-                Session.logger.info(
-                    "Downloaded \(Session.backendName) parser file: \(remotePath)"
-                )
+                Session.logger.info("Downloaded \(Session.backendName) parser file: \(remotePath)")
             }
         } catch {
             Session.logger.error(
-                "Failed to download \(Session.backendName) parser file: \(remotePath)",
-                error: error
+                "Failed to download \(Session.backendName) parser file: \(remotePath)", error: error
             )
             throw error
         }
     }
 }
 
-/// Common implementation for plugins that expose manga files through a
-/// browsable hierarchy.
+/// Common implementation for plugins that expose manga files through a browsable hierarchy.
 ///
-/// Subclasses provide persistence and presentation details while their session
-/// implements the backend-specific file operations.
-class GenericBrowsablePlugin<Config, Session>:
-    Plugin, Browsable, Importable, LocalBrowsablePluginConvertible
+/// Subclasses provide persistence and presentation details while their session implements the backend-specific file operations.
+class GenericBrowsablePlugin<Config, Session>: Plugin, Browsable, Importable,
+    LocalBrowsablePluginConvertible
 where Session: BrowsableSession, Session.Config == Config {
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
     var displayName: String?
 
-    var systemImageName: String {
-        "folder.fill"
-    }
+    var systemImageName: String { "folder.fill" }
 
-    override var availableGenres: [Genre] {
-        Genre.allCases
-    }
+    override var availableGenres: [Genre] { Genre.allCases }
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image]
     }
 
-    override var canDownload: Bool {
-        false
-    }
+    override var canDownload: Bool { false }
 
-    var systemImageColor: Color {
-        BrowsablePluginStyle.systemImageColor(for: _id)
-    }
+    var systemImageColor: Color { BrowsablePluginStyle.systemImageColor(for: _id) }
 
-    var supportedExtensions: [String] {
-        extensionsIndex.keys.sorted()
-    }
+    var supportedExtensions: [String] { extensionsIndex.keys.sorted() }
 
     var importsEntity: Entity {
-        Entity(
-            path: "imports",
-            displayName: "imports",
-            name: "imports",
-            type: .directory
-        )
+        Entity(path: "imports", displayName: "imports", name: "imports", type: .directory)
     }
 
     var configuration: Config {
@@ -182,9 +143,7 @@ where Session: BrowsableSession, Session.Config == Config {
             let previousSession = session
             session = Session(configuration: configuration)
             sessionNeedsCleanup = true
-            Task {
-                await previousSession.disconnect()
-            }
+            Task { await previousSession.disconnect() }
         }
     }
 
@@ -192,9 +151,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     /// Directory used by backends that need to materialize remote parser files locally.
     var temporaryDirectory: URL {
-        guard let temporaryDirectoryName else {
-            return FileManager.default.temporaryDirectory
-        }
+        guard let temporaryDirectoryName else { return FileManager.default.temporaryDirectory }
         return FileManager.default.temporaryDirectory
             .appendingPathComponent(temporaryDirectoryName, isDirectory: true)
             .appendingPathComponent(id, isDirectory: true)
@@ -206,53 +163,37 @@ where Session: BrowsableSession, Session.Config == Config {
     private var sessionNeedsCleanup = true
     let parsers: [String: Parser]
 
-    override var shouldSync: Bool {
-        _shouldSync
-    }
+    override var shouldSync: Bool { _shouldSync }
 
     func convertToLocalPlugin() {
         _id = UUID().uuidString
         _shouldSync = false
     }
 
-    /// On-disk cache of route-neutral parsed manga (JSON-encoded
-    /// `DetailedManga`), keyed by plugin, parser, and content hash. The
-    /// relative path provides a secondary lookup that avoids hashing entries
-    /// already seen while browsing.
-    private var db: DatabasePool? {
-        DbService.shared.openBrowsablePluginDb()
-    }
+    /// On-disk cache of route-neutral parsed manga (JSON-encoded `DetailedManga`),
+    /// keyed by plugin, parser, and content hash.
+    /// The relative path provides a secondary lookup that avoids hashing entries already seen while browsing.
+    private var db: DatabasePool? { DbService.shared.openBrowsablePluginDb() }
 
     /// Root directory holding cached cover images and the cache database.
     /// The directory name is retained for compatibility with existing caches.
     private let cacheRootDir: URL = {
         let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         return (cachesDir ?? URL(fileURLWithPath: NSTemporaryDirectory()))
-            .appendingPathComponent(CacheDirectory.index)
-            .appendingPathComponent("browsableplugin")
+            .appendingPathComponent(CacheDirectory.index).appendingPathComponent("browsableplugin")
     }()
 
-    private var cacheDir: URL {
-        cacheRootDir.appendingPathComponent(_id, isDirectory: true)
-    }
+    private var cacheDir: URL { cacheRootDir.appendingPathComponent(_id, isDirectory: true) }
 
-    /// Prefix for cover references that point at a cached cover file rather
-    /// than an entry inside the backend source.
+    /// Prefix for cover references that point at a cached cover file rather than an entry inside the backend source.
     private static var coverCachePrefix: String { "book-cover:" }
 
     init(
-        id: String,
-        name: String?,
-        configuration: Config,
-        session: Session? = nil,
-        temporaryDirectoryName: String? = nil,
-        shouldSync: Bool = true,
-        parsers: [Parser]? = nil
+        id: String, name: String?, configuration: Config, session: Session? = nil,
+        temporaryDirectoryName: String? = nil, shouldSync: Bool = true, parsers: [Parser]? = nil
     ) throws {
         let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedId.isEmpty else {
-            throw MankaiErrorCode.browseInvalidPlugin.makeError()
-        }
+        guard !trimmedId.isEmpty else { throw MankaiErrorCode.browseInvalidPlugin.makeError() }
 
         _id = trimmedId
         _shouldSync = shouldSync
@@ -262,9 +203,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
         if let parsers {
             var parserIndex: [String: Parser] = [:]
-            for parser in parsers {
-                parserIndex[parser.id] = parser
-            }
+            for parser in parsers { parserIndex[parser.id] = parser }
             self.parsers = parserIndex
         } else {
             let cbzParser = CbzParser()
@@ -272,10 +211,8 @@ where Session: BrowsableSession, Session.Config == Config {
             let pdfParser = PdfParser()
             let epubParser = EpubParser()
             self.parsers = [
-                cbzParser.id: cbzParser,
-                cbrParser.id: cbrParser,
-                pdfParser.id: pdfParser,
-                epubParser.id: epubParser,
+                cbzParser.id: cbzParser, cbrParser.id: cbrParser, pdfParser.id: pdfParser,
+                epubParser.id: epubParser
             ]
         }
 
@@ -291,36 +228,27 @@ where Session: BrowsableSession, Session.Config == Config {
 
     // MARK: - Session-backed hooks
 
-    /// Returns the entries directly below `path`. Returned paths must be
-    /// relative to the plugin root and use `/` as their separator.
+    /// Returns the entries directly below `path`.
+    /// Returned paths must be relative to the plugin root and use `/` as their separator.
     func entries(path: String?) async throws -> [BrowsableEntry] {
         let parentPath = path ?? ""
-        return try await session.list(path: parentPath).compactMap { entry in
-            guard !entry.name.isEmpty, !entry.name.hasPrefix(".") else {
-                return nil
-            }
+        return try await session.list(path: parentPath)
+            .compactMap { entry in
+                guard !entry.name.isEmpty, !entry.name.hasPrefix(".") else { return nil }
 
-            let entryPath =
-                parentPath.isEmpty
-                ? entry.name
-                : "\(parentPath)/\(entry.name)"
-            return BrowsableEntry(
-                path: entryPath,
-                isDirectory: entry.isDirectory,
-                isRegularFile: entry.isRegularFile
-            )
-        }
+                let entryPath = parentPath.isEmpty ? entry.name : "\(parentPath)/\(entry.name)"
+                return BrowsableEntry(
+                    path: entryPath, isDirectory: entry.isDirectory,
+                    isRegularFile: entry.isRegularFile)
+            }
     }
 
-    /// Creates a parser file for a backend entry. `cacheKey` identifies the
-    /// current content and is used by parser-level caches.
+    /// Creates a parser file for a backend entry.
+    /// `cacheKey` identifies the current content and is used by parser-level caches.
     func parserFile(relativePath: String, cacheKey: String) async throws -> ParserFile {
         BrowsableSessionParserFile(
-            cacheKey: cacheKey,
-            remotePath: relativePath,
-            session: session,
-            temporaryDirectory: temporaryDirectory
-        )
+            cacheKey: cacheKey, remotePath: relativePath, session: session,
+            temporaryDirectory: temporaryDirectory)
     }
 
     /// Computes the content hash used in manga routes.
@@ -330,40 +258,30 @@ where Session: BrowsableSession, Session.Config == Config {
         return try BrowsableFileUtilities.sha256(of: fileURL)
     }
 
-    func absoluteURL(for path: String?) -> URL? {
-        try? session.localURL(for: path)
-    }
+    func absoluteURL(for path: String?) -> URL? { try? session.localURL(for: path) }
 
     // MARK: - Route helpers
 
     private lazy var extensionsIndex: [String: Parser] = {
         var index: [String: Parser] = [:]
         for parser in parsers.values {
-            for ext in parser.supportedExtensions {
-                index[ext] = parser
-            }
+            for ext in parser.supportedExtensions { index[ext] = parser }
         }
         return index
     }()
 
-    func parser(forExtension ext: String) -> Parser? {
-        extensionsIndex[ext]
-    }
+    func parser(forExtension ext: String) -> Parser? { extensionsIndex[ext] }
 
     private struct MangaRoute {
         let parserId: String
         let hash: String
         let relativePath: String
 
-        var mangaId: String {
-            "\(parserId)://\(hash):\(Self.encode(relativePath)!)"
-        }
+        var mangaId: String { "\(parserId)://\(hash):\(Self.encode(relativePath)!)" }
 
         init(parserId: String, hash: String, relativePath: String) throws {
             let isSHA256 = hash.count == 64 && hash.allSatisfy(\.isHexDigit)
-            guard !parserId.isEmpty,
-                isSHA256,
-                !relativePath.isEmpty,
+            guard !parserId.isEmpty, isSHA256, !relativePath.isEmpty,
                 Self.encode(relativePath) != nil
             else {
                 Logger.browseService.error("Unable to create manga route for: \(relativePath)")
@@ -409,10 +327,7 @@ where Session: BrowsableSession, Session.Config == Config {
         func applying(_ manga: DetailedManga, coverCachePrefix: String) throws -> DetailedManga {
             var routed = manga
             routed.id = mangaId
-            if let cover = routed.cover,
-                !cover.isEmpty,
-                !cover.hasPrefix(coverCachePrefix)
-            {
+            if let cover = routed.cover, !cover.isEmpty, !cover.hasPrefix(coverCachePrefix) {
                 routed.cover = try ImageRoute(manga: self, parserURL: cover).imageId
             }
             return routed
@@ -437,9 +352,7 @@ where Session: BrowsableSession, Session.Config == Config {
         let manga: MangaRoute
         let parserURL: String
 
-        var imageId: String {
-            "\(manga.mangaId)#\(Self.encode(parserURL)!)"
-        }
+        var imageId: String { "\(manga.mangaId)#\(Self.encode(parserURL)!)" }
 
         init(manga: MangaRoute, parserURL: String) throws {
             guard !parserURL.isEmpty, Self.encode(parserURL) != nil else {
@@ -468,9 +381,7 @@ where Session: BrowsableSession, Session.Config == Config {
             try self.init(manga: MangaRoute(mangaId: mangaId), parserURL: parserURL)
         }
 
-        func parser(in parsers: [String: Parser]) throws -> Parser {
-            try manga.parser(in: parsers)
-        }
+        func parser(in parsers: [String: Parser]) throws -> Parser { try manga.parser(in: parsers) }
 
         private static var allowedCharacters: CharacterSet {
             var allowed = CharacterSet.alphanumerics
@@ -494,9 +405,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
         var mangas: [Manga] = []
         for id in ids {
-            do {
-                try mangas.append(await detailedManga(forPrefixedId: id).toManga())
-            } catch {
+            do { try mangas.append(await detailedManga(forPrefixedId: id).toManga()) } catch {
                 Logger.browseService.warning("Skipping manga \(id) in getMangas: \(error)")
             }
         }
@@ -509,26 +418,18 @@ where Session: BrowsableSession, Session.Config == Config {
     }
 
     func parseFile(path: String, fileType: String) async throws -> DetailedManga {
-        let normalizedFileType =
-            fileType
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedFileType = fileType.trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased()
         guard let parser = parser(forExtension: normalizedFileType) else {
             Logger.browseService.error(
-                "No parser found for file type '\(fileType)' at path: \(path)"
-            )
+                "No parser found for file type '\(fileType)' at path: \(path)")
             throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
         }
 
-        Logger.browseService.debug(
-            "Parsing browsable file '\(path)' as '\(normalizedFileType)'"
-        )
-        do {
-            return try await parseAndCache(parser: parser, relativePath: path)
-        } catch {
+        Logger.browseService.debug("Parsing browsable file '\(path)' as '\(normalizedFileType)'")
+        do { return try await parseAndCache(parser: parser, relativePath: path) } catch {
             Logger.browseService.warning(
-                "Parser '\(parser.id)' failed to parse '\(path)': \(error)"
-            )
+                "Parser '\(parser.id)' failed to parse '\(path)': \(error)")
             throw error
         }
     }
@@ -551,22 +452,15 @@ where Session: BrowsableSession, Session.Config == Config {
             stored = cached.manga
             if cached.path != route.relativePath {
                 await storeManga(
-                    cached.manga,
-                    mangaId: route.hash,
-                    parserId: route.parserId,
-                    path: route.relativePath
-                )
+                    cached.manga, mangaId: route.hash, parserId: route.parserId,
+                    path: route.relativePath)
             }
         } else {
             Logger.browseService.debug("Manga cache miss, parsing source: \(route.relativePath)")
             var parsed = try await parser.parse(file: file)
             parsed.id = route.hash
             await storeManga(
-                parsed,
-                mangaId: route.hash,
-                parserId: route.parserId,
-                path: route.relativePath
-            )
+                parsed, mangaId: route.hash, parserId: route.parserId, path: route.relativePath)
             stored = parsed
         }
 
@@ -574,18 +468,11 @@ where Session: BrowsableSession, Session.Config == Config {
     }
 
     private func prepareCachedManga(
-        _ stored: DetailedManga,
-        route: MangaRoute,
-        parser: Parser,
-        file: ParserFile
+        _ stored: DetailedManga, route: MangaRoute, parser: Parser, file: ParserFile
     ) async throws -> DetailedManga {
         var transformed = parser.prepareForPresentation(stored, file: file)
         transformed.cover = await ensureCachedCover(
-            for: transformed.cover,
-            route: route,
-            parser: parser,
-            file: file
-        )
+            for: transformed.cover, route: route, parser: parser, file: file)
         return try route.applying(transformed, coverCachePrefix: Self.coverCachePrefix)
     }
 
@@ -604,9 +491,7 @@ where Session: BrowsableSession, Session.Config == Config {
         if path.hasPrefix(Self.coverCachePrefix) {
             let filename = String(path.dropFirst(Self.coverCachePrefix.count))
             let coverURL = cacheDir.appendingPathComponent(filename)
-            if let data = try? Data(contentsOf: coverURL) {
-                return data
-            }
+            if let data = try? Data(contentsOf: coverURL) { return data }
             throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
         }
 
@@ -616,9 +501,7 @@ where Session: BrowsableSession, Session.Config == Config {
         return try await parser.parseImage(url: imageRoute.parserURL, file: file)
     }
 
-    override func isOnline() async throws -> Bool {
-        await session.isOnline()
-    }
+    override func isOnline() async throws -> Bool { await session.isOnline() }
 
     // MARK: - Caching
 
@@ -632,10 +515,7 @@ where Session: BrowsableSession, Session.Config == Config {
         if let cached = try? await fetchCachedManga(path: relativePath, parserId: parser.id) {
             Logger.browseService.debug("Browsable source cache hit: \(relativePath)")
             let route = try MangaRoute(
-                parserId: parser.id,
-                hash: cached.mangaId,
-                relativePath: relativePath
-            )
+                parserId: parser.id, hash: cached.mangaId, relativePath: relativePath)
             let file = try await parserFile(for: route)
             return try await prepareCachedManga(
                 cached.manga, route: route, parser: parser, file: file)
@@ -650,13 +530,11 @@ where Session: BrowsableSession, Session.Config == Config {
     private func fetchCachedManga(mangaId: String, parserId: String) async throws -> CachedManga? {
         guard let db else { return nil }
         let row = try await db.read { db in
-            try BrowsablePluginMangaModel
-                .filter(
-                    Column("mangaId") == mangaId
-                        && Column("parserId") == parserId
-                        && Column("pluginId") == id
-                )
-                .fetchOne(db)
+            try BrowsablePluginMangaModel.filter(
+                Column("mangaId") == mangaId && Column("parserId") == parserId
+                    && Column("pluginId") == id
+            )
+            .fetchOne(db)
         }
         return Self.decodeCachedManga(row)
     }
@@ -664,53 +542,35 @@ where Session: BrowsableSession, Session.Config == Config {
     private func fetchCachedManga(path: String, parserId: String) async throws -> CachedManga? {
         guard let db else { return nil }
         let row = try await db.read { db in
-            try BrowsablePluginMangaModel
-                .filter(
-                    Column("path") == path
-                        && Column("parserId") == parserId
-                        && Column("pluginId") == id
-                )
-                .fetchOne(db)
+            try BrowsablePluginMangaModel.filter(
+                Column("path") == path && Column("parserId") == parserId && Column("pluginId") == id
+            )
+            .fetchOne(db)
         }
         return Self.decodeCachedManga(row)
     }
 
     private static func decodeCachedManga(_ row: BrowsablePluginMangaModel?) -> CachedManga? {
-        guard let row,
-            let data = row.info.data(using: .utf8),
+        guard let row, let data = row.info.data(using: .utf8),
             let stored = try? JSONDecoder().decode(DetailedManga.self, from: data)
         else { return nil }
         return CachedManga(mangaId: row.mangaId, path: row.path, manga: stored)
     }
 
-    private func storeManga(
-        _ manga: DetailedManga,
-        mangaId: String,
-        parserId: String,
-        path: String
-    ) async {
-        guard let db,
-            let infoData = try? JSONEncoder().encode(manga),
+    private func storeManga(_ manga: DetailedManga, mangaId: String, parserId: String, path: String)
+        async
+    {
+        guard let db, let infoData = try? JSONEncoder().encode(manga),
             let infoString = String(data: infoData, encoding: .utf8)
         else { return }
 
         let model = BrowsablePluginMangaModel(
-            mangaId: mangaId,
-            parserId: parserId,
-            pluginId: id,
-            path: path,
-            info: infoString
-        )
-        try? await db.write { db in
-            try model.upsert(db)
-        }
+            mangaId: mangaId, parserId: parserId, pluginId: id, path: path, info: infoString)
+        try? await db.write { db in try model.upsert(db) }
     }
 
     private func ensureCachedCover(
-        for cover: String?,
-        route: MangaRoute,
-        parser: Parser,
-        file: ParserFile
+        for cover: String?, route: MangaRoute, parser: Parser, file: ParserFile
     ) async -> String? {
         guard let cover, !cover.hasPrefix(Self.coverCachePrefix) else { return cover }
 
@@ -737,9 +597,7 @@ where Session: BrowsableSession, Session.Config == Config {
     func clearCache() throws {
         if let db {
             _ = try db.write { db in
-                try BrowsablePluginMangaModel
-                    .filter(Column("pluginId") == id)
-                    .deleteAll(db)
+                try BrowsablePluginMangaModel.filter(Column("pluginId") == id).deleteAll(db)
             }
         }
 
@@ -763,9 +621,7 @@ where Session: BrowsableSession, Session.Config == Config {
         guard sessionNeedsCleanup else { return }
         sessionNeedsCleanup = false
         let session = session
-        Task {
-            await session.disconnect()
-        }
+        Task { await session.disconnect() }
     }
 
     // MARK: - Browsable methods
@@ -779,12 +635,8 @@ where Session: BrowsableSession, Session.Config == Config {
             if entry.isDirectory {
                 entities.append(
                     Entity(
-                        path: entry.path,
-                        displayName: entry.fileName,
-                        name: entry.fileName,
-                        type: .directory
-                    )
-                )
+                        path: entry.path, displayName: entry.fileName, name: entry.fileName,
+                        type: .directory))
                 continue
             }
             guard entry.isRegularFile else { continue }
@@ -794,12 +646,8 @@ where Session: BrowsableSession, Session.Config == Config {
 
             entities.append(
                 Entity(
-                    path: entry.path,
-                    displayName: entry.fileName,
-                    name: entry.fileName,
-                    type: .book(fileType: ext)
-                )
-            )
+                    path: entry.path, displayName: entry.fileName, name: entry.fileName,
+                    type: .book(fileType: ext)))
         }
 
         return entities
@@ -809,34 +657,21 @@ where Session: BrowsableSession, Session.Config == Config {
 
     func importFile(from source: URL) async throws {
         let needsScopeAccess = source.startAccessingSecurityScopedResource()
-        defer {
-            if needsScopeAccess {
-                source.stopAccessingSecurityScopedResource()
-            }
-        }
+        defer { if needsScopeAccess { source.stopAccessingSecurityScopedResource() } }
 
         let importPath = importsEntity.path
         let rootEntries = try await session.list(path: "")
         if !rootEntries.contains(where: { $0.name == importPath && $0.isDirectory }) {
-            do {
-                try await session.createDirectory(path: importPath)
-            } catch {
+            do { try await session.createDirectory(path: importPath) } catch {
                 let refreshedEntries = try await session.list(path: "")
-                guard
-                    refreshedEntries.contains(where: {
-                        $0.name == importPath && $0.isDirectory
-                    })
-                else {
-                    throw error
-                }
+                guard refreshedEntries.contains(where: { $0.name == importPath && $0.isDirectory })
+                else { throw error }
             }
         }
 
         let existingEntries = try await session.list(path: importPath)
         let fileName = BrowsableFileUtilities.uniqueFileName(
-            for: source,
-            existingNames: Set(existingEntries.map(\.name))
-        )
+            for: source, existingNames: Set(existingEntries.map(\.name)))
         try await session.upload(file: source, path: "\(importPath)/\(fileName)")
         try Task.checkCancellation()
 

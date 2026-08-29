@@ -19,9 +19,7 @@ struct SelectChaptersModal: View {
     @State private var selectedChapters: [Int: Set<String>] = [:]
     @State private var expandedGroupIndex: Int? = nil
 
-    private var totalSelectedCount: Int {
-        selectedChapters.values.reduce(0) { $0 + $1.count }
-    }
+    private var totalSelectedCount: Int { selectedChapters.values.reduce(0) { $0 + $1.count } }
 
     private func isDownloaded(chapterId: String) -> Bool {
         alreadyDownloaded?.contains(chapterId) == true
@@ -33,11 +31,7 @@ struct SelectChaptersModal: View {
 
     private func toggleChapter(_ chapter: Chapter, groupIndex: Int) {
         var set = selectedChapters[groupIndex] ?? []
-        if set.contains(chapter.id) {
-            set.remove(chapter.id)
-        } else {
-            set.insert(chapter.id)
-        }
+        if set.contains(chapter.id) { set.remove(chapter.id) } else { set.insert(chapter.id) }
         selectedChapters[groupIndex] = set
     }
 
@@ -62,9 +56,7 @@ struct SelectChaptersModal: View {
             result.append(
                 ChapterGroup(
                     title: group.title,
-                    chapters: group.chapters.filter { selectedIds.contains($0.id) }
-                )
-            )
+                    chapters: group.chapters.filter { selectedIds.contains($0.id) }))
         }
         return result
     }
@@ -77,8 +69,7 @@ struct SelectChaptersModal: View {
                     Section {
                         chapterGroupRow(
                             groupIndex: groupIndex, groupTitle: group.title,
-                            chapters: group.chapters
-                        )
+                            chapters: group.chapters)
 
                         if expandedGroupIndex == groupIndex {
                             ForEach(group.chapters, id: \.id) { chapter in
@@ -90,11 +81,7 @@ struct SelectChaptersModal: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("close") {
-                        dismiss()
-                    }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("close") { dismiss() } }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("download") {
@@ -111,17 +98,12 @@ struct SelectChaptersModal: View {
                     ? Text(
                         String(
                             format: String(localized: "selectedChapterCountFormat"),
-                            totalSelectedCount
-                        )
-                    ) : nil
-            )
+                            totalSelectedCount)) : nil)
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
     }
 
-    @ViewBuilder
-    private func chapterGroupRow(
+    @ViewBuilder private func chapterGroupRow(
         groupIndex: Int, groupTitle: String, chapters: [Chapter]
     ) -> some View {
         // calculate selectable chapters (those not already downloaded)
@@ -130,9 +112,8 @@ struct SelectChaptersModal: View {
 
         // calculate currently selected count among selectable ones
         let currentlySelectedIds = selectedChapters[groupIndex] ?? []
-        let selectedSelectableCount = selectableChapters.filter {
-            currentlySelectedIds.contains($0.id)
-        }.count
+        let selectedSelectableCount =
+            selectableChapters.filter { currentlySelectedIds.contains($0.id) }.count
 
         let isAllSelected = selectableCount > 0 && selectedSelectableCount == selectableCount
         let isPartiallySelected =
@@ -141,16 +122,13 @@ struct SelectChaptersModal: View {
         HStack(spacing: 12) {
             // Select All / Deselect All Checkbox
             if selectableCount > 0 {
-                Button(action: {
-                    selectAllInGroup(groupIndex, chapters: chapters)
-                }) {
+                Button(action: { selectAllInGroup(groupIndex, chapters: chapters) }) {
                     Image(
                         systemName: isAllSelected
                             ? "checkmark.circle.fill"
                             : (isPartiallySelected ? "minus.circle.fill" : "circle")
                     )
-                    .resizable()
-                    .frame(width: 20, height: 20)
+                    .resizable().frame(width: 20, height: 20)
                     .foregroundColor(
                         isAllSelected || isPartiallySelected
                             ? .accentColor : .secondary.opacity(0.5))
@@ -158,9 +136,7 @@ struct SelectChaptersModal: View {
                 .buttonStyle(.plain)
             } else {
                 // Fully downloaded state
-                Image(systemName: "checkmark.circle.fill")
-                    .resizable()
-                    .frame(width: 20, height: 20)
+                Image(systemName: "checkmark.circle.fill").resizable().frame(width: 20, height: 20)
                     .foregroundColor(.gray)
             }
 
@@ -168,14 +144,10 @@ struct SelectChaptersModal: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(LocalizedStringKey(groupTitle))
-                            .foregroundColor(.primary)
+                        Text(LocalizedStringKey(groupTitle)).foregroundColor(.primary)
 
                         Text(
-                            String(
-                                format: String(localized: "chapterCountFormat"),
-                                chapters.count
-                            )
+                            String(format: String(localized: "chapterCountFormat"), chapters.count)
                         )
                         .smallTagStyle()
                     }
@@ -183,18 +155,14 @@ struct SelectChaptersModal: View {
                     Text(
                         String(
                             format: String(localized: "selectedChapterCountFormat"),
-                            selectedSelectableCount
-                        )
+                            selectedSelectableCount)
                     )
-                    .font(.caption)
-                    .foregroundColor(.accentColor)
+                    .font(.caption).foregroundColor(.accentColor)
                 }
 
                 Spacer()
 
-                Image(systemName: "chevron.right")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                Image(systemName: "chevron.right").font(.footnote).foregroundColor(.secondary)
                     .rotationEffect(.degrees(expandedGroupIndex == groupIndex ? 90 : 0))
             }
             .contentShape(Rectangle())
@@ -211,40 +179,24 @@ struct SelectChaptersModal: View {
         .padding(.trailing, 4)
     }
 
-    @ViewBuilder
-    private func chapterRow(chapter: Chapter, groupIndex: Int) -> some View {
+    @ViewBuilder private func chapterRow(chapter: Chapter, groupIndex: Int) -> some View {
         let downloaded = isDownloaded(chapterId: chapter.id)
         let selected = isSelected(chapterId: chapter.id, groupIndex: groupIndex)
 
-        Button(action: {
-            toggleChapter(chapter, groupIndex: groupIndex)
-        }) {
+        Button(action: { toggleChapter(chapter, groupIndex: groupIndex) }) {
             HStack {
                 Image(
                     systemName: downloaded
-                        ? "checkmark.circle.fill"
-                        : selected
-                            ? "checkmark.circle.fill"
-                            : "circle"
+                        ? "checkmark.circle.fill" : selected ? "checkmark.circle.fill" : "circle"
                 )
-                .foregroundColor(
-                    downloaded
-                        ? .gray
-                        : selected
-                            ? .accentColor
-                            : .secondary
-                )
+                .foregroundColor(downloaded ? .gray : selected ? .accentColor : .secondary)
 
                 Text(chapter.title ?? chapter.id)
                     .foregroundColor(downloaded ? .secondary : .primary)
 
                 Spacer()
 
-                if downloaded {
-                    Text("downloaded")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                if downloaded { Text("downloaded").font(.caption).foregroundColor(.secondary) }
             }
         }
         .disabled(downloaded)

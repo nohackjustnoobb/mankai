@@ -14,11 +14,9 @@ struct FolderSettingsScreen: View {
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "folder.fill"),
-                color: .blue,
+                image: Image(systemName: "folder.fill"), color: .blue,
                 title: String(localized: "folders"),
-                description: String(localized: "foldersDescription")
-            )
+                description: String(localized: "foldersDescription"))
 
             ForEach(browseService.plugins, id: \.id) { plugin in
                 NavigationLink {
@@ -29,12 +27,10 @@ struct FolderSettingsScreen: View {
                             Text(plugin.name ?? plugin.id)
 
                             HStack(spacing: 8) {
-                                Text(folderTypeName(for: plugin))
-                                    .smallTagStyle()
+                                Text(folderTypeName(for: plugin)).smallTagStyle()
 
                                 if plugin is AppDirBrowsablePlugin {
-                                    Text("builtin")
-                                        .smallTagStyle()
+                                    Text("builtin").smallTagStyle()
                                 }
                             }
                         }
@@ -54,27 +50,18 @@ struct FolderSettingsScreen: View {
                 }
             }
         }
-        .navigationTitle("folders")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingAddFolderModal) {
-            AddBrowsableFolderModal()
-        }
+        .navigationTitle("folders").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingAddFolderModal) { AddBrowsableFolderModal() }
     }
 }
 
 private func folderTypeName(for plugin: BrowsablePlugin) -> String {
-    switch plugin {
-    case is AppDirBrowsablePlugin, is FsBrowsablePlugin:
+    switch plugin { case is AppDirBrowsablePlugin, is FsBrowsablePlugin:
         return String(localized: "fs")
-    case is SmbBrowsablePlugin:
-        return String(localized: "smb")
-    case is NfsBrowsablePlugin:
-        return String(localized: "nfs")
-    case is WebDavBrowsablePlugin:
-        return String(localized: "webdav")
-    case is OpdsBrowsablePlugin:
-        return String(localized: "opds")
-    default:
-        return String(localized: "folder")
+        case is SmbBrowsablePlugin: return String(localized: "smb")
+        case is NfsBrowsablePlugin: return String(localized: "nfs")
+        case is WebDavBrowsablePlugin: return String(localized: "webdav")
+        case is OpdsBrowsablePlugin: return String(localized: "opds")
+        default: return String(localized: "folder")
     }
 }

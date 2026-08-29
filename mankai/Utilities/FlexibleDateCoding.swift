@@ -15,8 +15,7 @@ struct FlexibleDateCoding: CodingCustomizable {
     static func decode(by decoder: any Decoder, keys: [String]) throws -> Date {
         guard let key = keys.first else {
             throw DecodingError.dataCorrupted(
-                .init(codingPath: decoder.codingPath, debugDescription: "Missing date key")
-            )
+                .init(codingPath: decoder.codingPath, debugDescription: "Missing date key"))
         }
 
         let codingKey = AnyCodingKey(key)
@@ -33,10 +32,8 @@ struct FlexibleDateCoding: CodingCustomizable {
         let value = try container.decode(String.self, forKey: codingKey)
         guard let date = DateCodingStrategy.parseISO8601(value) else {
             throw DecodingError.dataCorruptedError(
-                forKey: codingKey,
-                in: container,
-                debugDescription: "Expected an ISO-8601 date or a millisecond timestamp"
-            )
+                forKey: codingKey, in: container,
+                debugDescription: "Expected an ISO-8601 date or a millisecond timestamp")
         }
         return date
     }

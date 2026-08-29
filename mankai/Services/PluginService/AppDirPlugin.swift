@@ -12,8 +12,8 @@ final class AppDirPlugin: ReadWriteFsPlugin {
 
     private init() {
         let fileManager = FileManager.default
-        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!.appendingPathComponent("mangas")
+        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("mangas")
 
         if !fileManager.fileExists(atPath: mangaDir.path) {
             do {
@@ -24,31 +24,20 @@ final class AppDirPlugin: ReadWriteFsPlugin {
         }
 
         Logger.appDirPlugin.info(
-            "AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))"
-        )
+            "AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
 
         super.init(url: mangaDir, id: "mankai")
     }
 
     override var tags: [String] {
-        [
-            String(localized: "builtin"),
-            String(localized: "fs"),
-            String(localized: "editable"),
-        ]
+        [String(localized: "builtin"), String(localized: "fs"), String(localized: "editable")]
     }
 
-    override var description: String? {
-        String(localized: "appFsPluginDescription")
-    }
+    override var description: String? { String(localized: "appFsPluginDescription") }
 
-    override var name: String? {
-        String(localized: "appName")
-    }
+    override var name: String? { String(localized: "appName") }
 
-    override var shouldSync: Bool {
-        false
-    }
+    override var shouldSync: Bool { false }
 
     /// Built-in plugin, do nothing
     override func savePlugin() throws {}

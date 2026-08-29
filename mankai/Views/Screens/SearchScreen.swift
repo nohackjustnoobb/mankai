@@ -27,26 +27,14 @@ struct SearchScreen: View {
         .overlay {
             if plugins.isEmpty {
                 ContentUnavailableView(
-                    "noPluginAvailable",
-                    systemImage: "puzzlepiece.extension",
-                    description: Text("noPluginAvailableDescription")
-                )
+                    "noPluginAvailable", systemImage: "puzzlepiece.extension",
+                    description: Text("noPluginAvailableDescription"))
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitleWithSubtitle(
-            title: Text("search"),
-            subtitle: Text(query)
-        )
-        .onAppear {
-            updatePlugins()
-        }
-        .onReceive(pluginService.objectWillChange) {
-            updatePlugins()
-        }
-        .onChange(of: hideBuiltInPlugins) {
-            updatePlugins()
-        }
+        .navigationTitleWithSubtitle(title: Text("search"), subtitle: Text(query))
+        .onAppear { updatePlugins() }.onReceive(pluginService.objectWillChange) { updatePlugins() }
+        .onChange(of: hideBuiltInPlugins) { updatePlugins() }
     }
 
     private func updatePlugins() {
@@ -71,9 +59,8 @@ struct PluginSearchMangasRowListView: View {
         }
 
         Task {
-            do {
-                mangas = try await plugin.search(query, page: 1, genre: .all, status: .any)
-            } catch {
+            do { mangas = try await plugin.search(query, page: 1, genre: .all, status: .any) } catch
+            {
                 errorMessage = error.localizedDescription
                 showErrorAlert = true
             }
@@ -81,25 +68,12 @@ struct PluginSearchMangasRowListView: View {
     }
 
     var body: some View {
-        MangasRowListView(
-            mangas: mangas,
-            plugin: plugin,
-            query: query
-        )
-        .onAppear {
-            loadMangas()
-        }
-        .onReceive(plugin.objectWillChange) {
-            loadMangas()
-        }
-        .alert("failedToSearchManga", isPresented: $showErrorAlert) {
-            Button("ok") {
-                errorMessage = ""
+        MangasRowListView(mangas: mangas, plugin: plugin, query: query).onAppear { loadMangas() }
+            .onReceive(plugin.objectWillChange) { loadMangas() }
+            .alert("failedToSearchManga", isPresented: $showErrorAlert) {
+                Button("ok") { errorMessage = "" }
+            } message: {
+                if !errorMessage.isEmpty { Text(errorMessage) }
             }
-        } message: {
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-            }
-        }
     }
 }

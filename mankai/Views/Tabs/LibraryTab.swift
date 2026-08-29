@@ -24,57 +24,39 @@ struct LibraryTab: View {
             Group {
                 if plugins.isEmpty {
                     ContentUnavailableView(
-                        "noPluginAvailable",
-                        systemImage: "puzzlepiece.extension",
-                        description: Text("noPluginAvailableDescription")
-                    )
+                        "noPluginAvailable", systemImage: "puzzlepiece.extension",
+                        description: Text("noPluginAvailableDescription"))
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(plugins) { plugin in
-                                PluginListMangasRowListView(plugin: plugin)
+                            ForEach(plugins) { plugin in PluginListMangasRowListView(plugin: plugin)
                             }
                         }
                         .padding()
                     }
                 }
             }
-            .navigationTitle("library")
-            .onAppear {
-                updatePlugins()
-            }
-            .onReceive(pluginService.objectWillChange) {
-                updatePlugins()
-            }
+            .navigationTitle("library").onAppear { updatePlugins() }
+            .onReceive(pluginService.objectWillChange) { updatePlugins() }
             .onChange(of: hideBuiltInPlugins) {
                 updatePlugins()
                 getSearchSuggestions(for: query)
             }
             .capabilitySearchable(
-                enabled: !searchablePlugins.isEmpty,
-                text: $query,
-                prompt: "searchManga"
+                enabled: !searchablePlugins.isEmpty, text: $query, prompt: "searchManga"
             ) {
                 ForEach(searchSuggestions, id: \.self) { suggestion in
-                    Label(suggestion, systemImage: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                    Label(suggestion, systemImage: "magnifyingglass").foregroundColor(.secondary)
                         .searchCompletion(suggestion)
                 }
             }
-            .onSubmit(of: .search) {
-                performSearch()
-            }
+            .onSubmit(of: .search) { performSearch() }
             .onChange(of: query, initial: false) { _, newQuery in
                 getSearchSuggestions(for: newQuery)
             }
-            .onDisappear {
-                searchTask?.cancel()
-            }
+            .onDisappear { searchTask?.cancel() }
             .navigationDestination(
-                isPresented: $navigateToSearch,
-                destination: {
-                    SearchScreen(query: query)
-                }
+                isPresented: $navigateToSearch, destination: { SearchScreen(query: query) }
             )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -83,25 +65,23 @@ struct LibraryTab: View {
                     }
                 }
             }
-            .sheet(isPresented: $isUpdateMangaModalPresented) {
-                UpdateMangaModal()
-            }
+            .sheet(isPresented: $isUpdateMangaModalPresented) { UpdateMangaModal() }
         }
     }
 
     private func updatePlugins() {
-        plugins = pluginService.plugins.filter { plugin in
-            guard plugin.supports(.list) else { return false }
+        plugins = pluginService.plugins
+            .filter { plugin in
+                guard plugin.supports(.list) else { return false }
 
-            if hideBuiltInPlugins, plugin is AppDirPlugin {
-                return false
+                if hideBuiltInPlugins, plugin is AppDirPlugin { return false }
+                return true
             }
-            return true
-        }.sorted { plugin1, plugin2 in
-            let name1 = plugin1.name ?? plugin1.id
-            let name2 = plugin2.name ?? plugin2.id
-            return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
-        }
+            .sorted { plugin1, plugin2 in
+                let name1 = plugin1.name ?? plugin1.id
+                let name2 = plugin2.name ?? plugin2.id
+                return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
+            }
     }
 
     private func getSearchSuggestions(for query: String) {
@@ -131,8 +111,7 @@ struct LibraryTab: View {
                 } catch {
                     // Continue with other plugins if one fails
                     Logger.pluginService.error(
-                        "Failed to get suggestions from plugin \(plugin.id)", error: error
-                    )
+                        "Failed to get suggestions from plugin \(plugin.id)", error: error)
                 }
             }
 
@@ -155,11 +134,8 @@ struct LibraryTab: View {
 }
 
 extension View {
-    @ViewBuilder
-    func capabilitySearchable<Suggestions: View>(
-        enabled: Bool,
-        text: Binding<String>,
-        prompt: LocalizedStringKey,
+    @ViewBuilder func capabilitySearchable<Suggestions: View>(
+        enabled: Bool, text: Binding<String>, prompt: LocalizedStringKey,
         @ViewBuilder suggestions: () -> Suggestions
     ) -> some View {
         if enabled {
@@ -194,24 +170,12 @@ private struct PluginListMangasRowListView: View {
     }
 
     var body: some View {
-        MangasRowListView(
-            mangas: mangas,
-            plugin: plugin
-        )
-        .onAppear {
-            loadMangas()
-        }
-        .onReceive(plugin.objectWillChange) {
-            loadMangas()
-        }
-        .alert("failedToLoadMangas", isPresented: $showErrorAlert) {
-            Button("ok") {
-                errorMessage = ""
+        MangasRowListView(mangas: mangas, plugin: plugin).onAppear { loadMangas() }
+            .onReceive(plugin.objectWillChange) { loadMangas() }
+            .alert("failedToLoadMangas", isPresented: $showErrorAlert) {
+                Button("ok") { errorMessage = "" }
+            } message: {
+                if !errorMessage.isEmpty { Text(errorMessage) }
             }
-        } message: {
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-            }
-        }
     }
 }

@@ -25,19 +25,13 @@ final class AuthManager {
     var postLogin: (() -> Void)?
     var postLogout: (() -> Void)?
 
-    var username: String? {
-        return _username
-    }
+    var username: String? { return _username }
 
     var serverUrl: String? {
-        get {
-            return _serverUrl
-        }
+        get { return _serverUrl }
         set {
             _serverUrl = newValue
-            if _serverUrl?.hasSuffix("/") == true {
-                _serverUrl?.removeLast()
-            }
+            if _serverUrl?.hasSuffix("/") == true { _serverUrl?.removeLast() }
 
             save()
         }
@@ -104,9 +98,7 @@ final class AuthManager {
         postLogout?()
     }
 
-    func isPasswordSame(password: String) -> Bool {
-        return _password == password
-    }
+    func isPasswordSame(password: String) -> Bool { return _password == password }
 
     private func getRefreshToken() async throws {
         Logger.authManager.debug("AuthManager getting refresh token")
@@ -124,10 +116,7 @@ final class AuthManager {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body: [String: String] = [
-            "username": username,
-            "password": password,
-        ]
+        let body: [String: String] = ["username": username, "password": password]
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -166,9 +155,7 @@ final class AuthManager {
         refreshAccessTokenLock.lock()
         defer { refreshAccessTokenLock.unlock() }
 
-        if let refreshAccessTokenTask {
-            return refreshAccessTokenTask
-        }
+        if let refreshAccessTokenTask { return refreshAccessTokenTask }
 
         let task: Task<Void, Error> = Task { [weak self] in
             defer { self?.clearRefreshAccessTokenTask() }
@@ -203,9 +190,7 @@ final class AuthManager {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body: [String: String] = [
-            "refreshToken": refreshToken
-        ]
+        let body: [String: String] = ["refreshToken": refreshToken]
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -224,8 +209,7 @@ final class AuthManager {
 
         guard httpResponse.statusCode == 200 else {
             Logger.authManager.error(
-                "AuthManager refresh failed with status code: \(httpResponse.statusCode)"
-            )
+                "AuthManager refresh failed with status code: \(httpResponse.statusCode)")
             throw MankaiErrorCode.authRefreshFailed.makeError()
         }
 
@@ -254,27 +238,19 @@ final class AuthManager {
 
     func post(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
         Data, HTTPURLResponse
-    ) {
-        return try await request(method: "POST", path: path, query: query, body: body)
-    }
+    ) { return try await request(method: "POST", path: path, query: query, body: body) }
 
     func patch(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
         Data, HTTPURLResponse
-    ) {
-        return try await request(method: "PATCH", path: path, query: query, body: body)
-    }
+    ) { return try await request(method: "PATCH", path: path, query: query, body: body) }
 
     func put(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
         Data, HTTPURLResponse
-    ) {
-        return try await request(method: "PUT", path: path, query: query, body: body)
-    }
+    ) { return try await request(method: "PUT", path: path, query: query, body: body) }
 
     func delete(path: String, query: [String: String]? = nil) async throws -> (
         Data, HTTPURLResponse
-    ) {
-        return try await request(method: "DELETE", path: path, query: query, body: nil)
-    }
+    ) { return try await request(method: "DELETE", path: path, query: query, body: nil) }
 
     func request(
         method: String, path: String, query: [String: String]? = nil, body: Data? = nil,
@@ -289,9 +265,11 @@ final class AuthManager {
         var urlString = serverUrl + path
 
         if let query = query, !query.isEmpty {
-            let queryString = query.map {
-                "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            }.joined(separator: "&")
+            let queryString =
+                query.map {
+                    "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
+                }
+                .joined(separator: "&")
             urlString += "?" + queryString
         }
 
@@ -310,9 +288,7 @@ final class AuthManager {
             urlRequest.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         }
 
-        if let body = body {
-            urlRequest.httpBody = body
-        }
+        if let body = body { urlRequest.httpBody = body }
 
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
@@ -335,8 +311,7 @@ final class AuthManager {
                     messageOverride: errorMsg,
                     additionalUserInfo: [
                         MankaiErrorUserInfoKey.httpStatusCode: httpResponse.statusCode
-                    ]
-                )
+                    ])
             }
         } else {
             Logger.authManager.error("AuthManager invalid response type")

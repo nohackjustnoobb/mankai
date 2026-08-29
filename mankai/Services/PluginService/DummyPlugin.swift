@@ -10,17 +10,11 @@ import Foundation
 final class DummyPlugin: Plugin {
     private let _id: String
 
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
-    override var capabilities: [PluginCapability] {
-        []
-    }
+    override var capabilities: [PluginCapability] { [] }
 
-    init(_ id: String) {
-        _id = id
-    }
+    init(_ id: String) { _id = id }
 
     /// DummyPlugin cannot be saved
     override func savePlugin() throws {}
@@ -37,9 +31,7 @@ final class DummyPlugin: Plugin {
 
     override func search(
         _: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool
-    ) async throws -> [Manga] {
-        throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()
-    }
+    ) async throws -> [Manga] { throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError() }
 
     override func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
         throw MankaiErrorCode.pluginDummyCannotBeUsed.makeError()

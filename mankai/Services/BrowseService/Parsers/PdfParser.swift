@@ -14,9 +14,7 @@ final class PdfParser: Parser {
         let document: PDFDocument
         let readLock = NSLock()
 
-        init(document: PDFDocument) {
-            self.document = document
-        }
+        init(document: PDFDocument) { self.document = document }
     }
 
     private var cachedDocumentKey: String?
@@ -31,16 +29,11 @@ final class PdfParser: Parser {
         return cachedDocument
     }
 
-    private func storeDocument(
-        _ document: CachedDocument,
-        for cacheKey: String
-    ) -> CachedDocument {
+    private func storeDocument(_ document: CachedDocument, for cacheKey: String) -> CachedDocument {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
-        if cachedDocumentKey == cacheKey, let cachedDocument {
-            return cachedDocument
-        }
+        if cachedDocumentKey == cacheKey, let cachedDocument { return cachedDocument }
 
         cachedDocumentKey = cacheKey
         cachedDocument = document
@@ -78,38 +71,27 @@ final class PdfParser: Parser {
         }
     }
 
-    private func performRead<T>(
-        cachedDocument: CachedDocument,
-        body: (CachedDocument) throws -> T
-    ) rethrows -> T {
+    private func performRead<T>(cachedDocument: CachedDocument, body: (CachedDocument) throws -> T)
+        rethrows -> T
+    {
         cachedDocument.readLock.lock()
         defer { cachedDocument.readLock.unlock() }
         return try body(cachedDocument)
     }
 
-    private func withReadLock<T>(
-        for file: ParserFile,
-        body: (CachedDocument) throws -> T
-    ) async throws -> T {
+    private func withReadLock<T>(for file: ParserFile, body: (CachedDocument) throws -> T)
+        async throws -> T
+    {
         Logger.pdfParser.debug("Acquiring read lock for: \(file.cacheKey)")
         let cachedDocument = try await document(for: file)
-        return try performRead(
-            cachedDocument: cachedDocument,
-            body: body
-        )
+        return try performRead(cachedDocument: cachedDocument, body: body)
     }
 
-    override var id: String {
-        "pdf"
-    }
+    override var id: String { "pdf" }
 
-    override var supportedExtensions: [String] {
-        ["pdf"]
-    }
+    override var supportedExtensions: [String] { ["pdf"] }
 
-    override var supportedMimeTypes: [String] {
-        ["application/pdf"]
-    }
+    override var supportedMimeTypes: [String] { ["application/pdf"] }
 
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.pdfParser.debug("Parsing document: \(file.fileName)")
@@ -124,10 +106,7 @@ final class PdfParser: Parser {
         manga.cover = Self.pageReference(for: 0)
         manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
         manga.latestChapter = chapter
-        manga.meta = try ParserChapterMetadata(
-            chapterId: chapter.id,
-            pages: pages
-        ).encoded()
+        manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: pages).encoded()
 
         Logger.pdfParser.debug("Parsed \(pageCount) pages")
         return manga
@@ -144,39 +123,30 @@ final class PdfParser: Parser {
             var presentedGroup = group
             presentedGroup.chapters = group.chapters.map { chapter in
                 var presentedChapter = chapter
-                if presentedChapter.title == nil {
-                    presentedChapter.title = filenameTitle
-                }
+                if presentedChapter.title == nil { presentedChapter.title = filenameTitle }
                 return presentedChapter
             }
             return presentedGroup
         }
-        if var latestChapter = presented.latestChapter,
-            latestChapter.title == nil
-        {
+        if var latestChapter = presented.latestChapter, latestChapter.title == nil {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter
         }
         return presented
     }
 
-    override func parseChapter(
-        manga: DetailedManga,
-        chapter: Chapter,
-        file: ParserFile
-    ) async throws -> [String] {
+    override func parseChapter(manga: DetailedManga, chapter: Chapter, file: ParserFile)
+        async throws -> [String]
+    {
         Logger.pdfParser.debug("Parsing chapter pages for manga: \(manga.id)")
 
         if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
             Logger.pdfParser.debug(
-                "Using \(pages.count) cached page references for chapter: \(chapter.id)"
-            )
+                "Using \(pages.count) cached page references for chapter: \(chapter.id)")
             return pages
         }
 
-        Logger.pdfParser.debug(
-            "No compatible chapter metadata found, reparsing document"
-        )
+        Logger.pdfParser.debug("No compatible chapter metadata found, reparsing document")
 
         let pageCount = try await withReadLock(for: file) { cachedDocument in
             cachedDocument.document.pageCount
@@ -192,8 +162,7 @@ final class PdfParser: Parser {
 
         let path = url as NSString
         guard path.pathExtension.lowercased() == "png",
-            let pageIndex = Int(path.deletingPathExtension),
-            pageIndex >= 0
+            let pageIndex = Int(path.deletingPathExtension), pageIndex >= 0
         else {
             Logger.pdfParser.error("Invalid page reference: \(url)")
             throw MankaiErrorCode.browsePdfPageNotFound.makeError()
@@ -201,18 +170,13 @@ final class PdfParser: Parser {
 
         return try await withReadLock(for: file) { cachedDocument in
             let document = cachedDocument.document
-            guard pageIndex < document.pageCount,
-                let page = document.page(at: pageIndex)
-            else {
+            guard pageIndex < document.pageCount, let page = document.page(at: pageIndex) else {
                 Logger.pdfParser.error("Page not found: \(url)")
                 throw MankaiErrorCode.browsePdfPageNotFound.makeError()
             }
 
             let bounds = page.bounds(for: .cropBox)
-            guard bounds.width.isFinite,
-                bounds.height.isFinite,
-                bounds.width > 0,
-                bounds.height > 0
+            guard bounds.width.isFinite, bounds.height.isFinite, bounds.width > 0, bounds.height > 0
             else {
                 Logger.pdfParser.error("Invalid bounds for page: \(url)")
                 throw MankaiErrorCode.browsePdfFailedToRenderPage.makeError()
@@ -220,9 +184,7 @@ final class PdfParser: Parser {
 
             let isQuarterTurn = abs(page.rotation % 180) == 90
             let displaySize =
-                isQuarterTurn
-                ? CGSize(width: bounds.height, height: bounds.width)
-                : bounds.size
+                isQuarterTurn ? CGSize(width: bounds.height, height: bounds.width) : bounds.size
             let image = page.thumbnail(of: displaySize, for: .cropBox)
 
             guard let data = image.pngData() else {
@@ -233,7 +195,5 @@ final class PdfParser: Parser {
         }
     }
 
-    private static func pageReference(for index: Int) -> String {
-        "\(index).png"
-    }
+    private static func pageReference(for index: Int) -> String { "\(index).png" }
 }

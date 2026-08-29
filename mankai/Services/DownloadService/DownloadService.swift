@@ -26,20 +26,14 @@ final class DownloadTask: Identifiable, ObservableObject {
         id = UUID().uuidString
         self.manga = manga
 
-        if save {
-            try await self.save()
-        }
+        if save { try await self.save() }
     }
 
     static func restoreUnfinishedTasks() async throws -> [DownloadTask] {
-        guard let db = DownloadPlugin.shared.db else {
-            return []
-        }
+        guard let db = DownloadPlugin.shared.db else { return [] }
 
         let unfinishedMangas = try await db.read { db in
-            try DownloadMangaModel
-                .filter(Column("downloaded") == false)
-                .fetchAll(db)
+            try DownloadMangaModel.filter(Column("downloaded") == false).fetchAll(db)
         }
 
         var restoredTasks: [DownloadTask] = []
@@ -52,9 +46,7 @@ final class DownloadTask: Identifiable, ObservableObject {
     }
 
     func download() async throws {
-        await MainActor.run {
-            status = .downloading(progress: 0.0)
-        }
+        await MainActor.run { status = .downloading(progress: 0.0) }
 
         // 1. Get Source Plugin
         guard let plugin = PluginService.shared.getPlugin(manga.pluginId) else {
@@ -73,20 +65,16 @@ final class DownloadTask: Identifiable, ObservableObject {
                 if try await !DownloadPlugin.shared.isImageDownloaded(coverUrl) {
                     let data = try await plugin.getImage(coverUrl)
                     try await DownloadPlugin.shared.saveImage(
-                        url: coverUrl, data: data, mangaId: manga.id
-                    )
+                        url: coverUrl, data: data, mangaId: manga.id)
                 }
-            } catch {
-                Logger.downloadService.warning("Failed to download cover: \(error)")
-            }
+            } catch { Logger.downloadService.warning("Failed to download cover: \(error)") }
         }
 
         // 3. Process Chapters
         let detailedManga = try await DownloadPlugin.shared.getDetailedManga(manga.id)
 
         var chaptersToDownload: [Chapter] = []
-        if let chaptersJson = manga.chapters,
-            let chaptersData = chaptersJson.data(using: .utf8),
+        if let chaptersJson = manga.chapters, let chaptersData = chaptersJson.data(using: .utf8),
             let chapterGroups = try? JSONDecoder().decode(ChapterGroups.self, from: chaptersData)
         {
             chaptersToDownload = chapterGroups.flatMap(\.chapters)
@@ -104,24 +92,18 @@ final class DownloadTask: Identifiable, ObservableObject {
             // Check if chapter exists locally
             do {
                 chapterUrls = try await DownloadPlugin.shared.getChapter(
-                    manga: detailedManga, chapter: chapter
-                )
+                    manga: detailedManga, chapter: chapter)
             } catch {
                 // Not found, fetch from source
-                chapterUrls = try await plugin.getChapter(
-                    manga: detailedManga, chapter: chapter
-                )
+                chapterUrls = try await plugin.getChapter(manga: detailedManga, chapter: chapter)
                 isNewChapter = true
             }
 
             // Save chapter if it's new
             if isNewChapter {
                 let chapterModel = DownloadChapterModel(
-                    mangaId: manga.id,
-                    chapterId: chapter.id,
-                    urls: chapterUrls.joined(separator: "|"),
-                    downloaded: false
-                )
+                    mangaId: manga.id, chapterId: chapter.id,
+                    urls: chapterUrls.joined(separator: "|"), downloaded: false)
                 try await DownloadPlugin.shared.saveChapter(chapterModel)
             }
 
@@ -134,35 +116,24 @@ final class DownloadTask: Identifiable, ObservableObject {
                     if try await !DownloadPlugin.shared.isImageDownloaded(url) {
                         let data = try await plugin.getImage(url)
                         try await DownloadPlugin.shared.saveImage(
-                            url: url, data: data, mangaId: manga.id
-                        )
+                            url: url, data: data, mangaId: manga.id)
                     }
 
                     let currentProgress =
-                        (downloadedChaptersCount + (Double(index + 1) / totalPages))
-                        / totalChapters
-                    await MainActor.run {
-                        status = .downloading(progress: currentProgress)
-                    }
+                        (downloadedChaptersCount + (Double(index + 1) / totalPages)) / totalChapters
+                    await MainActor.run { status = .downloading(progress: currentProgress) }
                 }
             }
 
             // Mark chapter as downloaded
             let completedChapterModel = DownloadChapterModel(
-                mangaId: manga.id,
-                chapterId: chapter.id,
-                urls: chapterUrls.joined(separator: "|"),
-                downloaded: true
-            )
+                mangaId: manga.id, chapterId: chapter.id, urls: chapterUrls.joined(separator: "|"),
+                downloaded: true)
             try await DownloadPlugin.shared.saveChapter(completedChapterModel)
 
             downloadedChaptersCount += 1.0
             let finalProgress = downloadedChaptersCount / totalChapters
-            await MainActor.run {
-                status = .downloading(
-                    progress: finalProgress
-                )
-            }
+            await MainActor.run { status = .downloading(progress: finalProgress) }
         }
 
         // Mark manga as downloaded
@@ -170,23 +141,17 @@ final class DownloadTask: Identifiable, ObservableObject {
         completedManga.downloaded = true
         try await DownloadPlugin.shared.saveManga(completedManga)
 
-        await MainActor.run {
-            status = .completed
-        }
+        await MainActor.run { status = .completed }
     }
 
     func cancel() async throws {
-        await MainActor.run {
-            status = .cancelled
-        }
+        await MainActor.run { status = .cancelled }
 
         try await delete()
     }
 
     func markFailed(error: Error) async throws {
-        await MainActor.run {
-            status = .failed(error: error)
-        }
+        await MainActor.run { status = .failed(error: error) }
 
         try await delete()
     }
@@ -194,18 +159,12 @@ final class DownloadTask: Identifiable, ObservableObject {
     func retry() async throws {
         try await save()
 
-        await MainActor.run {
-            status = .queued
-        }
+        await MainActor.run { status = .queued }
     }
 
-    func save() async throws {
-        try await DownloadPlugin.shared.saveManga(manga)
-    }
+    func save() async throws { try await DownloadPlugin.shared.saveManga(manga) }
 
-    func delete() async throws {
-        try await DownloadPlugin.shared.deleteManga(manga.id)
-    }
+    func delete() async throws { try await DownloadPlugin.shared.deleteManga(manga.id) }
 }
 
 final class DownloadService: ObservableObject {
@@ -227,9 +186,7 @@ final class DownloadService: ObservableObject {
                     }
                     self.scheduleDownloads()
                 }
-            } catch {
-                Logger.downloadService.error("Failed to restore unfinished tasks: \(error)")
-            }
+            } catch { Logger.downloadService.error("Failed to restore unfinished tasks: \(error)") }
         }
     }
 
@@ -265,8 +222,8 @@ final class DownloadService: ObservableObject {
             // Parse existing chapters
             if let existingChaptersJson = existingManga.chapters,
                 let chaptersData = existingChaptersJson.data(using: .utf8),
-                let existingChapters = try? JSONDecoder().decode(
-                    ChapterGroups.self, from: chaptersData)
+                let existingChapters = try? JSONDecoder()
+                    .decode(ChapterGroups.self, from: chaptersData)
             {
                 for existingGroup in existingChapters {
                     guard
@@ -280,9 +237,9 @@ final class DownloadService: ObservableObject {
 
                     // Merge lists, avoiding duplicates while retaining the selected order.
                     for existingChapter in existingGroup.chapters {
-                        if !finalChapters[currentIndex].chapters.contains(where: {
-                            $0.id == existingChapter.id
-                        }) {
+                        if !finalChapters[currentIndex].chapters
+                            .contains(where: { $0.id == existingChapter.id })
+                        {
                             finalChapters[currentIndex].chapters.append(existingChapter)
                         }
                     }
@@ -295,8 +252,7 @@ final class DownloadService: ObservableObject {
                 title: group.title,
                 chapters: group.chapters.map { chapter in
                     Chapter(id: chapter.id, title: chapter.title)
-                }
-            )
+                })
         }
         let chaptersJsonData = try JSONEncoder().encode(chaptersToPersist)
         let chaptersJson = String(data: chaptersJsonData, encoding: .utf8)
@@ -304,29 +260,19 @@ final class DownloadService: ObservableObject {
         var latestChapterJson: String?
         if let latestChapter = manga.latestChapter {
             var latestChapterDict: [String: Any] = ["id": latestChapter.id]
-            if let title = latestChapter.title {
-                latestChapterDict["title"] = title
-            }
+            if let title = latestChapter.title { latestChapterDict["title"] = title }
             let latestChapterData = try JSONSerialization.data(
                 withJSONObject: latestChapterDict, options: [])
             latestChapterJson = String(data: latestChapterData, encoding: .utf8)
         }
 
         let mangaModel = DownloadMangaModel(
-            pluginId: plugin.id,
-            mangaId: manga.id,
-            id: combinedId,
-            title: manga.title,
-            cover: manga.cover,
-            status: manga.status != nil ? Int(manga.status!.rawValue) : nil,
-            description: manga.description,
-            updatedAt: manga.updatedAt,
+            pluginId: plugin.id, mangaId: manga.id, id: combinedId, title: manga.title,
+            cover: manga.cover, status: manga.status != nil ? Int(manga.status!.rawValue) : nil,
+            description: manga.description, updatedAt: manga.updatedAt,
             authors: manga.authors.joined(separator: "|"),
             genres: manga.genres.map { $0.rawValue }.joined(separator: "|"),
-            latestChapter: latestChapterJson,
-            chapters: chaptersJson,
-            downloaded: false
-        )
+            latestChapter: latestChapterJson, chapters: chaptersJson, downloaded: false)
 
         let task = try await DownloadTask(manga: mangaModel)
         await MainActor.run {
@@ -346,9 +292,7 @@ final class DownloadService: ObservableObject {
         if let task = tasks[id] {
             try await task.cancel()
 
-            await MainActor.run {
-                _ = tasks.removeValue(forKey: id)
-            }
+            await MainActor.run { _ = tasks.removeValue(forKey: id) }
 
             Logger.downloadService.info("Cancelled task for \(task.manga.title ?? task.manga.id)")
         }
@@ -357,9 +301,7 @@ final class DownloadService: ObservableObject {
     func retryTask(id: String) async throws {
         if let task = tasks[id] {
             try await task.retry()
-            await MainActor.run {
-                self.scheduleDownloads()
-            }
+            await MainActor.run { self.scheduleDownloads() }
         }
     }
 
@@ -402,9 +344,7 @@ final class DownloadService: ObservableObject {
                 NotificationService.shared.showSuccess(
                     String(format: message, task.manga.title ?? task.manga.id))
 
-                await MainActor.run {
-                    _ = tasks.removeValue(forKey: task.id)
-                }
+                await MainActor.run { _ = tasks.removeValue(forKey: task.id) }
             } catch {
                 if case .cancelled = task.status {
                     // Already cancelled
@@ -415,11 +355,8 @@ final class DownloadService: ObservableObject {
                     let message = String(localized: "downloadFailedMessageFormat")
                     NotificationService.shared.showError(
                         String(
-                            format: message,
-                            task.manga.title ?? task.manga.id,
-                            error.localizedDescription
-                        )
-                    )
+                            format: message, task.manga.title ?? task.manga.id,
+                            error.localizedDescription))
                 }
             }
 

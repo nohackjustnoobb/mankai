@@ -18,9 +18,7 @@ struct SyncSettingsScreen: View {
         List {
             SettingsHeaderView(
                 image: Image(systemName: "arrow.triangle.2.circlepath"), color: .blue,
-                title: String(localized: "sync"),
-                description: String(localized: "syncDescription")
-            )
+                title: String(localized: "sync"), description: String(localized: "syncDescription"))
 
             Section {
                 Picker("syncEngine", selection: $syncService.engine) {
@@ -35,34 +33,25 @@ struct SyncSettingsScreen: View {
                 Section("syncStatus") {
                     LabeledContent("status") {
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(engine.active ? Color.green : Color.red)
+                            Circle().fill(engine.active ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
-                            Text(engine.active ? "active" : "inactive")
-                                .foregroundColor(.secondary)
+                            Text(engine.active ? "active" : "inactive").foregroundColor(.secondary)
                         }
                     }
 
                     LabeledContent("lastSyncTime") {
                         if let lastSyncTime = syncService.lastSyncTime {
-                            Text(lastSyncTime, style: .relative)
-                                .foregroundColor(.secondary)
+                            Text(lastSyncTime, style: .relative).foregroundColor(.secondary)
                         } else {
-                            Text("never")
-                                .foregroundColor(.secondary)
+                            Text("never").foregroundColor(.secondary)
                         }
                     }
 
                     Button {
-                        Task {
-                            await performSync()
-                        }
+                        Task { await performSync() }
                     } label: {
                         HStack {
-                            if isSyncing {
-                                ProgressView()
-                                    .padding(.trailing, 4)
-                            }
+                            if isSyncing { ProgressView().padding(.trailing, 4) }
                             Text("syncNow")
                         }
                     }
@@ -71,27 +60,18 @@ struct SyncSettingsScreen: View {
             }
 
             if let engine = syncService.engine {
-                if engine is HttpEngine {
-                    HttpEngineConfigView()
-                }
+                if engine is HttpEngine { HttpEngineConfigView() }
 
-                if engine is SupabaseEngine {
-                    SupabaseEngineConfigView()
-                }
+                if engine is SupabaseEngine { SupabaseEngineConfigView() }
             }
 
             if syncService.engine != nil {
                 Section {
                     Button(role: .destructive) {
-                        Task {
-                            await clearSyncCache()
-                        }
+                        Task { await clearSyncCache() }
                     } label: {
                         HStack {
-                            if isSyncing {
-                                ProgressView()
-                                    .padding(.trailing, 4)
-                            }
+                            if isSyncing { ProgressView().padding(.trailing, 4) }
                             Text("clearSyncCache")
                         }
                     }
@@ -99,14 +79,11 @@ struct SyncSettingsScreen: View {
                 }
             }
         }
-        .navigationTitle("sync")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("sync").navigationBarTitleDisplayMode(.inline)
         .alert("syncFailed", isPresented: $showErrorAlert) {
             Button("ok", role: .cancel) {}
         } message: {
-            if let syncError = syncError {
-                Text(syncError)
-            }
+            if let syncError = syncError { Text(syncError) }
         }
     }
 
@@ -114,9 +91,7 @@ struct SyncSettingsScreen: View {
         isSyncing = true
         syncError = nil
 
-        do {
-            try await syncService.sync()
-        } catch {
+        do { try await syncService.sync() } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }
@@ -128,9 +103,7 @@ struct SyncSettingsScreen: View {
         isSyncing = true
         syncError = nil
 
-        do {
-            try await syncService.onEngineChange()
-        } catch {
+        do { try await syncService.onEngineChange() } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }
@@ -155,9 +128,7 @@ struct HttpEngineConfigView: View {
             Section("serverSettings") {
                 if let serverUrl = httpEngine.serverUrl, !serverUrl.isEmpty {
                     LabeledContent("serverUrl") {
-                        Text(serverUrl)
-                            .foregroundColor(.secondary)
-                            .textSelection(.enabled)
+                        Text(serverUrl).foregroundColor(.secondary).textSelection(.enabled)
                     }
 
                     Button(role: .destructive) {
@@ -167,8 +138,7 @@ struct HttpEngineConfigView: View {
                     }
                     .confirmationDialog(
                         "resetServerSettingsConfirmationMessage",
-                        isPresented: $showResetConfirmation,
-                        titleVisibility: .visible
+                        isPresented: $showResetConfirmation, titleVisibility: .visible
                     ) {
                         Button("reset", role: .destructive) {
                             httpEngine.serverUrl = nil
@@ -180,10 +150,8 @@ struct HttpEngineConfigView: View {
                         Button("cancel", role: .cancel) {}
                     }
                 } else {
-                    TextField("serverUrl", text: $serverUrl)
-                        .textContentType(.URL)
-                        .keyboardType(.URL)
-                        .autocapitalization(.none)
+                    TextField("serverUrl", text: $serverUrl).textContentType(.URL)
+                        .keyboardType(.URL).autocapitalization(.none)
 
                     Button {
                         let trimmedServerUrl = serverUrl.trimmingCharacters(
@@ -196,17 +164,16 @@ struct HttpEngineConfigView: View {
                             let queryItems = components.queryItems
                         {
                             loginUsername = queryItems.first(where: { $0.name == "username" })?
-                                .value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                                .value?
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
                             loginPassword = queryItems.first(where: { $0.name == "password" })?
-                                .value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                                .value?
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
 
                             if loginUsername != nil || loginPassword != nil {
-                                components.queryItems = components.queryItems?.filter {
-                                    $0.name != "username" && $0.name != "password"
-                                }
-                                if components.queryItems?.isEmpty ?? true {
-                                    components.query = nil
-                                }
+                                components.queryItems = components.queryItems?
+                                    .filter { $0.name != "username" && $0.name != "password" }
+                                if components.queryItems?.isEmpty ?? true { components.query = nil }
                                 cleanedUrl = components.string ?? trimmedServerUrl
                             }
                         }
@@ -218,9 +185,7 @@ struct HttpEngineConfigView: View {
                             self.username = loginUsername
                             self.password = loginPassword
 
-                            Task {
-                                await performLogin()
-                            }
+                            Task { await performLogin() }
                         }
                     } label: {
                         Text("saveConfigs")
@@ -233,8 +198,7 @@ struct HttpEngineConfigView: View {
                 Section("credentials") {
                     if httpEngine.username != nil {
                         LabeledContent("username") {
-                            Text(httpEngine.username ?? "")
-                                .foregroundColor(.secondary)
+                            Text(httpEngine.username ?? "").foregroundColor(.secondary)
                         }
 
                         Button(role: .destructive) {
@@ -243,8 +207,7 @@ struct HttpEngineConfigView: View {
                             Text("logout")
                         }
                         .confirmationDialog(
-                            "logoutConfirmationMessage",
-                            isPresented: $showLogoutConfirmation,
+                            "logoutConfirmationMessage", isPresented: $showLogoutConfirmation,
                             titleVisibility: .visible
                         ) {
                             Button("logout", role: .destructive) {
@@ -255,24 +218,15 @@ struct HttpEngineConfigView: View {
                             Button("cancel", role: .cancel) {}
                         }
                     } else {
-                        TextField("username", text: $username)
-                            .textContentType(.username)
-                            .keyboardType(.default)
-                            .autocapitalization(.none)
+                        TextField("username", text: $username).textContentType(.username)
+                            .keyboardType(.default).autocapitalization(.none)
 
-                        SecureField("password", text: $password)
-                            .textContentType(.password)
+                        SecureField("password", text: $password).textContentType(.password)
 
                         Button {
-                            Task {
-                                await performLogin()
-                            }
+                            Task { await performLogin() }
                         } label: {
-                            if isLoggingIn {
-                                ProgressView()
-                            } else {
-                                Text("login")
-                            }
+                            if isLoggingIn { ProgressView() } else { Text("login") }
                         }
                         .disabled(
                             username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn
@@ -288,9 +242,7 @@ struct HttpEngineConfigView: View {
         .alert("loginFailed", isPresented: $showErrorAlert) {
             Button("ok", role: .cancel) {}
         } message: {
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-            }
+            if let errorMessage = errorMessage { Text(errorMessage) }
         }
     }
 
@@ -329,14 +281,12 @@ struct SupabaseEngineConfigView: View {
             Section("supabaseSettings") {
                 if supabaseEngine.isConfigured {
                     LabeledContent("url") {
-                        Text(supabaseEngine.currentUrl ?? "")
-                            .foregroundColor(.secondary)
+                        Text(supabaseEngine.currentUrl ?? "").foregroundColor(.secondary)
                             .textSelection(.enabled)
                     }
 
                     LabeledContent("key") {
-                        Text(supabaseEngine.currentKey ?? "")
-                            .foregroundColor(.secondary)
+                        Text(supabaseEngine.currentKey ?? "").foregroundColor(.secondary)
                             .textSelection(.enabled)
                     }
 
@@ -346,8 +296,7 @@ struct SupabaseEngineConfigView: View {
                         Text("resetConfigs")
                     }
                     .confirmationDialog(
-                        "resetSupabaseConfirmationMessage",
-                        isPresented: $showResetConfirmation,
+                        "resetSupabaseConfirmationMessage", isPresented: $showResetConfirmation,
                         titleVisibility: .visible
                     ) {
                         Button("reset", role: .destructive) {
@@ -358,14 +307,10 @@ struct SupabaseEngineConfigView: View {
                         Button("cancel", role: .cancel) {}
                     }
                 } else {
-                    TextField("url", text: $url)
-                        .textContentType(.URL)
-                        .keyboardType(.URL)
+                    TextField("url", text: $url).textContentType(.URL).keyboardType(.URL)
                         .autocapitalization(.none)
 
-                    TextField("key", text: $key)
-                        .keyboardType(.default)
-                        .autocapitalization(.none)
+                    TextField("key", text: $key).keyboardType(.default).autocapitalization(.none)
 
                     Button {
                         performConfig()
@@ -384,21 +329,15 @@ struct SupabaseEngineConfigView: View {
                                 let avatarUrl = URL(string: avatarUrlString)
                             {
                                 AsyncImage(url: avatarUrl) { image in
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
+                                    image.resizable().aspectRatio(contentMode: .fill)
                                 } placeholder: {
-                                    Image(systemName: "person.circle.fill")
-                                        .resizable()
+                                    Image(systemName: "person.circle.fill").resizable()
                                         .foregroundColor(.gray)
                                 }
-                                .frame(width: 32, height: 32)
-                                .clipShape(Circle())
+                                .frame(width: 32, height: 32).clipShape(Circle())
                             } else {
-                                Image(systemName: "person.circle.fill")
-                                    .resizable()
-                                    .foregroundColor(.gray)
-                                    .frame(width: 32, height: 32)
+                                Image(systemName: "person.circle.fill").resizable()
+                                    .foregroundColor(.gray).frame(width: 32, height: 32)
                             }
 
                             if let userName = user.userMetadata["preferred_username"]?.stringValue
@@ -407,9 +346,7 @@ struct SupabaseEngineConfigView: View {
                                 VStack(alignment: .leading) {
                                     Text(userName)
                                     if let email = user.email {
-                                        Text(email)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                        Text(email).font(.caption).foregroundColor(.secondary)
                                     }
                                 }
                             } else {
@@ -423,22 +360,18 @@ struct SupabaseEngineConfigView: View {
                             Text("logout")
                         }
                         .confirmationDialog(
-                            "logoutConfirmationMessage",
-                            isPresented: $showLogoutConfirmation,
+                            "logoutConfirmationMessage", isPresented: $showLogoutConfirmation,
                             titleVisibility: .visible
                         ) {
                             Button("logout", role: .destructive) {
-                                Task {
-                                    try? await supabaseEngine.logout()
-                                }
+                                Task { try? await supabaseEngine.logout() }
                             }
                             Button("cancel", role: .cancel) {}
                         }
                     } else {
                         Picker("provider", selection: $selectedProvider) {
                             ForEach(Provider.allCases, id: \.self) { provider in
-                                Text(provider.rawValue.capitalized)
-                                    .tag(provider)
+                                Text(provider.rawValue.capitalized).tag(provider)
                             }
                         }
 
@@ -454,32 +387,22 @@ struct SupabaseEngineConfigView: View {
                                 isLoggingIn = false
                             }
                         } label: {
-                            if isLoggingIn {
-                                ProgressView()
-                            } else {
-                                Text("login")
-                            }
+                            if isLoggingIn { ProgressView() } else { Text("login") }
                         }
                     }
                 }
             }
         }
-        .onAppear {
-            url = supabaseEngine.currentUrl ?? ""
-        }
+        .onAppear { url = supabaseEngine.currentUrl ?? "" }
         .alert("configFailed", isPresented: $showErrorAlert) {
             Button("ok", role: .cancel) {}
         } message: {
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-            }
+            if let errorMessage = errorMessage { Text(errorMessage) }
         }
     }
 
     private func performConfig() {
-        do {
-            try supabaseEngine.configClient(url: url, key: key)
-        } catch {
+        do { try supabaseEngine.configClient(url: url, key: key) } catch {
             errorMessage = error.localizedDescription
             showErrorAlert = true
         }

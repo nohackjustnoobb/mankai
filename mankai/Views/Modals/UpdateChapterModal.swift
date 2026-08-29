@@ -41,13 +41,10 @@ struct UpdateChapterModal: View {
         }
 
         Task {
-            do {
-                urls = try await plugin.getChapter(manga: manga, chapter: chapter)
-            } catch {
+            do { urls = try await plugin.getChapter(manga: manga, chapter: chapter) } catch {
                 showError(
                     title: String(localized: "failedToLoadChapter"),
-                    message: error.localizedDescription
-                )
+                    message: error.localizedDescription)
             }
         }
     }
@@ -57,9 +54,7 @@ struct UpdateChapterModal: View {
 
         if let urls = urls {
             for url in urls {
-                if images[url] != nil {
-                    continue
-                }
+                if images[url] != nil { continue }
 
                 Task {
                     do {
@@ -68,8 +63,7 @@ struct UpdateChapterModal: View {
                     } catch {
                         showError(
                             title: String(localized: "failedToLoadImage"),
-                            message: error.localizedDescription
-                        )
+                            message: error.localizedDescription)
                     }
                 }
             }
@@ -88,8 +82,7 @@ struct UpdateChapterModal: View {
             } catch {
                 showError(
                     title: String(localized: "failedToReorderImages"),
-                    message: error.localizedDescription
-                )
+                    message: error.localizedDescription)
             }
         }
     }
@@ -102,15 +95,12 @@ struct UpdateChapterModal: View {
 
         Task {
             do {
-                try await plugin.deleteImages(
-                    ids: idsToRemove
-                )
+                try await plugin.deleteImages(ids: idsToRemove)
                 loadUrls()
             } catch {
                 showError(
                     title: String(localized: "failedToRemoveImages"),
-                    message: error.localizedDescription
-                )
+                    message: error.localizedDescription)
             }
         }
     }
@@ -129,23 +119,19 @@ struct UpdateChapterModal: View {
                 } catch {
                     showError(
                         title: String(localized: "failedToLoadSelectedImage"),
-                        message: error.localizedDescription
-                    )
+                        message: error.localizedDescription)
                 }
             }
 
             do {
-                try await plugin.addImages(
-                    chapterId: chapter.id, images: newImages
-                )
+                try await plugin.addImages(chapterId: chapter.id, images: newImages)
 
                 loadUrls()
                 selectedItems = []
             } catch {
                 showError(
                     title: String(localized: "failedToAddImages"),
-                    message: error.localizedDescription
-                )
+                    message: error.localizedDescription)
             }
         }
     }
@@ -154,66 +140,45 @@ struct UpdateChapterModal: View {
         List {
             if let urls = urls {
                 Section {
-                    PhotosPicker(
-                        selection: $selectedItems,
-                        matching: .images
-                    ) {
-                        Text("add")
-                            .padding(.horizontal, 20)
+                    PhotosPicker(selection: $selectedItems, matching: .images) {
+                        Text("add").padding(.horizontal, 20)
                     }
                     .onChange(of: selectedItems) {
-                        if !selectedItems.isEmpty {
-                            addSelectedImages()
-                        }
+                        if !selectedItems.isEmpty { addSelectedImages() }
                     }
 
                     ForEach(urls, id: \.self) { url in
                         Group {
                             if let image = images[url] {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
+                                Image(uiImage: image).resizable().scaledToFit()
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    .frame(maxWidth: .infinity, maxHeight: 200)
-                                    .padding()
+                                    .frame(maxWidth: .infinity, maxHeight: 200).padding()
                             } else {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
+                                ProgressView().frame(maxWidth: .infinity)
                             }
                         }
                     }
-                    .onMove(perform: moveImage)
-                    .onDelete(perform: deleteImage)
+                    .onMove(perform: moveImage).onDelete(perform: deleteImage)
                 } header: {
-                    Text("editChaptersInstructions")
-                        .font(.caption)
-                        .textCase(.none)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom)
+                    Text("editChaptersInstructions").font(.caption).textCase(.none)
+                        .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.bottom)
                 }
                 .listRowInsets(EdgeInsets())
             } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(
-            title: Text("editChapter"),
-            subtitle: Text(chapter.title ?? chapter.id)
+            title: Text("editChapter"), subtitle: Text(chapter.title ?? chapter.id)
         ) {
             Button(action: showRenameAlert) {
                 VStack {
-                    Text("editChapter")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    Text("editChapter").font(.headline).foregroundColor(.primary)
 
                     HStack(spacing: 4) {
-                        Text(chapter.title ?? chapter.id)
-                            .font(.caption)
-                        Image(systemName: "pencil")
-                            .font(.caption2)
+                        Text(chapter.title ?? chapter.id).font(.caption)
+                        Image(systemName: "pencil").font(.caption2)
                     }
 
                     .foregroundColor(.secondary)
@@ -223,9 +188,7 @@ struct UpdateChapterModal: View {
         .toolbar {
             if #available(iOS 26.0, *) {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: showRenameAlert) {
-                        Image(systemName: "pencil")
-                    }
+                    Button(action: showRenameAlert) { Image(systemName: "pencil") }
                 }
             }
         }
@@ -246,11 +209,6 @@ struct UpdateChapterModal: View {
         } message: {
             Text(errorMessage)
         }
-        .onAppear {
-            loadUrls()
-        }
-        .onChange(of: urls) {
-            loadImages()
-        }
+        .onAppear { loadUrls() }.onChange(of: urls) { loadImages() }
     }
 }

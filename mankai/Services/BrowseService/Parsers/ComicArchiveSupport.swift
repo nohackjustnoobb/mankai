@@ -16,7 +16,7 @@ import SWXMLHash
 enum ComicArchiveSupport {
     /// Image extensions supported as pages inside comic book archives.
     private static let imageExtensions: Set<String> = [
-        "jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff", "tif",
+        "jpg", "jpeg", "png", "gif", "bmp", "webp", "tiff", "tif"
     ]
 
     static func isImagePath(_ path: String) -> Bool {
@@ -51,19 +51,16 @@ enum ComicArchiveSupport {
 
             // Authors: aggregate the credit fields, which are comma-separated.
             let creditFields = [
-                info.writer, info.penciller, info.inker, info.colorist,
-                info.letterer, info.coverArtist, info.editor, info.translator,
+                info.writer, info.penciller, info.inker, info.colorist, info.letterer,
+                info.coverArtist, info.editor, info.translator
             ]
             var authors: [String] = []
             for field in creditFields {
                 guard let field, !field.isEmpty else { continue }
                 authors.append(
-                    contentsOf:
-                        field
-                        .split(separator: ",")
+                    contentsOf: field.split(separator: ",")
                         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        .filter { !$0.isEmpty }
-                )
+                        .filter { !$0.isEmpty })
             }
             manga.authors = uniqueStrings(authors)
 
@@ -71,13 +68,9 @@ enum ComicArchiveSupport {
             if let mangaTag = info.manga?.trimmingCharacters(in: .whitespacesAndNewlines),
                 !mangaTag.isEmpty
             {
-                switch mangaTag {
-                case "No":
-                    manga.readingDirection = .leftToRight
-                case "Yes", "YesAndRightToLeft":
-                    manga.readingDirection = .rightToLeft
-                default:
-                    break
+                switch mangaTag { case "No": manga.readingDirection = .leftToRight
+                    case "Yes", "YesAndRightToLeft": manga.readingDirection = .rightToLeft
+                    default: break
                 }
             }
 
@@ -94,10 +87,7 @@ enum ComicArchiveSupport {
         return manga
     }
 
-    static func prepareForPresentation(
-        _ manga: DetailedManga,
-        file: ParserFile
-    ) -> DetailedManga {
+    static func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga {
         guard manga.title == nil else { return manga }
 
         var presented = manga
@@ -107,16 +97,12 @@ enum ComicArchiveSupport {
             var presentedGroup = group
             presentedGroup.chapters = group.chapters.map { chapter in
                 var presentedChapter = chapter
-                if presentedChapter.title == nil {
-                    presentedChapter.title = filenameTitle
-                }
+                if presentedChapter.title == nil { presentedChapter.title = filenameTitle }
                 return presentedChapter
             }
             return presentedGroup
         }
-        if var latestChapter = presented.latestChapter,
-            latestChapter.title == nil
-        {
+        if var latestChapter = presented.latestChapter, latestChapter.title == nil {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter
         }
@@ -153,16 +139,14 @@ struct ComicInfo {
     var frontCoverIndex: Int?
 }
 
-/// A lenient parser for `ComicInfo.xml`. Only the elements relevant to the
-/// comic archive parsers are collected.
+/// A lenient parser for `ComicInfo.xml`.
+/// Only the elements relevant to the comic archive parsers are collected.
 final class ComicInfoParser {
     private var info = ComicInfo()
     private var frontCoverIndex: Int?
 
     static func parse(data: Data) -> ComicInfo? {
-        let document = XMLHash.config { config in
-            config.detectParsingErrors = true
-        }.parse(data)
+        let document = XMLHash.config { config in config.detectParsingErrors = true }.parse(data)
         guard !document.children.isEmpty else { return nil }
 
         let parser = ComicInfoParser()
@@ -182,10 +166,8 @@ final class ComicInfoParser {
             }
 
             if inPages {
-                if name == "Page",
-                    element.attribute(by: "Type")?.text == "FrontCover",
-                    let image = element.attribute(by: "Image")?.text,
-                    let index = Int(image)
+                if name == "Page", element.attribute(by: "Type")?.text == "FrontCover",
+                    let image = element.attribute(by: "Image")?.text, let index = Int(image)
                 {
                     frontCoverIndex = index
                 }
@@ -194,33 +176,18 @@ final class ComicInfoParser {
             }
 
             let text = element.recursiveText.trimmingCharacters(in: .whitespacesAndNewlines)
-            switch name {
-            case "Title":
-                info.title = text
-            case "Series":
-                info.series = text
-            case "Summary":
-                info.summary = text
-            case "Writer":
-                info.writer = text
-            case "Penciller":
-                info.penciller = text
-            case "Inker":
-                info.inker = text
-            case "Colorist":
-                info.colorist = text
-            case "Letterer":
-                info.letterer = text
-            case "CoverArtist":
-                info.coverArtist = text
-            case "Editor":
-                info.editor = text
-            case "Translator":
-                info.translator = text
-            case "Manga":
-                info.manga = text
-            default:
-                visit(child, inPages: false)
+            switch name { case "Title": info.title = text case "Series": info.series = text
+                case "Summary": info.summary = text
+                case "Writer": info.writer = text
+                case "Penciller": info.penciller = text
+                case "Inker": info.inker = text
+                case "Colorist": info.colorist = text
+                case "Letterer": info.letterer = text
+                case "CoverArtist": info.coverArtist = text
+                case "Editor": info.editor = text
+                case "Translator": info.translator = text
+                case "Manga": info.manga = text
+                default: visit(child, inPages: false)
             }
         }
     }

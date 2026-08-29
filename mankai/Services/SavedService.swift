@@ -13,9 +13,7 @@ final class SavedService: ObservableObject {
     /// The shared singleton instance of SavedService.
     static let shared = SavedService()
 
-    private init() {
-        Logger.savedService.debug("Initializing SavedService")
-    }
+    private init() { Logger.savedService.debug("Initializing SavedService") }
 
     /// Retrieves a saved manga record.
     /// - Parameters:
@@ -26,11 +24,13 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug(
             "Getting saved manga for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
-            return try DbService.shared.appDb?.read { db in
-                try SavedModel
-                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+            return try DbService.shared.appDb?
+                .read { db in
+                    try SavedModel.filter(
+                        Column("mangaId") == mangaId && Column("pluginId") == pluginId
+                    )
                     .fetchOne(db)
-            }
+                }
         } catch {
             Logger.savedService.error("Failed to get saved manga", error: error)
             return nil
@@ -47,9 +47,7 @@ final class SavedService: ObservableObject {
         let result = try await update(saved: saved, manga: manga)
 
         if result, saved.shouldSync, SyncService.shared.engine != nil {
-            do {
-                try await SyncService.shared.addSaved(saved)
-            } catch {
+            do { try await SyncService.shared.addSaved(saved) } catch {
                 Logger.savedService.error("Failed to push saveds after adding", error: error)
                 throw error
             }
@@ -89,14 +87,13 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Updating saved manga: \(saved.mangaId)")
         var result: Bool?
         do {
-            result = try await DbService.shared.appDb?.write { db in
-                if let manga = manga {
-                    try manga.upsert(db)
-                }
-                try saved.upsert(db)
+            result = try await DbService.shared.appDb?
+                .write { db in
+                    if let manga = manga { try manga.upsert(db) }
+                    try saved.upsert(db)
 
-                return true
-            }
+                    return true
+                }
         } catch {
             Logger.savedService.error("Failed to update saved manga", error: error)
             throw error
@@ -107,9 +104,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
 
         return result
     }
@@ -123,19 +118,14 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Batch updating \(saveds.count) saved mangas")
         var result: Bool?
         do {
-            result = try await DbService.shared.appDb?.write { db in
-                if let mangas = mangas {
-                    for manga in mangas {
-                        try manga.upsert(db)
-                    }
-                }
+            result = try await DbService.shared.appDb?
+                .write { db in
+                    if let mangas = mangas { for manga in mangas { try manga.upsert(db) } }
 
-                for saved in saveds {
-                    try saved.upsert(db)
-                }
+                    for saved in saveds { try saved.upsert(db) }
 
-                return true
-            }
+                    return true
+                }
         } catch {
             Logger.savedService.error("Failed to batch update saved mangas", error: error)
             throw error
@@ -146,9 +136,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
 
         return result
     }
@@ -162,18 +150,21 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Deleting saved manga: \(mangaId)")
         var result: Bool?
         do {
-            result = try await DbService.shared.appDb?.write { db in
-                let deleted =
-                    try SavedModel
-                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+            result = try await DbService.shared.appDb?
+                .write { db in
+                    let deleted =
+                        try SavedModel.filter(
+                            Column("mangaId") == mangaId && Column("pluginId") == pluginId
+                        )
+                        .deleteAll(db)
+
+                    try MangaModel.filter(
+                        Column("mangaId") == mangaId && Column("pluginId") == pluginId
+                    )
                     .deleteAll(db)
 
-                try MangaModel
-                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-                    .deleteAll(db)
-
-                return deleted > 0
-            }
+                    return deleted > 0
+                }
         } catch {
             Logger.savedService.error("Failed to delete saved manga", error: error)
             throw error
@@ -184,9 +175,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToDeleteSavedManga.makeError()
         }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
 
         return result
     }
@@ -196,15 +185,16 @@ final class SavedService: ObservableObject {
     func getAll(shouldSync: Bool? = nil) -> [SavedModel] {
         Logger.savedService.debug("Getting all saved mangas")
         do {
-            let result = try DbService.shared.appDb?.read { db in
-                var request = SavedModel.order(Column("datetime").desc)
+            let result = try DbService.shared.appDb?
+                .read { db in
+                    var request = SavedModel.order(Column("datetime").desc)
 
-                if let shouldSync = shouldSync {
-                    request = request.filter(Column("shouldSync") == shouldSync)
+                    if let shouldSync = shouldSync {
+                        request = request.filter(Column("shouldSync") == shouldSync)
+                    }
+
+                    return try request.fetchAll(db)
                 }
-
-                return try request.fetchAll(db)
-            }
             return result ?? []
         } catch {
             Logger.savedService.error("Failed to get all saved mangas", error: error)
@@ -218,19 +208,18 @@ final class SavedService: ObservableObject {
     func getAllSince(date: Date?, shouldSync: Bool? = nil) -> [SavedModel] {
         Logger.savedService.debug("Getting saved mangas since: \(String(describing: date))")
         do {
-            let result = try DbService.shared.appDb?.read { db in
-                var request = SavedModel.order(Column("datetime").asc)
+            let result = try DbService.shared.appDb?
+                .read { db in
+                    var request = SavedModel.order(Column("datetime").asc)
 
-                if let shouldSync = shouldSync {
-                    request = request.filter(Column("shouldSync") == shouldSync)
+                    if let shouldSync = shouldSync {
+                        request = request.filter(Column("shouldSync") == shouldSync)
+                    }
+
+                    if let date = date { request = request.filter(Column("datetime") > date) }
+
+                    return try request.fetchAll(db)
                 }
-
-                if let date = date {
-                    request = request.filter(Column("datetime") > date)
-                }
-
-                return try request.fetchAll(db)
-            }
             return result ?? []
         } catch {
             Logger.savedService.error("Failed to get saved mangas since date", error: error)
@@ -243,27 +232,22 @@ final class SavedService: ObservableObject {
     func generateHash() -> String? {
         Logger.savedService.debug("Generating hash for saved mangas")
         do {
-            return try DbService.shared.appDb?.read { db in
-                // Fetch all saved items, sorted by mangaId and pluginId
-                let saveds =
-                    try SavedModel
-                    .filter(Column("shouldSync") == true)
-                    .order(Column("mangaId").asc, Column("pluginId").asc)
-                    .fetchAll(db)
+            return try DbService.shared.appDb?
+                .read { db in
+                    // Fetch all saved items, sorted by mangaId and pluginId
+                    let saveds = try SavedModel.filter(Column("shouldSync") == true)
+                        .order(Column("mangaId").asc, Column("pluginId").asc).fetchAll(db)
 
-                // Concatenate primary keys
-                let keyString =
-                    saveds
-                    .map { "\($0.mangaId)|\($0.pluginId)" }
-                    .joined()
+                    // Concatenate primary keys
+                    let keyString = saveds.map { "\($0.mangaId)|\($0.pluginId)" }.joined()
 
-                // Generate SHA256 hash
-                let data = Data(keyString.utf8)
-                let hash = SHA256.hash(data: data)
+                    // Generate SHA256 hash
+                    let data = Data(keyString.utf8)
+                    let hash = SHA256.hash(data: data)
 
-                // Convert hash to hex string
-                return hash.compactMap { String(format: "%02x", $0) }.joined()
-            }
+                    // Convert hash to hex string
+                    return hash.compactMap { String(format: "%02x", $0) }.joined()
+                }
         } catch {
             Logger.savedService.error("Failed to generate hash for saved mangas", error: error)
             return nil

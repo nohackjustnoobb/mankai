@@ -16,8 +16,7 @@ struct PluginSettingsScreen: View {
             SettingsHeaderView(
                 image: Image(systemName: "puzzlepiece.extension.fill"), color: .red,
                 title: String(localized: "plugins"),
-                description: String(localized: "pluginsDescription")
-            )
+                description: String(localized: "pluginsDescription"))
 
             ForEach(
                 pluginService.plugins.sorted { plugin1, plugin2 in
@@ -33,39 +32,26 @@ struct PluginSettingsScreen: View {
                     }
                 }
             ) { plugin in
-                NavigationLink(destination: {
-                    PluginInfoScreen(plugin: plugin)
-                }) {
+                NavigationLink(destination: { PluginInfoScreen(plugin: plugin) }) {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
 
-                            ForEach(plugin.tags, id: \.self) { tag in
-                                Text(tag)
-                                    .smallTagStyle()
-                            }
+                            ForEach(plugin.tags, id: \.self) { tag in Text(tag).smallTagStyle() }
 
                             if let version = plugin.version {
-                                Text(
-                                    String(
-                                        format: String(localized: "versionFormat"),
-                                        version
-                                    )
-                                )
-                                .smallTagStyle()
+                                Text(String(format: String(localized: "versionFormat"), version))
+                                    .smallTagStyle()
                             }
 
                             if plugin is Editable,
                                 !plugin.tags.contains(String(localized: "editable"))
                             {
-                                Text("editable")
-                                    .smallTagStyle()
+                                Text("editable").smallTagStyle()
                             }
                         }
                         if let description = plugin.description {
-                            Text(description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text(description).font(.caption).foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
                     }
@@ -74,17 +60,10 @@ struct PluginSettingsScreen: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    showModal = true
-                }) {
-                    Image(systemName: "plus.circle")
-                }
+                Button(action: { showModal = true }) { Image(systemName: "plus.circle") }
             }
         }
-        .navigationTitle("plugins")
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showModal) {
-            AddPluginModal()
-        }
+        .navigationTitle("plugins").navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showModal) { AddPluginModal() }
     }
 }

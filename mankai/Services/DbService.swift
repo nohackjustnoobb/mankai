@@ -13,18 +13,14 @@ final class DbService {
     /// The shared singleton instance of DbService.
     static let shared = DbService()
 
-    private init() {
-        Logger.dbService.debug("Initializing DbService")
-    }
+    private init() { Logger.dbService.debug("Initializing DbService") }
 
     /// The database pool for the main application database.
     lazy var appDb: DatabasePool? = {
         Logger.dbService.debug("Initializing appDb")
         guard
-            let documentsURL = FileManager.default.urls(
-                for: .documentDirectory, in: .userDomainMask
-            )
-            .first
+            let documentsURL = FileManager.default
+                .urls(for: .documentDirectory, in: .userDomainMask).first
         else {
             Logger.dbService.error("Could not find document directory")
             return nil
@@ -36,8 +32,7 @@ final class DbService {
             var config = Configuration()
             config.busyMode = .timeout(5.0)
             let dbPool = try DatabasePool(
-                path: fullUrl.path(percentEncoded: false), configuration: config
-            )
+                path: fullUrl.path(percentEncoded: false), configuration: config)
 
             try dbPool.write { db in
                 try MangaModel.createTable(db)
@@ -99,12 +94,10 @@ final class DbService {
     private var downloadDb: DatabasePool?
 
     func openDownloadDb() -> DatabasePool? {
-        if let db = downloadDb {
-            return db
-        }
+        if let db = downloadDb { return db }
 
-        let path = DownloadPlugin.shared.downloadDir.appendingPathComponent("data.db").path(
-            percentEncoded: false)
+        let path = DownloadPlugin.shared.downloadDir.appendingPathComponent("data.db")
+            .path(percentEncoded: false)
 
         Logger.dbService.debug("Opening DownloadDb at \(path)")
         var config = Configuration()
@@ -131,16 +124,14 @@ final class DbService {
     private var browsablePluginDb: DatabasePool?
 
     func openBrowsablePluginDb() -> DatabasePool? {
-        if let db = browsablePluginDb {
-            return db
-        }
+        if let db = browsablePluginDb { return db }
 
         guard
             let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
                 .first
         else { return nil }
-        let dir = cacheDir.appendingPathComponent(CacheDirectory.index).appendingPathComponent(
-            "browsableplugin")
+        let dir = cacheDir.appendingPathComponent(CacheDirectory.index)
+            .appendingPathComponent("browsableplugin")
         let path = dir.appendingPathComponent("data.db").path(percentEncoded: false)
 
         do {
@@ -159,9 +150,7 @@ final class DbService {
         do {
             let pool = try DatabasePool(path: path, configuration: config)
 
-            try pool.write { db in
-                try BrowsablePluginMangaModel.createTable(db)
-            }
+            try pool.write { db in try BrowsablePluginMangaModel.createTable(db) }
 
             browsablePluginDb = pool
             Logger.dbService.info("browsablePluginDb opened successfully at \(path)")
@@ -180,38 +169,28 @@ final class DbService {
     private var opdsBrowsablePluginDb: DatabasePool?
 
     func openOpdsBrowsablePluginDb() -> DatabasePool? {
-        if let db = opdsBrowsablePluginDb {
-            return db
-        }
+        if let db = opdsBrowsablePluginDb { return db }
 
         guard
-            let cacheURL = FileManager.default.urls(
-                for: .cachesDirectory, in: .userDomainMask
-            ).first
+            let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+                .first
         else {
             Logger.dbService.error("Could not find cache directory for OPDS database")
             return nil
         }
 
-        let directory =
-            cacheURL
-            .appendingPathComponent(CacheDirectory.index)
+        let directory = cacheURL.appendingPathComponent(CacheDirectory.index)
             .appendingPathComponent("opdsbrowsableplugin")
-        let path = directory.appendingPathComponent("data.db").path(
-            percentEncoded: false
-        )
+        let path = directory.appendingPathComponent("data.db").path(percentEncoded: false)
         Logger.dbService.debug("Opening opdsBrowsablePluginDb at \(path)")
 
         do {
             try FileManager.default.createDirectory(
-                at: directory,
-                withIntermediateDirectories: true
-            )
+                at: directory, withIntermediateDirectories: true)
         } catch {
             Logger.dbService.error(
                 "Failed to create OPDS database directory at \(directory.path(percentEncoded: false))",
-                error: error
-            )
+                error: error)
             return nil
         }
 
@@ -220,18 +199,13 @@ final class DbService {
 
         do {
             let pool = try DatabasePool(path: path, configuration: config)
-            try pool.write { db in
-                try OpdsBrowsableBookModel.createTable(db)
-            }
+            try pool.write { db in try OpdsBrowsableBookModel.createTable(db) }
 
             opdsBrowsablePluginDb = pool
             Logger.dbService.info("opdsBrowsablePluginDb initialized successfully")
             return pool
         } catch {
-            Logger.dbService.error(
-                "Failed to initialize opdsBrowsablePluginDb",
-                error: error
-            )
+            Logger.dbService.error("Failed to initialize opdsBrowsablePluginDb", error: error)
             return nil
         }
     }

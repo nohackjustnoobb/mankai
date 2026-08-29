@@ -44,11 +44,7 @@ extension FsImageModel: TableRecord {
 }
 
 extension FsImageModel: Codable, FetchableRecord, PersistableRecord {
-    var manga: QueryInterfaceRequest<FsMangaModel> {
-        request(for: FsImageModel.manga)
-    }
+    var manga: QueryInterfaceRequest<FsMangaModel> { request(for: FsImageModel.manga) }
 
-    var chapter: QueryInterfaceRequest<FsChapterModel> {
-        request(for: FsImageModel.chapter)
-    }
+    var chapter: QueryInterfaceRequest<FsChapterModel> { request(for: FsImageModel.chapter) }
 }

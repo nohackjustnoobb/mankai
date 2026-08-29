@@ -30,9 +30,7 @@ enum ReachabilityType: CustomStringConvertible {
     case wiFi
 
     var description: String {
-        switch self {
-        case .wwan: return "WWAN"
-        case .wiFi: return "WiFi"
+        switch self { case .wwan: return "WWAN" case .wiFi: return "WiFi"
         }
     }
 }
@@ -43,10 +41,9 @@ enum ReachabilityStatus: CustomStringConvertible {
     case unknown
 
     var description: String {
-        switch self {
-        case .offline: return "Offline"
-        case .online(let type): return "Online (\(type))"
-        case .unknown: return "Unknown"
+        switch self { case .offline: return "Offline" case .online(let type):
+            return "Online (\(type))"
+            case .unknown: return "Unknown"
         }
     }
 }
@@ -65,14 +62,10 @@ public class Reach {
                         SCNetworkReachabilityCreateWithAddress(nil, $0)
                     }
                 })
-        else {
-            return .unknown
-        }
+        else { return .unknown }
 
         var flags: SCNetworkReachabilityFlags = []
-        if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) {
-            return .unknown
-        }
+        if !SCNetworkReachabilityGetFlags(defaultRouteReachability, &flags) { return .unknown }
 
         return ReachabilityStatus(reachabilityFlags: flags)
     }
@@ -90,8 +83,7 @@ public class Reach {
 
                 NotificationCenter.default.post(
                     name: Notification.Name(rawValue: ReachabilityStatusChangedNotification),
-                    object: nil,
-                    userInfo: ["Status": status.description])
+                    object: nil, userInfo: ["Status": status.description])
 
             }, &context)
 
@@ -107,11 +99,7 @@ extension ReachabilityStatus {
         let isWWAN = flags.contains(.isWWAN)
 
         if !connectionRequired, isReachable {
-            if isWWAN {
-                self = .online(.wwan)
-            } else {
-                self = .online(.wiFi)
-            }
+            if isWWAN { self = .online(.wwan) } else { self = .online(.wiFi) }
         } else {
             self = .offline
         }

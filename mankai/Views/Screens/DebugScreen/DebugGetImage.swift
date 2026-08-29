@@ -20,9 +20,7 @@ struct DebugGetImage: View {
                     if let uiImage = UIImage(data: imageData) {
                         Section("image") {
                             VStack {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fit)
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -34,42 +32,34 @@ struct DebugGetImage: View {
                                 Text(
                                     String(
                                         format: String(localized: "byteCountFormat"),
-                                        imageData.count
-                                    )
+                                        imageData.count)
                                 )
                                 .foregroundColor(.secondary)
                             }
                             HStack {
                                 Text("url")
                                 Spacer()
-                                Text(url)
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
+                                Text(url).foregroundColor(.secondary).lineLimit(1)
                                     .truncationMode(.middle)
                             }
                         }
                     } else {
                         Section("error") {
                             VStack {
-                                Text("failedToLoadImage")
-                                    .font(.headline)
+                                Text("failedToLoadImage").font(.headline)
                                 Text(
                                     String(
                                         format: String(localized: "dataSizeMessageFormat"),
-                                        imageData.count
-                                    )
+                                        imageData.count)
                                 )
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.caption).foregroundColor(.secondary)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
+                            .frame(maxWidth: .infinity).padding()
                         }
                     }
                 }
             } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task {

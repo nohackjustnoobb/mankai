@@ -34,9 +34,7 @@ struct PluginSearchScreen: View {
         plugin.supports(.search) && plugin.supports(.searchByStatus)
     }
 
-    private var hasActiveFilters: Bool {
-        selectedGenre != .all || selectedStatus != .any
-    }
+    private var hasActiveFilters: Bool { selectedGenre != .all || selectedStatus != .any }
 
     private var allMangas: [Manga] {
         let sortedKeys = mangas.keys.sorted()
@@ -44,8 +42,8 @@ struct PluginSearchScreen: View {
     }
 
     init(
-        plugin: Plugin, query: String, isAuthorSearch: Bool = false,
-        genre: Genre = .all, status: Status = .any
+        plugin: Plugin, query: String, isAuthorSearch: Bool = false, genre: Genre = .all,
+        status: Status = .any
     ) {
         self.plugin = plugin
         self.query = query
@@ -65,17 +63,9 @@ struct PluginSearchScreen: View {
             LazyVStack {
                 MangasListView(mangas: allMangas, plugin: plugin)
 
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                }
+                if isLoading { ProgressView().frame(maxWidth: .infinity).padding() }
 
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                        search()
-                    }
+                Color.clear.frame(height: 1).onAppear { search() }
             }
             .padding()
         }
@@ -84,30 +74,21 @@ struct PluginSearchScreen: View {
                 ProgressView()
             } else if allMangas.isEmpty && !mangas.isEmpty {
                 ContentUnavailableView(
-                    "noResultsFound",
-                    systemImage: "magnifyingglass",
-                    description: Text("noResultsFoundDescription")
-                )
+                    "noResultsFound", systemImage: "magnifyingglass",
+                    description: Text("noResultsFoundDescription"))
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitleWithSubtitle(
-            title: Text(plugin.name ?? plugin.id),
-            subtitle: Text(query)
-        )
+        .navigationTitleWithSubtitle(title: Text(plugin.name ?? plugin.id), subtitle: Text(query))
         .toolbar {
             if supportsGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: {
-                        showingFilters = true
-                    }) {
+                    Button(action: { showingFilters = true }) {
                         ZStack {
                             Image(systemName: "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 8, height: 8)
+                                Circle().fill(Color.red).frame(width: 8, height: 8)
                                     .offset(x: 8, y: -8)
                             }
                         }
@@ -121,12 +102,10 @@ struct PluginSearchScreen: View {
                     Section {
                         if supportsGenreFilter {
                             Picker("genre", selection: $tempSelectedGenre) {
-                                Text(LocalizedStringKey(Genre.all.rawValue))
-                                    .tag(Genre.all)
+                                Text(LocalizedStringKey(Genre.all.rawValue)).tag(Genre.all)
 
                                 ForEach(plugin.availableGenres, id: \.self) { genre in
-                                    Text(LocalizedStringKey(genre.rawValue))
-                                        .tag(genre)
+                                    Text(LocalizedStringKey(genre.rawValue)).tag(genre)
                                 }
                             }
                             .pickerStyle(.menu)
@@ -146,35 +125,28 @@ struct PluginSearchScreen: View {
 
                     Section {
                         Button(
-                            "reset",
-                            role: .destructive,
+                            "reset", role: .destructive,
                             action: {
                                 resetFilters()
                                 showingFilters = false
-                            }
-                        )
+                            })
                     }
                 }
-                .navigationTitle("filters")
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("filters").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(action: {
                             tempSelectedGenre = selectedGenre
                             tempSelectedStatus = selectedStatus
                             showingFilters = false
-                        }) {
-                            Text("cancel")
-                        }
+                        }) { Text("cancel") }
                     }
 
                     ToolbarItem(placement: .confirmationAction) {
                         Button(action: {
                             setFilters(genre: tempSelectedGenre, status: tempSelectedStatus)
                             showingFilters = false
-                        }) {
-                            Text("done")
-                        }
+                        }) { Text("done") }
                     }
                 }
             }
@@ -184,23 +156,12 @@ struct PluginSearchScreen: View {
                 tempSelectedStatus = selectedStatus
             }
         }
-        .onAppear {
-            search()
-        }
-        .onReceive(pluginService.objectWillChange) {
-            search()
-        }
-        .onDisappear {
-            searchTask?.cancel()
-        }
+        .onAppear { search() }.onReceive(pluginService.objectWillChange) { search() }
+        .onDisappear { searchTask?.cancel() }
         .alert("failedToSearchManga", isPresented: $showErrorAlert) {
-            Button("ok") {
-                errorMessage = ""
-            }
+            Button("ok") { errorMessage = "" }
         } message: {
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-            }
+            if !errorMessage.isEmpty { Text(errorMessage) }
         }
     }
 
@@ -226,8 +187,7 @@ struct PluginSearchScreen: View {
     private func search() {
         if isLoading
             || !plugin.supportsSearch(
-                isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus
-            )
+                isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus)
         {
             return
         }
@@ -235,9 +195,7 @@ struct PluginSearchScreen: View {
         let maxPage = mangas.keys.max() ?? 0
 
         // reach the end of the list
-        if mangas[maxPage]?.count == 0 {
-            return
-        }
+        if mangas[maxPage]?.count == 0 { return }
 
         let page = maxPage + 1
         let requestGenre = selectedGenre
@@ -248,15 +206,12 @@ struct PluginSearchScreen: View {
             do {
                 let result = try await plugin.search(
                     query, page: page, genre: requestGenre, status: requestStatus,
-                    isAuthor: isAuthorSearch
-                )
+                    isAuthor: isAuthorSearch)
 
-                guard !Task.isCancelled,
-                    requestGenre == selectedGenre,
+                guard !Task.isCancelled, requestGenre == selectedGenre,
                     requestStatus == selectedStatus,
                     plugin.supportsSearch(
-                        isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus
-                    )
+                        isAuthor: isAuthorSearch, genre: selectedGenre, status: selectedStatus)
                 else { return }
 
                 mangas[page] = result
@@ -264,8 +219,7 @@ struct PluginSearchScreen: View {
             } catch is CancellationError {
                 // Ignore requests cancelled by a filter change or view dismissal.
             } catch {
-                guard !Task.isCancelled,
-                    requestGenre == selectedGenre,
+                guard !Task.isCancelled, requestGenre == selectedGenre,
                     requestStatus == selectedStatus
                 else { return }
 

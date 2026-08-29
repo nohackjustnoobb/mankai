@@ -29,9 +29,7 @@ struct AddPluginsModal: View {
         var plugin: Plugin?
         var isLoading = true
 
-        var id: UUID {
-            source.id
-        }
+        var id: UUID { source.id }
     }
 
     @Environment(\.dismiss) private var dismiss
@@ -49,8 +47,7 @@ struct AddPluginsModal: View {
         NavigationStack {
             List(candidates) { candidate in
                 if candidate.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, alignment: .center)
+                    ProgressView().frame(maxWidth: .infinity, alignment: .center)
                 } else if let plugin = candidate.plugin {
                     Button {
                         if selectedSourceIds.contains(candidate.id) {
@@ -67,13 +64,11 @@ struct AddPluginsModal: View {
                             .font(.title3)
                             .foregroundStyle(
                                 selectedSourceIds.contains(candidate.id)
-                                    ? Color.accentColor : .secondary
-                            )
+                                    ? Color.accentColor : .secondary)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 8) {
-                                    Text(plugin.name ?? plugin.id)
-                                        .foregroundStyle(.primary)
+                                    Text(plugin.name ?? plugin.id).foregroundStyle(.primary)
 
                                     Text(LocalizedStringKey(candidate.source.kind.rawValue))
                                         .smallTagStyle()
@@ -81,18 +76,14 @@ struct AddPluginsModal: View {
                                     if let version = plugin.version {
                                         Text(
                                             String(
-                                                format: String(localized: "versionFormat"),
-                                                version
-                                            )
+                                                format: String(localized: "versionFormat"), version)
                                         )
                                         .smallTagStyle()
                                     }
                                 }
 
                                 if let description = plugin.description {
-                                    Text(description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    Text(description).font(.caption).foregroundStyle(.secondary)
                                         .lineLimit(2)
                                 }
                             }
@@ -103,76 +94,51 @@ struct AddPluginsModal: View {
                     .buttonStyle(.plain)
                 } else {
                     HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .font(.title3)
+                        Image(systemName: "exclamationmark.circle.fill").font(.title3)
                             .foregroundStyle(.red)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("failedToParsePlugin")
-                                .foregroundStyle(.red)
+                            Text("failedToParsePlugin").foregroundStyle(.red)
 
-                            Text(candidate.source.url.absoluteString)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
+                            Text(candidate.source.url.absoluteString).font(.caption2)
+                                .foregroundStyle(.secondary).lineLimit(2)
                         }
                     }
                 }
             }
-            .navigationTitle("addPlugins")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("addPlugins").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel") {
-                        dismiss()
-                    }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("add") {
-                        addSelectedPlugins()
-                    }
-                    .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
+                    Button("add") { addSelectedPlugins() }
+                        .disabled(isLoading || isAdding || selectedSourceIds.isEmpty)
                 }
             }
-            .task {
-                await loadCandidates()
-            }
+            .task { await loadCandidates() }
             .alert(
                 "failedToAddPlugin",
                 isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )
+                    get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
             ) {
                 Button("ok", role: .cancel) {}
             } message: {
-                if let errorMessage {
-                    Text(errorMessage)
-                }
+                if let errorMessage { Text(errorMessage) }
             }
-            .alert(
-                "duplicatePluginTitle",
-                isPresented: duplicatePluginsArePresented
-            ) {
+            .alert("duplicatePluginTitle", isPresented: duplicatePluginsArePresented) {
                 Button("overwrite", role: .destructive) {
                     duplicatePluginIDs = []
                     performAddSelectedPlugins(overwriteDuplicates: true)
                 }
-                Button("cancel", role: .cancel) {
-                    duplicatePluginIDs = []
-                }
+                Button("cancel", role: .cancel) { duplicatePluginIDs = [] }
             } message: {
                 Text(
                     String(
                         format: String(localized: "duplicatePluginIdMessageFormat"),
-                        duplicatePluginIDs.joined(separator: ", ")
-                    )
-                )
+                        duplicatePluginIDs.joined(separator: ", ")))
             }
         }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.hidden)
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.hidden)
     }
 
     private func loadCandidates() async {
@@ -182,11 +148,9 @@ struct AddPluginsModal: View {
             for (index, source) in sources.enumerated() {
                 group.addTask {
                     let plugin: Plugin?
-                    switch source.kind {
-                    case .js:
+                    switch source.kind { case .js:
                         plugin = await JsPlugin.fromUrl(source.url.absoluteString)
-                    case .http:
-                        plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
+                        case .http: plugin = await HttpPlugin.fromUrl(source.url.absoluteString)
                     }
 
                     return (index, plugin)
@@ -202,9 +166,7 @@ struct AddPluginsModal: View {
                 candidates[index].plugin = plugin
                 candidates[index].isLoading = false
 
-                if plugin != nil {
-                    selectedSourceIds.insert(candidates[index].id)
-                }
+                if plugin != nil { selectedSourceIds.insert(candidates[index].id) }
             }
         }
 
@@ -235,10 +197,7 @@ struct AddPluginsModal: View {
     }
 
     private var duplicatePluginsArePresented: Binding<Bool> {
-        Binding(
-            get: { !duplicatePluginIDs.isEmpty },
-            set: { if !$0 { duplicatePluginIDs = [] } }
-        )
+        Binding(get: { !duplicatePluginIDs.isEmpty }, set: { if !$0 { duplicatePluginIDs = [] } })
     }
 
     private func performAddSelectedPlugins(overwriteDuplicates: Bool) {
@@ -252,9 +211,7 @@ struct AddPluginsModal: View {
 
             do {
                 try PluginService.shared.addPlugin(
-                    plugin,
-                    conflictResolution: overwriteDuplicates ? .overwrite : .reject
-                )
+                    plugin, conflictResolution: overwriteDuplicates ? .overwrite : .reject)
             } catch {
                 let name = plugin.name ?? plugin.id
                 failures.append((candidate.id, "\(name): \(error.localizedDescription)"))

@@ -16,9 +16,7 @@ private struct ContinuousGroup: Equatable {
     var y: CGFloat = 0
     var height: CGFloat = 0
 
-    func contains(_ url: String) -> Bool {
-        urls.contains(url)
-    }
+    func contains(_ url: String) -> Bool { urls.contains(url) }
 }
 
 private final class ContinuousReaderViewController: UIViewController, UIScrollViewDelegate {
@@ -59,8 +57,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var bottomOverscrollPositionConstraint: NSLayoutConstraint!
 
     init(
-        state: ReaderRenderState,
-        configuration: ReaderRenderConfiguration,
+        state: ReaderRenderState, configuration: ReaderRenderConfiguration,
         actions: ReaderRenderActions
     ) {
         renderState = state
@@ -68,25 +65,14 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         self.actions = actions
         topOverscrollController = UIHostingController(
             rootView: ReaderOverscrollIndicator(
-                progress: 0,
-                direction: .up,
-                step: .previous,
-                availability: state.previousChapter
-            )
-        )
+                progress: 0, direction: .up, step: .previous, availability: state.previousChapter))
         bottomOverscrollController = UIHostingController(
             rootView: ReaderOverscrollIndicator(
-                progress: 0,
-                direction: .down,
-                step: .next,
-                availability: state.nextChapter
-            )
-        )
+                progress: 0, direction: .down, step: .next, availability: state.nextChapter))
         super.init(nibName: nil, bundle: nil)
     }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
+    @available(*, unavailable) required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -123,19 +109,16 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     override func viewWillTransition(
-        to size: CGSize,
-        with coordinator: UIViewControllerTransitionCoordinator
+        to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator
     ) {
         super.viewWillTransition(to: size, with: coordinator)
         isResizing = true
-        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
-            self?.view.setNeedsLayout()
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in self?.view.setNeedsLayout()
         }
     }
 
     func apply(
-        state: ReaderRenderState,
-        configuration: ReaderRenderConfiguration,
+        state: ReaderRenderState, configuration: ReaderRenderConfiguration,
         actions: ReaderRenderActions
     ) {
         let chapterChanged = renderedChapterID != state.chapterID
@@ -149,9 +132,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         guard isViewLoaded else { return }
 
-        if chapterChanged {
-            resetForChapter()
-        }
+        if chapterChanged { resetForChapter() }
 
         if chapterChanged || contentChanged || configurationChanged {
             applyCurrentState(force: true)
@@ -164,8 +145,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func enqueueNavigationCommand(from state: ReaderRenderState) {
-        guard
-            let command = state.navigationCommand,
+        guard let command = state.navigationCommand,
             command.generation > lastAppliedNavigationGeneration
         else { return }
 
@@ -213,9 +193,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         startY = 0
     }
 
-    func viewForZooming(in _: UIScrollView) -> UIView? {
-        contentView
-    }
+    func viewForZooming(in _: UIScrollView) -> UIView? { contentView }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard !isResizing else { return }
@@ -224,17 +202,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         updateOverscrollViews()
     }
 
-    func scrollViewWillBeginDragging(_: UIScrollView) {
-        animatedNavigationGeneration = nil
-    }
+    func scrollViewWillBeginDragging(_: UIScrollView) { animatedNavigationGeneration = nil }
 
-    func scrollViewDidEndScrollingAnimation(_: UIScrollView) {
-        animatedNavigationGeneration = nil
-    }
+    func scrollViewDidEndScrollingAnimation(_: UIScrollView) { animatedNavigationGeneration = nil }
 
     func scrollViewWillEndDragging(
-        _ scrollView: UIScrollView,
-        withVelocity _: CGPoint,
+        _ scrollView: UIScrollView, withVelocity _: CGPoint,
         targetContentOffset: UnsafeMutablePointer<CGPoint>
     ) {
         guard configuration.snapToPage else { return }
@@ -300,21 +273,14 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate _: Bool) {
         let offsetY = scrollView.contentOffset.y
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let topSpacing = readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.top
-        )
-        let bottomSpacing = readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.bottom
-        )
+        let topSpacing = readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.top)
+        let bottomSpacing = readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.bottom)
 
         if readerOverscrollProgress(max(-offsetY, 0), spacing: topSpacing) >= 1,
             renderState.previousChapter == .available
         {
             actions.requestChapterStep(.previous)
-        } else if readerOverscrollProgress(
-            max(offsetY - maximumY, 0),
-            spacing: bottomSpacing
-        ) >= 1,
+        } else if readerOverscrollProgress(max(offsetY - maximumY, 0), spacing: bottomSpacing) >= 1,
             renderState.nextChapter == .available
         {
             actions.requestChapterStep(.next)
@@ -322,9 +288,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func updateCurrentPageFromScroll() {
-        guard pendingNavigationCommand == nil,
-            animatedNavigationGeneration == nil,
-            !groups.isEmpty
+        guard pendingNavigationCommand == nil, animatedNavigationGeneration == nil, !groups.isEmpty
         else { return }
         let viewportCenter = scrollView.contentOffset.y + view.bounds.height / 2
         var closestIndex = 0
@@ -341,8 +305,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         currentGroupIndex = closestIndex
         guard let firstURL = groups[closestIndex].urls.first,
-            let page = renderState.urls.firstIndex(of: firstURL),
-            page != currentPage
+            let page = renderState.urls.firstIndex(of: firstURL), page != currentPage
         else { return }
 
         currentPage = page
@@ -373,18 +336,15 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func setupConstraints() {
         containerLeadingConstraint = containerView.leadingAnchor.constraint(
-            equalTo: contentView.leadingAnchor
-        )
+            equalTo: contentView.leadingAnchor)
         containerTopConstraint = containerView.topAnchor.constraint(equalTo: contentView.topAnchor)
         containerWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 0)
         containerHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
         contentHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: 0)
         topOverscrollPositionConstraint = topOverscrollView.bottomAnchor.constraint(
-            equalTo: scrollView.topAnchor
-        )
+            equalTo: scrollView.topAnchor)
         bottomOverscrollPositionConstraint = bottomOverscrollView.topAnchor.constraint(
-            equalTo: scrollView.bottomAnchor
-        )
+            equalTo: scrollView.bottomAnchor)
 
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -399,9 +359,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             contentHeightConstraint,
 
-            containerLeadingConstraint,
-            containerTopConstraint,
-            containerWidthConstraint,
+            containerLeadingConstraint, containerTopConstraint, containerWidthConstraint,
             containerHeightConstraint,
 
             topOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
@@ -409,7 +367,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             topOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
             bottomOverscrollPositionConstraint,
-            bottomOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            bottomOverscrollView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
         ])
 
         updateOverscrollLayout()
@@ -417,11 +375,9 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func updateOverscrollLayout() {
         topOverscrollPositionConstraint.constant = -readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.top
-        )
+            safeAreaInset: view.safeAreaInsets.top)
         bottomOverscrollPositionConstraint.constant = readerOverscrollLayoutSpacing(
-            safeAreaInset: view.safeAreaInsets.bottom
-        )
+            safeAreaInset: view.safeAreaInsets.bottom)
     }
 
     @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
@@ -449,35 +405,35 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         wrapper.addSubview(child)
         NSLayoutConstraint.activate([
             child.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
-            child.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
+            child.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor)
         ])
         return wrapper
     }
 
     private func view(for state: ReaderImageState) -> UIView {
-        switch state {
-        case .success(let image):
+        switch state { case .success(let image):
             let imageView = UIImageView(image: image.uiImage(retainData: true))
             imageView.contentMode = .scaleToFill
             return imageView
-        case .failed:
-            let errorIconName: String
-            if #available(iOS 18.0, *) {
-                errorIconName = "photo.badge.exclamationmark"
-            } else {
-                errorIconName = "exclamationmark.circle.fill"
-            }
-            let icon = UIImageView(image: UIImage(systemName: errorIconName))
-            icon.tintColor = .secondaryLabel
-            NSLayoutConstraint.activate([
-                icon.widthAnchor.constraint(equalToConstant: 48),
-                icon.heightAnchor.constraint(equalToConstant: 48),
-            ])
-            return makePlaceholderView(child: icon, identifierTag: CONTINUOUS_ERROR_IMAGE_TAG)
-        case .loading:
-            let spinner = UIActivityIndicatorView(style: .medium)
-            spinner.startAnimating()
-            return makePlaceholderView(child: spinner, identifierTag: CONTINUOUS_LOADING_IMAGE_TAG)
+            case .failed:
+                let errorIconName: String
+                if #available(iOS 18.0, *) {
+                    errorIconName = "photo.badge.exclamationmark"
+                } else {
+                    errorIconName = "exclamationmark.circle.fill"
+                }
+                let icon = UIImageView(image: UIImage(systemName: errorIconName))
+                icon.tintColor = .secondaryLabel
+                NSLayoutConstraint.activate([
+                    icon.widthAnchor.constraint(equalToConstant: 48),
+                    icon.heightAnchor.constraint(equalToConstant: 48)
+                ])
+                return makePlaceholderView(child: icon, identifierTag: CONTINUOUS_ERROR_IMAGE_TAG)
+            case .loading:
+                let spinner = UIActivityIndicatorView(style: .medium)
+                spinner.startAnimating()
+                return makePlaceholderView(
+                    child: spinner, identifierTag: CONTINUOUS_LOADING_IMAGE_TAG)
         }
     }
 
@@ -496,20 +452,16 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     }
 
     private func view(_ view: UIView, matches state: ReaderImageState) -> Bool {
-        switch state {
-        case .success(let image):
+        switch state { case .success(let image):
             return (view as? UIImageView)?.image === image.uiImage(retainData: true)
-        case .failed:
-            return view.viewWithTag(CONTINUOUS_ERROR_IMAGE_TAG) != nil
-        case .loading:
-            return view.viewWithTag(CONTINUOUS_LOADING_IMAGE_TAG) != nil
+            case .failed: return view.viewWithTag(CONTINUOUS_ERROR_IMAGE_TAG) != nil
+            case .loading: return view.viewWithTag(CONTINUOUS_LOADING_IMAGE_TAG) != nil
         }
     }
 
-    private func calculateFrames(
-        ratios: [String: CGFloat],
-        mode: CGFloat
-    ) -> ([String: CGRect], CGFloat) {
+    private func calculateFrames(ratios: [String: CGFloat], mode: CGFloat) -> (
+        [String: CGRect], CGFloat
+    ) {
         let width = view.safeAreaLayoutGuide.layoutFrame.width
         guard width > 0 else { return ([:], 0) }
 
@@ -521,13 +473,10 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             let groupURLs = groups[index].urls
             guard let firstURL = groupURLs.first else { continue }
             let isSinglePortrait =
-                configuration.defaultGroupSize != 1
-                && groupURLs.count == 1
+                configuration.defaultGroupSize != 1 && groupURLs.count == 1
                 && ratios[firstURL, default: mode] < 1
             let effectiveWidth =
-                isSinglePortrait
-                ? width / CGFloat(configuration.defaultGroupSize)
-                : width
+                isSinglePortrait ? width / CGFloat(configuration.defaultGroupSize) : width
             let ratioSum = groupURLs.reduce(CGFloat(0)) { result, url in
                 result + ratios[url, default: mode]
             }
@@ -566,16 +515,10 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             roundedRatioCounts[(ratio * 100).rounded() / 100, default: 0] += 1
         }
         let maximumRatioCount = roundedRatioCounts.values.max() ?? 0
-        let mode =
-            roundedRatioCounts
-            .filter { $0.value == maximumRatioCount }
-            .keys
-            .min() ?? 1
+        let mode = roundedRatioCounts.filter { $0.value == maximumRatioCount }.keys.min() ?? 1
         let (frames, finalY) = calculateFrames(ratios: ratios, mode: mode)
 
-        for url in renderState.urls {
-            reconcileImageView(url: url, frame: frames[url] ?? .zero)
-        }
+        for url in renderState.urls { reconcileImageView(url: url, frame: frames[url] ?? .zero) }
 
         if navigationBarHeight == nil {
             navigationBarHeight = navigationController?.navigationBar.frame.height
@@ -586,9 +529,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         containerWidthConstraint.constant = view.safeAreaLayoutGuide.layoutFrame.width
         containerHeightConstraint.constant = finalY
         contentHeightConstraint.constant = max(
-            finalY + startY + view.safeAreaInsets.bottom,
-            view.bounds.height
-        )
+            finalY + startY + view.safeAreaInsets.bottom, view.bounds.height)
         topOverscrollView.isHidden = false
         bottomOverscrollView.isHidden = false
     }
@@ -609,11 +550,12 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let targetOffset = CGPoint(x: 0, y: clampedY)
         currentGroupIndex = groupIndex
 
-        let targetGeometryIsStable = renderState.urls[...targetPage].allSatisfy { url in
-            guard let image = renderState.images[url] else { return false }
-            if case .loading = image { return false }
-            return true
-        }
+        let targetGeometryIsStable = renderState.urls[...targetPage]
+            .allSatisfy { url in
+                guard let image = renderState.images[url] else { return false }
+                if case .loading = image { return false }
+                return true
+            }
         guard targetGeometryIsStable else {
             scrollView.setContentOffset(targetOffset, animated: command.animated)
             return
@@ -621,18 +563,14 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
         lastAppliedNavigationGeneration = command.generation
         let offsetDelta = hypot(
-            scrollView.contentOffset.x - targetOffset.x,
-            scrollView.contentOffset.y - targetOffset.y
+            scrollView.contentOffset.x - targetOffset.x, scrollView.contentOffset.y - targetOffset.y
         )
         if command.animated, offsetDelta > 0.5 {
             animatedNavigationGeneration = command.generation
         } else {
             animatedNavigationGeneration = nil
         }
-        scrollView.setContentOffset(
-            targetOffset,
-            animated: animatedNavigationGeneration != nil
-        )
+        scrollView.setContentOffset(targetOffset, animated: animatedNavigationGeneration != nil)
         pendingNavigationCommand = nil
     }
 
@@ -664,7 +602,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
             bottomIndicator.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor),
             bottomIndicator.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor),
             bottomIndicator.trailingAnchor.constraint(equalTo: bottomOverscrollView.trailingAnchor),
-            bottomIndicator.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor),
+            bottomIndicator.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor)
         ])
     }
 
@@ -673,29 +611,17 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         let maximumY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
         let topProgress = readerOverscrollProgress(
             max(-offsetY, 0),
-            spacing: readerOverscrollLayoutSpacing(
-                safeAreaInset: view.safeAreaInsets.top
-            )
-        )
+            spacing: readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.top))
         let bottomProgress = readerOverscrollProgress(
             max(offsetY - maximumY, 0),
-            spacing: readerOverscrollLayoutSpacing(
-                safeAreaInset: view.safeAreaInsets.bottom
-            )
-        )
+            spacing: readerOverscrollLayoutSpacing(safeAreaInset: view.safeAreaInsets.bottom))
 
         topOverscrollController.rootView = ReaderOverscrollIndicator(
-            progress: Double(topProgress),
-            direction: .up,
-            step: .previous,
-            availability: renderState.previousChapter
-        )
+            progress: Double(topProgress), direction: .up, step: .previous,
+            availability: renderState.previousChapter)
         bottomOverscrollController.rootView = ReaderOverscrollIndicator(
-            progress: Double(bottomProgress),
-            direction: .down,
-            step: .next,
-            availability: renderState.nextChapter
-        )
+            progress: Double(bottomProgress), direction: .down, step: .next,
+            availability: renderState.nextChapter)
     }
 }
 
@@ -705,19 +631,12 @@ private struct ContinuousReaderViewControllerWrapper: UIViewControllerRepresenta
     let actions: ReaderRenderActions
 
     func makeUIViewController(context _: Context) -> ContinuousReaderViewController {
-        ContinuousReaderViewController(
-            state: state,
-            configuration: configuration,
-            actions: actions
-        )
+        ContinuousReaderViewController(state: state, configuration: configuration, actions: actions)
     }
 
     func updateUIViewController(
-        _ viewController: ContinuousReaderViewController,
-        context _: Context
-    ) {
-        viewController.apply(state: state, configuration: configuration, actions: actions)
-    }
+        _ viewController: ContinuousReaderViewController, context _: Context
+    ) { viewController.apply(state: state, configuration: configuration, actions: actions) }
 }
 
 struct ContinuousReaderScreen: View {
@@ -727,9 +646,6 @@ struct ContinuousReaderScreen: View {
 
     var body: some View {
         ContinuousReaderViewControllerWrapper(
-            state: state,
-            configuration: configuration,
-            actions: actions
-        )
+            state: state, configuration: configuration, actions: actions)
     }
 }

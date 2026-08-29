@@ -22,10 +22,7 @@ struct ImportsModal: View {
     @State private var importError: String?
     @State private var showingError = false
 
-    init(
-        initialFiles: [URL] = [],
-        onImport: ((ImportableBrowsablePlugin) -> Void)? = nil
-    ) {
+    init(initialFiles: [URL] = [], onImport: ((ImportableBrowsablePlugin) -> Void)? = nil) {
         self.initialFiles = initialFiles
         self.onImport = onImport
         _selectedFiles = State(initialValue: initialFiles)
@@ -34,9 +31,7 @@ struct ImportsModal: View {
     private var supportedContentTypes: [UTType] {
         (selectedPlugin?.supportedExtensions ?? AppDirBrowsablePlugin.shared.supportedExtensions)
             .compactMap { ext in
-                if ext == "epub" {
-                    return .epub
-                }
+                if ext == "epub" { return .epub }
 
                 return UTType(filenameExtension: ext)
             }
@@ -57,14 +52,12 @@ struct ImportsModal: View {
                             Text("selectFiles")
                             Spacer()
                             if selectedFiles.isEmpty {
-                                Text("none")
-                                    .foregroundStyle(.secondary)
+                                Text("none").foregroundStyle(.secondary)
                             } else {
                                 Text(
                                     String(
                                         format: String(localized: "fileCountFormat"),
-                                        selectedFiles.count
-                                    )
+                                        selectedFiles.count)
                                 )
                                 .foregroundStyle(.secondary)
                             }
@@ -80,48 +73,33 @@ struct ImportsModal: View {
                 Section("importTo") {
                     Picker("folder", selection: $selectedPluginId) {
                         ForEach(browseService.importablePlugins, id: \.id) { plugin in
-                            Text(plugin.name ?? plugin.id)
-                                .tag(plugin.id)
+                            Text(plugin.name ?? plugin.id).tag(plugin.id)
                         }
                     }
                 }
             }
-            .navigationTitle("imports")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("imports").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel") {
-                        dismiss()
-                    }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("import") {
-                        Task {
-                            await importFiles()
-                        }
-                    }
-                    .disabled(selectedFiles.isEmpty || selectedPlugin == nil || isImporting)
+                    Button("import") { Task { await importFiles() } }
+                        .disabled(selectedFiles.isEmpty || selectedPlugin == nil || isImporting)
                 }
             }
             .fileImporter(
-                isPresented: $showingFileImporter,
-                allowedContentTypes: supportedContentTypes,
+                isPresented: $showingFileImporter, allowedContentTypes: supportedContentTypes,
                 allowsMultipleSelection: true
             ) { result in
-                switch result {
-                case .success(let urls):
-                    selectedFiles = urls
-                case .failure(let error):
-                    importError = error.localizedDescription
-                    showingError = true
+                switch result { case .success(let urls): selectedFiles = urls
+                    case .failure(let error):
+                        importError = error.localizedDescription
+                        showingError = true
                 }
             }
             .alert("failedToImport", isPresented: $showingError) {
                 Button("ok", role: .cancel) {}
             } message: {
-                if let importError {
-                    Text(importError)
-                }
+                if let importError { Text(importError) }
             }
         }
     }
@@ -133,9 +111,7 @@ struct ImportsModal: View {
         defer { isImporting = false }
 
         do {
-            for file in selectedFiles {
-                try await plugin.importFile(from: file)
-            }
+            for file in selectedFiles { try await plugin.importFile(from: file) }
             onImport?(plugin)
             dismiss()
         } catch {

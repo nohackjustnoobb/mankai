@@ -37,32 +37,23 @@ struct MangaDetailsScreen: View {
     @State private var saved: SavedModel? = nil
 
     /// Offline access
-    private var downloadMangaId: String {
-        return "\(plugin.id)+\(manga.id)"
-    }
+    private var downloadMangaId: String { return "\(plugin.id)+\(manga.id)" }
 
     @State private var downloadManga: DetailedManga?
     @State private var downloadedChapterIds: Set<String>?
 
-    private var mangaData: DetailedManga? {
-        return detailedManga ?? downloadManga
-    }
+    private var mangaData: DetailedManga? { return detailedManga ?? downloadManga }
 
     private var selectedChapterGroup: ChapterGroup? {
-        guard let mangaData,
-            let selectedChapterGroupIndex,
+        guard let mangaData, let selectedChapterGroupIndex,
             mangaData.chapters.indices.contains(selectedChapterGroupIndex)
-        else {
-            return nil
-        }
+        else { return nil }
 
         return mangaData.chapters[selectedChapterGroupIndex]
     }
 
     private var hasReadableChapter: Bool {
-        mangaData?.chapters
-            .flatMap(\.chapters)
-            .contains(where: canRead) == true
+        mangaData?.chapters.flatMap(\.chapters).contains(where: canRead) == true
     }
 
     private func canRead(_ chapter: Chapter) -> Bool {
@@ -93,13 +84,8 @@ struct MangaDetailsScreen: View {
 
         showingChaptersModal = false
         readerRoute = ReaderRoute(
-            plugin: plugin,
-            manga: mangaData,
-            downloadManga: downloadManga,
-            chapterGroupIndex: readerChapterGroupIndex,
-            chapter: chapter,
-            initialPage: page
-        )
+            plugin: plugin, manga: mangaData, downloadManga: downloadManga,
+            chapterGroupIndex: readerChapterGroupIndex, chapter: chapter, initialPage: page)
     }
 
     private func scrollToRecord(proxy: ScrollViewProxy) {
@@ -109,9 +95,7 @@ struct MangaDetailsScreen: View {
             let targetIndex = mangaData.chapters.firstIndex(where: { group in
                 group.chapters.contains { $0.id == record.chapterId }
             })
-        else {
-            return
-        }
+        else { return }
 
         if selectedChapterGroupIndex == targetIndex {
             proxy.scrollTo(record.chapterId, anchor: .center)
@@ -126,9 +110,7 @@ struct MangaDetailsScreen: View {
                 if let chapter = group.chapters.first(where: {
                     $0.id == record.chapterId && canRead($0)
                 }) {
-                    navigateToChapter(
-                        chapter, page: record.page, chapterGroupIndex: groupIndex
-                    )
+                    navigateToChapter(chapter, page: record.page, chapterGroupIndex: groupIndex)
                     return
                 }
             }
@@ -137,9 +119,7 @@ struct MangaDetailsScreen: View {
         if let mangaData = mangaData {
             if let groupIndex = mangaData.chapters.firstIndex(where: {
                 $0.chapters.contains(where: canRead)
-            }),
-                let chapter = mangaData.chapters[groupIndex].chapters.first(where: canRead)
-            {
+            }), let chapter = mangaData.chapters[groupIndex].chapters.first(where: canRead) {
                 navigateToChapter(chapter, chapterGroupIndex: groupIndex)
             }
         }
@@ -153,13 +133,9 @@ struct MangaDetailsScreen: View {
                         mangaId: manga.id, pluginId: plugin.id)
                 } else {
                     let newSaved = SavedModel(
-                        mangaId: manga.id,
-                        pluginId: plugin.id,
-                        datetime: Date(),
-                        updates: false,
+                        mangaId: manga.id, pluginId: plugin.id, datetime: Date(), updates: false,
                         latestChapter: manga.latestChapter?.encode() ?? "",
-                        shouldSync: plugin.shouldSync
-                    )
+                        shouldSync: plugin.shouldSync)
 
                     let mangaInfo: String
                     if let mangaData = try? JSONEncoder().encode(manga) {
@@ -169,16 +145,11 @@ struct MangaDetailsScreen: View {
                     }
 
                     let mangaModel = MangaModel(
-                        mangaId: manga.id,
-                        pluginId: plugin.id,
-                        info: mangaInfo
-                    )
+                        mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
 
                     let _ = try await SavedService.shared.add(saved: newSaved, manga: mangaModel)
                 }
-            } catch {
-                Logger.ui.error("Failed to delete or create SavedData")
-            }
+            } catch { Logger.ui.error("Failed to delete or create SavedData") }
         }
     }
 
@@ -186,8 +157,7 @@ struct MangaDetailsScreen: View {
         List {
             if mangaData != nil && detailedManga == nil {
                 Section {
-                    Text("usingDownloadMangaDescription")
-                        .foregroundStyle(.secondary)
+                    Text("usingDownloadMangaDescription").foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 } header: {
                     Spacer(minLength: 0)
@@ -195,31 +165,21 @@ struct MangaDetailsScreen: View {
             }
 
             if let remarks = mangaData?.remarks, !remarks.isEmpty {
-                Section("remarks") {
-                    Text(remarks)
-                }
+                Section("remarks") { Text(remarks) }
             }
 
             Section {
             } header: {
                 VStack {
                     MangaCoverView(coverUrl: mangaData?.cover ?? manga.cover, plugin: plugin)
-                        .aspectRatio(3 / 4, contentMode: .fit)
-                        .padding(.horizontal)
-                        .padding(.horizontal)
-                        .frame(maxWidth: 400)
+                        .aspectRatio(3 / 4, contentMode: .fit).padding(.horizontal)
+                        .padding(.horizontal).frame(maxWidth: 400)
 
-                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                        .textSelection(.enabled)
-                        .padding(.top, 12)
-                        .foregroundColor(.primary)
+                    Text(mangaData?.title ?? manga.title ?? mangaData?.id ?? manga.id).font(.title2)
+                        .fontWeight(.bold).multilineTextAlignment(.center).textSelection(.enabled)
+                        .padding(.top, 12).foregroundColor(.primary)
 
-                    if let authors = mangaData?.authors,
-                        !authors.isEmpty
-                    {
+                    if let authors = mangaData?.authors, !authors.isEmpty {
                         HStack(spacing: 4) {
                             HStack(spacing: 4) {
                                 ForEach(authors, id: \.self) { author in
@@ -227,13 +187,9 @@ struct MangaDetailsScreen: View {
                                         Button(action: {
                                             searchQuery = author
                                             showPluginSearchScreen = true
-                                        }) {
-                                            Text(author)
-                                                .foregroundStyle(.secondary)
-                                        }
+                                        }) { Text(author).foregroundStyle(.secondary) }
                                     } else {
-                                        Text(author)
-                                            .foregroundStyle(.secondary)
+                                        Text(author).foregroundStyle(.secondary)
                                     }
                                 }
                             }
@@ -243,15 +199,12 @@ struct MangaDetailsScreen: View {
                                     .foregroundColor(.primary.opacity(0.7))
                             }
                         }
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.subheadline).foregroundColor(.secondary)
                     }
                 }
-                .textCase(.none)
-                .frame(maxWidth: .infinity)
+                .textCase(.none).frame(maxWidth: .infinity)
             }
-            .listRowInsets(EdgeInsets())
-            .padding(.top)
+            .listRowInsets(EdgeInsets()).padding(.top)
 
             Section {
                 VStack(spacing: 8) {
@@ -265,9 +218,7 @@ struct MangaDetailsScreen: View {
                             Text(
                                 String(
                                     format: String(localized: "chapterCountFormat"),
-                                    chapters.flatMap(\.chapters).count
-                                )
-                            )
+                                    chapters.flatMap(\.chapters).count))
                         }
 
                         if let status = mangaData?.status {
@@ -275,8 +226,7 @@ struct MangaDetailsScreen: View {
                             Text(status.localizedName)
                         }
                     }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(.secondary)
 
                     HStack(spacing: 12) {
                         Button(action: handleReadContinueAction) {
@@ -286,22 +236,19 @@ struct MangaDetailsScreen: View {
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.borderedProminent).frame(maxWidth: .infinity)
                         .disabled(!hasReadableChapter)
 
                         Button(action: handleBookmarkAction) {
                             HStack {
                                 Image(
                                     systemName: saved != nil
-                                        ? "bookmark.slash.fill" : "bookmark.fill"
-                                )
+                                        ? "bookmark.slash.fill" : "bookmark.fill")
                                 Text(saved != nil ? "remove" : "bookmark")
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(saved != nil ? nil : .accent)
+                        .buttonStyle(.bordered).tint(saved != nil ? nil : .accent)
                         .frame(maxWidth: .infinity)
                     }
 
@@ -311,14 +258,12 @@ struct MangaDetailsScreen: View {
 
                             if let chapterTitle = record.chapterTitle {
                                 Text("•")
-                                Text(chapterTitle)
-                                    .lineLimit(1)
+                                Text(chapterTitle).lineLimit(1)
                             } else {
                                 Text("•")
                                 Text(
                                     String(
-                                        format: String(localized: "chapterFormat"),
-                                        record.chapterId
+                                        format: String(localized: "chapterFormat"), record.chapterId
                                     )
                                 )
                                 .lineLimit(1)
@@ -328,12 +273,9 @@ struct MangaDetailsScreen: View {
                             Text(
                                 String(
                                     format: String(localized: "pageFormat"),
-                                    (record.page + 1).description
-                                )
-                            )
+                                    (record.page + 1).description))
                         }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 8)
@@ -345,41 +287,30 @@ struct MangaDetailsScreen: View {
                 Section {
                     Text(description)
                 } header: {
-                    Text("description")
-                        .padding(.top)
+                    Text("description").padding(.top)
                 }
             }
 
-            if let genres = mangaData?.genres,
-                !genres.isEmpty
-            {
+            if let genres = mangaData?.genres, !genres.isEmpty {
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
                         if plugin.supportsList(genre: genre) {
                             Button(action: {
                                 selectedGenre = genre
                                 showPluginLibraryScreen = true
-                            }) {
-                                Text(LocalizedStringKey(genre.rawValue))
-                                    .genreTagStyle()
-                            }
+                            }) { Text(LocalizedStringKey(genre.rawValue)).genreTagStyle() }
                             .buttonStyle(.borderless)
                         } else {
-                            Text(LocalizedStringKey(genre.rawValue))
-                                .genreTagStyle()
+                            Text(LocalizedStringKey(genre.rawValue)).genreTagStyle()
                         }
                     }
-                    .padding()
-                    .listRowInsets(EdgeInsets())
+                    .padding().listRowInsets(EdgeInsets())
                 } header: {
-                    Text("genres")
-                        .padding(.top)
+                    Text("genres").padding(.top)
                 }
             }
 
-            if let mangaData = mangaData,
-                !mangaData.chapters.isEmpty
-            {
+            if let mangaData = mangaData, !mangaData.chapters.isEmpty {
                 Section {
                     ForEach(Array(mangaData.chapters.enumerated()), id: \.offset) {
                         groupIndex, group in
@@ -396,38 +327,31 @@ struct MangaDetailsScreen: View {
                                         Text(
                                             String(
                                                 format: String(localized: "chapterCountFormat"),
-                                                group.chapters.count
-                                            )
+                                                group.chapters.count)
                                         )
                                         .smallTagStyle()
                                     }
 
                                     if let latestChapter = group.chapters.last {
                                         HStack(spacing: 4) {
-                                            Text("latest")
-                                                .font(.caption)
-                                                .foregroundColor(.primary)
+                                            Text("latest").font(.caption).foregroundColor(.primary)
 
                                             Text(latestChapter.title ?? latestChapter.id)
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(1)
+                                                .font(.caption).foregroundStyle(.secondary)
+                                                .foregroundColor(.secondary).lineLimit(1)
                                         }
                                     }
                                 }
 
                                 Spacer()
 
-                                Image(systemName: "list.bullet")
-                                    .foregroundColor(.secondary)
+                                Image(systemName: "list.bullet").foregroundColor(.secondary)
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
                 } header: {
-                    Text("chapters")
-                        .padding(.top)
+                    Text("chapters").padding(.top)
                 }
             }
         }
@@ -440,26 +364,18 @@ struct MangaDetailsScreen: View {
         let isAvailable = canRead(chapter)
         let chapterIcon = isAvailable ? "chevron.right" : "lock.fill"
 
-        return Button(action: {
-            navigateToChapter(chapter)
-        }) {
+        return Button(action: { navigateToChapter(chapter) }) {
             HStack {
-                Text(chapterTitle)
-                    .foregroundColor(.primary)
+                Text(chapterTitle).foregroundColor(.primary)
 
-                if isDownloaded {
-                    Image(systemName: "network.slash")
-                        .foregroundColor(.secondary)
-                }
+                if isDownloaded { Image(systemName: "network.slash").foregroundColor(.secondary) }
 
                 if isCurrentChapter {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .foregroundColor(.accentColor)
+                    Image(systemName: "clock.arrow.circlepath").foregroundColor(.accentColor)
                 }
 
                 Spacer()
-                Image(systemName: chapterIcon)
-                    .foregroundColor(.secondary)
+                Image(systemName: chapterIcon).foregroundColor(.secondary)
             }
         }
         .disabled(!isAvailable)
@@ -473,22 +389,17 @@ struct MangaDetailsScreen: View {
                     let chaptersWidth = max(0, geometry.size.width - infoWidth)
 
                     HStack(spacing: 0) {
-                        info
-                            .frame(minWidth: 400)
-                            .frame(width: infoWidth)
+                        info.frame(minWidth: 400).frame(width: infoWidth)
 
                         if let selectedChapterGroup {
                             let chapters = selectedChapterGroup.chapters
                             let displayedChapters: [Chapter] =
-                                isReversed
-                                ? Array(chapters.reversed())
-                                : chapters
+                                isReversed ? Array(chapters.reversed()) : chapters
                             ScrollViewReader { proxy in
                                 List {
                                     Section {
                                         if chapters.isEmpty {
-                                            Text("noChaptersAvailable")
-                                                .foregroundStyle(.secondary)
+                                            Text("noChaptersAvailable").foregroundStyle(.secondary)
                                         } else {
                                             ForEach(displayedChapters, id: \.id) { chapter in
                                                 chapterRow(chapter)
@@ -502,23 +413,18 @@ struct MangaDetailsScreen: View {
                                                     String(
                                                         format: String(
                                                             localized: "chapterCountFormat"),
-                                                        chapters.count
-                                                    )
+                                                        chapters.count)
                                                 )
-                                                .font(.caption)
-                                                .foregroundStyle(.secondary)
+                                                .font(.caption).foregroundStyle(.secondary)
                                             }
 
                                             Spacer()
 
                                             HStack {
-                                                Button(action: {
-                                                    isReversed.toggle()
-                                                }) {
+                                                Button(action: { isReversed.toggle() }) {
                                                     Image(
                                                         systemName: isReversed
-                                                            ? "arrow.up"
-                                                            : "arrow.down"
+                                                            ? "arrow.up" : "arrow.down"
                                                     )
                                                     .font(.headline)
                                                 }
@@ -530,8 +436,7 @@ struct MangaDetailsScreen: View {
                                                     Button(action: {
                                                         isUpdateChaptersModalPresented = true
                                                     }) {
-                                                        Image(systemName: "pencil")
-                                                            .font(.headline)
+                                                        Image(systemName: "pencil").font(.headline)
                                                     }
                                                     .buttonStyle(.plain)
                                                 }
@@ -540,9 +445,7 @@ struct MangaDetailsScreen: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity)
-                                .onAppear {
-                                    scrollToRecord(proxy: proxy)
-                                }
+                                .onAppear { scrollToRecord(proxy: proxy) }
                                 .onChange(of: record, initial: false) { _, _ in
                                     scrollToRecord(proxy: proxy)
                                 }
@@ -554,9 +457,7 @@ struct MangaDetailsScreen: View {
                             }
                             .frame(width: chaptersWidth)
                         } else {
-                            ProgressView()
-                                .frame(width: chaptersWidth)
-                                .frame(maxHeight: .infinity)
+                            ProgressView().frame(width: chaptersWidth).frame(maxHeight: .infinity)
                                 .background(Color(.systemGroupedBackground))
                         }
                     }
@@ -565,27 +466,19 @@ struct MangaDetailsScreen: View {
                 info
             }
         }
-        .listSectionSpacing(0)
-        .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingChaptersModal) {
-            [mangaData, selectedChapterGroupIndex] in
-            if let mangaData = mangaData,
-                let selectedChapterGroupIndex = selectedChapterGroupIndex
+        .listSectionSpacing(0).navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingChaptersModal) { [mangaData, selectedChapterGroupIndex] in
+            if let mangaData = mangaData, let selectedChapterGroupIndex = selectedChapterGroupIndex
             {
                 ChaptersModal(
-                    plugin: plugin,
-                    manga: mangaData,
-                    chapterGroupIndex: selectedChapterGroupIndex,
-                    record: record,
-                    downloadChapters: downloadedChapterIds,
+                    plugin: plugin, manga: mangaData, chapterGroupIndex: selectedChapterGroupIndex,
+                    record: record, downloadChapters: downloadedChapterIds,
                     canReadRemotely: plugin.supportsRemoteReading,
-                    onNavigateToChapter: navigateToChapter
-                )
+                    onNavigateToChapter: navigateToChapter)
             }
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
-            if let detailedManga = detailedManga,
-                detailedManga.editable ?? true,
+            if let detailedManga = detailedManga, detailedManga.editable ?? true,
                 let editablePlugin = plugin as? any Editable
             {
                 UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
@@ -593,50 +486,35 @@ struct MangaDetailsScreen: View {
         }
         .sheet(isPresented: $isUpdateChaptersModalPresented) {
             [detailedManga, selectedChapterGroupIndex] in
-            if let detailedManga = detailedManga,
-                detailedManga.editable ?? true,
+            if let detailedManga = detailedManga, detailedManga.editable ?? true,
                 let selectedChapterGroupIndex = selectedChapterGroupIndex,
                 let editablePlugin = plugin as? any Editable
             {
                 UpdateChaptersModal(
-                    plugin: editablePlugin,
-                    manga: detailedManga,
-                    chapterGroupIndex: selectedChapterGroupIndex,
-                    isRootOfSheet: true
-                )
+                    plugin: editablePlugin, manga: detailedManga,
+                    chapterGroupIndex: selectedChapterGroupIndex, isRootOfSheet: true)
             }
         }
         .sheet(isPresented: $isSelectChaptersModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga {
                 SelectChaptersModal(
-                    plugin: plugin,
-                    detailedManga: detailedManga,
+                    plugin: plugin, detailedManga: detailedManga,
                     alreadyDownloaded: downloadedChapterIds,
                     downloadChapters: { chapters in
                         Task {
                             do {
                                 _ = try await DownloadService.shared.queue(
-                                    plugin: plugin,
-                                    manga: detailedManga,
-                                    chapters: chapters
-                                )
-                            } catch {
-                                Logger.ui.error("Failed to queue download", error: error)
-                            }
+                                    plugin: plugin, manga: detailedManga, chapters: chapters)
+                            } catch { Logger.ui.error("Failed to queue download", error: error) }
                         }
-                    }
-                )
+                    })
             }
         }
         .navigationDestination(item: $readerRoute) { params in
             ReaderScreen(
-                plugin: params.plugin,
-                manga: params.manga,
-                downloadManga: params.downloadManga,
-                chapterGroupIndex: params.chapterGroupIndex,
-                chapter: params.chapter,
-                initialPage: params.initialPage
-            )
+                plugin: params.plugin, manga: params.manga, downloadManga: params.downloadManga,
+                chapterGroupIndex: params.chapterGroupIndex, chapter: params.chapter,
+                initialPage: params.initialPage)
         }
         .navigationDestination(isPresented: $showPluginLibraryScreen) {
             if let selectedGenre = selectedGenre {
@@ -645,9 +523,7 @@ struct MangaDetailsScreen: View {
         }
         .navigationDestination(isPresented: $showPluginSearchScreen) {
             if let searchQuery = searchQuery {
-                PluginSearchScreen(
-                    plugin: plugin, query: searchQuery, isAuthorSearch: true
-                )
+                PluginSearchScreen(plugin: plugin, query: searchQuery, isAuthorSearch: true)
             }
         }
         .toolbar {
@@ -674,22 +550,12 @@ struct MangaDetailsScreen: View {
             updateRecord()
             updateSaved()
         }
-        .onReceive(plugin.objectWillChange) {
-            loadDetailedManga()
-        }
-        .onReceive(DownloadPlugin.shared.objectWillChange) {
-            loadDetailedManga()
-        }
-        .onReceive(SavedService.shared.objectWillChange) {
-            updateSaved()
-        }
-        .onReceive(HistoryService.shared.objectWillChange) {
-            updateRecord()
-        }
+        .onReceive(plugin.objectWillChange) { loadDetailedManga() }
+        .onReceive(DownloadPlugin.shared.objectWillChange) { loadDetailedManga() }
+        .onReceive(SavedService.shared.objectWillChange) { updateSaved() }
+        .onReceive(HistoryService.shared.objectWillChange) { updateRecord() }
         .toolbarBackground(
-            horizontalSizeClass == .regular ? .visible : .automatic,
-            for: .navigationBar
-        )
+            horizontalSizeClass == .regular ? .visible : .automatic, for: .navigationBar)
     }
 
     private func loadDetailedManga() {
@@ -720,10 +586,10 @@ struct MangaDetailsScreen: View {
                 }
 
                 downloadedChapterIds = Set(
-                    downloadManga!.chapters.flatMap { group in
-                        group.chapters.filter { !($0.locked ?? false) }.map(\.id)
-                    }
-                )
+                    downloadManga!.chapters
+                        .flatMap { group in
+                            group.chapters.filter { !($0.locked ?? false) }.map(\.id)
+                        })
             } catch {
                 if detailedManga == nil {
                     Logger.ui.error("Failed to load detailed manga", error: error)

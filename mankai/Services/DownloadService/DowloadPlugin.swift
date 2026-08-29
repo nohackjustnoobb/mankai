@@ -19,33 +19,23 @@ enum DownloadPluginConstants {
 final class DownloadPlugin: Plugin {
     static let shared = DownloadPlugin()
 
-    override var id: String {
-        "download"
-    }
+    override var id: String { "download" }
 
-    override var name: String? {
-        "Downloaded"
-    }
+    override var name: String? { "Downloaded" }
 
-    override var shouldSync: Bool {
-        false
-    }
+    override var shouldSync: Bool { false }
 
-    override var availableGenres: [Genre] {
-        Genre.allCases
-    }
+    override var availableGenres: [Genre] { Genre.allCases }
 
     let downloadDir: URL
-    var db: DatabasePool? {
-        DbService.shared.openDownloadDb()
-    }
+    var db: DatabasePool? { DbService.shared.openDownloadDb() }
 
     override private init() {
         Logger.downloadPlugin.debug("Initializing DownloadPlugin")
 
         let fileManager = FileManager.default
-        downloadDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!.appendingPathComponent("downloads")
+        downloadDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("downloads")
 
         if !fileManager.fileExists(atPath: downloadDir.path) {
             try! fileManager.createDirectory(at: downloadDir, withIntermediateDirectories: true)
@@ -58,9 +48,7 @@ final class DownloadPlugin: Plugin {
     /// Built-in plugin, do nothing
     override func deletePlugin() throws {}
 
-    override func isOnline() async throws -> Bool {
-        return true
-    }
+    override func isOnline() async throws -> Bool { return true }
 
     // MARK: - Helper Functions
 
@@ -71,38 +59,26 @@ final class DownloadPlugin: Plugin {
     private func convertToDetailedManga(_ mangaModel: DownloadMangaModel, db: Database? = nil)
         -> DetailedManga?
     {
-        var mangaDict: [String: Any] = [
-            "id": mangaModel.mangaId
-        ]
+        var mangaDict: [String: Any] = ["id": mangaModel.mangaId]
 
-        if let title = mangaModel.title {
-            mangaDict["title"] = title
-        }
+        if let title = mangaModel.title { mangaDict["title"] = title }
 
-        if let cover = mangaModel.cover {
-            mangaDict["cover"] = cover
-        }
+        if let cover = mangaModel.cover { mangaDict["cover"] = cover }
 
-        if let status = mangaModel.status {
-            mangaDict["status"] = UInt(status)
-        }
+        if let status = mangaModel.status { mangaDict["status"] = UInt(status) }
 
-        if let description = mangaModel.description {
-            mangaDict["description"] = description
-        }
+        if let description = mangaModel.description { mangaDict["description"] = description }
 
         if let updatedAt = mangaModel.updatedAt {
             mangaDict["updatedAt"] = Int64(updatedAt.timeIntervalSince1970 * 1000)
         }
 
-        let authors = mangaModel.authors.components(separatedBy: "|").map {
-            $0.trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty }
+        let authors = mangaModel.authors.components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         mangaDict["authors"] = authors
 
-        let genres = mangaModel.genres.components(separatedBy: "|").map {
-            $0.trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty }
+        let genres = mangaModel.genres.components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         mangaDict["genres"] = genres
 
         if let latestChapter = mangaModel.latestChapter,
@@ -112,8 +88,7 @@ final class DownloadPlugin: Plugin {
             mangaDict["latestChapter"] = chapterDict
         }
 
-        if let chapters = mangaModel.chapters,
-            let chaptersData = chapters.data(using: .utf8),
+        if let chapters = mangaModel.chapters, let chaptersData = chapters.data(using: .utf8),
             let chapterGroups = try? JSONSerialization.jsonObject(with: chaptersData)
         {
             mangaDict["chapters"] = chapterGroups
@@ -121,15 +96,11 @@ final class DownloadPlugin: Plugin {
 
         mangaDict["meta"] = mangaModel.pluginId
 
-        guard var detailedManga = DetailedManga(from: mangaDict) else {
-            return nil
-        }
+        guard var detailedManga = DetailedManga(from: mangaDict) else { return nil }
 
         if let db = db {
             do {
-                let chapters =
-                    try DownloadChapterModel
-                    .filter(Column("mangaId") == mangaModel.id)
+                let chapters = try DownloadChapterModel.filter(Column("mangaId") == mangaModel.id)
                     .fetchAll(db)
 
                 let downloadedChapterIds = Set(
@@ -139,9 +110,7 @@ final class DownloadPlugin: Plugin {
                     var updatedGroup = group
                     updatedGroup.chapters = group.chapters.map { chapter in
                         var newChapter = chapter
-                        if !downloadedChapterIds.contains(chapter.id) {
-                            newChapter.locked = true
-                        }
+                        if !downloadedChapterIds.contains(chapter.id) { newChapter.locked = true }
                         return newChapter
                     }
                     return updatedGroup
@@ -167,18 +136,16 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             let searchQuery = "%\(query.lowercased())%"
             let mangas =
-                try DownloadMangaModel
-                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                .limit(Int(DownloadPluginConstants.suggestionLimit))
-                .fetchAll(db)
+                try DownloadMangaModel.filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(Int(DownloadPluginConstants.suggestionLimit)).fetchAll(db)
 
             return mangas.compactMap { $0.title }
         }
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         Logger.downloadPlugin.debug(
             "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor)"
         )
@@ -193,9 +160,8 @@ final class DownloadPlugin: Plugin {
             let limit = Int(DownloadPluginConstants.pageLimit)
 
             let searchColumn = isAuthor ? "authors" : "title"
-            var query =
-                DownloadMangaModel
-                .filter(sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
+            var query = DownloadMangaModel.filter(
+                sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
 
             // Filter by genre if not "all"
             if genre != .all {
@@ -204,18 +170,11 @@ final class DownloadPlugin: Plugin {
             }
 
             // Filter by status if not "any"
-            if status != .any {
-                query = query.filter(Column("status") == Int(status.rawValue))
-            }
+            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
 
-            let mangas =
-                try query
-                .limit(limit, offset: offset)
-                .fetchAll(db)
+            let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in
-                self.convertToManga(mangaModel)
-            }
+            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
         }
     }
 
@@ -240,18 +199,11 @@ final class DownloadPlugin: Plugin {
             }
 
             // Filter by status if not "any"
-            if status != .any {
-                query = query.filter(Column("status") == Int(status.rawValue))
-            }
+            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
 
-            let mangas =
-                try query
-                .limit(limit, offset: offset)
-                .fetchAll(db)
+            let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in
-                self.convertToManga(mangaModel)
-            }
+            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
         }
     }
 
@@ -263,14 +215,9 @@ final class DownloadPlugin: Plugin {
         }
 
         return try await db.read { db in
-            let mangas =
-                try DownloadMangaModel
-                .filter(ids.contains(Column("id")))
-                .fetchAll(db)
+            let mangas = try DownloadMangaModel.filter(ids.contains(Column("id"))).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in
-                self.convertToManga(mangaModel)
-            }
+            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
         }
     }
 
@@ -314,8 +261,9 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             guard
                 let chapterModel =
-                    try DownloadChapterModel
-                    .filter(Column("mangaId") == mangaId && Column("chapterId") == chapter.id)
+                    try DownloadChapterModel.filter(
+                        Column("mangaId") == mangaId && Column("chapterId") == chapter.id
+                    )
                     .fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Chapter not found: \(chapter.id)")
@@ -335,11 +283,7 @@ final class DownloadPlugin: Plugin {
 
         return try await db.read { db in
             // First try to get the image from the database
-            guard
-                let imageModel =
-                    try DownloadImageModel
-                    .filter(Column("url") == path)
-                    .fetchOne(db)
+            guard let imageModel = try DownloadImageModel.filter(Column("url") == path).fetchOne(db)
             else {
                 Logger.downloadPlugin.error("Image not found in DB: \(path)")
                 throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError()
@@ -353,9 +297,7 @@ final class DownloadPlugin: Plugin {
                 throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError()
             }
 
-            do {
-                return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
-            } catch {
+            do { return try Data(contentsOf: URL(fileURLWithPath: fullImagePath)) } catch {
                 Logger.downloadPlugin.error(
                     "Failed to load image data: \(fullImagePath)", error: error)
                 throw MankaiErrorCode.pluginDownloadFailedToLoadImage.makeError(
@@ -374,13 +316,9 @@ final class DownloadPlugin: Plugin {
         }
 
         return try await db.read { db in
-            let mangas =
-                try DownloadMangaModel
-                .filter(Column("downloaded") == true)
-                .fetchAll(db)
+            let mangas = try DownloadMangaModel.filter(Column("downloaded") == true).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in
-                self.convertToDetailedManga(mangaModel, db: db)
+            return mangas.compactMap { mangaModel in self.convertToDetailedManga(mangaModel, db: db)
             }
         }
     }
@@ -422,11 +360,7 @@ final class DownloadPlugin: Plugin {
         try data.write(to: fullPath)
 
         // Save to DB
-        let imageModel = DownloadImageModel(
-            url: url,
-            mangaId: mangaId,
-            path: path
-        )
+        let imageModel = DownloadImageModel(url: url, mangaId: mangaId, path: path)
 
         try await saveImage(imageModel)
     }
@@ -438,13 +372,9 @@ final class DownloadPlugin: Plugin {
             throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
-        try await db.write { db in
-            try manga.save(db)
-        }
+        try await db.write { db in try manga.save(db) }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
     }
 
     func saveChapter(_ chapter: DownloadChapterModel) async throws {
@@ -454,13 +384,9 @@ final class DownloadPlugin: Plugin {
             throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
-        try await db.write { db in
-            try chapter.save(db)
-        }
+        try await db.write { db in try chapter.save(db) }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
     }
 
     func saveImage(_ image: DownloadImageModel) async throws {
@@ -470,13 +396,9 @@ final class DownloadPlugin: Plugin {
             throw MankaiErrorCode.pluginDownloadDatabaseNotAvailable.makeError()
         }
 
-        try await db.write { db in
-            try image.save(db)
-        }
+        try await db.write { db in try image.save(db) }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
     }
 
     /// Deletes a manga from the database and removes its image directory from disk
@@ -515,9 +437,7 @@ final class DownloadPlugin: Plugin {
             Logger.downloadPlugin.debug("Successfully deleted manga from database: \(mangaId)")
         }
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func deleteManga(_ manga: DetailedManga) async throws {

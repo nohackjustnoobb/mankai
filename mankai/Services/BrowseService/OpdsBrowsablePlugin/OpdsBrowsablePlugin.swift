@@ -10,8 +10,7 @@ import Foundation
 import GRDB
 import SwiftUI
 
-/// OPDS support is based on the [OPDS 1.2 specification](https://specs.opds.io/opds-1.2)
-/// and the [OPDS Page Streaming Extension 1.2 specification](https://anansi-project.github.io/docs/opds-pse/specs/v1.2).
+/// OPDS support is based on the [OPDS 1.2 specification](https://specs.opds.io/opds-1.2) and the [OPDS Page Streaming Extension 1.2 specification](https://anansi-project.github.io/docs/opds-pse/specs/v1.2).
 
 struct OpdsConnectionConfiguration {
     let catalogURL: URL
@@ -21,17 +20,12 @@ struct OpdsConnectionConfiguration {
     init(catalogURL: String, username: String? = nil, password: String? = nil) throws {
         let trimmedURL = catalogURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard var components = URLComponents(string: trimmedURL),
-            let scheme = components.scheme?.lowercased(),
-            scheme == "http" || scheme == "https",
+            let scheme = components.scheme?.lowercased(), scheme == "http" || scheme == "https",
             components.host?.isEmpty == false
-        else {
-            throw URLError(.badURL)
-        }
+        else { throw URLError(.badURL) }
 
         components.scheme = scheme
-        guard let normalizedURL = components.url else {
-            throw URLError(.badURL)
-        }
+        guard let normalizedURL = components.url else { throw URLError(.badURL) }
 
         self.catalogURL = normalizedURL
         self.username = username.trimmed
@@ -54,9 +48,7 @@ actor OpdsSession {
         return try OpdsParser.parse(data, baseURL: url)
     }
 
-    func download(url: URL) async throws -> Data {
-        try await data(for: url)
-    }
+    func download(url: URL) async throws -> Data { try await data(for: url) }
 
     private func data(for url: URL) async throws -> Data {
         var request = URLRequest(url: url)
@@ -79,9 +71,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     private var _id: String
     var configuration: OpdsConnectionConfiguration {
-        didSet {
-            session = OpdsSession(configuration: configuration)
-        }
+        didSet { session = OpdsSession(configuration: configuration) }
     }
     var displayName: String?
     private var _shouldSync: Bool
@@ -95,75 +85,53 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
     }
 
     private var temporaryDirectory: URL {
-        let cacheName = SHA256.hash(data: Data(_id.utf8))
-            .map { String(format: "%02x", $0) }
+        let cacheName = SHA256.hash(data: Data(_id.utf8)).map { String(format: "%02x", $0) }
             .joined()
         return FileManager.default.temporaryDirectory
             .appendingPathComponent("opds", isDirectory: true)
             .appendingPathComponent(cacheName, isDirectory: true)
     }
 
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
     override var name: String? {
         displayName ?? configuration.catalogURL.host ?? configuration.catalogURL.absoluteString
     }
 
-    override var shouldSync: Bool {
-        _shouldSync
-    }
+    override var shouldSync: Bool { _shouldSync }
 
     func convertToLocalPlugin() {
         _id = UUID().uuidString
         _shouldSync = false
     }
 
-    override var availableGenres: [Genre] {
-        Genre.allCases
-    }
+    override var availableGenres: [Genre] { Genre.allCases }
 
     override var capabilities: [PluginCapability] {
         [.onlineCheck, .mangaDetails, .batchMangas, .chapter, .image]
     }
 
-    override var canDownload: Bool {
-        false
-    }
+    override var canDownload: Bool { false }
 
-    var systemImageName: String {
-        "books.vertical.fill"
-    }
+    var systemImageName: String { "books.vertical.fill" }
 
-    var systemImageColor: Color {
-        BrowsablePluginStyle.systemImageColor(for: _id)
-    }
+    var systemImageColor: Color { BrowsablePluginStyle.systemImageColor(for: _id) }
 
     convenience init(session: OpdsSession, name: String?) async throws {
         let rootCatalog = try await session.get(url: session.configuration.catalogURL)
         let id = rootCatalog.metadata.id ?? UUID().uuidString
 
         try self.init(
-            id: id,
-            name: name,
-            configuration: session.configuration,
-            session: session,
-            shouldSync: rootCatalog.metadata.id != nil
-        )
+            id: id, name: name, configuration: session.configuration, session: session,
+            shouldSync: rootCatalog.metadata.id != nil)
     }
 
     init(
-        id: String,
-        name: String?,
-        configuration: OpdsConnectionConfiguration,
-        session: OpdsSession? = nil,
-        shouldSync: Bool = true
+        id: String, name: String?, configuration: OpdsConnectionConfiguration,
+        session: OpdsSession? = nil, shouldSync: Bool = true
     ) throws {
         let trimmedId = id.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedId.isEmpty else {
-            throw MankaiErrorCode.browseOpdsInvalidPlugin.makeError()
-        }
+        guard !trimmedId.isEmpty else { throw MankaiErrorCode.browseOpdsInvalidPlugin.makeError() }
 
         self._id = trimmedId
         self.displayName = name.trimmed
@@ -174,17 +142,13 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         let allParsers: [Parser] = [CbzParser(), CbrParser(), PdfParser(), EpubParser()]
         var parsers: [String: Parser] = [:]
         for parser in allParsers {
-            for ext in parser.supportedExtensions {
-                parsers[ext.lowercased()] = parser
-            }
+            for ext in parser.supportedExtensions { parsers[ext.lowercased()] = parser }
         }
         self.parsers = parsers
 
         var mimeTypes: [String: Parser] = [:]
         for parser in allParsers {
-            for mimeType in parser.supportedMimeTypes {
-                mimeTypes[mimeType.lowercased()] = parser
-            }
+            for mimeType in parser.supportedMimeTypes { mimeTypes[mimeType.lowercased()] = parser }
         }
         self.mimeTypes = mimeTypes
 
@@ -192,16 +156,12 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
-    deinit {
-        try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
-    }
+    deinit { try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) }
 
     func getEntities(path: String?) async throws -> [Entity] {
         let catalogURL: URL
         if let path = path?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty {
-            guard let url = URL(string: path) else {
-                throw URLError(.badURL)
-            }
+            guard let url = URL(string: path) else { throw URLError(.badURL) }
             catalogURL = url
         } else {
             catalogURL = configuration.catalogURL
@@ -213,46 +173,34 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         var entities: [Entity] = []
 
         for entry in feed.entries {
-            switch entry {
-            case .navigation(let navigation):
+            switch entry { case .navigation(let navigation):
                 let fallbackName =
                     navigation.url.lastPathComponent.isEmpty
                     ? navigation.url.absoluteString : navigation.url.lastPathComponent
-                let displayName =
-                    navigation.title.flatMap { $0.isEmpty ? nil : $0 }
-                    ?? fallbackName
+                let displayName = navigation.title.flatMap { $0.isEmpty ? nil : $0 } ?? fallbackName
                 entities.append(
                     Entity(
-                        path: navigation.url.absoluteString,
-                        displayName: displayName,
-                        name: displayName,
-                        type: .directory
-                    )
-                )
-            case .book(let book):
-                let fileName: String
-                let fileType: String
-                switch book.mediaType {
-                case .regular(let url, let type):
-                    guard let regularFile = regularFileInfo(url: url, type: type) else {
-                        continue
+                        path: navigation.url.absoluteString, displayName: displayName,
+                        name: displayName, type: .directory))
+                case .book(let book):
+                    let fileName: String
+                    let fileType: String
+                    switch book.mediaType { case .regular(let url, let type):
+                        guard let regularFile = regularFileInfo(url: url, type: type) else {
+                            continue
+                        }
+                        fileName = regularFile.fileName
+                        fileType = regularFile.parser.id
+                        case .pse(let urlTemplate, _):
+                            fileName = urlTemplate.lastPathComponent
+                            fileType = Self.pseFileType
                     }
-                    fileName = regularFile.fileName
-                    fileType = regularFile.parser.id
-                case .pse(let urlTemplate, _):
-                    fileName = urlTemplate.lastPathComponent
-                    fileType = Self.pseFileType
-                }
 
-                books.append(book)
-                entities.append(
-                    Entity(
-                        path: book.id,
-                        displayName: book.title ?? fileName,
-                        name: fileName,
-                        type: .book(fileType: fileType)
-                    )
-                )
+                    books.append(book)
+                    entities.append(
+                        Entity(
+                            path: book.id, displayName: book.title ?? fileName, name: fileName,
+                            type: .book(fileType: fileType)))
             }
         }
 
@@ -264,9 +212,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         try await detailedManga(for: path)
     }
 
-    func absoluteURL(for path: String?) -> URL? {
-        nil
-    }
+    func absoluteURL(for path: String?) -> URL? { nil }
 
     static func loadPlugins() -> [OpdsBrowsablePlugin] {
         Logger.opdsBrowsablePlugin.debug("Loading OPDS browsable plugins")
@@ -276,15 +222,9 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         }
 
         let models: [OpdsBrowsablePluginModel]
-        do {
-            models = try dbPool.read { db in
-                try OpdsBrowsablePluginModel.fetchAll(db)
-            }
-        } catch {
+        do { models = try dbPool.read { db in try OpdsBrowsablePluginModel.fetchAll(db) } } catch {
             Logger.opdsBrowsablePlugin.error(
-                "Failed to fetch OpdsBrowsablePluginModels",
-                error: error
-            )
+                "Failed to fetch OpdsBrowsablePluginModels", error: error)
             return []
         }
 
@@ -292,22 +232,15 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         for model in models {
             do {
                 let configuration = try OpdsConnectionConfiguration(
-                    catalogURL: model.catalogURL,
-                    username: model.username,
-                    password: model.password
+                    catalogURL: model.catalogURL, username: model.username, password: model.password
                 )
                 try results.append(
                     OpdsBrowsablePlugin(
-                        id: model.id,
-                        name: model.name,
-                        configuration: configuration,
-                        shouldSync: model.shouldSync
-                    ))
+                        id: model.id, name: model.name, configuration: configuration,
+                        shouldSync: model.shouldSync))
             } catch {
                 Logger.opdsBrowsablePlugin.error(
-                    "Failed to load OPDS plugin \(model.id)",
-                    error: error
-                )
+                    "Failed to load OPDS plugin \(model.id)", error: error)
             }
         }
         return results
@@ -320,34 +253,22 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         }
 
         let model = OpdsBrowsablePluginModel(
-            id: id,
-            name: displayName,
-            catalogURL: configuration.catalogURL.absoluteString,
-            username: configuration.username,
-            password: configuration.password,
-            shouldSync: _shouldSync
-        )
-        try db.write { db in
-            try model.save(db)
-        }
+            id: id, name: displayName, catalogURL: configuration.catalogURL.absoluteString,
+            username: configuration.username, password: configuration.password,
+            shouldSync: _shouldSync)
+        try db.write { db in try model.save(db) }
     }
 
     override func deletePlugin() throws {
         Logger.opdsBrowsablePlugin.debug("Deleting OPDS plugin: \(id)")
         guard let appDb = DbService.shared.appDb,
             let opdsDb = DbService.shared.openOpdsBrowsablePluginDb()
-        else {
-            throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
-        }
+        else { throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError() }
 
         _ = try opdsDb.write { db in
-            try OpdsBrowsableBookModel
-                .filter(Column("pluginId") == id)
-                .deleteAll(db)
+            try OpdsBrowsableBookModel.filter(Column("pluginId") == id).deleteAll(db)
         }
-        _ = try appDb.write { db in
-            try OpdsBrowsablePluginModel.deleteOne(db, key: id)
-        }
+        _ = try appDb.write { db in try OpdsBrowsablePluginModel.deleteOne(db, key: id) }
 
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
@@ -356,9 +277,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         do {
             _ = try await session.get(url: configuration.catalogURL)
             return true
-        } catch {
-            return false
-        }
+        } catch { return false }
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
@@ -376,45 +295,32 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         }
 
         let images: [String]
-        switch book.mediaType {
-        case .pse(let urlTemplate, let pageCount):
-            images = (0..<pageCount).map {
-                urlTemplate.absoluteString
-                    .replacingOccurrences(
-                        of: "%7BpageNumber%7D",
-                        with: String($0),
-                        options: .caseInsensitive
-                    )
-                    .replacingOccurrences(of: "{pageNumber}", with: String($0))
-                    .replacingOccurrences(
-                        of: "%7BmaxWidth%7D",
-                        with: String(Self.pseMaxWidth),
-                        options: .caseInsensitive
-                    )
-                    .replacingOccurrences(
-                        of: "{maxWidth}",
-                        with: String(Self.pseMaxWidth)
-                    )
-            }
-        case .regular(let url, let type):
-            guard let regularFile = regularFileInfo(url: url, type: type) else {
-                throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
-            }
-            let fileName = regularFile.fileName
-            let parser = regularFile.parser
-            let file = OpdsParserFile(
-                cacheKey: book.id,
-                remoteURL: url,
-                fileName: fileName,
-                session: session,
-                temporaryDirectory: temporaryDirectory
-            )
-            let parsedManga = try await parser.parse(file: file)
-            images = try await parser.parseChapter(
-                manga: parsedManga,
-                chapter: chapter,
-                file: file
-            )
+        switch book.mediaType { case .pse(let urlTemplate, let pageCount):
+            images = (0..<pageCount)
+                .map {
+                    urlTemplate.absoluteString
+                        .replacingOccurrences(
+                            of: "%7BpageNumber%7D", with: String($0), options: .caseInsensitive
+                        )
+                        .replacingOccurrences(of: "{pageNumber}", with: String($0))
+                        .replacingOccurrences(
+                            of: "%7BmaxWidth%7D", with: String(Self.pseMaxWidth),
+                            options: .caseInsensitive
+                        )
+                        .replacingOccurrences(of: "{maxWidth}", with: String(Self.pseMaxWidth))
+                }
+            case .regular(let url, let type):
+                guard let regularFile = regularFileInfo(url: url, type: type) else {
+                    throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
+                }
+                let fileName = regularFile.fileName
+                let parser = regularFile.parser
+                let file = OpdsParserFile(
+                    cacheKey: book.id, remoteURL: url, fileName: fileName, session: session,
+                    temporaryDirectory: temporaryDirectory)
+                let parsedManga = try await parser.parse(file: file)
+                images = try await parser.parseChapter(
+                    manga: parsedManga, chapter: chapter, file: file)
         }
 
         let encodedBookId = Data(book.id.utf8).base64EncodedString()
@@ -425,9 +331,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     override func getImage(_ path: String) async throws -> Data {
         guard path.hasPrefix(Self.imagePrefix) else {
-            guard let url = URL(string: path) else {
-                throw URLError(.badURL)
-            }
+            guard let url = URL(string: path) else { throw URLError(.badURL) }
             return try await session.download(url: url)
         }
 
@@ -436,47 +340,33 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             let bookIdData = Data(base64Encoded: String(encodedRoute[..<separator])),
             let bookId = String(data: bookIdData, encoding: .utf8),
             let imageData = Data(
-                base64Encoded: String(encodedRoute[encodedRoute.index(after: separator)...])
-            ),
+                base64Encoded: String(encodedRoute[encodedRoute.index(after: separator)...])),
             let image = String(data: imageData, encoding: .utf8),
             let book = try await cachedBook(for: bookId)
-        else {
-            throw MankaiErrorCode.pluginMangaNotFound.makeError()
-        }
+        else { throw MankaiErrorCode.pluginMangaNotFound.makeError() }
 
-        switch book.mediaType {
-        case .pse:
-            guard let url = URL(string: image) else {
-                throw URLError(.badURL)
-            }
+        switch book.mediaType { case .pse:
+            guard let url = URL(string: image) else { throw URLError(.badURL) }
             return try await session.download(url: url)
-        case .regular(let url, let type):
-            guard let regularFile = regularFileInfo(url: url, type: type) else {
-                throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
-            }
-            let fileName = regularFile.fileName
-            let parser = regularFile.parser
-            let file = OpdsParserFile(
-                cacheKey: book.id,
-                remoteURL: url,
-                fileName: fileName,
-                session: session,
-                temporaryDirectory: temporaryDirectory
-            )
-            return try await parser.parseImage(url: image, file: file)
+            case .regular(let url, let type):
+                guard let regularFile = regularFileInfo(url: url, type: type) else {
+                    throw MankaiErrorCode.browseFilesystemParserNotFound.makeError()
+                }
+                let fileName = regularFile.fileName
+                let parser = regularFile.parser
+                let file = OpdsParserFile(
+                    cacheKey: book.id, remoteURL: url, fileName: fileName, session: session,
+                    temporaryDirectory: temporaryDirectory)
+                return try await parser.parseImage(url: image, file: file)
         }
     }
 
     private func regularFileInfo(url: URL, type: String?) -> RegularFileInfo? {
         let fileName = url.lastPathComponent
-        if let type = type?.trimmingCharacters(in: .whitespacesAndNewlines),
-            !type.isEmpty,
-            let mimeType =
-                type
-                .split(separator: ";", maxSplits: 1, omittingEmptySubsequences: true)
+        if let type = type?.trimmingCharacters(in: .whitespacesAndNewlines), !type.isEmpty,
+            let mimeType = type.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: true)
                 .first?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased(),
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
             let parser = mimeTypes[mimeType]
         {
             return RegularFileInfo(fileName: fileName, parser: parser)
@@ -503,11 +393,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
             return OpdsBrowsableBookModel(pluginId: id, bookId: book.id, info: info)
         }
 
-        try await db.write { db in
-            for model in models {
-                try model.upsert(db)
-            }
-        }
+        try await db.write { db in for model in models { try model.upsert(db) } }
     }
 
     private func cachedBooks(for ids: [String]) async throws -> [OpdsBookEntry] {
@@ -517,20 +403,18 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         }
 
         let models = try await db.read { db in
-            try OpdsBrowsableBookModel
-                .filter(Column("pluginId") == id && ids.contains(Column("bookId")))
-                .fetchAll(db)
+            try OpdsBrowsableBookModel.filter(
+                Column("pluginId") == id && ids.contains(Column("bookId"))
+            )
+            .fetchAll(db)
         }
         let booksById: [String: OpdsBookEntry] = Dictionary(
             uniqueKeysWithValues: models.compactMap { model -> (String, OpdsBookEntry)? in
                 guard let data = model.info.data(using: .utf8),
                     let book = try? JSONDecoder().decode(OpdsBookEntry.self, from: data)
-                else {
-                    return nil
-                }
+                else { return nil }
                 return (model.bookId, book)
-            }
-        )
+            })
 
         return ids.compactMap { booksById[$0] }
     }

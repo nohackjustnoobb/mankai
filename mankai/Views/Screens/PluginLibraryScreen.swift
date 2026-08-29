@@ -35,9 +35,7 @@ struct PluginLibraryScreen: View {
         plugin.supports(.list) && plugin.supports(.listByStatus)
     }
 
-    private var hasActiveFilters: Bool {
-        selectedGenre != .all || selectedStatus != .any
-    }
+    private var hasActiveFilters: Bool { selectedGenre != .all || selectedStatus != .any }
 
     init(plugin: Plugin, selectedGenre: Genre = .all) {
         self.plugin = plugin
@@ -50,9 +48,7 @@ struct PluginLibraryScreen: View {
     private var allMangas: [Manga] {
         let key = "\(selectedGenre.rawValue)_\(selectedStatus.rawValue)"
 
-        guard let mangas = mangasList[key] else {
-            return []
-        }
+        guard let mangas = mangasList[key] else { return [] }
 
         let sortedKeys = mangas.keys.sorted()
         return sortedKeys.flatMap { mangas[$0] ?? [] }
@@ -67,20 +63,13 @@ struct PluginLibraryScreen: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack {
-                    MangasListView(mangas: allMangas, plugin: plugin)
-                        .id("mangasList")
+                    MangasListView(mangas: allMangas, plugin: plugin).id("mangasList")
 
                     if isLoading {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding()
+                        ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).padding()
                     }
 
-                    Color.clear
-                        .frame(height: 1)
-                        .onAppear {
-                            loadList()
-                        }
+                    Color.clear.frame(height: 1).onAppear { loadList() }
                 }
                 .padding()
             }
@@ -89,10 +78,8 @@ struct PluginLibraryScreen: View {
                     ProgressView()
                 } else if allMangas.isEmpty && hasLoadedCurrentFilter {
                     ContentUnavailableView(
-                        "noEntities",
-                        systemImage: "tray",
-                        description: Text("noEntitiesDescription")
-                    )
+                        "noEntities", systemImage: "tray",
+                        description: Text("noEntitiesDescription"))
                 }
             }
             .onChange(of: selectedGenre, initial: false) { _, _ in
@@ -104,29 +91,21 @@ struct PluginLibraryScreen: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .capabilitySearchable(
-            enabled: plugin.supports(.search),
-            text: $searchQuery,
-            prompt: "searchManga"
+            enabled: plugin.supports(.search), text: $searchQuery, prompt: "searchManga"
         ) {
             ForEach(searchSuggestions, id: \.self) { suggestion in
-                Label(suggestion, systemImage: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                Label(suggestion, systemImage: "magnifyingglass").foregroundColor(.secondary)
                     .searchCompletion(suggestion)
             }
         }
-        .onSubmit(of: .search) {
-            performSearch()
-        }
+        .onSubmit(of: .search) { performSearch() }
         .onChange(of: searchQuery, initial: false) { _, newQuery in
             getSearchSuggestions(for: newQuery)
         }
-        .onDisappear {
-            searchTask?.cancel()
-        }
+        .onDisappear { searchTask?.cancel() }
         .navigationDestination(isPresented: $navigateToSearch) {
             PluginSearchScreen(
-                plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus
-            )
+                plugin: plugin, query: searchQuery, genre: selectedGenre, status: selectedStatus)
         }
         .sheet(isPresented: $showingFilters) {
             NavigationView {
@@ -134,12 +113,10 @@ struct PluginLibraryScreen: View {
                     Section {
                         if supportsGenreFilter {
                             Picker("genre", selection: $tempSelectedGenre) {
-                                Text(LocalizedStringKey(Genre.all.rawValue))
-                                    .tag(Genre.all)
+                                Text(LocalizedStringKey(Genre.all.rawValue)).tag(Genre.all)
 
                                 ForEach(plugin.availableGenres, id: \.self) { genre in
-                                    Text(LocalizedStringKey(genre.rawValue))
-                                        .tag(genre)
+                                    Text(LocalizedStringKey(genre.rawValue)).tag(genre)
                                 }
                             }
                             .pickerStyle(.menu)
@@ -159,35 +136,28 @@ struct PluginLibraryScreen: View {
 
                     Section {
                         Button(
-                            "reset",
-                            role: .destructive,
+                            "reset", role: .destructive,
                             action: {
                                 resetFilters()
                                 showingFilters = false
-                            }
-                        )
+                            })
                     }
                 }
-                .navigationTitle("filters")
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("filters").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(action: {
                             tempSelectedGenre = selectedGenre
                             tempSelectedStatus = selectedStatus
                             showingFilters = false
-                        }) {
-                            Text("cancel")
-                        }
+                        }) { Text("cancel") }
                     }
 
                     ToolbarItem(placement: .confirmationAction) {
                         Button(action: {
                             setFilters(genre: tempSelectedGenre, status: tempSelectedStatus)
                             showingFilters = false
-                        }) {
-                            Text("done")
-                        }
+                        }) { Text("done") }
                     }
                 }
             }
@@ -200,16 +170,12 @@ struct PluginLibraryScreen: View {
         .toolbar {
             if supportsGenreFilter || supportsStatusFilter {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: {
-                        showingFilters = true
-                    }) {
+                    Button(action: { showingFilters = true }) {
                         ZStack {
                             Image(systemName: "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 8, height: 8)
+                                Circle().fill(Color.red).frame(width: 8, height: 8)
                                     .offset(x: 8, y: -8)
                             }
                         }
@@ -218,12 +184,9 @@ struct PluginLibraryScreen: View {
             }
         }
         .navigationTitleWithSubtitle(
-            title: Text(plugin.name ?? plugin.id),
-            subtitle: Text("library")
+            title: Text(plugin.name ?? plugin.id), subtitle: Text("library")
         )
-        .onAppear {
-            loadList()
-        }
+        .onAppear { loadList() }
         .alert("failedToLoadList", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
@@ -241,9 +204,7 @@ struct PluginLibraryScreen: View {
         let maxPage = mangasList[key]?.keys.max() ?? 0
 
         // reach the end of the list
-        if mangasList[key]?[maxPage]?.count == 0 {
-            return
-        }
+        if mangasList[key]?[maxPage]?.count == 0 { return }
 
         let page = maxPage + 1
 
@@ -251,12 +212,9 @@ struct PluginLibraryScreen: View {
         Task {
             do {
                 let result = try await plugin.getList(
-                    page: page, genre: selectedGenre, status: selectedStatus
-                )
+                    page: page, genre: selectedGenre, status: selectedStatus)
 
-                if mangasList[key] == nil {
-                    mangasList[key] = [:]
-                }
+                if mangasList[key] == nil { mangasList[key] = [:] }
 
                 mangasList[key]![page] = result
 
@@ -287,13 +245,9 @@ struct PluginLibraryScreen: View {
         let normalizedGenre = supportsGenreFilter ? genre : .all
         let normalizedStatus = supportsStatusFilter ? status : .any
 
-        if selectedGenre != normalizedGenre {
-            selectedGenre = normalizedGenre
-        }
+        if selectedGenre != normalizedGenre { selectedGenre = normalizedGenre }
 
-        if selectedStatus != normalizedStatus {
-            selectedStatus = normalizedStatus
-        }
+        if selectedStatus != normalizedStatus { selectedStatus = normalizedStatus }
 
         loadList()
     }
@@ -321,9 +275,7 @@ struct PluginLibraryScreen: View {
                 let suggestions = try await plugin.getSuggestions(query)
                 guard !Task.isCancelled else { return }
                 searchSuggestions = suggestions
-            } catch {
-                searchSuggestions = []
-            }
+            } catch { searchSuggestions = [] }
         }
     }
 

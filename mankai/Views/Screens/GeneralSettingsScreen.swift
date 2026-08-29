@@ -29,11 +29,9 @@ struct GeneralSettingsScreen: View {
             Section {
                 LabeledContent("lastUpdateTime") {
                     if let lastUpdateTime = updateService.lastUpdateTime {
-                        Text(lastUpdateTime, style: .relative)
-                            .foregroundColor(.secondary)
+                        Text(lastUpdateTime, style: .relative).foregroundColor(.secondary)
                     } else {
-                        Text("never")
-                            .foregroundColor(.secondary)
+                        Text("never").foregroundColor(.secondary)
                     }
                 }
             }
@@ -41,17 +39,12 @@ struct GeneralSettingsScreen: View {
             Section("imageScaling") {
                 VStack(alignment: .leading, spacing: 12) {
                     Toggle("downsampleImages", isOn: $downsampleImages)
-                    Text("downsampleImagesDescription")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text("downsampleImagesDescription").font(.caption).foregroundColor(.secondary)
                 }
             }
 
             Section {
-                Picker(
-                    "inMemoryCacheItemCount",
-                    selection: $inMemoryCacheItemCount
-                ) {
+                Picker("inMemoryCacheItemCount", selection: $inMemoryCacheItemCount) {
                     Text("25").tag(25)
                     Text("50").tag(50)
                     Text("100").tag(100)
@@ -65,9 +58,7 @@ struct GeneralSettingsScreen: View {
                         get: {
                             DiskCacheLimit(rawValue: diskCacheSizeLimitRawValue)
                                 ?? SettingsDefaults.diskCacheSizeLimit
-                        },
-                        set: { diskCacheSizeLimitRawValue = $0.rawValue }
-                    )
+                        }, set: { diskCacheSizeLimitRawValue = $0.rawValue })
                 ) {
                     Text(DiskCacheLimit.fiveHundredMB.localizedName)
                         .tag(DiskCacheLimit.fiveHundredMB)
@@ -94,9 +85,7 @@ struct GeneralSettingsScreen: View {
                 .confirmationDialog(
                     "clearCache", isPresented: $showClearCacheAlert, titleVisibility: .visible
                 ) {
-                    Button("clear", role: .destructive) {
-                        clearCache()
-                    }
+                    Button("clear", role: .destructive) { clearCache() }
                     Button("cancel", role: .cancel) {}
                 } message: {
                     Text("clearCacheMessage")
@@ -125,9 +114,7 @@ struct GeneralSettingsScreen: View {
                 .confirmationDialog(
                     "clearIndex", isPresented: $showClearIndexCacheAlert, titleVisibility: .visible
                 ) {
-                    Button("clear", role: .destructive) {
-                        clearIndexCache()
-                    }
+                    Button("clear", role: .destructive) { clearIndexCache() }
                     Button("cancel", role: .cancel) {}
                 } message: {
                     Text("clearIndexMessage")
@@ -136,34 +123,23 @@ struct GeneralSettingsScreen: View {
                 Text("index")
             }
 
-            Section {
-                Toggle("checkClipboard", isOn: $checkClipboard)
-            }
+            Section { Toggle("checkClipboard", isOn: $checkClipboard) }
 
             Section("about") {
-                LabeledContent("version") {
-                    Text(appVersion)
-                }
+                LabeledContent("version") { Text(appVersion) }
 
                 NavigationLink {
                     AppLicenseScreen()
                 } label: {
-                    LabeledContent("license") {
-                        Text("GNU GPLv3")
-                    }
+                    LabeledContent("license") { Text("GNU GPLv3") }
                 }
 
-                NavigationLink("thirdPartyLicenses") {
-                    ThirdPartyLicensesScreen()
-                }
+                NavigationLink("thirdPartyLicenses") { ThirdPartyLicensesScreen() }
             }
 
-            Section {
-                Toggle("showDebugScreen", isOn: $showDebugScreen)
-            }
+            Section { Toggle("showDebugScreen", isOn: $showDebugScreen) }
         }
-        .navigationTitle("general")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("general").navigationBarTitleDisplayMode(.inline)
         .onAppear {
             updateCacheSize()
             updateIndexCacheSize()
@@ -184,110 +160,98 @@ struct GeneralSettingsScreen: View {
     }
 
     private func updateCacheSize() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-            else {
-                return
+        DispatchQueue.global(qos: .userInitiated)
+            .async {
+                let fileManager = FileManager.default
+                guard
+                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+                        .first
+                else { return }
+
+                // Only report the size of the clearable regular cache, index cache is
+                // intentionally excluded since the user cannot clear it from here.
+                let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
+                let size = (try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir)) ?? 0
+
+                let formatter = ByteCountFormatter()
+                formatter.allowedUnits = [.useAll]
+                formatter.countStyle = .file
+                let formattedSize = formatter.string(fromByteCount: Int64(size))
+
+                DispatchQueue.main.async { self.cacheSize = formattedSize }
             }
-
-            // Only report the size of the clearable regular cache, index cache is
-            // intentionally excluded since the user cannot clear it from here.
-            let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
-            let size = (try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir)) ?? 0
-
-            let formatter = ByteCountFormatter()
-            formatter.allowedUnits = [.useAll]
-            formatter.countStyle = .file
-            let formattedSize = formatter.string(fromByteCount: Int64(size))
-
-            DispatchQueue.main.async {
-                self.cacheSize = formattedSize
-            }
-        }
     }
 
     private func updateIndexCacheSize() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-            else {
-                return
+        DispatchQueue.global(qos: .userInitiated)
+            .async {
+                let fileManager = FileManager.default
+                guard
+                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+                        .first
+                else { return }
+
+                let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
+                let size = (try? fileManager.allocatedSizeOfDirectory(at: indexCacheDir)) ?? 0
+
+                let formatter = ByteCountFormatter()
+                formatter.allowedUnits = [.useAll]
+                formatter.countStyle = .file
+                let formattedSize = formatter.string(fromByteCount: Int64(size))
+
+                DispatchQueue.main.async { self.indexCacheSize = formattedSize }
             }
-
-            let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
-            let size = (try? fileManager.allocatedSizeOfDirectory(at: indexCacheDir)) ?? 0
-
-            let formatter = ByteCountFormatter()
-            formatter.allowedUnits = [.useAll]
-            formatter.countStyle = .file
-            let formattedSize = formatter.string(fromByteCount: Int64(size))
-
-            DispatchQueue.main.async {
-                self.indexCacheSize = formattedSize
-            }
-        }
     }
 
     private func clearCache() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-            else {
-                return
-            }
+        DispatchQueue.global(qos: .userInitiated)
+            .async {
+                let fileManager = FileManager.default
+                guard
+                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+                        .first
+                else { return }
 
-            // Only clear the regular cache, index cache must be preserved.
-            let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
-            if fileManager.fileExists(atPath: regularCacheDir.path) {
-                do {
-                    let contents = try fileManager.contentsOfDirectory(
-                        at: regularCacheDir, includingPropertiesForKeys: nil
-                    )
-                    for url in contents {
-                        try fileManager.removeItem(at: url)
-                    }
-                } catch {
-                    Logger.ui.error("Failed to clear cache: \(error)")
+                // Only clear the regular cache, index cache must be preserved.
+                let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
+                if fileManager.fileExists(atPath: regularCacheDir.path) {
+                    do {
+                        let contents = try fileManager.contentsOfDirectory(
+                            at: regularCacheDir, includingPropertiesForKeys: nil)
+                        for url in contents { try fileManager.removeItem(at: url) }
+                    } catch { Logger.ui.error("Failed to clear cache: \(error)") }
+                }
+
+                DispatchQueue.main.async {
+                    // Determine new size (should be small/zero)
+                    self.updateCacheSize()
                 }
             }
-
-            DispatchQueue.main.async {
-                // Determine new size (should be small/zero)
-                self.updateCacheSize()
-            }
-        }
     }
 
     private func clearIndexCache() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fileManager = FileManager.default
-            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
-            else {
-                return
-            }
+        DispatchQueue.global(qos: .userInitiated)
+            .async {
+                let fileManager = FileManager.default
+                guard
+                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+                        .first
+                else { return }
 
-            let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
+                let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
 
-            DbService.shared.closeBrowsablePluginDb()
-            DbService.shared.closeOpdsBrowsablePluginDb()
+                DbService.shared.closeBrowsablePluginDb()
+                DbService.shared.closeOpdsBrowsablePluginDb()
 
-            if fileManager.fileExists(atPath: indexCacheDir.path) {
-                do {
-                    let contents = try fileManager.contentsOfDirectory(
-                        at: indexCacheDir, includingPropertiesForKeys: nil
-                    )
-                    for url in contents {
-                        try fileManager.removeItem(at: url)
-                    }
-                } catch {
-                    Logger.ui.error("Failed to clear index cache: \(error)")
+                if fileManager.fileExists(atPath: indexCacheDir.path) {
+                    do {
+                        let contents = try fileManager.contentsOfDirectory(
+                            at: indexCacheDir, includingPropertiesForKeys: nil)
+                        for url in contents { try fileManager.removeItem(at: url) }
+                    } catch { Logger.ui.error("Failed to clear index cache: \(error)") }
                 }
-            }
 
-            DispatchQueue.main.async {
-                self.updateIndexCacheSize()
+                DispatchQueue.main.async { self.updateIndexCacheSize() }
             }
-        }
     }
 }

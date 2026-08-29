@@ -18,9 +18,7 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
 
         let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
 
         return json?["id"] as? String ?? manga.id ?? ""
     }
@@ -29,9 +27,7 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         try await setup()
         _ = try await authManager.delete(path: "/edit/manga/\(mangaId)")
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func upsertCover(mangaId: String, image: Data) async throws {
@@ -39,15 +35,10 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
 
         let contentType = image.detectImageMimeType()
         _ = try await authManager.request(
-            method: "POST",
-            path: "/edit/manga/\(mangaId)/cover",
-            body: image,
-            contentType: contentType
-        )
+            method: "POST", path: "/edit/manga/\(mangaId)/cover", body: image,
+            contentType: contentType)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     // MARK: - Chapter Group Management
@@ -62,26 +53,20 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let jsonData = try JSONEncoder().encode(group)
         _ = try await authManager.post(path: "/edit/chapter-group", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func deleteChapterGroup(id: String) async throws {
         try await setup()
         _ = try await authManager.delete(path: "/edit/chapter-group/\(id)")
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func getChapters(groupId: String) async throws -> [Chapter] {
         try await setup()
 
-        let (data, _) = try await authManager.get(
-            path: "/edit/chapter-group/\(groupId)/chapters"
-        )
+        let (data, _) = try await authManager.get(path: "/edit/chapter-group/\(groupId)/chapters")
 
         return try JSONDecoder().decode([Chapter].self, from: data)
     }
@@ -98,18 +83,14 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let jsonData = try JSONEncoder().encode(chapter)
         _ = try await authManager.post(path: "/edit/chapter", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func deleteChapter(id: String) async throws {
         try await setup()
         _ = try await authManager.delete(path: "/edit/chapter/\(id)")
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func arrangeChapterOrder(ids: [String]) async throws {
@@ -118,9 +99,7 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let jsonData = try JSONSerialization.data(withJSONObject: ids, options: [])
         _ = try await authManager.post(path: "/edit/chapter/order", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func addImages(chapterId: String, images: [Data]) async throws {
@@ -129,14 +108,9 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let base64Images = images.map { $0.base64EncodedString() }
         let body: [String: Any] = ["images": base64Images]
         let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
-        _ = try await authManager.post(
-            path: "/edit/chapter/\(chapterId)/images",
-            body: jsonData
-        )
+        _ = try await authManager.post(path: "/edit/chapter/\(chapterId)/images", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func deleteImages(ids: [String]) async throws {
@@ -145,9 +119,7 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let jsonData = try JSONSerialization.data(withJSONObject: ids, options: [])
         _ = try await authManager.post(path: "/edit/images/delete", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 
     func arrangeImageOrder(ids: [String]) async throws {
@@ -156,8 +128,6 @@ final class EditableHttpPlugin: HttpPlugin, Editable {
         let jsonData = try JSONSerialization.data(withJSONObject: ids, options: [])
         _ = try await authManager.post(path: "/edit/images/order", body: jsonData)
 
-        await MainActor.run {
-            objectWillChange.send()
-        }
+        await MainActor.run { objectWillChange.send() }
     }
 }

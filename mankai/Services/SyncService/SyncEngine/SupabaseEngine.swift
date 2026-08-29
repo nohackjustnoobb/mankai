@@ -20,33 +20,19 @@ final class SupabaseEngine: SyncEngine {
     private var _url: String?
     private var _key: String?
 
-    override var id: String {
-        return "SupabaseEngine"
-    }
+    override var id: String { return "SupabaseEngine" }
 
-    override var name: String {
-        return String(localized: "supabaseEngine")
-    }
+    override var name: String { return String(localized: "supabaseEngine") }
 
-    override var active: Bool {
-        return supabase != nil && supabase?.auth.currentUser != nil
-    }
+    override var active: Bool { return supabase != nil && supabase?.auth.currentUser != nil }
 
-    var isConfigured: Bool {
-        return supabase != nil
-    }
+    var isConfigured: Bool { return supabase != nil }
 
-    var currentUrl: String? {
-        return _url
-    }
+    var currentUrl: String? { return _url }
 
-    var currentKey: String? {
-        return _key
-    }
+    var currentKey: String? { return _key }
 
-    var currentUser: User? {
-        return supabase?.auth.currentUser
-    }
+    var currentUser: User? { return supabase?.auth.currentUser }
 
     override init() {
         let defaults = UserDefaults.standard
@@ -56,14 +42,9 @@ final class SupabaseEngine: SyncEngine {
         if let url = _url, let key = _key {
             if let validUrl = URL(string: url) {
                 supabase = SupabaseClient(
-                    supabaseURL: validUrl,
-                    supabaseKey: key,
+                    supabaseURL: validUrl, supabaseKey: key,
                     options: SupabaseClientOptions(
-                        auth: .init(
-                            autoRefreshToken: true,
-                            emitLocalSessionAsInitialSession: true
-                        )
-                    )
+                        auth: .init(autoRefreshToken: true, emitLocalSessionAsInitialSession: true))
                 )
             }
         }
@@ -79,15 +60,9 @@ final class SupabaseEngine: SyncEngine {
         _url = url
         _key = key
         supabase = SupabaseClient(
-            supabaseURL: validUrl,
-            supabaseKey: key,
+            supabaseURL: validUrl, supabaseKey: key,
             options: SupabaseClientOptions(
-                auth: .init(
-                    autoRefreshToken: true,
-                    emitLocalSessionAsInitialSession: true
-                )
-            )
-        )
+                auth: .init(autoRefreshToken: true, emitLocalSessionAsInitialSession: true)))
 
         save()
     }
@@ -102,9 +77,7 @@ final class SupabaseEngine: SyncEngine {
             defaults.removeObject(forKey: "SupabaseEngine.url")
             defaults.removeObject(forKey: "SupabaseEngine.key")
 
-            Task { @MainActor in
-                self.objectWillChange.send()
-            }
+            Task { @MainActor in self.objectWillChange.send() }
         }
     }
 
@@ -117,14 +90,11 @@ final class SupabaseEngine: SyncEngine {
 
         Logger.supabaseEngine.info("Logging in with provider: \(provider)")
         try await supabase.auth.signInWithOAuth(
-            provider: provider, redirectTo: URL(string: "mankai://login-callback")!
-        )
+            provider: provider, redirectTo: URL(string: "mankai://login-callback")!)
 
         try? await SyncService.shared.onEngineChange()
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
     }
 
     func logout() async throws {
@@ -135,9 +105,7 @@ final class SupabaseEngine: SyncEngine {
         Logger.supabaseEngine.info("Logging out")
         try await supabase.auth.signOut()
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
     }
 
     func save() {
@@ -221,12 +189,10 @@ final class SupabaseEngine: SyncEngine {
         // Upload local data via edge function
         let syncPayload = SyncPayload(
             saveds: localSaveds.map { SyncSaved(from: $0) },
-            records: localRecords.map { SyncRecord(from: $0) }
-        )
+            records: localRecords.map { SyncRecord(from: $0) })
 
         Logger.supabaseEngine.debug(
-            "Uploading \(localSaveds.count) saveds and \(localRecords.count) records"
-        )
+            "Uploading \(localSaveds.count) saveds and \(localRecords.count) records")
         try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
 
         // Pull data from remote
@@ -251,10 +217,7 @@ final class SupabaseEngine: SyncEngine {
             "SupabaseEngine adding \(saveds.count) saveds via edge function")
 
         // Upload saveds via edge function (handles insert/update with conflict resolution)
-        let syncPayload = SyncPayload(
-            saveds: saveds.map { SyncSaved(from: $0) },
-            records: []
-        )
+        let syncPayload = SyncPayload(saveds: saveds.map { SyncSaved(from: $0) }, records: [])
 
         try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
         Logger.supabaseEngine.info("Uploaded \(saveds.count) saveds")
@@ -280,12 +243,8 @@ final class SupabaseEngine: SyncEngine {
         let updatePayload = SoftDeleteUpdate(isDeleted: true, datetime: now)
 
         for saved in saveds {
-            try await supabase.from("Saved")
-                .update(updatePayload)
-                .eq("userId", value: userId)
-                .eq("mangaId", value: saved.mangaId)
-                .eq("pluginId", value: saved.pluginId)
-                .execute()
+            try await supabase.from("Saved").update(updatePayload).eq("userId", value: userId)
+                .eq("mangaId", value: saved.mangaId).eq("pluginId", value: saved.pluginId).execute()
         }
 
         Logger.supabaseEngine.info("Marked \(saveds.count) saveds as deleted")
@@ -322,12 +281,8 @@ final class SupabaseEngine: SyncEngine {
         if !activeSaveds.isEmpty {
             let models = activeSaveds.map { s in
                 SavedModel(
-                    mangaId: s.mangaId,
-                    pluginId: s.pluginId,
-                    datetime: s.datetime,
-                    updates: s.updates,
-                    latestChapter: s.latestChapter
-                )
+                    mangaId: s.mangaId, pluginId: s.pluginId, datetime: s.datetime,
+                    updates: s.updates, latestChapter: s.latestChapter)
             }
             Logger.supabaseEngine.info("Applying \(models.count) remote saveds")
             _ = try await SavedService.shared.batchUpdate(saveds: models)
@@ -369,9 +324,7 @@ final class SupabaseEngine: SyncEngine {
         Logger.supabaseEngine.debug(
             "SupabaseEngine getting saveds since: \(String(describing: since))")
 
-        var query = supabase.from("Saved")
-            .select()
-            .eq("userId", value: userId)
+        var query = supabase.from("Saved").select().eq("userId", value: userId)
 
         if let since = since {
             let isoDate = ISO8601DateFormatter().string(from: since)
@@ -383,18 +336,14 @@ final class SupabaseEngine: SyncEngine {
         let limit = 1000
 
         while true {
-            let chunkQuery =
-                query
-                .order("datetime", ascending: false)
+            let chunkQuery = query.order("datetime", ascending: false)
                 .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseSaved] = try await chunkQuery.execute().value
 
             allResults.append(contentsOf: chunk)
 
-            if chunk.count < limit {
-                break
-            }
+            if chunk.count < limit { break }
             offset += limit
         }
 
@@ -418,12 +367,10 @@ final class SupabaseEngine: SyncEngine {
         }
 
         Logger.supabaseEngine.debug(
-            "SupabaseEngine getting records since: \(String(describing: since))"
-        )
+            "SupabaseEngine getting records since: \(String(describing: since))")
 
         // Supabase/PostgREST uses ISO8601 strings for date comparison
-        var query = supabase.from("Record")
-            .select()  // Select all fields
+        var query = supabase.from("Record").select()  // Select all fields
             .eq("userId", value: userId)
 
         if let since = since {
@@ -438,29 +385,20 @@ final class SupabaseEngine: SyncEngine {
 
         while true {
             // Apply order and range to the filtered query
-            let chunkQuery =
-                query
-                .order("datetime", ascending: false)
+            let chunkQuery = query.order("datetime", ascending: false)
                 .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseRecord] = try await chunkQuery.execute().value
 
             let models = chunk.map { r in
                 RecordModel(
-                    mangaId: r.mangaId,
-                    pluginId: r.pluginId,
-                    datetime: r.datetime,
-                    chapterId: r.chapterId,
-                    chapterTitle: r.chapterTitle,
-                    page: r.page
-                )
+                    mangaId: r.mangaId, pluginId: r.pluginId, datetime: r.datetime,
+                    chapterId: r.chapterId, chapterTitle: r.chapterTitle, page: r.page)
             }
 
             allResults.append(contentsOf: models)
 
-            if chunk.count < limit {
-                break
-            }
+            if chunk.count < limit { break }
             offset += limit
         }
 

@@ -18,12 +18,10 @@ final class HttpEngine: SyncEngine {
         let records: [SyncRecord]
     }
 
-    @Codable
-    fileprivate struct SyncSaved {
+    @Codable fileprivate struct SyncSaved {
         let mangaId: String
         let pluginId: String
-        @CustomCoding(FlexibleDateCoding.self)
-        let datetime: Date
+        @CustomCoding(FlexibleDateCoding.self) let datetime: Date
         let updates: Bool
         let latestChapter: String
 
@@ -37,21 +35,15 @@ final class HttpEngine: SyncEngine {
 
         func toModel() -> SavedModel {
             SavedModel(
-                mangaId: mangaId,
-                pluginId: pluginId,
-                datetime: datetime,
-                updates: updates,
-                latestChapter: latestChapter
-            )
+                mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates,
+                latestChapter: latestChapter)
         }
     }
 
-    @Codable
-    fileprivate struct SyncRecord {
+    @Codable fileprivate struct SyncRecord {
         let mangaId: String
         let pluginId: String
-        @CustomCoding(FlexibleDateCoding.self)
-        let datetime: Date
+        @CustomCoding(FlexibleDateCoding.self) let datetime: Date
         let page: Int
         let chapterId: String
         let chapterTitle: String?
@@ -67,32 +59,21 @@ final class HttpEngine: SyncEngine {
 
         func toModel() -> RecordModel {
             RecordModel(
-                mangaId: mangaId,
-                pluginId: pluginId,
-                datetime: datetime,
-                chapterId: chapterId,
-                chapterTitle: chapterTitle,
-                page: page
-            )
+                mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId,
+                chapterTitle: chapterTitle, page: page)
         }
     }
 
-    @Decodable
-    fileprivate struct DeletedItem {
+    @Decodable fileprivate struct DeletedItem {
         let mangaId: String
         let pluginId: String
-        @CustomCoding(FlexibleDateCoding.self)
-        let datetime: Date
+        @CustomCoding(FlexibleDateCoding.self) let datetime: Date
     }
 
-    @Decodable
-    fileprivate struct SyncResponse {
-        @DecodingDefault([])
-        let saveds: [SyncSaved]
-        @DecodingDefault([])
-        let records: [SyncRecord]
-        @DecodingDefault([])
-        let deleted: [DeletedItem]
+    @Decodable fileprivate struct SyncResponse {
+        @DecodingDefault([]) let saveds: [SyncSaved]
+        @DecodingDefault([]) let records: [SyncRecord]
+        @DecodingDefault([]) let deleted: [DeletedItem]
     }
 
     private struct SavedReference: Encodable {
@@ -100,9 +81,7 @@ final class HttpEngine: SyncEngine {
         let pluginId: String
     }
 
-    private struct HashResponse: Decodable {
-        let hash: String
-    }
+    private struct HashResponse: Decodable { let hash: String }
 
     private let authManager: AuthManager
 
@@ -111,52 +90,34 @@ final class HttpEngine: SyncEngine {
 
         super.init()
         authManager.postSave = { [weak self] in
-            DispatchQueue.main.async {
-                self?.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self?.objectWillChange.send() }
         }
 
         authManager.postLogin = { [weak self] in
-            DispatchQueue.main.async {
-                self?.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self?.objectWillChange.send() }
 
-            Task {
-                try? await SyncService.shared.onEngineChange()
-            }
+            Task { try? await SyncService.shared.onEngineChange() }
         }
 
         Logger.httpEngine.debug("HttpEngine initialized")
     }
 
-    override var id: String {
-        return "HttpEngine"
-    }
+    override var id: String { return "HttpEngine" }
 
-    override var name: String {
-        return String(localized: "httpEngine")
-    }
+    override var name: String { return String(localized: "httpEngine") }
 
-    var username: String? {
-        return authManager.username
-    }
+    var username: String? { return authManager.username }
 
     var serverUrl: String? {
-        get {
-            return authManager.serverUrl
-        }
+        get { return authManager.serverUrl }
         set {
             authManager.serverUrl = newValue
 
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self.objectWillChange.send() }
         }
     }
 
-    override var active: Bool {
-        return authManager.loggedIn
-    }
+    override var active: Bool { return authManager.loggedIn }
 
     // MARK: - Authentication
 
@@ -203,10 +164,7 @@ final class HttpEngine: SyncEngine {
         var isFirstRequest = true
 
         while hasMorePages {
-            var query: [String: String] = [
-                "os": String(offset),
-                "lm": String(limit),
-            ]
+            var query: [String: String] = ["os": String(offset), "lm": String(limit)]
             if let since = lastSyncTime {
                 let ts = Int(since.timeIntervalSince1970 * 1000)
                 query["ts"] = String(ts)
@@ -217,8 +175,7 @@ final class HttpEngine: SyncEngine {
             if isFirstRequest {
                 let body = SyncRequest(
                     saveds: newLocalSaveds.map { SyncSaved(from: $0) },
-                    records: newLocalRecords.map { SyncRecord(from: $0) }
-                )
+                    records: newLocalRecords.map { SyncRecord(from: $0) })
                 let bodyData = try JSONEncoder().encode(body)
                 (data, _) = try await authManager.post(path: "/sync", query: query, body: bodyData)
                 isFirstRequest = false
@@ -234,27 +191,22 @@ final class HttpEngine: SyncEngine {
             // Handle Saveds
             if !response.saveds.isEmpty {
                 _ = try await SavedService.shared.batchUpdate(
-                    saveds: response.saveds.map { $0.toModel() }
-                )
+                    saveds: response.saveds.map { $0.toModel() })
             }
 
             // Handle Records
             if !response.records.isEmpty {
                 _ = try await HistoryService.shared.batchUpdate(
-                    records: response.records.map { $0.toModel() }
-                )
+                    records: response.records.map { $0.toModel() })
             }
 
             for deleted in response.deleted {
                 if let localSaved = SavedService.shared.get(
-                    mangaId: deleted.mangaId,
-                    pluginId: deleted.pluginId
-                ) {
+                    mangaId: deleted.mangaId, pluginId: deleted.pluginId)
+                {
                     if deleted.datetime > localSaved.datetime {
                         _ = try await SavedService.shared.delete(
-                            mangaId: deleted.mangaId,
-                            pluginId: deleted.pluginId
-                        )
+                            mangaId: deleted.mangaId, pluginId: deleted.pluginId)
                     }
                 }
             }
@@ -286,9 +238,7 @@ final class HttpEngine: SyncEngine {
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         Logger.httpEngine.debug("HttpEngine removing \(saveds.count) saveds")
-        let body = saveds.map {
-            SavedReference(mangaId: $0.mangaId, pluginId: $0.pluginId)
-        }
+        let body = saveds.map { SavedReference(mangaId: $0.mangaId, pluginId: $0.pluginId) }
         let bodyData = try JSONEncoder().encode(body)
         _ = try await authManager.post(path: "/saveds/remove", body: bodyData)
     }

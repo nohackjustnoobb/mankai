@@ -9,25 +9,19 @@ import Foundation
 import GRDB
 import ReerCodable
 
-@Codable
-private struct HttpPluginMetadata {
+@Codable private struct HttpPluginMetadata {
     let id: String
     let name: String?
     let version: String?
     let description: String?
-    @DecodingDefault([])
-    let authors: [String]
+    @DecodingDefault([]) let authors: [String]
     let repository: String?
-    @DecodingDefault([])
-    let availableGenres: [Genre]
+    @DecodingDefault([]) let availableGenres: [Genre]
     let authenticationEnabled: Bool?
-    @DecodingDefault(false)
-    let editorEnabled: Bool
-    @DecodingDefault([])
-    let configs: [Config]
+    @DecodingDefault(false) let editorEnabled: Bool
+    @DecodingDefault([]) let configs: [Config]
     let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.allCases)
-    let capabilities: [PluginCapability]
+    @DecodingDefault(PluginCapability.allCases) let capabilities: [PluginCapability]
 }
 
 class HttpPlugin: Plugin {
@@ -41,53 +35,33 @@ class HttpPlugin: Plugin {
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
 
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
-    override var name: String? {
-        _name
-    }
+    override var name: String? { _name }
 
-    override var version: String? {
-        _version
-    }
+    override var version: String? { _version }
 
-    override var description: String? {
-        _description
-    }
+    override var description: String? { _description }
 
-    override var authors: [String] {
-        _authors
-    }
+    override var authors: [String] { _authors }
 
-    override var repository: String? {
-        _repository
-    }
+    override var repository: String? { _repository }
 
-    override var availableGenres: [Genre] {
-        _availableGenres
-    }
+    override var availableGenres: [Genre] { _availableGenres }
 
-    override var cooldown: Cooldown? {
-        _cooldown
-    }
+    override var cooldown: Cooldown? { _cooldown }
 
-    override var capabilities: [PluginCapability] {
-        _capabilities
-    }
+    override var capabilities: [PluginCapability] { _capabilities }
 
     override var configs: [Config] {
         [
             Config(key: "username", name: "username", type: .text, defaultValue: ""),
-            Config(key: "password", name: "password", type: .password, defaultValue: ""),
+            Config(key: "password", name: "password", type: .password, defaultValue: "")
         ]
     }
 
     private var _authenticationEnabled: Bool
-    var authenticationEnabled: Bool {
-        _authenticationEnabled
-    }
+    var authenticationEnabled: Bool { _authenticationEnabled }
 
     private var baseUrl: String
     lazy var authManager: AuthManager = .init(id: id)
@@ -96,31 +70,22 @@ class HttpPlugin: Plugin {
     private var setupTask: Task<Void, Error>?
     private let setupLock = NSLock()
 
-    override var tags: [String] {
-        [String(localized: "http")]
-    }
+    override var tags: [String] { [String(localized: "http")] }
 
-    override var shouldCache: Bool {
-        true
-    }
+    override var shouldCache: Bool { true }
 
     // MARK: - Init
 
     required init(
         id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
-        version: String? = nil, description: String? = nil,
-        authors: [String] = [],
-        repository: String? = nil,
-        availableGenres: [Genre] = [],
-        cooldown: Cooldown? = nil,
+        version: String? = nil, description: String? = nil, authors: [String] = [],
+        repository: String? = nil, availableGenres: [Genre] = [], cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.allCases
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
         _id = id
         self.baseUrl = baseUrl
-        if self.baseUrl.hasSuffix("/") {
-            self.baseUrl.removeLast()
-        }
+        if self.baseUrl.hasSuffix("/") { self.baseUrl.removeLast() }
         _authenticationEnabled = authenticationEnabled
         _name = name
         _version = version
@@ -133,14 +98,11 @@ class HttpPlugin: Plugin {
     }
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
-        for configValue in configValues {
-            _configValues[configValue.key] = configValue
-        }
+        for configValue in configValues { _configValues[configValue.key] = configValue }
     }
 
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {
-        guard let metadata = try? HttpPluginMetadata.decoded(from: json)
-        else { return nil }
+        guard let metadata = try? HttpPluginMetadata.decoded(from: json) else { return nil }
 
         return fromMetadata(baseUrl: baseUrl, metadata: metadata)
     }
@@ -154,8 +116,7 @@ class HttpPlugin: Plugin {
                 name: metadata.name, version: metadata.version, description: metadata.description,
                 authors: metadata.authors, repository: metadata.repository,
                 availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
-                capabilities: metadata.capabilities
-            )
+                capabilities: metadata.capabilities)
         }
 
         if !metadata.editorEnabled, self is EditableHttpPlugin.Type {
@@ -170,23 +131,16 @@ class HttpPlugin: Plugin {
             name: metadata.name, version: metadata.version, description: metadata.description,
             authors: metadata.authors, repository: metadata.repository,
             availableGenres: metadata.availableGenres, cooldown: metadata.cooldown,
-            capabilities: metadata.capabilities
-        )
+            capabilities: metadata.capabilities)
     }
 
     static func fromUrl(_ urlString: String) async -> HttpPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmed) else {
-            return nil
-        }
+        guard let url = URL(string: trimmed) else { return nil }
 
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else {
-            return nil
-        }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
 
-        guard let metadata = try? HttpPluginMetadata.decoded(from: data) else {
-            return nil
-        }
+        guard let metadata = try? HttpPluginMetadata.decoded(from: data) else { return nil }
 
         var baseUrl = url.absoluteString
         if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
@@ -195,9 +149,7 @@ class HttpPlugin: Plugin {
             baseUrl = components.string ?? url.absoluteString
         }
 
-        guard let plugin = fromMetadata(baseUrl: baseUrl, metadata: metadata) else {
-            return nil
-        }
+        guard let plugin = fromMetadata(baseUrl: baseUrl, metadata: metadata) else { return nil }
 
         let configMap = Dictionary(uniqueKeysWithValues: plugin.configs.map { ($0.key, $0) })
         let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -209,9 +161,7 @@ class HttpPlugin: Plugin {
             matchedConfigValues.append(ConfigValue(key: item.name, value: parsedValue))
         }
 
-        if !matchedConfigValues.isEmpty {
-            plugin.setConfigValues(matchedConfigValues)
-        }
+        if !matchedConfigValues.isEmpty { plugin.setConfigValues(matchedConfigValues) }
 
         return plugin
     }
@@ -227,9 +177,7 @@ class HttpPlugin: Plugin {
         let plugin = fromMetadata(baseUrl: httpPluginModel.baseUrl, metadata: metadata)
 
         // Update config values if they exist
-        if let configValues = configValues,
-            let plugin = plugin
-        {
+        if let configValues = configValues, let plugin = plugin {
             plugin.setConfigValues(configValues)
         }
 
@@ -255,26 +203,20 @@ class HttpPlugin: Plugin {
                     }
                 }
             }
-        } catch {
-            Logger.httpPlugin.error("Failed to load plugins from GRDB", error: error)
-        }
+        } catch { Logger.httpPlugin.error("Failed to load plugins from GRDB", error: error) }
 
         return results
     }
 
     // MARK: - Private Methods
 
-    func setup() async throws {
-        try await getOrCreateSetupTask().value
-    }
+    func setup() async throws { try await getOrCreateSetupTask().value }
 
     private func getOrCreateSetupTask() -> Task<Void, Error> {
         setupLock.lock()
         defer { setupLock.unlock() }
 
-        if let existingTask = setupTask {
-            return existingTask
-        }
+        if let existingTask = setupTask { return existingTask }
 
         let newTask = Task {
             defer { setupTask = nil }
@@ -292,8 +234,7 @@ class HttpPlugin: Plugin {
                 throw MankaiErrorCode.pluginHttpInvalidUrl.makeError()
             }
             let (metaData, _) = try await URLSession.shared.data(from: metaUrl)
-            guard let metadata = try? HttpPluginMetadata.decoded(from: metaData)
-            else { return }
+            guard let metadata = try? HttpPluginMetadata.decoded(from: metaData) else { return }
 
             _name = metadata.name
             _version = metadata.version
@@ -318,9 +259,7 @@ class HttpPlugin: Plugin {
             throw MankaiErrorCode.pluginHttpInvalidCredentials.makeError()
         }
 
-        if authManager.serverUrl != baseUrl {
-            authManager.serverUrl = baseUrl
-        }
+        if authManager.serverUrl != baseUrl { authManager.serverUrl = baseUrl }
 
         if authManager.username != username || !authManager.isPasswordSame(password: password) {
             try await authManager.login(username: username, password: password)
@@ -336,19 +275,10 @@ class HttpPlugin: Plugin {
         }
 
         let metadata = HttpPluginMetadata(
-            id: id,
-            name: name,
-            version: version,
-            description: description,
-            authors: authors,
-            repository: repository,
-            availableGenres: availableGenres,
-            authenticationEnabled: authenticationEnabled,
-            editorEnabled: self is EditableHttpPlugin,
-            configs: configs,
-            cooldown: cooldown,
-            capabilities: capabilities
-        )
+            id: id, name: name, version: version, description: description, authors: authors,
+            repository: repository, availableGenres: availableGenres,
+            authenticationEnabled: authenticationEnabled, editorEnabled: self is EditableHttpPlugin,
+            configs: configs, cooldown: cooldown, capabilities: capabilities)
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginHttpFailedToEncodeMetaData.makeError()
@@ -363,11 +293,7 @@ class HttpPlugin: Plugin {
         // Save to database
         try dbPool.write { db in
             let httpPluginModel = HttpPluginModel(
-                id: id,
-                baseUrl: baseUrl,
-                meta: metaString,
-                configValues: configValuesString
-            )
+                id: id, baseUrl: baseUrl, meta: metaString, configValues: configValuesString)
             try httpPluginModel.save(db)
         }
     }
@@ -378,12 +304,7 @@ class HttpPlugin: Plugin {
             throw MankaiErrorCode.pluginHttpDatabaseNotAvailable.makeError()
         }
 
-        try dbPool.write { db in
-            _ =
-                try HttpPluginModel
-                .filter(Column("id") == id)
-                .deleteAll(db)
-        }
+        try dbPool.write { db in _ = try HttpPluginModel.filter(Column("id") == id).deleteAll(db) }
     }
 
     override func isOnline() async throws -> Bool {
@@ -391,9 +312,7 @@ class HttpPlugin: Plugin {
         do {
             let (_, response) = try await authManager.get(path: "/")
             return response.statusCode == 200
-        } catch {
-            return false
-        }
+        } catch { return false }
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
@@ -402,20 +321,16 @@ class HttpPlugin: Plugin {
         return try [String].decoded(from: data)
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         try await setup()
         let (data, _) = try await authManager.get(
             path: "/search",
             query: [
-                "query": query,
-                "page": String(page),
-                "genre": genre.rawValue,
-                "status": String(status.rawValue),
-                "isAuthor": String(isAuthor),
-            ]
-        )
+                "query": query, "page": String(page), "genre": genre.rawValue,
+                "status": String(status.rawValue), "isAuthor": String(isAuthor)
+            ])
         return try [Manga].decoded(from: data)
     }
 
@@ -424,11 +339,8 @@ class HttpPlugin: Plugin {
         let (data, _) = try await authManager.get(
             path: "/manga",
             query: [
-                "page": String(page),
-                "genre": genre.rawValue,
-                "status": String(status.rawValue),
-            ]
-        )
+                "page": String(page), "genre": genre.rawValue, "status": String(status.rawValue)
+            ])
         return try [Manga].decoded(from: data)
     }
 
@@ -465,23 +377,18 @@ class HttpPlugin: Plugin {
         }
 
         // Ensure path starts with / if baseUrl doesn't end with /
-        if !baseUrl.hasSuffix("/") && !path.hasPrefix("/") {
-            path = "/" + path
-        }
+        if !baseUrl.hasSuffix("/") && !path.hasPrefix("/") { path = "/" + path }
 
         let (data, _) = try await authManager.get(path: path)
         return data
     }
 
     func checkForUpdates() async {
-        guard let version = version else {
-            return
-        }
+        guard let version = version else { return }
 
         Logger.httpPlugin.info("Checking for updates for plugin: \(id)")
 
-        guard let newPlugin = await HttpPlugin.fromUrl(baseUrl),
-            let newVersion = newPlugin.version
+        guard let newPlugin = await HttpPlugin.fromUrl(baseUrl), let newVersion = newPlugin.version
         else {
             Logger.httpPlugin.error("Failed to fetch update for plugin: \(id)")
             return
@@ -489,8 +396,7 @@ class HttpPlugin: Plugin {
 
         if newVersion != version {
             Logger.httpPlugin.info(
-                "Updating plugin: \(id) from version \(version) to \(newVersion)"
-            )
+                "Updating plugin: \(id) from version \(version) to \(newVersion)")
 
             do {
                 _name = newPlugin._name

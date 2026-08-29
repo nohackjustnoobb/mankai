@@ -14,9 +14,7 @@ final class EpubParser: Parser {
         let readLock = NSLock()
         var publication: EpubPublication?
 
-        init(archive: Archive) {
-            self.archive = archive
-        }
+        init(archive: Archive) { self.archive = archive }
     }
 
     private var cachedArchiveKey: String?
@@ -31,16 +29,11 @@ final class EpubParser: Parser {
         return cachedArchive
     }
 
-    private func storeArchive(
-        _ archive: CachedArchive,
-        for cacheKey: String
-    ) -> CachedArchive {
+    private func storeArchive(_ archive: CachedArchive, for cacheKey: String) -> CachedArchive {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
-        if cachedArchiveKey == cacheKey, let cachedArchive {
-            return cachedArchive
-        }
+        if cachedArchiveKey == cacheKey, let cachedArchive { return cachedArchive }
 
         cachedArchiveKey = cacheKey
         cachedArchive = archive
@@ -66,41 +59,31 @@ final class EpubParser: Parser {
                 return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
             } catch {
                 Logger.epubParser.error("Invalid EPUB ZIP container", error: error)
-                throw MankaiErrorCode.browseEpubInvalidContainer.makeError(
-                    underlyingError: error
-                )
+                throw MankaiErrorCode.browseEpubInvalidContainer.makeError(underlyingError: error)
             }
         }
     }
 
-    private func performRead<T>(
-        cachedArchive: CachedArchive,
-        body: (CachedArchive) throws -> T
-    ) rethrows -> T {
+    private func performRead<T>(cachedArchive: CachedArchive, body: (CachedArchive) throws -> T)
+        rethrows -> T
+    {
         cachedArchive.readLock.lock()
         defer { cachedArchive.readLock.unlock() }
         return try body(cachedArchive)
     }
 
-    private func withReadLock<T>(
-        for file: ParserFile,
-        body: (CachedArchive) throws -> T
-    ) async throws -> T {
+    private func withReadLock<T>(for file: ParserFile, body: (CachedArchive) throws -> T)
+        async throws -> T
+    {
         let cachedArchive = try await archive(for: file)
         return try performRead(cachedArchive: cachedArchive, body: body)
     }
 
-    override var id: String {
-        "epub"
-    }
+    override var id: String { "epub" }
 
-    override var supportedExtensions: [String] {
-        ["epub"]
-    }
+    override var supportedExtensions: [String] { ["epub"] }
 
-    override var supportedMimeTypes: [String] {
-        ["application/epub+zip"]
-    }
+    override var supportedMimeTypes: [String] { ["application/epub+zip"] }
 
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.epubParser.debug("Parsing EPUB: \(file.fileName)")
@@ -118,10 +101,8 @@ final class EpubParser: Parser {
         let chapter = Chapter(id: "0", title: publication.title)
         manga.chapters = [ChapterGroup(title: "volume", chapters: [chapter])]
         manga.latestChapter = chapter
-        manga.meta = try ParserChapterMetadata(
-            chapterId: chapter.id,
-            pages: publication.pagePaths
-        ).encoded()
+        manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: publication.pagePaths)
+            .encoded()
 
         Logger.epubParser.debug("Parsed \(publication.pagePaths.count) EPUB image pages")
         return manga
@@ -138,17 +119,13 @@ final class EpubParser: Parser {
             var presentedGroup = group
             presentedGroup.chapters = group.chapters.map { chapter in
                 var presentedChapter = chapter
-                if presentedChapter.title == nil {
-                    presentedChapter.title = filenameTitle
-                }
+                if presentedChapter.title == nil { presentedChapter.title = filenameTitle }
                 return presentedChapter
             }
             return presentedGroup
         }
 
-        if var latestChapter = presented.latestChapter,
-            latestChapter.title == nil
-        {
+        if var latestChapter = presented.latestChapter, latestChapter.title == nil {
             latestChapter.title = filenameTitle
             presented.latestChapter = latestChapter
         }
@@ -156,23 +133,18 @@ final class EpubParser: Parser {
         return presented
     }
 
-    override func parseChapter(
-        manga: DetailedManga,
-        chapter: Chapter,
-        file: ParserFile
-    ) async throws -> [String] {
+    override func parseChapter(manga: DetailedManga, chapter: Chapter, file: ParserFile)
+        async throws -> [String]
+    {
         Logger.epubParser.debug("Parsing EPUB chapter images for manga: \(manga.id)")
 
         if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
             Logger.epubParser.debug(
-                "Using \(pages.count) cached EPUB page references for chapter: \(chapter.id)"
-            )
+                "Using \(pages.count) cached EPUB page references for chapter: \(chapter.id)")
             return pages
         }
 
-        Logger.epubParser.debug(
-            "No compatible EPUB chapter metadata found, reparsing publication"
-        )
+        Logger.epubParser.debug("No compatible EPUB chapter metadata found, reparsing publication")
         return try await publication(for: file).pagePaths
     }
 
@@ -190,35 +162,26 @@ final class EpubParser: Parser {
 
     private func publication(for file: ParserFile) async throws -> EpubPublication {
         try await withReadLock(for: file) { cachedArchive in
-            if let publication = cachedArchive.publication {
-                return publication
-            }
+            if let publication = cachedArchive.publication { return publication }
 
             do {
                 let publication = try EpubPackageDecoder.decode(archive: cachedArchive.archive)
                 cachedArchive.publication = publication
                 return publication
-            } catch let error as NSError
-                where error.domain == MankaiErrorDomain.browseEpub.rawValue
+            } catch let error as NSError where error.domain == MankaiErrorDomain.browseEpub.rawValue
             {
                 Logger.epubParser.error("EPUB publication parsing failed", error: error)
                 throw error
             } catch {
                 Logger.epubParser.error("Failed to parse EPUB package", error: error)
-                throw MankaiErrorCode.browseEpubInvalidPackage.makeError(
-                    underlyingError: error
-                )
+                throw MankaiErrorCode.browseEpubInvalidPackage.makeError(underlyingError: error)
             }
         }
     }
 
     private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
-        _ = try archive.extract(
-            entry,
-            consumer: { chunk in
-                data.append(chunk)
-            })
+        _ = try archive.extract(entry, consumer: { chunk in data.append(chunk) })
         return data
     }
 }

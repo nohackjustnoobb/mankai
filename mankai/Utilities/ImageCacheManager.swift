@@ -15,31 +15,23 @@ final class ImageCacheManager: @unchecked Sendable {
     private let pruningTimer: DispatchSourceTimer
 
     private init() {
-        regularCacheDirectory = FileManager.default
-            .urls(for: .cachesDirectory, in: .userDomainMask)
+        regularCacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
             .first?
             .appendingPathComponent(CacheDirectory.regular)
 
         let timer = DispatchSource.makeTimerSource(
-            queue: DispatchQueue(label: "com.mankai.image-cache", qos: .background)
-        )
+            queue: DispatchQueue(label: "com.mankai.image-cache", qos: .background))
         pruningTimer = timer
         timer.schedule(deadline: .now(), repeating: .seconds(180))
-        timer.setEventHandler { [weak self] in
-            self?.pruneIfNeeded()
-        }
+        timer.setEventHandler { [weak self] in self?.pruneIfNeeded() }
         timer.resume()
     }
 
-    deinit {
-        pruningTimer.cancel()
-    }
+    deinit { pruningTimer.cancel() }
 
-    func image(
-        for key: String,
-        pluginID: String,
-        load: @escaping () async throws -> Data
-    ) async throws -> Data {
+    func image(for key: String, pluginID: String, load: @escaping () async throws -> Data)
+        async throws -> Data
+    {
         if let data = cachedImage(for: key, pluginID: pluginID) {
             Logger.cacheWrapper.debug("Disk cache hit for image key: \(key)")
             return data
@@ -60,37 +52,23 @@ final class ImageCacheManager: @unchecked Sendable {
     }
 
     private func cachedImage(for key: String, pluginID: String) -> Data? {
-        guard let regularCacheDirectory else {
-            return nil
-        }
+        guard let regularCacheDirectory else { return nil }
 
-        let fileURL =
-            regularCacheDirectory
-            .appendingPathComponent(pluginID)
+        let fileURL = regularCacheDirectory.appendingPathComponent(pluginID)
             .appendingPathComponent(key)
         return try? Data(contentsOf: fileURL)
     }
 
     private func cacheImage(_ data: Data, for key: String, pluginID: String) {
-        guard let regularCacheDirectory else {
-            return
-        }
+        guard let regularCacheDirectory else { return }
         let pluginCacheDirectory = regularCacheDirectory.appendingPathComponent(pluginID)
 
         do {
             try FileManager.default.createDirectory(
-                at: pluginCacheDirectory,
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-            try data.write(
-                to: pluginCacheDirectory.appendingPathComponent(key),
-                options: .atomic
-            )
+                at: pluginCacheDirectory, withIntermediateDirectories: true, attributes: nil)
+            try data.write(to: pluginCacheDirectory.appendingPathComponent(key), options: .atomic)
             Logger.cacheWrapper.debug("Wrote image to disk cache for key: \(key)")
-        } catch {
-            Logger.cacheWrapper.error("Failed to write image to disk cache: \(error)")
-        }
+        } catch { Logger.cacheWrapper.error("Failed to write image to disk cache: \(error)") }
     }
 
     private func diskCacheSizeLimit() -> Int64 {
@@ -127,20 +105,17 @@ final class ImageCacheManager: @unchecked Sendable {
         }
 
         let resourceKeys: [URLResourceKey] = [
-            .isDirectoryKey, .contentModificationDateKey, .fileSizeKey,
+            .isDirectoryKey, .contentModificationDateKey, .fileSizeKey
         ]
         let enumerator = FileManager.default.enumerator(
-            at: regularCacheDirectory,
-            includingPropertiesForKeys: resourceKeys,
-            options: [.skipsHiddenFiles]
-        )!
+            at: regularCacheDirectory, includingPropertiesForKeys: resourceKeys,
+            options: [.skipsHiddenFiles])!
 
         var fileURLs: [URL] = []
 
         for case let fileURL as URL in enumerator {
             guard let resourceValues = try? fileURL.resourceValues(forKeys: Set(resourceKeys)),
-                let isDirectory = resourceValues.isDirectory,
-                !isDirectory,
+                let isDirectory = resourceValues.isDirectory, !isDirectory,
                 resourceValues.contentModificationDate != nil
             else { continue }
 
@@ -175,9 +150,7 @@ final class ImageCacheManager: @unchecked Sendable {
                     currentSize -= Int64(fileSize)
                     prunedFileCount += 1
                     Logger.cacheWrapper.debug("Pruned cache file: \(fileURL.lastPathComponent)")
-                } catch {
-                    Logger.cacheWrapper.error("Failed to prune cache file: \(error)")
-                }
+                } catch { Logger.cacheWrapper.error("Failed to prune cache file: \(error)") }
             }
         }
 

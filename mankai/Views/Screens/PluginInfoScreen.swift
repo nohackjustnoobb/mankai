@@ -34,70 +34,45 @@ struct PluginInfoScreen: View {
                     HStack {
                         Text("id")
                         Spacer()
-                        Text(plugin.id)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                        Text(plugin.id).lineLimit(1).truncationMode(.middle)
                             .foregroundStyle(.secondary)
                     }
 
-                    if let name = plugin.name {
-                        LabeledContent("name") {
-                            Text(name)
-                        }
-                    }
+                    if let name = plugin.name { LabeledContent("name") { Text(name) } }
 
-                    if let version = plugin.version {
-                        LabeledContent("version") {
-                            Text(version)
-                        }
-                    }
+                    if let version = plugin.version { LabeledContent("version") { Text(version) } }
 
                     if let description = plugin.description {
-                        LabeledContent("description") {
-                            Text(description)
-                        }
+                        LabeledContent("description") { Text(description) }
                     }
 
                     if !plugin.authors.isEmpty {
-                        LabeledContent("authors") {
-                            Text(plugin.authors.joined(separator: ", "))
-                        }
+                        LabeledContent("authors") { Text(plugin.authors.joined(separator: ", ")) }
                     }
 
                     if let repository = plugin.repository {
-                        LabeledContent("repository") {
-                            Text(repository)
-                        }
+                        LabeledContent("repository") { Text(repository) }
                     }
 
                     if plugin.availableGenres.isEmpty {
-                        LabeledContent("availableGenres") {
-                            Text("noGenresAvailable")
-                                .italic()
-                        }
+                        LabeledContent("availableGenres") { Text("noGenresAvailable").italic() }
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("availableGenres")
                             WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
-                                genre in
-                                Text(LocalizedStringKey(genre.rawValue))
-                                    .genreTagStyle()
+                                genre in Text(LocalizedStringKey(genre.rawValue)).genreTagStyle()
                             }
                         }
                     }
 
                     if supportedCapabilities.isEmpty {
-                        LabeledContent("capabilities") {
-                            Text("none")
-                                .italic()
-                        }
+                        LabeledContent("capabilities") { Text("none").italic() }
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("capabilities")
                             WrappingHStack(supportedCapabilities, id: \.self, lineSpacing: 8) {
                                 capability in
-                                Text(LocalizedStringKey(capability.rawValue))
-                                    .genreTagStyle()
+                                Text(LocalizedStringKey(capability.rawValue)).genreTagStyle()
                             }
                         }
                     }
@@ -106,8 +81,7 @@ struct PluginInfoScreen: View {
                 Section("sync") {
                     LabeledContent("syncAcrossDevices") {
                         HStack(spacing: 8) {
-                            Circle()
-                                .fill(plugin.shouldSync ? Color.green : Color.red)
+                            Circle().fill(plugin.shouldSync ? Color.green : Color.red)
                                 .frame(width: 8, height: 8)
                             Text(plugin.shouldSync ? "syncEnabled" : "syncDisabled")
                                 .foregroundColor(.secondary)
@@ -116,25 +90,19 @@ struct PluginInfoScreen: View {
                 }
 
                 if plugin is AppDirPlugin {
-                    Section {
-                        Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins)
-                    }
+                    Section { Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins) }
                 }
 
                 if !plugin.configs.isEmpty {
                     Section("configs") {
                         ForEach(plugin.configs, id: \.key) { config in
-                            switch config.type {
-                            case .text:
+                            switch config.type { case .text:
                                 TextConfigView(plugin: plugin, config: config)
-                            case .password:
-                                TextConfigView(plugin: plugin, config: config, isPassword: true)
-                            case .number:
-                                NumberConfigView(plugin: plugin, config: config)
-                            case .boolean:
-                                BooleanConfigView(plugin: plugin, config: config)
-                            case .select:
-                                SelectConfigView(plugin: plugin, config: config)
+                                case .password:
+                                    TextConfigView(plugin: plugin, config: config, isPassword: true)
+                                case .number: NumberConfigView(plugin: plugin, config: config)
+                                case .boolean: BooleanConfigView(plugin: plugin, config: config)
+                                case .select: SelectConfigView(plugin: plugin, config: config)
                             }
                         }
                     }
@@ -144,20 +112,15 @@ struct PluginInfoScreen: View {
                     Section("actions") {
                         if !plugin.configs.isEmpty {
                             Button(
-                                "resetConfigs",
-                                role: .destructive,
-                                action: {
-                                    showResetConfirmation = true
-                                }
+                                "resetConfigs", role: .destructive,
+                                action: { showResetConfirmation = true }
                             )
                             .confirmationDialog(
                                 "resetConfigs", isPresented: $showResetConfirmation,
                                 titleVisibility: .visible
                             ) {
                                 Button("reset", role: .destructive) {
-                                    do {
-                                        try plugin.resetConfigs()
-                                    } catch {
+                                    do { try plugin.resetConfigs() } catch {
                                         errorTitle = String(localized: "failedToResetConfigs")
                                         errorMessage = error.localizedDescription
                                         showErrorAlert = true
@@ -170,11 +133,8 @@ struct PluginInfoScreen: View {
                         }
 
                         Button(
-                            "removePlugin",
-                            role: .destructive,
-                            action: {
-                                showRemoveConfirmation = true
-                            }
+                            "removePlugin", role: .destructive,
+                            action: { showRemoveConfirmation = true }
                         )
                         .confirmationDialog(
                             "removePlugin", isPresented: $showRemoveConfirmation,
@@ -209,13 +169,8 @@ struct PluginInfoScreen: View {
 
 struct ConfigTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.secondary.opacity(0.1))
-            )
+        configuration.padding(.horizontal).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.1)))
             .foregroundColor(.primary)
     }
 }
@@ -235,9 +190,7 @@ struct TextConfigView: View {
                 Text(LocalizedStringKey(config.name))
 
                 if let description = config.description {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(description).font(.caption).foregroundStyle(.secondary)
                 }
             }
 
@@ -249,18 +202,10 @@ struct TextConfigView: View {
                     TextField(LocalizedStringKey(config.type.rawValue), text: $textValue)
                 }
             }
-            .textFieldStyle(ConfigTextFieldStyle())
-            .autocapitalization(.none)
-            .onAppear {
-                updateTextValue()
-            }
-            .onReceive(plugin.objectWillChange) {
-                updateTextValue()
-            }
+            .textFieldStyle(ConfigTextFieldStyle()).autocapitalization(.none)
+            .onAppear { updateTextValue() }.onReceive(plugin.objectWillChange) { updateTextValue() }
             .onChange(of: textValue, initial: false) { _, newValue in
-                do {
-                    try plugin.setConfig(key: config.key, value: newValue)
-                } catch {
+                do { try plugin.setConfig(key: config.key, value: newValue) } catch {
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
                 }
@@ -276,9 +221,7 @@ struct TextConfigView: View {
     private func updateTextValue() {
         let newValue =
             plugin.getConfig(config.key) as? String ?? config.defaultValue as? String ?? ""
-        if textValue != newValue {
-            textValue = newValue
-        }
+        if textValue != newValue { textValue = newValue }
     }
 }
 
@@ -296,27 +239,18 @@ struct NumberConfigView: View {
                 Text(LocalizedStringKey(config.name))
 
                 if let description = config.description {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(description).font(.caption).foregroundStyle(.secondary)
                 }
             }
 
             TextField(
                 LocalizedStringKey(config.type.rawValue), value: $numberValue, format: .number
             )
-            .textFieldStyle(ConfigTextFieldStyle())
-            .keyboardType(.decimalPad)
-            .onAppear {
-                updateNumberValue()
-            }
-            .onReceive(plugin.objectWillChange) {
-                updateNumberValue()
-            }
+            .textFieldStyle(ConfigTextFieldStyle()).keyboardType(.decimalPad)
+            .onAppear { updateNumberValue() }
+            .onReceive(plugin.objectWillChange) { updateNumberValue() }
             .onChange(of: numberValue, initial: false) { _, newValue in
-                do {
-                    try plugin.setConfig(key: config.key, value: newValue)
-                } catch {
+                do { try plugin.setConfig(key: config.key, value: newValue) } catch {
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
                 }
@@ -341,9 +275,7 @@ struct NumberConfigView: View {
             newValue = Double(value)
         }
 
-        if numberValue != newValue {
-            numberValue = newValue
-        }
+        if numberValue != newValue { numberValue = newValue }
     }
 }
 
@@ -360,22 +292,13 @@ struct BooleanConfigView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(LocalizedStringKey(config.name))
                 if let description = config.description {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text(description).font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
-        .onAppear {
-            updateBoolValue()
-        }
-        .onReceive(plugin.objectWillChange) {
-            updateBoolValue()
-        }
+        .onAppear { updateBoolValue() }.onReceive(plugin.objectWillChange) { updateBoolValue() }
         .onChange(of: boolValue, initial: false) { _, newValue in
-            do {
-                try plugin.setConfig(key: config.key, value: newValue)
-            } catch {
+            do { try plugin.setConfig(key: config.key, value: newValue) } catch {
                 errorMessage = error.localizedDescription
                 showErrorAlert = true
             }
@@ -390,9 +313,7 @@ struct BooleanConfigView: View {
     private func updateBoolValue() {
         let newValue =
             plugin.getConfig(config.key) as? Bool ?? config.defaultValue as? Bool ?? false
-        if boolValue != newValue {
-            boolValue = newValue
-        }
+        if boolValue != newValue { boolValue = newValue }
     }
 }
 
@@ -404,25 +325,18 @@ struct SelectConfigView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
 
-    private var options: [String] {
-        return config.options ?? []
-    }
+    private var options: [String] { return config.options ?? [] }
 
     var body: some View {
         Group {
             if selectedValue != nil {
                 Picker(selection: $selectedValue) {
-                    ForEach(options, id: \.self) { option in
-                        Text(option)
-                            .tag(option)
-                    }
+                    ForEach(options, id: \.self) { option in Text(option).tag(option) }
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(LocalizedStringKey(config.name))
                         if let description = config.description {
-                            Text(description)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            Text(description).font(.caption).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -441,12 +355,8 @@ struct SelectConfigView: View {
                 Spacer(minLength: 0)
             }
         }
-        .onAppear {
-            updateSelectedValue()
-        }
-        .onReceive(plugin.objectWillChange) {
-            updateSelectedValue()
-        }
+        .onAppear { updateSelectedValue() }
+        .onReceive(plugin.objectWillChange) { updateSelectedValue() }
         .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
@@ -458,12 +368,8 @@ struct SelectConfigView: View {
         var newValue =
             plugin.getConfig(config.key) as? String ?? config.defaultValue as? String ?? ""
 
-        if !options.contains(newValue), !options.isEmpty {
-            newValue = options.first ?? ""
-        }
+        if !options.contains(newValue), !options.isEmpty { newValue = options.first ?? "" }
 
-        if selectedValue != newValue {
-            selectedValue = newValue
-        }
+        if selectedValue != newValue { selectedValue = newValue }
     }
 }

@@ -10,8 +10,7 @@ import SwiftUI
 
 struct ThirdPartyLicensesScreen: View {
     var body: some View {
-        AcknowledgmentsList()
-            .navigationTitle("thirdPartyLicenses")
+        AcknowledgmentsList().navigationTitle("thirdPartyLicenses")
             .navigationBarTitleDisplayMode(.inline)
     }
 }

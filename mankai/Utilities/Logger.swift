@@ -56,13 +56,9 @@ enum LogCategory: String {
     case cacheWrapper = "CacheWrapper"
     case cooldownWrapper = "CooldownWrapper"
 
-    var subsystem: String {
-        return "app.mankai"
-    }
+    var subsystem: String { return "app.mankai" }
 
-    var category: String {
-        return rawValue
-    }
+    var category: String { return rawValue }
 }
 
 /// Unified logger for the application
@@ -85,9 +81,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func debug(
         _ message: String, file _: String = #file, function: String = #function, line: Int = #line
-    ) {
-        osLogger.debug("[\(function):\(line)] \(message)")
-    }
+    ) { osLogger.debug("[\(function):\(line)] \(message)") }
 
     /// Log an info message
     /// - Parameters:
@@ -97,9 +91,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func info(
         _ message: String, file _: String = #file, function: String = #function, line: Int = #line
-    ) {
-        osLogger.info("[\(function):\(line)] \(message)")
-    }
+    ) { osLogger.info("[\(function):\(line)] \(message)") }
 
     /// Log a notice message
     /// - Parameters:
@@ -109,9 +101,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func notice(
         _ message: String, file _: String = #file, function: String = #function, line: Int = #line
-    ) {
-        osLogger.notice("[\(function):\(line)] \(message)")
-    }
+    ) { osLogger.notice("[\(function):\(line)] \(message)") }
 
     /// Log a warning message
     /// - Parameters:
@@ -121,9 +111,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func warning(
         _ message: String, file _: String = #file, function: String = #function, line: Int = #line
-    ) {
-        osLogger.warning("[\(function):\(line)] \(message)")
-    }
+    ) { osLogger.warning("[\(function):\(line)] \(message)") }
 
     private func formattedError(_ error: Error) -> String {
         let nsError = error as NSError
@@ -139,8 +127,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func error(
         _ message: String, error: Error? = nil, file _: String = #file,
-        function: String = #function,
-        line: Int = #line
+        function: String = #function, line: Int = #line
     ) {
         if let error = error {
             osLogger.error(
@@ -159,8 +146,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func critical(
         _ message: String, error: Error? = nil, file _: String = #file,
-        function: String = #function,
-        line: Int = #line
+        function: String = #function, line: Int = #line
     ) {
         if let error = error {
             osLogger.critical(
@@ -178,9 +164,7 @@ final class Logger {
     ///   - line: The line number where the log is called (automatically populated)
     func trace(
         _ message: String, file _: String = #file, function: String = #function, line: Int = #line
-    ) {
-        osLogger.trace("[\(function):\(line)] \(message)")
-    }
+    ) { osLogger.trace("[\(function):\(line)] \(message)") }
 }
 
 /// Convenience accessors for category-specific loggers

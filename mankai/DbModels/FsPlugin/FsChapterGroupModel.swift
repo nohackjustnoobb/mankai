@@ -33,9 +33,7 @@ extension FsChapterGroupModel: TableRecord {
 }
 
 extension FsChapterGroupModel: Codable, FetchableRecord, PersistableRecord {
-    var manga: QueryInterfaceRequest<FsMangaModel> {
-        request(for: FsChapterGroupModel.manga)
-    }
+    var manga: QueryInterfaceRequest<FsMangaModel> { request(for: FsChapterGroupModel.manga) }
 
     var chapters: QueryInterfaceRequest<FsChapterModel> {
         request(for: FsChapterGroupModel.chapters)

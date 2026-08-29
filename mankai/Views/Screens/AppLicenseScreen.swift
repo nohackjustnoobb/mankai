@@ -23,22 +23,16 @@ struct AppLicenseScreen: View {
         Group {
             if let licenseText {
                 ScrollView {
-                    Text(licenseText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .center)
+                    Text(licenseText).font(.caption).foregroundStyle(.secondary)
+                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .center)
                         .padding()
                 }
                 .background(Color(.systemGroupedBackground))
             } else {
                 ContentUnavailableView(
-                    "licenseUnavailable",
-                    systemImage: "doc.text.magnifyingglass"
-                )
+                    "licenseUnavailable", systemImage: "doc.text.magnifyingglass")
             }
         }
-        .navigationTitle("license")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("license").navigationBarTitleDisplayMode(.inline)
     }
 }

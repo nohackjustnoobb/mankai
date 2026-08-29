@@ -15,12 +15,9 @@ struct DebugGetList: View {
     var body: some View {
         Group {
             if let mangas = mangas {
-                List {
-                    DebugMangas(mangas: mangas, plugin: plugin)
-                }
+                List { DebugMangas(mangas: mangas, plugin: plugin) }
             } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task {

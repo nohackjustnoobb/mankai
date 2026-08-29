@@ -29,9 +29,7 @@ class ReadFsPlugin: Plugin {
     private var _isAccessing: Bool = false
 
     private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: true)
-    var db: DatabasePool? {
-        _db
-    }
+    var db: DatabasePool? { _db }
 
     init(url: URL, id: String, shouldSync: Bool = true) {
         Logger.fsPlugin.debug("Initializing ReadFsPlugin with url: \(url.path)")
@@ -45,8 +43,7 @@ class ReadFsPlugin: Plugin {
             _isAccessing = url.startAccessingSecurityScopedResource()
             if !_isAccessing {
                 Logger.fsPlugin.error(
-                    "Failed to start accessing security scoped resource for plugin: \(_id)"
-                )
+                    "Failed to start accessing security scoped resource for plugin: \(_id)")
             }
         }
     }
@@ -55,9 +52,7 @@ class ReadFsPlugin: Plugin {
         guard url.startAccessingSecurityScopedResource() else {
             throw MankaiErrorCode.pluginFilesystemFailedToAccessFolder.makeError()
         }
-        defer {
-            url.stopAccessingSecurityScopedResource()
-        }
+        defer { url.stopAccessingSecurityScopedResource() }
 
         let identity = try Self.resolveIdentity(at: url)
         self.init(url: url, id: identity.id, shouldSync: identity.shouldSync)
@@ -66,9 +61,8 @@ class ReadFsPlugin: Plugin {
     static func resolveIdentity(at url: URL) throws -> (id: String, shouldSync: Bool) {
         let idFile = url.appendingPathComponent(".mankai")
         if FileManager.default.fileExists(atPath: idFile.path) {
-            let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+            let id = try String(contentsOf: idFile, encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !id.isEmpty else {
                 throw MankaiErrorCode.pluginFilesystemPluginIdEmpty.makeError()
             }
@@ -81,17 +75,12 @@ class ReadFsPlugin: Plugin {
             return (id, true)
         } catch {
             Logger.fsPlugin.warning(
-                "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-            )
+                "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)")
             return (id, false)
         }
     }
 
-    deinit {
-        if _isAccessing {
-            url.stopAccessingSecurityScopedResource()
-        }
-    }
+    deinit { if _isAccessing { url.stopAccessingSecurityScopedResource() } }
 
     static func loadPlugins() -> [ReadFsPlugin] {
         Logger.fsPlugin.debug("Loading FS plugins")
@@ -103,11 +92,7 @@ class ReadFsPlugin: Plugin {
         var results: [ReadFsPlugin] = []
 
         var models: [FsPluginModel] = []
-        do {
-            try dbPool.read { db in
-                models = try FsPluginModel.fetchAll(db)
-            }
-        } catch {
+        do { try dbPool.read { db in models = try FsPluginModel.fetchAll(db) } } catch {
             Logger.fsPlugin.error("Failed to fetch FsPluginModels: \(error)")
             return []
         }
@@ -116,28 +101,21 @@ class ReadFsPlugin: Plugin {
             var isStale = false
             do {
                 let url = try URL(
-                    resolvingBookmarkData: model.bookmarkData,
-                    options: .withoutUI,
-                    relativeTo: nil,
-                    bookmarkDataIsStale: &isStale
-                )
+                    resolvingBookmarkData: model.bookmarkData, options: .withoutUI, relativeTo: nil,
+                    bookmarkDataIsStale: &isStale)
 
                 if isStale {
                     Logger.fsPlugin.warning("Bookmark data is stale for plugin: \(model.id)")
                     do {
                         let newBookmarkData = try url.bookmarkData(
                             options: .minimalBookmark, includingResourceValuesForKeys: nil,
-                            relativeTo: nil
-                        )
+                            relativeTo: nil)
                         model.bookmarkData = newBookmarkData
-                        try dbPool.write { db in
-                            try model.update(db)
-                        }
+                        try dbPool.write { db in try model.update(db) }
                         Logger.fsPlugin.info("Updated stale bookmark for plugin: \(model.id)")
                     } catch {
                         Logger.fsPlugin.error(
-                            "Failed to update stale bookmark for plugin \(model.id): \(error)"
-                        )
+                            "Failed to update stale bookmark for plugin \(model.id): \(error)")
                         continue
                     }
                 }
@@ -149,24 +127,14 @@ class ReadFsPlugin: Plugin {
                     continue
                 }
 
-                defer {
-                    url.stopAccessingSecurityScopedResource()
-                }
+                defer { url.stopAccessingSecurityScopedResource() }
 
                 let plugin: ReadFsPlugin
 
                 if model.isWriteable {
-                    plugin = ReadWriteFsPlugin(
-                        url: url,
-                        id: model.id,
-                        shouldSync: model.shouldSync
-                    )
+                    plugin = ReadWriteFsPlugin(url: url, id: model.id, shouldSync: model.shouldSync)
                 } else {
-                    plugin = ReadFsPlugin(
-                        url: url,
-                        id: model.id,
-                        shouldSync: model.shouldSync
-                    )
+                    plugin = ReadFsPlugin(url: url, id: model.id, shouldSync: model.shouldSync)
                 }
 
                 results.append(plugin)
@@ -180,29 +148,17 @@ class ReadFsPlugin: Plugin {
 
     // MARK: - Metadata
 
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
-    override var shouldSync: Bool {
-        _shouldSync
-    }
+    override var shouldSync: Bool { _shouldSync }
 
-    override var tags: [String] {
-        [String(localized: "fs")]
-    }
+    override var tags: [String] { [String(localized: "fs")] }
 
-    override var name: String? {
-        dirName
-    }
+    override var name: String? { dirName }
 
-    override var availableGenres: [Genre] {
-        Genre.allCases
-    }
+    override var availableGenres: [Genre] { Genre.allCases }
 
-    override var canDownload: Bool {
-        false
-    }
+    override var canDownload: Bool { false }
 
     // MARK: - Override Methods
 
@@ -213,21 +169,14 @@ class ReadFsPlugin: Plugin {
         }
 
         let bookmarkData = try url.bookmarkData(
-            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
-        )
+            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
 
         let isWriteable = self is Editable
 
         let pluginModel = FsPluginModel(
-            id: id,
-            isWriteable: isWriteable,
-            bookmarkData: bookmarkData,
-            shouldSync: shouldSync
-        )
+            id: id, isWriteable: isWriteable, bookmarkData: bookmarkData, shouldSync: shouldSync)
 
-        try db.write { db in
-            try pluginModel.save(db)
-        }
+        try db.write { db in try pluginModel.save(db) }
     }
 
     override func deletePlugin() throws {
@@ -236,14 +185,10 @@ class ReadFsPlugin: Plugin {
             throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
 
-        _ = try db.write { db in
-            try FsPluginModel.deleteOne(db, key: id)
-        }
+        _ = try db.write { db in try FsPluginModel.deleteOne(db, key: id) }
     }
 
-    override func isOnline() async throws -> Bool {
-        db != nil
-    }
+    override func isOnline() async throws -> Bool { db != nil }
 
     // MARK: - Helper Functions
 
@@ -251,26 +196,17 @@ class ReadFsPlugin: Plugin {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
 
-        var mangaDict: [String: Any] = [
-            "id": mangaModel.id
-        ]
+        var mangaDict: [String: Any] = ["id": mangaModel.id]
 
-        if let title = mangaModel.title {
-            mangaDict["title"] = title
-        }
+        if let title = mangaModel.title { mangaDict["title"] = title }
 
-        if let coverPath = cover?.path {
-            mangaDict["cover"] = coverPath
-        }
+        if let coverPath = cover?.path { mangaDict["cover"] = coverPath }
 
-        if let status = mangaModel.status {
-            mangaDict["status"] = UInt(status)
-        }
+        if let status = mangaModel.status { mangaDict["status"] = UInt(status) }
 
         if let chapter = latestChapter {
             mangaDict["latestChapter"] = [
-                "id": chapter.id.flatMap { String($0) },
-                "title": chapter.title,
+                "id": chapter.id.flatMap { String($0) }, "title": chapter.title
             ]
         }
 
@@ -282,67 +218,45 @@ class ReadFsPlugin: Plugin {
     {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
-        let chapterGroupModels = try mangaModel.chapters
-            .order(Column("id").asc)
-            .fetchAll(db)
+        let chapterGroupModels = try mangaModel.chapters.order(Column("id").asc).fetchAll(db)
 
-        var mangaDict: [String: Any] = [
-            "id": mangaModel.id
-        ]
+        var mangaDict: [String: Any] = ["id": mangaModel.id]
 
-        if let title = mangaModel.title {
-            mangaDict["title"] = title
-        }
+        if let title = mangaModel.title { mangaDict["title"] = title }
 
-        if let coverPath = cover?.path {
-            mangaDict["cover"] = coverPath
-        }
+        if let coverPath = cover?.path { mangaDict["cover"] = coverPath }
 
-        if let status = mangaModel.status {
-            mangaDict["status"] = UInt(status)
-        }
+        if let status = mangaModel.status { mangaDict["status"] = UInt(status) }
 
-        if let description = mangaModel.description {
-            mangaDict["description"] = description
-        }
+        if let description = mangaModel.description { mangaDict["description"] = description }
 
         if let updatedAt = mangaModel.updatedAt {
             mangaDict["updatedAt"] = Int64(updatedAt.timeIntervalSince1970 * 1000)
         }
 
-        let authors = mangaModel.authors.components(separatedBy: "|").map {
-            $0.trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty }
+        let authors = mangaModel.authors.components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         mangaDict["authors"] = authors
 
-        let genres = mangaModel.genres.components(separatedBy: "|").map {
-            $0.trimmingCharacters(in: .whitespaces)
-        }.filter { !$0.isEmpty }
+        let genres = mangaModel.genres.components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         mangaDict["genres"] = genres
 
         if let chapter = latestChapter {
             mangaDict["latestChapter"] = [
-                "id": chapter.id.flatMap { String($0) },
-                "title": chapter.title,
+                "id": chapter.id.flatMap { String($0) }, "title": chapter.title
             ]
         }
 
         var chapterGroups = ChapterGroups()
         for group in chapterGroupModels {
             let chapters = try group.chapters.fetchAll(db)
-            let chaptersArray =
-                chapters
-                .sorted { $0.sequence < $1.sequence }
-                .map { chapter in
-                    Chapter(id: String(chapter.id!), title: chapter.title)
-                }
+            let chaptersArray = chapters.sorted { $0.sequence < $1.sequence }
+                .map { chapter in Chapter(id: String(chapter.id!), title: chapter.title) }
             chapterGroups.append(
                 ChapterGroup(
-                    id: self is Editable ? group.id.map(String.init) : nil,
-                    title: group.title,
-                    chapters: chaptersArray
-                )
-            )
+                    id: self is Editable ? group.id.map(String.init) : nil, title: group.title,
+                    chapters: chaptersArray))
         }
         let chapterGroupsData = try JSONEncoder().encode(chapterGroups)
         mangaDict["chapters"] = try JSONSerialization.jsonObject(with: chapterGroupsData)
@@ -360,18 +274,16 @@ class ReadFsPlugin: Plugin {
         return try await db.read { db in
             let searchQuery = "%\(query.lowercased())%"
             let mangas =
-                try FsMangaModel
-                .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
-                .limit(Int(ReadFsPluginConstants.suggestionLimit))
-                .fetchAll(db)
+                try FsMangaModel.filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                .limit(Int(ReadFsPluginConstants.suggestionLimit)).fetchAll(db)
 
             return mangas.compactMap { $0.title }
         }
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         Logger.fsPlugin.debug(
             "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor)"
         )
@@ -386,9 +298,8 @@ class ReadFsPlugin: Plugin {
             let limit = Int(ReadFsPluginConstants.pageLimit)
 
             let searchColumn = isAuthor ? "authors" : "title"
-            var query =
-                FsMangaModel
-                .filter(sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
+            var query = FsMangaModel.filter(
+                sql: "LOWER(\(searchColumn)) LIKE ?", arguments: [searchQuery])
 
             // Filter by genre if not "all"
             if genre != .all {
@@ -397,17 +308,11 @@ class ReadFsPlugin: Plugin {
             }
 
             // Filter by status if not "any"
-            if status != .any {
-                query = query.filter(Column("status") == Int(status.rawValue))
-            }
+            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
 
-            let mangas =
-                try query
-                .limit(limit, offset: offset)
-                .fetchAll(db)
+            let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in
-                try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -432,17 +337,11 @@ class ReadFsPlugin: Plugin {
             }
 
             // Filter by status if not "any"
-            if status != .any {
-                query = query.filter(Column("status") == Int(status.rawValue))
-            }
+            if status != .any { query = query.filter(Column("status") == Int(status.rawValue)) }
 
-            let mangas =
-                try query
-                .limit(limit, offset: offset)
-                .fetchAll(db)
+            let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in
-                try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -455,13 +354,9 @@ class ReadFsPlugin: Plugin {
         }
 
         return try await db.read { db in
-            let mangas =
-                try FsMangaModel
-                .filter(ids.contains(Column("id")))
-                .fetchAll(db)
+            let mangas = try FsMangaModel.filter(ids.contains(Column("id"))).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in
-                try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -501,15 +396,9 @@ class ReadFsPlugin: Plugin {
         }
 
         return try await db.read { db in
-            let images =
-                try FsImageModel
-                .filter(Column("chapterId") == chapterIdInt)
-                .fetchAll(db)
+            let images = try FsImageModel.filter(Column("chapterId") == chapterIdInt).fetchAll(db)
 
-            return
-                images
-                .sorted { ($0.sequence ?? 0) < ($1.sequence ?? 0) }
-                .map { $0.path }
+            return images.sorted { ($0.sequence ?? 0) < ($1.sequence ?? 0) }.map { $0.path }
         }
     }
 
@@ -523,9 +412,7 @@ class ReadFsPlugin: Plugin {
             throw MankaiErrorCode.pluginFilesystemFailedToLoadImage.makeError()
         }
 
-        do {
-            return try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
-        } catch {
+        do { return try Data(contentsOf: URL(fileURLWithPath: fullImagePath)) } catch {
             Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
             throw MankaiErrorCode.pluginFilesystemFailedToLoadImage.makeError()
         }

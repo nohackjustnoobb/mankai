@@ -15,52 +15,34 @@ struct SettingsTab: View {
         NavigationStack {
             List {
                 Section {
-                    NavigationLink(
-                        destination: GeneralSettingsScreen()
-                    ) {
+                    NavigationLink(destination: GeneralSettingsScreen()) {
                         Label("general", systemImage: "gear")
                             .labelStyle(ColorfulIconLabelStyle(color: .gray))
                     }
 
-                    NavigationLink(
-                        destination: ReaderSettingsScreen()
-                    ) {
+                    NavigationLink(destination: ReaderSettingsScreen()) {
                         Label("reader", systemImage: "book.pages.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .orange))
                     }
 
-                    NavigationLink(
-                        destination: HistoryScreen()
-                    ) {
-                        Label(
-                            "history",
-                            systemImage: "clock.arrow.circlepath"
-                        )
-                        .labelStyle(ColorfulIconLabelStyle(color: .indigo))
+                    NavigationLink(destination: HistoryScreen()) {
+                        Label("history", systemImage: "clock.arrow.circlepath")
+                            .labelStyle(ColorfulIconLabelStyle(color: .indigo))
                     }
 
-                    NavigationLink(
-                        destination: SyncSettingsScreen()
-                    ) {
-                        Label(
-                            "sync",
-                            systemImage: "arrow.triangle.2.circlepath"
-                        )
-                        .labelStyle(ColorfulIconLabelStyle(color: .blue))
+                    NavigationLink(destination: SyncSettingsScreen()) {
+                        Label("sync", systemImage: "arrow.triangle.2.circlepath")
+                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
                 }
 
                 Section {
-                    NavigationLink(
-                        destination: PluginSettingsScreen()
-                    ) {
+                    NavigationLink(destination: PluginSettingsScreen()) {
                         Label("plugins", systemImage: "puzzlepiece.extension.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red))
                     }
 
-                    NavigationLink(
-                        destination: FolderSettingsScreen()
-                    ) {
+                    NavigationLink(destination: FolderSettingsScreen()) {
                         Label("folders", systemImage: "folder.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
@@ -68,9 +50,7 @@ struct SettingsTab: View {
 
                 if showDebugScreen {
                     Section {
-                        NavigationLink(
-                            destination: DebugScreen()
-                        ) {
+                        NavigationLink(destination: DebugScreen()) {
                             Label("debug", systemImage: "curlybraces")
                                 .labelStyle(ColorfulIconLabelStyle(color: .yellow))
                         }

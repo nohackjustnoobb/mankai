@@ -11,28 +11,21 @@ import UIKit
 
 /// A temporary workaround that avoids retaining encoded image data longer than necessary.
 ///
-/// Every conversion requires the caller to explicitly decide whether the source data
-/// will be reused. The decoded `UIImage` is cached because the UI may request it again.
+/// Every conversion requires the caller to explicitly decide whether the source data will be reused.
+/// The decoded `UIImage` is cached because the UI may request it again.
 final class TempImage {
     private var data: Data?
     private var cachedUIImage: UIImage?
     private var cachedCIImage: CIImage?
 
-    var hasAnalysisSource: Bool {
-        data != nil || cachedCIImage != nil
-    }
+    var hasAnalysisSource: Bool { data != nil || cachedCIImage != nil }
 
-    var size: CGSize {
-        cachedUIImage?.size ?? .zero
-    }
+    var size: CGSize { cachedUIImage?.size ?? .zero }
 
-    init(data: Data) {
-        self.data = data
-    }
+    init(data: Data) { self.data = data }
 
     func uiImage(
-        downsampledTo pointSize: CGSize? = nil,
-        scale: CGFloat = UIScreen.main.scale,
+        downsampledTo pointSize: CGSize? = nil, scale: CGFloat = UIScreen.main.scale,
         retainData: Bool
     ) -> UIImage? {
         if let cachedUIImage {
@@ -64,12 +57,7 @@ final class TempImage {
 
         guard let data else { return nil }
 
-        guard
-            let image = CIImage(
-                data: data,
-                options: [.applyOrientationProperty: true]
-            )
-        else {
+        guard let image = CIImage(data: data, options: [.applyOrientationProperty: true]) else {
             return nil
         }
 
@@ -89,26 +77,12 @@ final class TempImage {
         self.data = data
     }
 
-    private func releaseDataIfNeeded(retainData: Bool) {
-        if !retainData {
-            releaseData()
-        }
-    }
+    private func releaseDataIfNeeded(retainData: Bool) { if !retainData { releaseData() } }
 
-    private static func downsample(
-        data: Data,
-        to pointSize: CGSize,
-        scale: CGFloat
-    ) -> UIImage? {
-        guard pointSize.width.isFinite,
-            pointSize.height.isFinite,
-            pointSize.width > 0,
-            pointSize.height > 0,
-            scale.isFinite,
-            scale > 0
-        else {
-            return nil
-        }
+    private static func downsample(data: Data, to pointSize: CGSize, scale: CGFloat) -> UIImage? {
+        guard pointSize.width.isFinite, pointSize.height.isFinite, pointSize.width > 0,
+            pointSize.height > 0, scale.isFinite, scale > 0
+        else { return nil }
 
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
         guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
@@ -121,7 +95,7 @@ final class TempImage {
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
                 kCGImageSourceShouldCacheImmediately: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
             ] as CFDictionary
 
         guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {

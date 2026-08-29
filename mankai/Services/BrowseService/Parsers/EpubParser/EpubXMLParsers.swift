@@ -45,16 +45,13 @@ private enum EpubXML {
         XMLHash.config { config in
             config.detectParsingErrors = true
             config.shouldProcessNamespaces = true
-        }.parse(data)
+        }
+        .parse(data)
     }
 
-    static func hasRootElement(_ document: XMLIndexer) -> Bool {
-        !document.children.isEmpty
-    }
+    static func hasRootElement(_ document: XMLIndexer) -> Bool { !document.children.isEmpty }
 
-    static func localName(_ node: XMLIndexer) -> String {
-        localName(node.element?.name ?? "")
-    }
+    static func localName(_ node: XMLIndexer) -> String { localName(node.element?.name ?? "") }
 
     static func localName(_ name: String) -> String {
         String(name.split(separator: ":").last ?? Substring(name)).lowercased()
@@ -63,24 +60,19 @@ private enum EpubXML {
     static func attribute(_ node: XMLIndexer, named name: String) -> String? {
         guard let element = node.element else { return nil }
 
-        if let value = element.attribute(by: name)?.text {
-            return value
-        }
+        if let value = element.attribute(by: name)?.text { return value }
 
         return element.allAttributes.values.first {
             localName($0.name).caseInsensitiveCompare(name) == .orderedSame
-        }?.text
+        }?
+        .text
     }
 
-    static func text(_ node: XMLIndexer) -> String {
-        node.element?.recursiveText ?? ""
-    }
+    static func text(_ node: XMLIndexer) -> String { node.element?.recursiveText ?? "" }
 }
 
 private struct EpubContainerParser {
-    func parse(_ document: XMLIndexer) -> String? {
-        rootfile(in: document)
-    }
+    func parse(_ document: XMLIndexer) -> String? { rootfile(in: document) }
 
     private func rootfile(in document: XMLIndexer) -> String? {
         for child in document.children {
@@ -91,18 +83,14 @@ private struct EpubContainerParser {
                 return path
             }
 
-            if let path = rootfile(in: child) {
-                return path
-            }
+            if let path = rootfile(in: child) { return path }
         }
         return nil
     }
 }
 
 private struct EpubPackageParser {
-    private enum Section {
-        case metadata, manifest, spine, guide
-    }
+    private enum Section { case metadata, manifest, spine, guide }
 
     private var document = EpubPackageDocument()
 
@@ -112,142 +100,92 @@ private struct EpubPackageParser {
     }
 
     private mutating func visit(_ xml: XMLIndexer, in section: Section?) {
-        for child in xml.children {
-            visitElement(child, in: section)
-        }
+        for child in xml.children { visitElement(child, in: section) }
     }
 
     private mutating func visitElement(_ element: XMLIndexer, in section: Section?) {
         let name = EpubXML.localName(element)
 
-        switch name {
-        case "metadata":
-            visit(element, in: .metadata)
-        case "manifest":
+        switch name { case "metadata": visit(element, in: .metadata) case "manifest":
             document.sawManifest = true
             visit(element, in: .manifest)
-        case "spine":
-            document.sawSpine = true
-            document.pageProgressionDirection = EpubXML.attribute(
-                element,
-                named: "page-progression-direction"
-            )
-            visit(element, in: .spine)
-        case "guide":
-            visit(element, in: .guide)
-        default:
-            visitSectionElement(element, name: name, in: section)
+            case "spine":
+                document.sawSpine = true
+                document.pageProgressionDirection = EpubXML.attribute(
+                    element, named: "page-progression-direction")
+                visit(element, in: .spine)
+            case "guide": visit(element, in: .guide)
+            default: visitSectionElement(element, name: name, in: section)
         }
     }
 
     private mutating func visitSectionElement(
-        _ element: XMLIndexer,
-        name: String,
-        in section: Section?
+        _ element: XMLIndexer, name: String, in section: Section?
     ) {
-        switch section {
-        case .metadata:
-            if captureMetadata(element, name: name) {
-                return
-            }
+        switch section { case .metadata:
+            if captureMetadata(element, name: name) { return }
             visit(element, in: .metadata)
-        case .manifest where name == "item":
-            guard let id = EpubXML.attribute(element, named: "id"),
-                let href = EpubXML.attribute(element, named: "href"),
-                !id.isEmpty,
-                !href.isEmpty
-            else { return }
+            case .manifest where name == "item":
+                guard let id = EpubXML.attribute(element, named: "id"),
+                    let href = EpubXML.attribute(element, named: "href"), !id.isEmpty, !href.isEmpty
+                else { return }
 
-            let mediaType = EpubXML.attribute(element, named: "media-type") ?? ""
-            let properties = Set(
-                (EpubXML.attribute(element, named: "properties") ?? "")
-                    .split(whereSeparator: \.isWhitespace)
-                    .map { $0.lowercased() }
-            )
-            document.manifest.append(
-                EpubManifestItem(
-                    id: id,
-                    href: href,
-                    mediaType: mediaType,
-                    properties: properties
-                )
-            )
-        case .spine where name == "itemref":
-            if let idref = EpubXML.attribute(element, named: "idref"), !idref.isEmpty {
-                document.spineItemIds.append(idref)
-            }
-        case .guide where name == "reference":
-            let types = (EpubXML.attribute(element, named: "type") ?? "")
-                .split(whereSeparator: \.isWhitespace)
-                .map { $0.lowercased() }
-            if document.guideCoverHref == nil,
-                types.contains("cover"),
-                let href = EpubXML.attribute(element, named: "href"),
-                !href.isEmpty
-            {
-                document.guideCoverHref = href
-            }
-        default:
-            visit(element, in: section)
+                let mediaType = EpubXML.attribute(element, named: "media-type") ?? ""
+                let properties = Set(
+                    (EpubXML.attribute(element, named: "properties") ?? "")
+                        .split(whereSeparator: \.isWhitespace).map { $0.lowercased() })
+                document.manifest.append(
+                    EpubManifestItem(
+                        id: id, href: href, mediaType: mediaType, properties: properties))
+            case .spine where name == "itemref":
+                if let idref = EpubXML.attribute(element, named: "idref"), !idref.isEmpty {
+                    document.spineItemIds.append(idref)
+                }
+            case .guide where name == "reference":
+                let types = (EpubXML.attribute(element, named: "type") ?? "")
+                    .split(whereSeparator: \.isWhitespace).map { $0.lowercased() }
+                if document.guideCoverHref == nil, types.contains("cover"),
+                    let href = EpubXML.attribute(element, named: "href"), !href.isEmpty
+                {
+                    document.guideCoverHref = href
+                }
+            default: visit(element, in: section)
         }
     }
 
     private mutating func captureMetadata(_ element: XMLIndexer, name: String) -> Bool {
         let id = EpubXML.attribute(element, named: "id")
 
-        switch name {
-        case "title":
+        switch name { case "title":
             let value = EpubXML.text(element).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                document.titles.append(EpubTextValue(id: id, value: value))
-            }
-        case "creator", "contributor":
-            appendNonEmpty(
-                EpubXML.text(element),
-                to: &document.credits
-            )
-        case "description":
-            appendNonEmpty(
-                EpubXML.text(element),
-                to: &document.descriptions
-            )
-        case "subject":
-            appendNonEmpty(
-                EpubXML.text(element),
-                to: &document.subjects
-            )
-        case "date":
-            appendNonEmpty(
-                EpubXML.text(element),
-                to: &document.dateValues
-            )
-        case "meta":
-            let legacyName = EpubXML.attribute(element, named: "name")
-            let legacyContent = EpubXML.attribute(element, named: "content")
-            if document.legacyCoverId == nil,
-                legacyName?.caseInsensitiveCompare("cover") == .orderedSame,
-                let legacyContent,
-                !legacyContent.isEmpty
-            {
-                document.legacyCoverId = legacyContent
-            }
-
-            if let property = EpubXML.attribute(element, named: "property"),
-                !property.isEmpty
-            {
-                let value = EpubXML.text(element).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !value.isEmpty {
-                    document.metaValues.append(
-                        EpubMetaValue(
-                            property: property,
-                            refines: EpubXML.attribute(element, named: "refines"),
-                            value: value
-                        )
-                    )
+            if !value.isEmpty { document.titles.append(EpubTextValue(id: id, value: value)) }
+            case "creator", "contributor":
+                appendNonEmpty(EpubXML.text(element), to: &document.credits)
+            case "description": appendNonEmpty(EpubXML.text(element), to: &document.descriptions)
+            case "subject": appendNonEmpty(EpubXML.text(element), to: &document.subjects)
+            case "date": appendNonEmpty(EpubXML.text(element), to: &document.dateValues)
+            case "meta":
+                let legacyName = EpubXML.attribute(element, named: "name")
+                let legacyContent = EpubXML.attribute(element, named: "content")
+                if document.legacyCoverId == nil,
+                    legacyName?.caseInsensitiveCompare("cover") == .orderedSame, let legacyContent,
+                    !legacyContent.isEmpty
+                {
+                    document.legacyCoverId = legacyContent
                 }
-            }
-        default:
-            return false
+
+                if let property = EpubXML.attribute(element, named: "property"), !property.isEmpty {
+                    let value = EpubXML.text(element)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !value.isEmpty {
+                        document.metaValues.append(
+                            EpubMetaValue(
+                                property: property,
+                                refines: EpubXML.attribute(element, named: "refines"), value: value)
+                        )
+                    }
+                }
+            default: return false
         }
 
         return true
@@ -255,9 +193,7 @@ private struct EpubPackageParser {
 
     private func appendNonEmpty(_ value: String, to values: inout [String]) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            values.append(trimmed)
-        }
+        if !trimmed.isEmpty { values.append(trimmed) }
     }
 }
 
@@ -271,17 +207,15 @@ private struct EpubContentImageParser {
 
     private mutating func visit(_ document: XMLIndexer) {
         for child in document.children {
-            switch EpubXML.localName(child) {
-            case "img":
+            switch EpubXML.localName(child) { case "img":
                 if let src = EpubXML.attribute(child, named: "src"), !src.isEmpty {
                     references.append(src)
                 }
-            case "image":
-                if let href = EpubXML.attribute(child, named: "href"), !href.isEmpty {
-                    references.append(href)
-                }
-            default:
-                break
+                case "image":
+                    if let href = EpubXML.attribute(child, named: "href"), !href.isEmpty {
+                        references.append(href)
+                    }
+                default: break
             }
             visit(child)
         }
@@ -301,10 +235,8 @@ private struct EpubEncryptionParser {
             let name = EpubXML.localName(child)
             let isInsideEncryptedData = insideEncryptedData || name == "encrypteddata"
 
-            if name == "cipherreference",
-                isInsideEncryptedData,
-                let uri = EpubXML.attribute(child, named: "uri"),
-                !uri.isEmpty
+            if name == "cipherreference", isInsideEncryptedData,
+                let uri = EpubXML.attribute(child, named: "uri"), !uri.isEmpty
             {
                 references.append(uri)
             }

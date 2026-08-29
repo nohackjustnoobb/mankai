@@ -13,22 +13,18 @@ struct ReaderSettingsScreen: View {
     @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
-        var respectMangaReadingDirection: Bool =
-            SettingsDefaults.respectMangaReadingDirection
+        var respectMangaReadingDirection: Bool = SettingsDefaults.respectMangaReadingDirection
     @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping: Bool =
         SettingsDefaults.smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
-        Double =
-            SettingsDefaults.smartGroupingSensitivity
+        Double = SettingsDefaults.smartGroupingSensitivity
 
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "book.pages.fill"),
-                color: .orange,
+                image: Image(systemName: "book.pages.fill"), color: .orange,
                 title: String(localized: "reader"),
-                description: String(localized: "readerDescription")
-            )
+                description: String(localized: "readerDescription"))
 
             Section("imageGrouping") {
                 Picker(
@@ -37,9 +33,7 @@ struct ReaderSettingsScreen: View {
                         get: {
                             ImageLayout(rawValue: imageLayoutRawValue)
                                 ?? SettingsDefaults.imageLayout
-                        },
-                        set: { imageLayoutRawValue = $0.rawValue }
-                    )
+                        }, set: { imageLayoutRawValue = $0.rawValue })
                 ) {
                     Text(ImageLayout.auto.localizedName).tag(ImageLayout.auto)
                     Text(ImageLayout.onePerRow.localizedName).tag(ImageLayout.onePerRow)
@@ -47,25 +41,15 @@ struct ReaderSettingsScreen: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    Toggle(
-                        String(localized: "smartGrouping"),
-                        isOn: $smartGrouping
-                    )
-                    Text("smartGroupingDescription")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Toggle(String(localized: "smartGrouping"), isOn: $smartGrouping)
+                    Text("smartGroupingDescription").font(.caption).foregroundColor(.secondary)
                 }
 
                 if smartGrouping {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("smartGroupingSensitivity")
-                        Slider(
-                            value: $smartGroupingSensitivity,
-                            in: 0...1,
-                            step: 0.1
-                        )
-                        Text("smartGroupingSensitivityDescription")
-                            .font(.caption)
+                        Slider(value: $smartGroupingSensitivity, in: 0...1, step: 0.1)
+                        Text("smartGroupingSensitivityDescription").font(.caption)
                             .foregroundColor(.secondary)
                     }
                 }
@@ -75,10 +59,8 @@ struct ReaderSettingsScreen: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Toggle(
                         String(localized: "respectMangaReadingDirection"),
-                        isOn: $respectMangaReadingDirection
-                    )
-                    Text("respectMangaReadingDirectionDescription")
-                        .font(.caption)
+                        isOn: $respectMangaReadingDirection)
+                    Text("respectMangaReadingDirectionDescription").font(.caption)
                         .foregroundColor(.secondary)
                 }
 
@@ -87,9 +69,7 @@ struct ReaderSettingsScreen: View {
                     selection: Binding(
                         get: {
                             ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
-                        },
-                        set: { readerTypeRawValue = $0.rawValue }
-                    )
+                        }, set: { readerTypeRawValue = $0.rawValue })
                 ) {
                     Text(ReaderType.paged.localizedName).tag(ReaderType.paged)
                     Text(ReaderType.continuous.localizedName).tag(ReaderType.continuous)
@@ -97,36 +77,29 @@ struct ReaderSettingsScreen: View {
             }
 
             if let readerType = ReaderType(rawValue: readerTypeRawValue) {
-                switch readerType {
-                case .continuous:
-                    ContinuousReaderSettingsView()
-                case .paged:
+                switch readerType { case .continuous: ContinuousReaderSettingsView() case .paged:
                     PagedReaderSettingsView()
                 }
             }
         }
-        .navigationTitle("reader")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("reader").navigationBarTitleDisplayMode(.inline)
         .onChange(of: smartGrouping) { _, isEnabled in
             guard !isEnabled else { return }
 
-            Task {
-                await AdjacencyModelWrapper.shared.unloadImmediately()
-            }
+            Task { await AdjacencyModelWrapper.shared.unloadImmediately() }
         }
     }
 }
 
 struct ContinuousReaderSettingsView: View {
     @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var readingDirectionRawValue:
-        Int =
-            SettingsDefaults.CR_readingDirection.rawValue
+        Int = SettingsDefaults.CR_readingDirection.rawValue
     @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.CR_tapNavigation
-    @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var snapToPage: Bool =
-        SettingsDefaults.CR_snapToPage
-    @AppStorage(SettingsKey.CR_softSnap.rawValue) private var softSnap: Bool =
-        SettingsDefaults.CR_softSnap
+    @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var snapToPage: Bool = SettingsDefaults
+        .CR_snapToPage
+    @AppStorage(SettingsKey.CR_softSnap.rawValue) private var softSnap: Bool = SettingsDefaults
+        .CR_softSnap
 
     var body: some View {
         Section("continuousReaderSettings") {
@@ -136,48 +109,32 @@ struct ContinuousReaderSettingsView: View {
                     get: {
                         ReadingDirection(rawValue: readingDirectionRawValue)
                             ?? SettingsDefaults.CR_readingDirection
-                    },
-                    set: { readingDirectionRawValue = $0.rawValue }
-                )
+                    }, set: { readingDirectionRawValue = $0.rawValue })
             ) {
                 Text(ReadingDirection.leftToRight.localizedName).tag(ReadingDirection.leftToRight)
                 Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
-            Toggle(
-                String(localized: "tapNavigation"),
-                isOn: $tapNavigation
-            )
+            Toggle(String(localized: "tapNavigation"), isOn: $tapNavigation)
 
-            Toggle(
-                String(localized: "snapToPage"),
-                isOn: $snapToPage
-            )
+            Toggle(String(localized: "snapToPage"), isOn: $snapToPage)
 
-            if snapToPage {
-                Toggle(
-                    String(localized: "softSnap"),
-                    isOn: $softSnap
-                )
-            }
+            if snapToPage { Toggle(String(localized: "softSnap"), isOn: $softSnap) }
         }
     }
 }
 
 struct PagedReaderSettingsView: View {
     @AppStorage(SettingsKey.PR_readingDirection.rawValue) private var readingDirectionRawValue:
-        Int =
-            SettingsDefaults.PR_readingDirection.rawValue
+        Int = SettingsDefaults.PR_readingDirection.rawValue
     @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private
-        var navigationOrientationRawValue: Int =
-            SettingsDefaults.PR_navigationOrientation.rawValue
+        var navigationOrientationRawValue: Int = SettingsDefaults.PR_navigationOrientation.rawValue
     @AppStorage(SettingsKey.PR_pageTransition.rawValue) private var pageTransitionRawValue: Int =
         SettingsDefaults.PR_pageTransition.rawValue
     @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var tapNavigation: Bool =
         SettingsDefaults.PR_tapNavigation
     @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
-        var tapNavigationBehaviorRawValue: Int =
-            SettingsDefaults.PR_tapNavigationBehavior.rawValue
+        var tapNavigationBehaviorRawValue: Int = SettingsDefaults.PR_tapNavigationBehavior.rawValue
 
     private var isVertical: Bool {
         NavigationOrientation(rawValue: navigationOrientationRawValue) == .vertical
@@ -191,9 +148,7 @@ struct PagedReaderSettingsView: View {
                     get: {
                         NavigationOrientation(rawValue: navigationOrientationRawValue)
                             ?? SettingsDefaults.PR_navigationOrientation
-                    },
-                    set: { navigationOrientationRawValue = $0.rawValue }
-                )
+                    }, set: { navigationOrientationRawValue = $0.rawValue })
             ) {
                 Text(NavigationOrientation.horizontal.localizedName)
                     .tag(NavigationOrientation.horizontal)
@@ -207,9 +162,7 @@ struct PagedReaderSettingsView: View {
                     get: {
                         PageTransition(rawValue: pageTransitionRawValue)
                             ?? SettingsDefaults.PR_pageTransition
-                    },
-                    set: { pageTransitionRawValue = $0.rawValue }
-                )
+                    }, set: { pageTransitionRawValue = $0.rawValue })
             ) {
                 Text(PageTransition.scroll.localizedName).tag(PageTransition.scroll)
                 Text(PageTransition.pageCurl.localizedName).tag(PageTransition.pageCurl)
@@ -221,18 +174,13 @@ struct PagedReaderSettingsView: View {
                     get: {
                         ReadingDirection(rawValue: readingDirectionRawValue)
                             ?? SettingsDefaults.PR_readingDirection
-                    },
-                    set: { readingDirectionRawValue = $0.rawValue }
-                )
+                    }, set: { readingDirectionRawValue = $0.rawValue })
             ) {
                 Text(ReadingDirection.leftToRight.localizedName).tag(ReadingDirection.leftToRight)
                 Text(ReadingDirection.rightToLeft.localizedName).tag(ReadingDirection.rightToLeft)
             }
 
-            Toggle(
-                String(localized: "tapNavigation"),
-                isOn: $tapNavigation
-            )
+            Toggle(String(localized: "tapNavigation"), isOn: $tapNavigation)
 
             if tapNavigation && !isVertical {
                 Picker(
@@ -241,9 +189,7 @@ struct PagedReaderSettingsView: View {
                         get: {
                             TapBehavior(rawValue: tapNavigationBehaviorRawValue)
                                 ?? SettingsDefaults.PR_tapNavigationBehavior
-                        },
-                        set: { tapNavigationBehaviorRawValue = $0.rawValue }
-                    )
+                        }, set: { tapNavigationBehaviorRawValue = $0.rawValue })
                 ) {
                     Text(TapBehavior.previousNext.localizedName).tag(TapBehavior.previousNext)
                     Text(TapBehavior.followReadingDirection.localizedName)

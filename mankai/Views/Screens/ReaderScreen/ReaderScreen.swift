@@ -26,17 +26,11 @@ private struct ReaderAdjacencyPair {
     let leftImage: TempImage
     let rightImage: TempImage
 
-    var key: String {
-        ReaderGrouping.pairKey(firstURL, secondURL)
-    }
+    var key: String { ReaderGrouping.pairKey(firstURL, secondURL) }
 
-    var urls: [String] {
-        [firstURL, secondURL]
-    }
+    var urls: [String] { [firstURL, secondURL] }
 
-    var images: [TempImage] {
-        [leftImage, rightImage]
-    }
+    var images: [TempImage] { [leftImage, rightImage] }
 }
 
 private struct ReaderGroupingKey: Equatable {
@@ -51,29 +45,19 @@ private struct ReaderGroupingKey: Equatable {
 
 private enum ReaderGrouping {
     static func defaultGroupSize(
-        readingDirection: ReadingDirection,
-        imageLayout: ImageLayout,
-        viewportSize: CGSize
+        readingDirection: ReadingDirection, imageLayout: ImageLayout, viewportSize: CGSize
     ) -> Int {
         if readingDirection == .vertical { return 1 }
 
-        switch imageLayout {
-        case .auto:
-            return viewportSize.width > viewportSize.height ? 2 : 1
-        case .onePerRow:
-            return 1
-        case .twoPerRow:
-            return 2
+        switch imageLayout { case .auto: return viewportSize.width > viewportSize.height ? 2 : 1
+            case .onePerRow: return 1
+            case .twoPerRow: return 2
         }
     }
 
     static func makeGroups(
-        urls: [String],
-        images: [String: ReaderImageState],
-        defaultGroupSize: Int,
-        smartGrouping: Bool,
-        smartGroupingSensitivity: Double,
-        adjacencyScores: [String: Double]
+        urls: [String], images: [String: ReaderImageState], defaultGroupSize: Int,
+        smartGrouping: Bool, smartGroupingSensitivity: Double, adjacencyScores: [String: Double]
     ) -> [ReaderGroup] {
         var groups: [ReaderGroup] = []
         var index = 0
@@ -90,12 +74,9 @@ private enum ReaderGrouping {
             if index + 1 < urls.count {
                 let nextURL = urls[index + 1]
                 if isSpread(
-                    url,
-                    nextURL,
-                    smartGrouping: smartGrouping,
-                    sensitivity: smartGroupingSensitivity,
-                    adjacencyScores: adjacencyScores
-                ) {
+                    url, nextURL, smartGrouping: smartGrouping,
+                    sensitivity: smartGroupingSensitivity, adjacencyScores: adjacencyScores)
+                {
                     groups.append(ReaderGroup(urls: [url, nextURL]))
                     index += 2
                     continue
@@ -111,12 +92,8 @@ private enum ReaderGrouping {
 
                 if candidateIndex > index, candidateIndex + 1 < urls.count,
                     isSpread(
-                        candidateURL,
-                        urls[candidateIndex + 1],
-                        smartGrouping: smartGrouping,
-                        sensitivity: smartGroupingSensitivity,
-                        adjacencyScores: adjacencyScores
-                    )
+                        candidateURL, urls[candidateIndex + 1], smartGrouping: smartGrouping,
+                        sensitivity: smartGroupingSensitivity, adjacencyScores: adjacencyScores)
                 {
                     break
                 }
@@ -147,10 +124,7 @@ private enum ReaderGrouping {
     }
 
     private static func isSpread(
-        _ firstURL: String,
-        _ secondURL: String,
-        smartGrouping: Bool,
-        sensitivity: Double,
+        _ firstURL: String, _ secondURL: String, smartGrouping: Bool, sensitivity: Double,
         adjacencyScores: [String: Double]
     ) -> Bool {
         guard smartGrouping else { return false }
@@ -171,38 +145,23 @@ private enum ReaderImageLoadResult {
 }
 
 private struct ReaderLegacyTabBarModifier: ViewModifier {
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(iOS 18.0, *) {
-            content
-        } else {
-            content.toolbar(.hidden, for: .tabBar)
-        }
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) { content } else { content.toolbar(.hidden, for: .tabBar) }
     }
 }
 
 private struct ReaderControlsBackgroundModifier: ViewModifier {
     let bottomSafeAreaInset: CGFloat
 
-    @ViewBuilder
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content
-                .padding()
-                .padding(.horizontal)
-                .glassEffect()
-                .padding(.horizontal)
+            content.padding().padding(.horizontal).glassEffect().padding(.horizontal)
                 .padding(.bottom, max(12, bottomSafeAreaInset))
         } else {
-            content
-                .padding(.horizontal, 20)
-                .padding(.top)
-                .padding(.bottom, max(12, bottomSafeAreaInset))
-                .background(.bar)
+            content.padding(.horizontal, 20).padding(.top)
+                .padding(.bottom, max(12, bottomSafeAreaInset)).background(.bar)
                 .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Color(uiColor: .separator))
-                        .frame(height: 0.5)
+                    Rectangle().fill(Color(uiColor: .separator)).frame(height: 0.5)
                 }
         }
     }
@@ -212,14 +171,10 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     let isNavigationBarHidden: Bool
     let onWillDisappear: () -> Void
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onWillDisappear: onWillDisappear)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(onWillDisappear: onWillDisappear) }
 
     func makeUIViewController(context: Context) -> Controller {
-        Controller {
-            context.coordinator.onWillDisappear()
-        }
+        Controller { context.coordinator.onWillDisappear() }
     }
 
     func updateUIViewController(_ controller: Controller, context: Context) {
@@ -237,9 +192,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     final class Coordinator {
         var onWillDisappear: () -> Void
 
-        init(onWillDisappear: @escaping () -> Void) {
-            self.onWillDisappear = onWillDisappear
-        }
+        init(onWillDisappear: @escaping () -> Void) { self.onWillDisappear = onWillDisappear }
     }
 
     final class Controller: UIViewController {
@@ -252,8 +205,7 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             super.init(nibName: nil, bundle: nil)
         }
 
-        @available(*, unavailable)
-        required init?(coder _: NSCoder) {
+        @available(*, unavailable) required init?(coder _: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
 
@@ -303,10 +255,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             let transform =
                 shouldHideNavigationBar
                 ? CGAffineTransform(
-                    translationX: 0,
-                    y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
-                )
-                : .identity
+                    translationX: 0, y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
+                ) : .identity
 
             updateNavigationBar(navigationBar, transform: transform, animated: animated)
         }
@@ -317,13 +267,9 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         }
 
         private func updateNavigationBar(
-            _ navigationBar: UINavigationBar,
-            transform: CGAffineTransform,
-            animated: Bool
+            _ navigationBar: UINavigationBar, transform: CGAffineTransform, animated: Bool
         ) {
-            let changes = {
-                navigationBar.transform = transform
-            }
+            let changes = { navigationBar.transform = transform }
 
             guard animated else {
                 changes()
@@ -332,13 +278,10 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
 
             isAnimatingNavigationBar = true
             UIView.animate(
-                withDuration: 0.2,
-                delay: 0,
+                withDuration: 0.2, delay: 0,
                 options: [.curveLinear, .beginFromCurrentState, .allowUserInteraction],
                 animations: changes
-            ) { _ in
-                self.isAnimatingNavigationBar = false
-            }
+            ) { _ in self.isAnimatingNavigationBar = false }
         }
     }
 }
@@ -351,40 +294,40 @@ struct ReaderScreen: View {
     let chapter: Chapter
     var initialPage: Int?
 
-    @AppStorage(SettingsKey.readerType.rawValue)
-    private var readerTypeRawValue: Int = SettingsDefaults.readerType.rawValue
-    @AppStorage(SettingsKey.imageLayout.rawValue)
-    private var imageLayoutRawValue: Int = SettingsDefaults.imageLayout.rawValue
-    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue)
-    private var respectMangaReadingDirection = SettingsDefaults.respectMangaReadingDirection
-    @AppStorage(SettingsKey.smartGrouping.rawValue)
-    private var smartGrouping = SettingsDefaults.smartGrouping
-    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue)
-    private var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
-    @AppStorage(SettingsKey.downsampleImages.rawValue)
-    private var downsampleImages = SettingsDefaults.downsampleImages
+    @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
+        SettingsDefaults.readerType.rawValue
+    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
+        SettingsDefaults.imageLayout.rawValue
+    @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
+        var respectMangaReadingDirection = SettingsDefaults.respectMangaReadingDirection
+    @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping = SettingsDefaults
+        .smartGrouping
+    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private
+        var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
+    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages =
+        SettingsDefaults.downsampleImages
 
     /// Continuous Reader
-    @AppStorage(SettingsKey.CR_readingDirection.rawValue)
-    private var continuousDirectionRawValue = SettingsDefaults.CR_readingDirection.rawValue
-    @AppStorage(SettingsKey.CR_tapNavigation.rawValue)
-    private var continuousTapNavigation = SettingsDefaults.CR_tapNavigation
-    @AppStorage(SettingsKey.CR_snapToPage.rawValue)
-    private var continuousSnapToPage = SettingsDefaults.CR_snapToPage
-    @AppStorage(SettingsKey.CR_softSnap.rawValue)
-    private var continuousSoftSnap = SettingsDefaults.CR_softSnap
+    @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var continuousDirectionRawValue =
+        SettingsDefaults.CR_readingDirection.rawValue
+    @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var continuousTapNavigation =
+        SettingsDefaults.CR_tapNavigation
+    @AppStorage(SettingsKey.CR_snapToPage.rawValue) private var continuousSnapToPage =
+        SettingsDefaults.CR_snapToPage
+    @AppStorage(SettingsKey.CR_softSnap.rawValue) private var continuousSoftSnap = SettingsDefaults
+        .CR_softSnap
 
     /// Paged Reader
-    @AppStorage(SettingsKey.PR_readingDirection.rawValue)
-    private var pagedDirectionRawValue = SettingsDefaults.PR_readingDirection.rawValue
-    @AppStorage(SettingsKey.PR_navigationOrientation.rawValue)
-    private var pagedOrientationRawValue = SettingsDefaults.PR_navigationOrientation.rawValue
-    @AppStorage(SettingsKey.PR_pageTransition.rawValue)
-    private var pagedTransitionRawValue = SettingsDefaults.PR_pageTransition.rawValue
-    @AppStorage(SettingsKey.PR_tapNavigation.rawValue)
-    private var pagedTapNavigation = SettingsDefaults.PR_tapNavigation
-    @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue)
-    private var pagedTapBehaviorRawValue = SettingsDefaults.PR_tapNavigationBehavior.rawValue
+    @AppStorage(SettingsKey.PR_readingDirection.rawValue) private var pagedDirectionRawValue =
+        SettingsDefaults.PR_readingDirection.rawValue
+    @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private
+        var pagedOrientationRawValue = SettingsDefaults.PR_navigationOrientation.rawValue
+    @AppStorage(SettingsKey.PR_pageTransition.rawValue) private var pagedTransitionRawValue =
+        SettingsDefaults.PR_pageTransition.rawValue
+    @AppStorage(SettingsKey.PR_tapNavigation.rawValue) private var pagedTapNavigation =
+        SettingsDefaults.PR_tapNavigation
+    @AppStorage(SettingsKey.PR_tapNavigationBehavior.rawValue) private
+        var pagedTapBehaviorRawValue = SettingsDefaults.PR_tapNavigationBehavior.rawValue
 
     @State private var currentChapterIndex: Int
     @State private var pendingInitialPage: Int?
@@ -408,12 +351,8 @@ struct ReaderScreen: View {
     @State private var lastSavedPosition: ReaderSavedPosition?
 
     init(
-        plugin: Plugin,
-        manga: DetailedManga,
-        downloadManga: DetailedManga?,
-        chapterGroupIndex: Int,
-        chapter: Chapter,
-        initialPage: Int? = nil
+        plugin: Plugin, manga: DetailedManga, downloadManga: DetailedManga?, chapterGroupIndex: Int,
+        chapter: Chapter, initialPage: Int? = nil
     ) {
         self.plugin = plugin
         self.manga = manga
@@ -424,11 +363,9 @@ struct ReaderScreen: View {
 
         let chapters =
             manga.chapters.indices.contains(chapterGroupIndex)
-            ? manga.chapters[chapterGroupIndex].chapters
-            : []
+            ? manga.chapters[chapterGroupIndex].chapters : []
         _currentChapterIndex = State(
-            initialValue: chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
-        )
+            initialValue: chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1)
         _pendingInitialPage = State(initialValue: initialPage)
     }
 
@@ -444,10 +381,8 @@ struct ReaderScreen: View {
 
     private var downloadedChapterIds: Set<String> {
         Set(
-            downloadManga?.chapters.flatMap { group in
-                group.chapters.filter { $0.locked != true }.map(\.id)
-            } ?? []
-        )
+            downloadManga?.chapters
+                .flatMap { group in group.chapters.filter { $0.locked != true }.map(\.id) } ?? [])
     }
 
     private func canRead(_ chapter: Chapter) -> Bool {
@@ -456,24 +391,19 @@ struct ReaderScreen: View {
     }
 
     private var readerType: ReaderType {
-        if respectMangaReadingDirection, manga.readingDirection == .vertical {
-            return .continuous
-        }
+        if respectMangaReadingDirection, manga.readingDirection == .vertical { return .continuous }
         return ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
     }
 
     private var readingDirection: ReadingDirection {
-        if respectMangaReadingDirection, let direction = manga.readingDirection {
-            return direction
-        }
+        if respectMangaReadingDirection, let direction = manga.readingDirection { return direction }
 
-        switch readerType {
-        case .continuous:
+        switch readerType { case .continuous:
             return ReadingDirection(rawValue: continuousDirectionRawValue)
                 ?? SettingsDefaults.CR_readingDirection
-        case .paged:
-            return ReadingDirection(rawValue: pagedDirectionRawValue)
-                ?? SettingsDefaults.PR_readingDirection
+            case .paged:
+                return ReadingDirection(rawValue: pagedDirectionRawValue)
+                    ?? SettingsDefaults.PR_readingDirection
         }
     }
 
@@ -482,8 +412,7 @@ struct ReaderScreen: View {
     }
 
     private var pagedTapBehavior: TapBehavior {
-        TapBehavior(rawValue: pagedTapBehaviorRawValue)
-            ?? SettingsDefaults.PR_tapNavigationBehavior
+        TapBehavior(rawValue: pagedTapBehaviorRawValue) ?? SettingsDefaults.PR_tapNavigationBehavior
     }
 
     private var pagedNavigationOrientation: NavigationOrientation {
@@ -492,8 +421,7 @@ struct ReaderScreen: View {
     }
 
     private var pagedPageTransition: PageTransition {
-        PageTransition(rawValue: pagedTransitionRawValue)
-            ?? SettingsDefaults.PR_pageTransition
+        PageTransition(rawValue: pagedTransitionRawValue) ?? SettingsDefaults.PR_pageTransition
     }
 
     private var readerTypeSelection: Binding<ReaderType> {
@@ -502,8 +430,7 @@ struct ReaderScreen: View {
             set: { readerType in
                 scheduleCurrentPageNavigationCommand()
                 readerTypeRawValue = readerType.rawValue
-            }
-        )
+            })
     }
 
     private var imageLayoutSelection: Binding<ImageLayout> {
@@ -512,8 +439,7 @@ struct ReaderScreen: View {
             set: { imageLayout in
                 scheduleCurrentPageNavigationCommand()
                 imageLayoutRawValue = imageLayout.rawValue
-            }
-        )
+            })
     }
 
     private var readingDirectionSelection: Binding<ReadingDirection> {
@@ -521,14 +447,11 @@ struct ReaderScreen: View {
             get: { readingDirection },
             set: { direction in
                 scheduleCurrentPageNavigationCommand()
-                switch readerType {
-                case .continuous:
+                switch readerType { case .continuous:
                     continuousDirectionRawValue = direction.rawValue
-                case .paged:
-                    pagedDirectionRawValue = direction.rawValue
+                    case .paged: pagedDirectionRawValue = direction.rawValue
                 }
-            }
-        )
+            })
     }
 
     private var smartGroupingSelection: Binding<Bool> {
@@ -537,24 +460,17 @@ struct ReaderScreen: View {
             set: { isEnabled in
                 scheduleCurrentPageNavigationCommand()
                 smartGrouping = isEnabled
-            }
-        )
+            })
     }
 
     private var tapNavigationSelection: Binding<Bool> {
         Binding(
-            get: {
-                readerType == .continuous ? continuousTapNavigation : pagedTapNavigation
-            },
+            get: { readerType == .continuous ? continuousTapNavigation : pagedTapNavigation },
             set: { isEnabled in
-                switch readerType {
-                case .continuous:
-                    continuousTapNavigation = isEnabled
-                case .paged:
-                    pagedTapNavigation = isEnabled
+                switch readerType { case .continuous: continuousTapNavigation = isEnabled
+                    case .paged: pagedTapNavigation = isEnabled
                 }
-            }
-        )
+            })
     }
 
     private var followReadingDirectionSelection: Binding<Bool> {
@@ -565,8 +481,7 @@ struct ReaderScreen: View {
                     isEnabled
                     ? TapBehavior.followReadingDirection.rawValue
                     : TapBehavior.previousNext.rawValue
-            }
-        )
+            })
     }
 
     private var navigationOrientationSelection: Binding<NavigationOrientation> {
@@ -575,8 +490,7 @@ struct ReaderScreen: View {
             set: { orientation in
                 scheduleCurrentPageNavigationCommand()
                 pagedOrientationRawValue = orientation.rawValue
-            }
-        )
+            })
     }
 
     private var pageTransitionSelection: Binding<PageTransition> {
@@ -585,105 +499,71 @@ struct ReaderScreen: View {
             set: { transition in
                 scheduleCurrentPageNavigationCommand()
                 pagedTransitionRawValue = transition.rawValue
-            }
-        )
+            })
     }
 
     private var defaultGroupSize: Int {
         ReaderGrouping.defaultGroupSize(
-            readingDirection: readingDirection,
-            imageLayout: imageLayout,
-            viewportSize: viewportSize
+            readingDirection: readingDirection, imageLayout: imageLayout, viewportSize: viewportSize
         )
     }
 
     private var renderConfiguration: ReaderRenderConfiguration {
         ReaderRenderConfiguration(
-            readingDirection: readingDirection,
-            defaultGroupSize: defaultGroupSize,
+            readingDirection: readingDirection, defaultGroupSize: defaultGroupSize,
 
-            tapNavigation: readerType == .continuous
-                ? continuousTapNavigation
-                : pagedTapNavigation,
+            tapNavigation: readerType == .continuous ? continuousTapNavigation : pagedTapNavigation,
 
             tapNavigationBehavior: pagedTapBehavior,
-            navigationOrientation: pagedNavigationOrientation,
-            pageTransition: pagedPageTransition,
+            navigationOrientation: pagedNavigationOrientation, pageTransition: pagedPageTransition,
 
-            snapToPage: continuousSnapToPage,
-            softSnap: continuousSoftSnap
-        )
+            snapToPage: continuousSnapToPage, softSnap: continuousSoftSnap)
     }
 
     private var renderState: ReaderRenderState {
         ReaderRenderState(
-            revision: contentRevision,
-            chapterID: currentChapter?.id,
-            urls: urls,
-            images: images,
-            groups: groups,
-            currentPage: currentPage,
-            navigationCommand: navigationCommand,
-            previousChapter: previousChapterAvailability,
-            nextChapter: nextChapterAvailability
-        )
+            revision: contentRevision, chapterID: currentChapter?.id, urls: urls, images: images,
+            groups: groups, currentPage: currentPage, navigationCommand: navigationCommand,
+            previousChapter: previousChapterAvailability, nextChapter: nextChapterAvailability)
     }
 
     private var renderActions: ReaderRenderActions {
         ReaderRenderActions(
-            pageDidChange: pageDidChange,
-            requestGroupStep: stepGroup,
-            requestChapterStep: stepChapter,
-            toggleChrome: toggleChrome,
-            viewportDidChange: updateViewportSize
-        )
+            pageDidChange: pageDidChange, requestGroupStep: stepGroup,
+            requestChapterStep: stepChapter, toggleChrome: toggleChrome,
+            viewportDidChange: updateViewportSize)
     }
 
     private var chapterLoadKey: ReaderChapterLoadKey {
-        ReaderChapterLoadKey(
-            chapterID: currentChapter?.id,
-            retryGeneration: retryGeneration
-        )
+        ReaderChapterLoadKey(chapterID: currentChapter?.id, retryGeneration: retryGeneration)
     }
 
     private var adjacencyKey: ReaderAdjacencyKey {
         ReaderAdjacencyKey(
-            chapterLoadKey: chapterLoadKey,
-            imagesSettled: imageLoadingFinished,
+            chapterLoadKey: chapterLoadKey, imagesSettled: imageLoadingFinished,
             readingDirection: readingDirection,
-            enabled: smartGrouping && readingDirection != .vertical
-        )
+            enabled: smartGrouping && readingDirection != .vertical)
     }
 
     private var groupingKey: ReaderGroupingKey {
         ReaderGroupingKey(
-            readerType: readerType,
-            imageLayout: imageLayout,
-            readingDirection: readingDirection,
-            smartGrouping: smartGrouping,
-            sensitivity: smartGroupingSensitivity,
+            readerType: readerType, imageLayout: imageLayout, readingDirection: readingDirection,
+            smartGrouping: smartGrouping, sensitivity: smartGroupingSensitivity,
             viewportWidth: Int(viewportSize.width.rounded()),
-            viewportHeight: Int(viewportSize.height.rounded())
-        )
+            viewportHeight: Int(viewportSize.height.rounded()))
     }
 
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                renderer
-                    .ignoresSafeArea()
+                renderer.ignoresSafeArea()
 
                 LinearGradient(
-                    colors: [
-                        Color(uiColor: .systemBackground).opacity(0.25),
-                        .clear,
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
+                    colors: [Color(uiColor: .systemBackground).opacity(0.25), .clear],
+                    startPoint: .top, endPoint: .bottom
                 )
                 .frame(height: UIApplication.statusBarHeight ?? 0)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .ignoresSafeArea(edges: .top)
+                .frame(maxHeight: .infinity, alignment: .top).ignoresSafeArea(edges: .top)
                 .allowsHitTesting(false)
 
                 loadOverlay
@@ -709,22 +589,12 @@ struct ReaderScreen: View {
                     }
                 }
             }
-            .ignoresSafeArea(edges: .bottom)
-            .onAppear {
-                updateViewportSize(proxy.size)
-            }
-            .onChange(of: proxy.size) { _, size in
-                updateViewportSize(size)
-            }
+            .ignoresSafeArea(edges: .bottom).onAppear { updateViewportSize(proxy.size) }
+            .onChange(of: proxy.size) { _, size in updateViewportSize(size) }
         }
         .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                readerSettingsMenu
-            }
-        }
+        .navigationBarTitleDisplayMode(.inline).toolbarBackground(.visible, for: .navigationBar)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { readerSettingsMenu } }
         .modifier(ReaderLegacyTabBarModifier())
         .background {
             ReaderNavigationBarController(isNavigationBarHidden: !isChromeVisible) {
@@ -733,26 +603,17 @@ struct ReaderScreen: View {
         }
         .sheet(isPresented: $isShowingChapters) {
             ChaptersModal(
-                plugin: plugin,
-                manga: manga,
-                chapterGroupIndex: chapterGroupIndex,
+                plugin: plugin, manga: manga, chapterGroupIndex: chapterGroupIndex,
                 downloadChapters: downloadedChapterIds,
-                canReadRemotely: plugin.supportsRemoteReading,
-                allowEditing: false
+                canReadRemotely: plugin.supportsRemoteReading, allowEditing: false
             ) { selectedChapter, _, _ in
                 selectChapter(selectedChapter)
                 isShowingChapters = false
             }
         }
-        .task(id: chapterLoadKey) {
-            await loadChapter(for: chapterLoadKey)
-        }
-        .task(id: adjacencyKey) {
-            await updateAdjacencyScores(for: adjacencyKey)
-        }
-        .task(id: saveRequestGeneration) {
-            await performScheduledSave()
-        }
+        .task(id: chapterLoadKey) { await loadChapter(for: chapterLoadKey) }
+        .task(id: adjacencyKey) { await updateAdjacencyScores(for: adjacencyKey) }
+        .task(id: saveRequestGeneration) { await performScheduledSave() }
         .onChange(of: groupingKey) { oldValue, _ in
             if oldValue.readingDirection != readingDirection {
                 checkedPairs.removeAll()
@@ -760,9 +621,7 @@ struct ReaderScreen: View {
             }
             regroup(keepCurrentPageVisible: true)
         }
-        .onDisappear {
-            finishReading()
-        }
+        .onDisappear { finishReading() }
     }
 
     private var readerSettingsMenu: some View {
@@ -787,14 +646,12 @@ struct ReaderScreen: View {
                             Image(
                                 systemName: readingDirection == .rightToLeft
                                     ? "inset.filled.lefthalf.arrow.left.rectangle"
-                                    : "inset.filled.righthalf.arrow.right.rectangle"
-                            )
+                                    : "inset.filled.righthalf.arrow.right.rectangle")
                         } else {
                             Image(
                                 systemName: readingDirection == .rightToLeft
                                     ? "rectangle.lefthalf.inset.filled.arrow.left"
-                                    : "rectangle.righthalf.inset.filled.arrow.right"
-                            )
+                                    : "rectangle.righthalf.inset.filled.arrow.right")
                         }
                     }
                     Text(readingDirection.localizedName)
@@ -805,13 +662,10 @@ struct ReaderScreen: View {
                     Button {
                         navigationOrientationSelection.wrappedValue =
                             navigationOrientationSelection.wrappedValue == .horizontal
-                            ? .vertical
-                            : .horizontal
+                            ? .vertical : .horizontal
                     } label: {
                         Label(
-                            "switchNavigationOrientation",
-                            systemImage: "rectangle.portrait.rotate"
-                        )
+                            "switchNavigationOrientation", systemImage: "rectangle.portrait.rotate")
                         Text(navigationOrientationSelection.wrappedValue.localizedName)
                     }
 
@@ -834,8 +688,7 @@ struct ReaderScreen: View {
                     Toggle(isOn: followReadingDirectionSelection) {
                         Label(
                             TapBehavior.followReadingDirection.localizedName,
-                            systemImage: "arrow.left.arrow.right"
-                        )
+                            systemImage: "arrow.left.arrow.right")
                     }
                 }
             }
@@ -860,47 +713,31 @@ struct ReaderScreen: View {
         .menuOrder(.fixed)
     }
 
-    @ViewBuilder
-    private var renderer: some View {
-        switch readerType {
-        case .continuous:
+    @ViewBuilder private var renderer: some View {
+        switch readerType { case .continuous:
             ContinuousReaderScreen(
-                state: renderState,
-                configuration: renderConfiguration,
-                actions: renderActions
-            )
-        case .paged:
-            PagedReaderScreen(
-                state: renderState,
-                configuration: renderConfiguration,
-                actions: renderActions
-            )
+                state: renderState, configuration: renderConfiguration, actions: renderActions)
+            case .paged:
+                PagedReaderScreen(
+                    state: renderState, configuration: renderConfiguration, actions: renderActions)
         }
     }
 
-    @ViewBuilder
-    private var loadOverlay: some View {
-        switch loadPhase {
-        case .idle, .loading:
-            ProgressView()
-                .controlSize(.large)
-        case .failed:
+    @ViewBuilder private var loadOverlay: some View {
+        switch loadPhase { case .idle, .loading: ProgressView().controlSize(.large) case .failed:
             Button {
                 retryGeneration += 1
                 loadPhase = .loading
             } label: {
                 VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.circle")
-                        .font(.system(size: 44))
+                    Image(systemName: "exclamationmark.circle").font(.system(size: 44))
                     Text("failedToLoadChapter")
-                    Text("tapToRetry")
-                        .font(.caption)
+                    Text("tapToRetry").font(.caption)
                 }
                 .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-        case .ready:
-            EmptyView()
+            case .ready: EmptyView()
         }
     }
 
@@ -911,84 +748,55 @@ struct ReaderScreen: View {
         return VStack(spacing: 10) {
             HStack {
                 controlButton(
-                    systemImage: "chevron.left.to.line",
-                    label: "previousChapter",
+                    systemImage: "chevron.left.to.line", label: "previousChapter",
                     enabled: previousChapterAvailability == .available
-                ) {
-                    stepChapter(.previous)
-                }
+                ) { stepChapter(.previous) }
 
                 controlButton(
-                    systemImage: "chevron.left",
-                    label: "previousPage",
+                    systemImage: "chevron.left", label: "previousPage",
                     enabled: canStepGroup(.previous)
-                ) {
-                    stepGroup(.previous)
-                }
+                ) { stepGroup(.previous) }
 
                 Button {
                     isShowingChapters = true
                 } label: {
                     Text(
                         String(
-                            format: String(localized: "readerPageProgressFormat"),
-                            displayedPage,
-                            pageCount
-                        )
+                            format: String(localized: "readerPageProgressFormat"), displayedPage,
+                            pageCount)
                     )
                     .frame(minWidth: 72)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.accent)
+                .buttonStyle(.plain).foregroundStyle(.accent)
 
                 controlButton(
-                    systemImage: "chevron.right",
-                    label: "nextPage",
-                    enabled: canStepGroup(.next)
-                ) {
-                    stepGroup(.next)
-                }
+                    systemImage: "chevron.right", label: "nextPage", enabled: canStepGroup(.next)
+                ) { stepGroup(.next) }
 
                 controlButton(
-                    systemImage: "chevron.right.to.line",
-                    label: "nextChapter",
+                    systemImage: "chevron.right.to.line", label: "nextChapter",
                     enabled: nextChapterAvailability == .available
-                ) {
-                    stepChapter(.next)
-                }
+                ) { stepChapter(.next) }
             }
 
             Slider(
                 value: Binding(
                     get: { Double(displayedPage) },
-                    set: { requestPage(Int($0.rounded()) - 1, animated: false) }
-                ),
-                in: 1...Double(pageCount),
-                step: 1
+                    set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
+                in: 1...Double(pageCount), step: 1
             )
             .disabled(urls.isEmpty)
         }
-        .modifier(
-            ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset)
-        )
-        .contentShape(Rectangle())
-        .ignoresSafeArea(edges: .bottom)
+        .modifier(ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset))
+        .contentShape(Rectangle()).ignoresSafeArea(edges: .bottom)
     }
 
     private func controlButton(
-        systemImage: String,
-        label: LocalizedStringKey,
-        enabled: Bool,
-        action: @escaping () -> Void
+        systemImage: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .frame(minWidth: 44, minHeight: 32)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .accessibilityLabel(label)
-        .foregroundStyle(.accent)
+        Button(action: action) { Image(systemName: systemImage).frame(minWidth: 44, minHeight: 32) }
+            .buttonStyle(.plain).disabled(!enabled).accessibilityLabel(label)
+            .foregroundStyle(.accent)
     }
 
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {
@@ -1006,10 +814,7 @@ struct ReaderScreen: View {
 
     private func canStepGroup(_ step: ReaderStep) -> Bool {
         guard let groupIndex = currentGroupIndex else { return false }
-        switch step {
-        case .previous:
-            return groupIndex > 0
-        case .next:
+        switch step { case .previous: return groupIndex > 0 case .next:
             return groupIndex < groups.count - 1
         }
     }
@@ -1025,10 +830,8 @@ struct ReaderScreen: View {
         let pageURL = urls[page]
 
         DispatchQueue.main.async {
-            guard currentChapter?.id == chapterID,
-                urls.indices.contains(page),
-                urls[page] == pageURL,
-                currentPage != page
+            guard currentChapter?.id == chapterID, urls.indices.contains(page),
+                urls[page] == pageURL, currentPage != page
             else { return }
 
             currentPage = page
@@ -1039,8 +842,7 @@ struct ReaderScreen: View {
     private func stepGroup(_ step: ReaderStep) {
         guard let groupIndex = currentGroupIndex else { return }
         let targetIndex = step == .previous ? groupIndex - 1 : groupIndex + 1
-        guard groups.indices.contains(targetIndex),
-            let targetURL = groups[targetIndex].urls.first,
+        guard groups.indices.contains(targetIndex), let targetURL = groups[targetIndex].urls.first,
             let page = urls.firstIndex(of: targetURL)
         else { return }
 
@@ -1051,17 +853,13 @@ struct ReaderScreen: View {
         guard urls.indices.contains(page) else { return }
         let selectedURL = urls[page]
         guard let group = groups.first(where: { $0.contains(selectedURL) }),
-            let targetURL = group.urls.first,
-            let targetPage = urls.firstIndex(of: targetURL)
+            let targetURL = group.urls.first, let targetPage = urls.firstIndex(of: targetURL)
         else { return }
 
         currentPage = targetPage
         navigationGeneration += 1
         navigationCommand = ReaderNavigationCommand(
-            generation: navigationGeneration,
-            targetURL: targetURL,
-            animated: animated
-        )
+            generation: navigationGeneration, targetURL: targetURL, animated: animated)
         scheduleSave()
     }
 
@@ -1075,10 +873,7 @@ struct ReaderScreen: View {
             currentPage = targetPage
             navigationGeneration += 1
             navigationCommand = ReaderNavigationCommand(
-                generation: navigationGeneration,
-                targetURL: targetURL,
-                animated: false
-            )
+                generation: navigationGeneration, targetURL: targetURL, animated: false)
         }
     }
 
@@ -1105,13 +900,9 @@ struct ReaderScreen: View {
 
     private func toggleChrome() {
         if #available(iOS 26.0, *) {
-            withAnimation {
-                isChromeVisible.toggle()
-            }
+            withAnimation { isChromeVisible.toggle() }
         } else {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isChromeVisible.toggle()
-            }
+            withAnimation(.easeInOut(duration: 0.2)) { isChromeVisible.toggle() }
         }
     }
 
@@ -1120,10 +911,8 @@ struct ReaderScreen: View {
         viewportSize = size
     }
 
-    @MainActor
-    private func loadChapter(for key: ReaderChapterLoadKey) async {
-        guard let chapter = currentChapter, chapter.id == key.chapterID, canRead(chapter)
-        else {
+    @MainActor private func loadChapter(for key: ReaderChapterLoadKey) async {
+        guard let chapter = currentChapter, chapter.id == key.chapterID, canRead(chapter) else {
             loadPhase = .failed
             return
         }
@@ -1167,9 +956,7 @@ struct ReaderScreen: View {
 
             await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
                 for url in loadedURLs {
-                    taskGroup.addTask {
-                        await loadImage(url: url, retainData: retainImageData)
-                    }
+                    taskGroup.addTask { await loadImage(url: url, retainData: retainImageData) }
                 }
 
                 for await result in taskGroup {
@@ -1178,11 +965,8 @@ struct ReaderScreen: View {
                         return
                     }
 
-                    switch result {
-                    case .success(let url, let image):
-                        images[url] = .success(image)
-                    case .failed(let url):
-                        images[url] = .failed
+                    switch result { case .success(let url, let image): images[url] = .success(image)
+                        case .failed(let url): images[url] = .failed
                     }
                     regroup(keepCurrentPageVisible: true)
                 }
@@ -1190,9 +974,7 @@ struct ReaderScreen: View {
 
             guard !Task.isCancelled, chapterLoadKey == key else { return }
             imageLoadingFinished = true
-        } catch is CancellationError {
-            return
-        } catch {
+        } catch is CancellationError { return } catch {
             guard chapterLoadKey == key else { return }
             Logger.ui.error("Failed to load chapter", error: error)
             loadPhase = .failed
@@ -1203,18 +985,12 @@ struct ReaderScreen: View {
         if let downloadManga {
             do {
                 let downloadedURLs = try await DownloadPlugin.shared.getChapter(
-                    manga: downloadManga,
-                    chapter: chapter
-                )
+                    manga: downloadManga, chapter: chapter)
                 if !downloadedURLs.isEmpty { return downloadedURLs }
-            } catch {
-                Logger.ui.warning("Failed to load chapter from download")
-            }
+            } catch { Logger.ui.warning("Failed to load chapter from download") }
         }
 
-        guard plugin.supports(.chapter) else {
-            throw ReaderSourceCapabilityError()
-        }
+        guard plugin.supports(.chapter) else { throw ReaderSourceCapabilityError() }
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
@@ -1225,32 +1001,18 @@ struct ReaderScreen: View {
                 let data = try await imageData(for: url)
 
                 let targetSize =
-                    viewportSize == .zero
-                    ? UIApplication.windowBounds.size
-                    : viewportSize
+                    viewportSize == .zero ? UIApplication.windowBounds.size : viewportSize
                 let image = TempImage(data: data)
                 let uiImage = image.uiImage(
-                    downsampledTo: downsampleImages ? targetSize : nil,
-                    retainData: retainData
-                )
-                if uiImage != nil {
-                    return .success(url, image)
-                }
-            } catch is CancellationError {
-                return .failed(url)
-            } catch {
-                if retry == 3 {
-                    Logger.ui.error("Failed to load reader image", error: error)
-                }
+                    downsampledTo: downsampleImages ? targetSize : nil, retainData: retainData)
+                if uiImage != nil { return .success(url, image) }
+            } catch is CancellationError { return .failed(url) } catch {
+                if retry == 3 { Logger.ui.error("Failed to load reader image", error: error) }
             }
 
             guard retry < 3 else { break }
             let delay = UInt64(1 << retry) * 1_000_000_000
-            do {
-                try await Task.sleep(nanoseconds: delay)
-            } catch {
-                return .failed(url)
-            }
+            do { try await Task.sleep(nanoseconds: delay) } catch { return .failed(url) }
         }
 
         return .failed(url)
@@ -1260,9 +1022,7 @@ struct ReaderScreen: View {
         if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
             return try await DownloadPlugin.shared.getImage(url)
         }
-        guard plugin.supports(.image) else {
-            throw ReaderSourceCapabilityError()
-        }
+        guard plugin.supports(.image) else { throw ReaderSourceCapabilityError() }
         return try await plugin.getImage(url)
     }
 
@@ -1271,9 +1031,7 @@ struct ReaderScreen: View {
             do {
                 try Task.checkCancellation()
                 return try await imageData(for: url)
-            } catch is CancellationError {
-                return nil
-            } catch {
+            } catch is CancellationError { return nil } catch {
                 if retry == 3 {
                     Logger.ui.error("Failed to restore reader image data", error: error)
                 }
@@ -1281,46 +1039,37 @@ struct ReaderScreen: View {
 
             guard retry < 3 else { break }
             let delay = UInt64(1 << retry) * 1_000_000_000
-            do {
-                try await Task.sleep(nanoseconds: delay)
-            } catch {
-                return nil
-            }
+            do { try await Task.sleep(nanoseconds: delay) } catch { return nil }
         }
 
         return nil
     }
 
-    @MainActor
-    private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
+    @MainActor private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
         guard key.enabled, key.imagesSettled, key.chapterLoadKey == chapterLoadKey else { return }
 
-        let pairs = urls.indices.dropLast().compactMap { index -> ReaderAdjacencyPair? in
-            let firstURL = urls[index]
-            let secondURL = urls[index + 1]
-            guard !checkedPairs.contains(ReaderGrouping.pairKey(firstURL, secondURL)),
-                case .success(let firstImage) = images[firstURL],
-                case .success(let secondImage) = images[secondURL]
-            else { return nil }
+        let pairs = urls.indices.dropLast()
+            .compactMap { index -> ReaderAdjacencyPair? in
+                let firstURL = urls[index]
+                let secondURL = urls[index + 1]
+                guard !checkedPairs.contains(ReaderGrouping.pairKey(firstURL, secondURL)),
+                    case .success(let firstImage) = images[firstURL],
+                    case .success(let secondImage) = images[secondURL]
+                else { return nil }
 
-            let isRightToLeft = readingDirection == .rightToLeft
-            return ReaderAdjacencyPair(
-                firstURL: firstURL,
-                secondURL: secondURL,
-                leftImage: isRightToLeft ? secondImage : firstImage,
-                rightImage: isRightToLeft ? firstImage : secondImage
-            )
-        }
+                let isRightToLeft = readingDirection == .rightToLeft
+                return ReaderAdjacencyPair(
+                    firstURL: firstURL, secondURL: secondURL,
+                    leftImage: isRightToLeft ? secondImage : firstImage,
+                    rightImage: isRightToLeft ? firstImage : secondImage)
+            }
 
         Logger.adjacencyModel.notice(
-            "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages"
-        )
+            "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages")
 
         let requiredURLs = Set(pairs.flatMap(\.urls))
         for url in urls where requiredURLs.contains(url) {
-            guard case .success(let image) = images[url], !image.hasAnalysisSource else {
-                continue
-            }
+            guard case .success(let image) = images[url], !image.hasAnalysisSource else { continue }
 
             guard let data = await restoreImageData(url: url) else { continue }
             guard !Task.isCancelled, adjacencyKey == key else { return }
@@ -1345,24 +1094,17 @@ struct ReaderScreen: View {
             do {
                 guard
                     let leftCIImage = consumeCIImage(
-                        from: pair.leftImage,
-                        remainingUses: &remainingImageUses
-                    ),
+                        from: pair.leftImage, remainingUses: &remainingImageUses),
                     let rightCIImage = consumeCIImage(
-                        from: pair.rightImage,
-                        remainingUses: &remainingImageUses
-                    )
+                        from: pair.rightImage, remainingUses: &remainingImageUses)
                 else {
                     Logger.adjacencyModel.error(
-                        "Missing retained image data for adjacency pair \(pair.key)"
-                    )
+                        "Missing retained image data for adjacency pair \(pair.key)")
                     continue
                 }
 
                 let score = try await AdjacencyModelWrapper.shared.predict(
-                    image1: leftCIImage,
-                    image2: rightCIImage
-                )
+                    image1: leftCIImage, image2: rightCIImage)
 
                 guard !Task.isCancelled, adjacencyKey == key else {
                     Logger.adjacencyModel.notice(
@@ -1379,9 +1121,7 @@ struct ReaderScreen: View {
                     "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
                 )
                 return
-            } catch {
-                Logger.ui.error("Adjacency check failed", error: error)
-            }
+            } catch { Logger.ui.error("Adjacency check failed", error: error) }
         }
 
         Logger.adjacencyModel.notice(
@@ -1389,10 +1129,9 @@ struct ReaderScreen: View {
         )
     }
 
-    private func consumeCIImage(
-        from image: TempImage,
-        remainingUses: inout [ObjectIdentifier: Int]
-    ) -> CIImage? {
+    private func consumeCIImage(from image: TempImage, remainingUses: inout [ObjectIdentifier: Int])
+        -> CIImage?
+    {
         let identifier = ObjectIdentifier(image)
         guard let remainingUseCount = remainingUses[identifier], remainingUseCount > 0 else {
             return nil
@@ -1413,22 +1152,15 @@ struct ReaderScreen: View {
     private func regroup(keepCurrentPageVisible: Bool = false) {
         let currentURL = urls.indices.contains(currentPage) ? urls[currentPage] : nil
         groups = ReaderGrouping.makeGroups(
-            urls: urls,
-            images: images,
-            defaultGroupSize: defaultGroupSize,
+            urls: urls, images: images, defaultGroupSize: defaultGroupSize,
             smartGrouping: smartGrouping && readingDirection != .vertical,
-            smartGroupingSensitivity: smartGroupingSensitivity,
-            adjacencyScores: adjacencyScores
-        )
+            smartGroupingSensitivity: smartGroupingSensitivity, adjacencyScores: adjacencyScores)
         contentRevision += 1
 
         if keepCurrentPageVisible, let currentURL, urls.contains(currentURL) {
             navigationGeneration += 1
             navigationCommand = ReaderNavigationCommand(
-                generation: navigationGeneration,
-                targetURL: currentURL,
-                animated: false
-            )
+                generation: navigationGeneration, targetURL: currentURL, animated: false)
         }
     }
 
@@ -1438,14 +1170,9 @@ struct ReaderScreen: View {
         saveRequestGeneration += 1
     }
 
-    @MainActor
-    private func performScheduledSave() async {
+    @MainActor private func performScheduledSave() async {
         guard saveScheduled else { return }
-        do {
-            try await Task.sleep(nanoseconds: 3_000_000_000)
-        } catch {
-            return
-        }
+        do { try await Task.sleep(nanoseconds: 3_000_000_000) } catch { return }
 
         guard saveScheduled else { return }
         saveScheduled = false
@@ -1457,42 +1184,29 @@ struct ReaderScreen: View {
         saveRequestGeneration += 1
         guard let chapter = currentChapter else { return }
         let page = currentPage
-        Task {
-            await persist(chapter: chapter, page: page)
-        }
+        Task { await persist(chapter: chapter, page: page) }
     }
 
-    @MainActor
-    private func persistCurrentPosition() async {
+    @MainActor private func persistCurrentPosition() async {
         guard let chapter = currentChapter else { return }
         await persist(chapter: chapter, page: currentPage)
     }
 
-    @MainActor
-    private func persist(chapter: Chapter, page: Int) async {
+    @MainActor private func persist(chapter: Chapter, page: Int) async {
         let position = ReaderSavedPosition(chapterID: chapter.id, page: page)
         guard lastSavedPosition != position else { return }
 
         let mangaInfo =
-            (try? JSONEncoder().encode(manga))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+            (try? JSONEncoder().encode(manga)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         let mangaModel = MangaModel(mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
         let record = RecordModel(
-            mangaId: manga.id,
-            pluginId: plugin.id,
-            datetime: Date(),
-            chapterId: chapter.id,
-            chapterTitle: chapter.title,
-            page: page,
-            shouldSync: plugin.shouldSync
-        )
+            mangaId: manga.id, pluginId: plugin.id, datetime: Date(), chapterId: chapter.id,
+            chapterTitle: chapter.title, page: page, shouldSync: plugin.shouldSync)
 
         do {
             _ = try await HistoryService.shared.add(record: record, manga: mangaModel)
             lastSavedPosition = position
-        } catch {
-            Logger.ui.error("Failed to save reader position", error: error)
-        }
+        } catch { Logger.ui.error("Failed to save reader position", error: error) }
     }
 
     private func finishReading() {

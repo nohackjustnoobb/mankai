@@ -17,21 +17,12 @@ final class AsyncLoadRegistry<Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [String: Entry] = [:]
 
-    func value(
-        for key: String,
-        operation: @escaping () async throws -> Value
-    ) async throws -> Value {
+    func value(for key: String, operation: @escaping () async throws -> Value) async throws -> Value
+    {
         let entry = lock.withLock {
-            if let existing = entries[key] {
-                return existing
-            }
+            if let existing = entries[key] { return existing }
 
-            let created = Entry(
-                id: UUID(),
-                task: Task {
-                    try await operation()
-                }
-            )
+            let created = Entry(id: UUID(), task: Task { try await operation() })
             entries[key] = created
             return created
         }

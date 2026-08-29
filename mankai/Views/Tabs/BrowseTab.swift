@@ -17,9 +17,7 @@ struct BrowseTab: View {
     @State private var importDestinationPluginId: String?
     @State private var editDestinationPluginId: String?
 
-    init(importedFiles: Binding<[URL]>) {
-        _importedFiles = importedFiles
-    }
+    init(importedFiles: Binding<[URL]>) { _importedFiles = importedFiles }
 
     var body: some View {
         NavigationStack {
@@ -29,11 +27,8 @@ struct BrowseTab: View {
                         NavigationLink {
                             BrowseScreen(plugin: plugin)
                         } label: {
-                            Label(
-                                plugin.name ?? plugin.id,
-                                systemImage: plugin.systemImageName
-                            )
-                            .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
+                            Label(plugin.name ?? plugin.id, systemImage: plugin.systemImageName)
+                                .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
                         }
                         .swipeActions(allowsFullSwipe: false) {
                             if !(plugin is AppDirBrowsablePlugin) {
@@ -49,8 +44,7 @@ struct BrowseTab: View {
                                 } label: {
                                     Label("edit", systemImage: "pencil")
                                 }
-                                .tint(.blue)
-                                .labelStyle(.iconOnly)
+                                .tint(.blue).labelStyle(.iconOnly)
 
                             }
                         }
@@ -59,12 +53,9 @@ struct BrowseTab: View {
                     Button {
                         showingAddFolderModal = true
                     } label: {
-                        Label(
-                            "addFolder",
-                            systemImage: "folder.badge.plus"
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
+                        Label("addFolder", systemImage: "folder.badge.plus")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 } footer: {
@@ -84,37 +75,27 @@ struct BrowseTab: View {
             .alert(
                 "failedToAddFolder",
                 isPresented: .init(
-                    get: { importError != nil },
-                    set: { if !$0 { importError = nil } }
-                )
+                    get: { importError != nil }, set: { if !$0 { importError = nil } })
             ) {
                 Button("ok", role: .cancel) {}
             } message: {
-                if let importError {
-                    Text(importError)
-                }
+                if let importError { Text(importError) }
             }
             .confirmationDialog(
                 "removeFolder",
                 isPresented: .init(
                     get: { pluginPendingDeletion != nil },
-                    set: { if !$0 { pluginPendingDeletion = nil } }
-                ),
-                titleVisibility: .visible
+                    set: { if !$0 { pluginPendingDeletion = nil } }), titleVisibility: .visible
             ) {
                 Button("remove", role: .destructive) {
                     if let plugin = pluginPendingDeletion {
-                        do {
-                            try browseService.removePlugin(plugin.id)
-                        } catch {
+                        do { try browseService.removePlugin(plugin.id) } catch {
                             importError = error.localizedDescription
                         }
                         pluginPendingDeletion = nil
                     }
                 }
-                Button("cancel", role: .cancel) {
-                    pluginPendingDeletion = nil
-                }
+                Button("cancel", role: .cancel) { pluginPendingDeletion = nil }
             } message: {
                 Text("removeFolderConfirmation")
             }
@@ -124,22 +105,16 @@ struct BrowseTab: View {
                     set: { _ in
                         showingImportsModal = false
                         importedFiles = []
-                    }
-                )
+                    })
             ) {
                 ImportsModal(initialFiles: importedFiles) { plugin in
                     importDestinationPluginId = plugin.id
                 }
             }
-            .sheet(isPresented: $showingAddFolderModal) {
-                AddBrowsableFolderModal()
-            }
+            .sheet(isPresented: $showingAddFolderModal) { AddBrowsableFolderModal() }
             .navigationDestination(item: $importDestinationPluginId) { pluginId in
                 if let plugin = browseService.getImportablePlugin(pluginId) {
-                    BrowseScreen(
-                        plugin: plugin,
-                        entry: plugin.importsEntity
-                    )
+                    BrowseScreen(plugin: plugin, entry: plugin.importsEntity)
                 }
             }
             .navigationDestination(item: $editDestinationPluginId) { pluginId in

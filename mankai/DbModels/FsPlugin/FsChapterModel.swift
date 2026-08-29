@@ -24,8 +24,7 @@ struct FsChapterModel {
 
             $0.foreignKey(
                 ["chapterGroupId"], references: FsChapterGroupModel.databaseTableName,
-                onDelete: .cascade
-            )
+                onDelete: .cascade)
         }
     }
 }

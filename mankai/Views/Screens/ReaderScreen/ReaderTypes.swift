@@ -15,19 +15,12 @@ let READER_OVERSCROLL_INDICATOR_SIZE: CGFloat = 48
 func readerOverscrollLayoutSpacing(safeAreaInset: CGFloat) -> CGFloat {
     max(
         max(READER_OVERSCROLL_MINIMUM_SPACING, safeAreaInset) - safeAreaInset,
-        READER_OVERSCROLL_INDICATOR_SIZE * (1.4 - 1) / 2
-    )
+        READER_OVERSCROLL_INDICATOR_SIZE * (1.4 - 1) / 2)
 }
 
-func readerOverscrollProgress(
-    _ distance: CGFloat,
-    spacing: CGFloat
-) -> CGFloat {
+func readerOverscrollProgress(_ distance: CGFloat, spacing: CGFloat) -> CGFloat {
     let visibleDistance = max(distance - spacing, 0)
-    return min(
-        visibleDistance / READER_OVERSCROLL_THRESHOLD,
-        1
-    )
+    return min(visibleDistance / READER_OVERSCROLL_THRESHOLD, 1)
 }
 
 struct ReaderRoute: Identifiable, Hashable {
@@ -38,17 +31,11 @@ struct ReaderRoute: Identifiable, Hashable {
     let chapter: Chapter
     let initialPage: Int?
 
-    var id: String {
-        "\(plugin.id):\(manga.id):\(chapterGroupIndex):\(chapter.id)"
-    }
+    var id: String { "\(plugin.id):\(manga.id):\(chapterGroupIndex):\(chapter.id)" }
 
-    static func == (lhs: ReaderRoute, rhs: ReaderRoute) -> Bool {
-        lhs.id == rhs.id
-    }
+    static func == (lhs: ReaderRoute, rhs: ReaderRoute) -> Bool { lhs.id == rhs.id }
 
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 enum ReaderLoadPhase: Equatable {
@@ -65,15 +52,11 @@ enum ReaderImageState {
 }
 
 struct ReaderGroup: Identifiable, Hashable {
-    var id: [String] {
-        urls
-    }
+    var id: [String] { urls }
 
     let urls: [String]
 
-    func contains(_ url: String) -> Bool {
-        urls.contains(url)
-    }
+    func contains(_ url: String) -> Bool { urls.contains(url) }
 }
 
 enum ReaderStep: Equatable {
@@ -95,49 +78,39 @@ struct ReaderOverscrollIndicator: View {
 
     var body: some View {
         Group {
-            switch availability {
-            case .available:
+            switch availability { case .available:
                 ProgressArrowView(
-                    progress: progress,
-                    direction: direction,
-                    size: READER_OVERSCROLL_INDICATOR_SIZE,
-                    completionScale: 1.2
-                )
-            case .locked:
-                statusContent(
-                    systemName: "lock.fill",
-                    text: step == .previous
-                        ? String(localized: "previousChapterIsLocked")
-                        : String(localized: "nextChapterIsLocked")
-                )
-            case .unavailable:
-                statusContent(
-                    systemName: "xmark",
-                    text: step == .previous
-                        ? String(localized: "noPreviousChapter")
-                        : String(localized: "noNextChapter")
-                )
+                    progress: progress, direction: direction,
+                    size: READER_OVERSCROLL_INDICATOR_SIZE, completionScale: 1.2)
+                case .locked:
+                    statusContent(
+                        systemName: "lock.fill",
+                        text: step == .previous
+                            ? String(localized: "previousChapterIsLocked")
+                            : String(localized: "nextChapterIsLocked"))
+                case .unavailable:
+                    statusContent(
+                        systemName: "xmark",
+                        text: step == .previous
+                            ? String(localized: "noPreviousChapter")
+                            : String(localized: "noNextChapter"))
             }
         }
     }
 
-    @ViewBuilder
-    private func statusContent(systemName: String, text: String) -> some View {
-        switch direction {
-        case .left, .right:
+    @ViewBuilder private func statusContent(systemName: String, text: String) -> some View {
+        switch direction { case .left, .right:
             VStack(spacing: 8) {
                 Image(systemName: systemName)
-                Text(text)
-                    .multilineTextAlignment(.center)
+                Text(text).multilineTextAlignment(.center)
             }
-            .frame(width: 80)
-            .foregroundStyle(Color(uiColor: .secondaryLabel))
-        case .up, .down:
-            HStack(spacing: 8) {
-                Image(systemName: systemName)
-                Text(text)
-            }
-            .foregroundStyle(Color(uiColor: .secondaryLabel))
+            .frame(width: 80).foregroundStyle(Color(uiColor: .secondaryLabel))
+            case .up, .down:
+                HStack(spacing: 8) {
+                    Image(systemName: systemName)
+                    Text(text)
+                }
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
         }
     }
 }

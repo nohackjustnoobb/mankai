@@ -11,15 +11,9 @@ struct FsParserFile: ParserFile {
     let cacheKey: String
     let url: URL
 
-    var fileName: String {
-        url.lastPathComponent
-    }
+    var fileName: String { url.lastPathComponent }
 
-    func getContent() async throws -> Data {
-        try Data(contentsOf: url)
-    }
+    func getContent() async throws -> Data { try Data(contentsOf: url) }
 
-    func getUrl() async throws -> URL {
-        url
-    }
+    func getUrl() async throws -> URL { url }
 }

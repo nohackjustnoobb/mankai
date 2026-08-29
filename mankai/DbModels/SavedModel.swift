@@ -32,9 +32,7 @@ struct SavedModel {
     }
 }
 
-extension SavedModel: TableRecord {
-    static let databaseTableName = "saved"
-}
+extension SavedModel: TableRecord { static let databaseTableName = "saved" }
 
 extension SavedModel: Codable, FetchableRecord, PersistableRecord {}
 

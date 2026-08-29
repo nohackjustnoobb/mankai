@@ -33,16 +33,11 @@ final class CbrParser: Parser {
         return cachedArchive
     }
 
-    private func storeArchive(
-        _ archive: CachedArchive,
-        for cacheKey: String
-    ) -> CachedArchive {
+    private func storeArchive(_ archive: CachedArchive, for cacheKey: String) -> CachedArchive {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
-        if cachedArchiveKey == cacheKey, let cachedArchive {
-            return cachedArchive
-        }
+        if cachedArchiveKey == cacheKey, let cachedArchive { return cachedArchive }
 
         cachedArchiveKey = cacheKey
         cachedArchive = archive
@@ -66,47 +61,32 @@ final class CbrParser: Parser {
             let archive = try URKArchive(url: url)
             let filenames = try archive.listFilenames()
             return storeArchive(
-                CachedArchive(archive: archive, filenames: filenames),
-                for: file.cacheKey
-            )
+                CachedArchive(archive: archive, filenames: filenames), for: file.cacheKey)
         }
     }
 
-    private func performRead<T>(
-        cachedArchive: CachedArchive,
-        body: (CachedArchive) throws -> T
-    ) rethrows -> T {
+    private func performRead<T>(cachedArchive: CachedArchive, body: (CachedArchive) throws -> T)
+        rethrows -> T
+    {
         cachedArchive.readLock.lock()
         defer { cachedArchive.readLock.unlock() }
         return try body(cachedArchive)
     }
 
-    private func withReadLock<T>(
-        for file: ParserFile,
-        body: (CachedArchive) throws -> T
-    ) async throws -> T {
+    private func withReadLock<T>(for file: ParserFile, body: (CachedArchive) throws -> T)
+        async throws -> T
+    {
         Logger.cbrParser.debug("Acquiring read lock for: \(file.cacheKey)")
         let cachedArchive = try await archive(for: file)
-        return try performRead(
-            cachedArchive: cachedArchive,
-            body: body
-        )
+        return try performRead(cachedArchive: cachedArchive, body: body)
     }
 
-    override var id: String {
-        "cbr"
-    }
+    override var id: String { "cbr" }
 
-    override var supportedExtensions: [String] {
-        ["cbr"]
-    }
+    override var supportedExtensions: [String] { ["cbr"] }
 
     override var supportedMimeTypes: [String] {
-        [
-            "application/vnd.comicbook-rar",
-            "application/x-cbr",
-            "application/x-rar-compressed",
-        ]
+        ["application/vnd.comicbook-rar", "application/x-cbr", "application/x-rar-compressed"]
     }
 
     override func parse(file: ParserFile) async throws -> DetailedManga {
@@ -137,12 +117,12 @@ final class CbrParser: Parser {
                 }
             } else {
                 Logger.cbrParser.debug(
-                    "No ComicInfo.xml found, deferring filename metadata to presentation"
-                )
+                    "No ComicInfo.xml found, deferring filename metadata to presentation")
             }
 
             coverPath =
-                info?.frontCoverIndex.flatMap { index in
+                info?.frontCoverIndex
+                .flatMap { index in
                     guard index >= 0, index < imagePaths.count else { return nil }
                     return imagePaths[index]
                 } ?? imagePaths.first
@@ -150,10 +130,8 @@ final class CbrParser: Parser {
 
         var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverPath)
         if let chapter = manga.latestChapter {
-            manga.meta = try ParserChapterMetadata(
-                chapterId: chapter.id,
-                pages: imagePaths
-            ).encoded()
+            manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: imagePaths)
+                .encoded()
         }
 
         Logger.cbrParser.debug("Parsed \(imagePaths.count) images")
@@ -161,27 +139,20 @@ final class CbrParser: Parser {
     }
 
     override func prepareForPresentation(_ manga: DetailedManga, file: ParserFile) -> DetailedManga
-    {
-        ComicArchiveSupport.prepareForPresentation(manga, file: file)
-    }
+    { ComicArchiveSupport.prepareForPresentation(manga, file: file) }
 
-    override func parseChapter(
-        manga: DetailedManga,
-        chapter: Chapter,
-        file: ParserFile
-    ) async throws -> [String] {
+    override func parseChapter(manga: DetailedManga, chapter: Chapter, file: ParserFile)
+        async throws -> [String]
+    {
         Logger.cbrParser.debug("Parsing chapter images for manga: \(manga.id)")
 
         if let pages = ParserChapterMetadata.decode(manga.meta)?.pages(for: chapter.id) {
             Logger.cbrParser.debug(
-                "Using \(pages.count) cached page references for chapter: \(chapter.id)"
-            )
+                "Using \(pages.count) cached page references for chapter: \(chapter.id)")
             return pages
         }
 
-        Logger.cbrParser.debug(
-            "No compatible chapter metadata found, reparsing archive"
-        )
+        Logger.cbrParser.debug("No compatible chapter metadata found, reparsing archive")
 
         let imagePaths = try await withReadLock(for: file) { cachedArchive in
             Self.sortedImagePaths(in: cachedArchive.filenames)
@@ -204,8 +175,7 @@ final class CbrParser: Parser {
     }
 
     private static func sortedImagePaths(in filenames: [String]) -> [String] {
-        filenames
-            .filter(ComicArchiveSupport.isImagePath)
+        filenames.filter(ComicArchiveSupport.isImagePath)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 }

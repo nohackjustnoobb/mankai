@@ -17,30 +17,23 @@ enum ConfigType: String, Codable {
 
     func parseValue(_ stringValue: String) -> Any {
         let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        switch self {
-        case .boolean:
-            return trimmed.lowercased() == "true" || trimmed == "1"
-        case .number:
-            if let intValue = Int(trimmed) {
-                return intValue
-            }
-            return Double(trimmed) ?? trimmed
-        case .text, .password, .select:
-            return trimmed
+        switch self { case .boolean: return trimmed.lowercased() == "true" || trimmed == "1"
+            case .number:
+                if let intValue = Int(trimmed) { return intValue }
+                return Double(trimmed) ?? trimmed
+            case .text, .password, .select: return trimmed
         }
     }
 }
 
-@Codable
-struct Config {
+@Codable struct Config {
     var key: String
     var name: String
     var description: String?
     var type: ConfigType
     var options: [String]?
 
-    @CodingKey("defaultValue")
-    private var codedDefaultValue: AnyCodable?
+    @CodingKey("defaultValue") private var codedDefaultValue: AnyCodable?
 
     var defaultValue: Any {
         get { codedDefaultValue?.value ?? NSNull() }
@@ -48,11 +41,7 @@ struct Config {
     }
 
     init(
-        key: String,
-        name: String,
-        description: String? = nil,
-        type: ConfigType,
-        defaultValue: Any,
+        key: String, name: String, description: String? = nil, type: ConfigType, defaultValue: Any,
         options: [String]? = nil
     ) {
         self.key = key
@@ -64,12 +53,10 @@ struct Config {
     }
 }
 
-@Codable
-struct ConfigValue {
+@Codable struct ConfigValue {
     var key: String
 
-    @CodingKey("value")
-    private var codedValue: AnyCodable
+    @CodingKey("value") private var codedValue: AnyCodable
 
     var value: Any {
         get { codedValue.value }
@@ -90,8 +77,8 @@ struct Cooldown: Codable {
 
 /// Features that a plugin can support.
 ///
-/// Plugins currently support every capability by default. A plugin can later
-/// provide a smaller list to disable features it does not implement.
+/// Plugins currently support every capability by default.
+/// A plugin can later provide a smaller list to disable features it does not implement.
 enum PluginCapability: String, Codable, CaseIterable {
     case onlineCheck
     case suggestions
@@ -113,68 +100,40 @@ class Plugin: Identifiable, ObservableObject {
 
     /// The unique identifier of the plugin.
     /// - Returns: A unique string identifier.
-    var id: String {
-        fatalError("Not Implemented")
-    }
+    var id: String { fatalError("Not Implemented") }
 
-    var name: String? {
-        nil
-    }
+    var name: String? { nil }
 
-    var version: String? {
-        nil
-    }
+    var version: String? { nil }
 
-    var tags: [String] {
-        []
-    }
+    var tags: [String] { [] }
 
-    var description: String? {
-        nil
-    }
+    var description: String? { nil }
 
-    var authors: [String] {
-        []
-    }
+    var authors: [String] { [] }
 
-    var repository: String? {
-        nil
-    }
+    var repository: String? { nil }
 
-    var availableGenres: [Genre] {
-        []
-    }
+    var availableGenres: [Genre] { [] }
 
-    var configs: [Config] {
-        []
-    }
+    var configs: [Config] { [] }
 
-    var cooldown: Cooldown? {
-        nil
-    }
+    var cooldown: Cooldown? { nil }
 
     /// Operations supported by the plugin.
     ///
-    /// Plugins that do not provide capability metadata support every operation
-    /// by default. Plugins can override this with a smaller list.
-    var capabilities: [PluginCapability] {
-        PluginCapability.allCases
-    }
+    /// Plugins that do not provide capability metadata support every operation by default.
+    /// Plugins can override this with a smaller list.
+    var capabilities: [PluginCapability] { PluginCapability.allCases }
 
     /// Whether manga sourced from this plugin should be synced across devices.
-    var shouldSync: Bool {
-        true
-    }
+    var shouldSync: Bool { true }
 
     /// Whether response data from this plugin should be cached.
-    var shouldCache: Bool {
-        false
-    }
+    var shouldCache: Bool { false }
 
     /// Whether manga sourced from this plugin can be downloaded for offline access.
-    var canDownload: Bool {
-        true
-    }
+    var canDownload: Bool { true }
 
     // MARK: - Config Values
 
@@ -182,30 +141,22 @@ class Plugin: Identifiable, ObservableObject {
         var _configValues: [String: ConfigValue] = [:]
 
         for config in configs {
-            _configValues[config.key] = ConfigValue(
-                key: config.key, value: config.defaultValue
-            )
+            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
 
         return _configValues
     }()
 
-    var configValues: [ConfigValue] {
-        Array(_configValues.values)
-    }
+    var configValues: [ConfigValue] { Array(_configValues.values) }
 
     // MARK: - Methods
 
-    func getConfig(_ key: String) -> Any {
-        _configValues[key]!.value
-    }
+    func getConfig(_ key: String) -> Any { _configValues[key]!.value }
 
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
 
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
-        }
+        DispatchQueue.main.async { self.objectWillChange.send() }
 
         try savePlugin()
     }
@@ -214,14 +165,10 @@ class Plugin: Identifiable, ObservableObject {
         _configValues = [:]
 
         for config in configs {
-            _configValues[config.key] = ConfigValue(
-                key: config.key, value: config.defaultValue
-            )
+            _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
 
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
-        }
+        DispatchQueue.main.async { self.objectWillChange.send() }
 
         try savePlugin()
     }
@@ -230,30 +177,22 @@ class Plugin: Identifiable, ObservableObject {
 
     /// Saves the plugin configuration or state.
     /// - Throws: An error if saving fails.
-    func savePlugin() throws {
-        fatalError("Not Implemented")
-    }
+    func savePlugin() throws { fatalError("Not Implemented") }
 
     /// Deletes the plugin and cleans up resources.
     /// - Throws: An error if deletion fails.
-    func deletePlugin() throws {
-        fatalError("Not Implemented")
-    }
+    func deletePlugin() throws { fatalError("Not Implemented") }
 
     /// Checks if the plugin is currently online and reachable.
     /// - Returns: `true` if online, `false` otherwise.
     /// - Throws: An error if the check fails.
-    func isOnline() async throws -> Bool {
-        fatalError("Not Implemented")
-    }
+    func isOnline() async throws -> Bool { fatalError("Not Implemented") }
 
     /// Gets search suggestions based on a query.
     /// - Parameter query: The search query string.
     /// - Returns: A list of suggested search terms.
     /// - Throws: An error if the request fails.
-    func getSuggestions(_: String) async throws -> [String] {
-        fatalError("Not Implemented")
-    }
+    func getSuggestions(_: String) async throws -> [String] { fatalError("Not Implemented") }
 
     /// Searches for manga based on a query.
     /// - Parameters:
@@ -264,11 +203,9 @@ class Plugin: Identifiable, ObservableObject {
     ///   - isAuthor: Whether to search the author field instead of the title field.
     /// - Returns: A list of `Manga` objects matching the query.
     /// - Throws: An error if the search fails.
-    func search(
-        _: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool = false
-    ) async throws -> [Manga] {
-        fatalError("Not Implemented")
-    }
+    func search(_: String, page _: UInt, genre _: Genre, status _: Status, isAuthor _: Bool = false)
+        async throws -> [Manga]
+    { fatalError("Not Implemented") }
 
     /// Retrieves a list of manga based on optional filters.
     /// - Parameters:
@@ -285,17 +222,13 @@ class Plugin: Identifiable, ObservableObject {
     /// - Parameter ids: A list of manga IDs.
     /// - Returns: A list of `Manga` objects.
     /// - Throws: An error if the request fails.
-    func getMangas(_: [String]) async throws -> [Manga] {
-        fatalError("Not Implemented")
-    }
+    func getMangas(_: [String]) async throws -> [Manga] { fatalError("Not Implemented") }
 
     /// Retrieves detailed information for a specific manga.
     /// - Parameter id: The ID of the manga.
     /// - Returns: A `DetailedManga` object.
     /// - Throws: An error if the request fails.
-    func getDetailedManga(_: String) async throws -> DetailedManga {
-        fatalError("Not Implemented")
-    }
+    func getDetailedManga(_: String) async throws -> DetailedManga { fatalError("Not Implemented") }
 
     /// Retrieves the list of image URLs for a specific chapter.
     /// - Parameters:
@@ -311,61 +244,42 @@ class Plugin: Identifiable, ObservableObject {
     /// - Parameter url: The URL of the image.
     /// - Returns: The image data.
     /// - Throws: An error if the request fails.
-    func getImage(_: String) async throws -> Data {
-        fatalError("Not Implemented")
-    }
+    func getImage(_: String) async throws -> Data { fatalError("Not Implemented") }
 }
 
 extension Plugin {
     /// Returns whether the plugin advertises support for a capability.
-    func supports(_ capability: PluginCapability) -> Bool {
-        capabilities.contains(capability)
-    }
+    func supports(_ capability: PluginCapability) -> Bool { capabilities.contains(capability) }
 
     /// Returns whether the plugin can service a list request with the supplied filters.
     /// Filter capabilities augment, rather than replace, the base list capability.
     func supportsList(genre: Genre = .all, status: Status = .any) -> Bool {
         guard supports(.list) else { return false }
 
-        if genre != .all, !supports(.listByGenre) {
-            return false
-        }
-        if status != .any, !supports(.listByStatus) {
-            return false
-        }
+        if genre != .all, !supports(.listByGenre) { return false }
+        if status != .any, !supports(.listByStatus) { return false }
 
         return true
     }
 
     /// Returns whether the plugin can service a search request with the supplied filters.
     /// Filter capabilities augment, rather than replace, the base search capability.
-    func supportsSearch(
-        isAuthor: Bool = false, genre: Genre = .all, status: Status = .any
-    ) -> Bool {
+    func supportsSearch(isAuthor: Bool = false, genre: Genre = .all, status: Status = .any) -> Bool
+    {
         guard supports(.search) else { return false }
 
-        if isAuthor, !supports(.searchByAuthor) {
-            return false
-        }
-        if genre != .all, !supports(.searchByGenre) {
-            return false
-        }
-        if status != .any, !supports(.searchByStatus) {
-            return false
-        }
+        if isAuthor, !supports(.searchByAuthor) { return false }
+        if genre != .all, !supports(.searchByGenre) { return false }
+        if status != .any, !supports(.searchByStatus) { return false }
 
         return true
     }
 
     /// Whether the source can resolve chapters and fetch their images.
-    var supportsRemoteReading: Bool {
-        supports(.chapter) && supports(.image)
-    }
+    var supportsRemoteReading: Bool { supports(.chapter) && supports(.image) }
 
     /// Whether new offline downloads can be created from this source.
-    var supportsDownloads: Bool {
-        canDownload && supportsRemoteReading
-    }
+    var supportsDownloads: Bool { canDownload && supportsRemoteReading }
 
     func getManga(id: String) async throws -> Manga {
         let mangas = try await getMangas([id])

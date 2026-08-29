@@ -9,14 +9,11 @@ import Foundation
 
 enum Base62 {
     private static let alphabet = Array(
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".utf8
-    )
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".utf8)
 
     private static let digitValues: [UInt8: UInt8] = Dictionary(
-        uniqueKeysWithValues: alphabet.enumerated().map { (offset, character) in
-            (character, UInt8(offset))
-        }
-    )
+        uniqueKeysWithValues: alphabet.enumerated()
+            .map { (offset, character) in (character, UInt8(offset)) })
 
     static func encode(_ value: String) -> String {
         var bytes = Array(value.utf8)

@@ -92,16 +92,14 @@ final class NotificationService: ObservableObject {
 
     /// Dismisses a notification by its ID.
     /// - Parameter id: The UUID of the notification to dismiss.
-    @MainActor
-    func dismiss(_ id: UUID) {
+    @MainActor func dismiss(_ id: UUID) {
         notifications.removeAll { $0.id == id }
         dismissTasks[id]?.cancel()
         dismissTasks.removeValue(forKey: id)
     }
 
     /// Dismisses all active notifications.
-    @MainActor
-    func dismissAll() {
+    @MainActor func dismissAll() {
         notifications.removeAll()
         dismissTasks.values.forEach { $0.cancel() }
         dismissTasks.removeAll()

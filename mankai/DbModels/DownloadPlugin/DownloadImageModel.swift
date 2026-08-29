@@ -22,8 +22,7 @@ struct DownloadImageModel {
             $0.column("path", .text).notNull()
 
             $0.foreignKey(
-                ["mangaId"], references: DownloadMangaModel.databaseTableName, onDelete: .cascade
-            )
+                ["mangaId"], references: DownloadMangaModel.databaseTableName, onDelete: .cascade)
         }
     }
 }
@@ -35,7 +34,5 @@ extension DownloadImageModel: TableRecord {
 }
 
 extension DownloadImageModel: Codable, FetchableRecord, PersistableRecord {
-    var manga: QueryInterfaceRequest<DownloadMangaModel> {
-        request(for: DownloadImageModel.manga)
-    }
+    var manga: QueryInterfaceRequest<DownloadMangaModel> { request(for: DownloadImageModel.manga) }
 }

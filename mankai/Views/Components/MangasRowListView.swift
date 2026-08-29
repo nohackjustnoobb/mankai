@@ -24,12 +24,9 @@ struct MangasRowListView: View {
                 }
             }) {
                 HStack(spacing: 4) {
-                    Text(plugin.name ?? plugin.id)
-                        .font(.title3)
-                        .foregroundColor(.primary)
+                    Text(plugin.name ?? plugin.id).font(.title3).foregroundColor(.primary)
                         .fontWeight(.semibold)
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.secondary)
+                    Image(systemName: "chevron.right").foregroundColor(.secondary)
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
@@ -38,13 +35,11 @@ struct MangasRowListView: View {
 
             if let mangas = mangas {
                 if mangas.isEmpty {
-                    Text("noMangasAvailable")
-                        .foregroundColor(.secondary)
+                    Text("noMangasAvailable").foregroundColor(.secondary)
                         .frame(
                             maxWidth: .infinity,
                             minHeight: horizontalSizeClass == .regular ? 240 : 200,
-                            alignment: .center
-                        )
+                            alignment: .center)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 12) {
@@ -71,8 +66,7 @@ struct MangasRowListView: View {
                 ProgressView()
                     .frame(
                         maxWidth: .infinity, minHeight: horizontalSizeClass == .regular ? 240 : 200,
-                        alignment: .center
-                    )
+                        alignment: .center)
             }
         }
     }

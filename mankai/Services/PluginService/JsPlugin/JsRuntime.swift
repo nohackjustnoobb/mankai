@@ -26,9 +26,7 @@ final class JsRuntime: NSObject {
     static func javascriptStringLiteral(_ value: String) -> String {
         guard let data = try? JSONEncoder().encode(value),
             let literal = String(data: data, encoding: .utf8)
-        else {
-            return "\"\""
-        }
+        else { return "\"\"" }
 
         return literal
     }
@@ -39,17 +37,13 @@ final class JsRuntime: NSObject {
     private lazy var jsStorage: String = loadScript("storage")
 
     private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
-        options: .traditionalize
-    )
+        options: .traditionalize)
     private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
-        options: .simplify
-    )
+        options: .simplify)
 
     private func loadScript(_ name: String) -> String {
         if let url = Bundle.main.url(forResource: name, withExtension: "js") {
-            if let content = try? String(contentsOf: url) {
-                return content
-            }
+            if let content = try? String(contentsOf: url) { return content }
         }
 
         Logger.jsRuntime.warning("Failed to load script: \(name).js")
@@ -58,22 +52,19 @@ final class JsRuntime: NSObject {
 
     private var webview: WKWebView?
 
-    @MainActor
-    private func initWebview() async {
+    @MainActor private func initWebview() async {
         Logger.jsRuntime.debug("Initializing WebView")
         if webview == nil {
             webview = WKWebView(frame: .zero)
-            webview?.configuration.userContentController.addScriptMessageHandler(
-                self, contentWorld: .defaultClient, name: "DEFAULT_BRIDGE"
-            )
+            webview?.configuration.userContentController
+                .addScriptMessageHandler(self, contentWorld: .defaultClient, name: "DEFAULT_BRIDGE")
         }
     }
 
     /// Executes JavaScript in the hidden WKWebView using async/await
     /// - Parameter js: The JavaScript code to execute
     /// - Returns: The result of the JavaScript execution
-    @MainActor
-    func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
+    @MainActor func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
         -> Any?
     {
         Logger.jsRuntime.debug("Executing JS (from: \(from ?? plugin?.id ?? "unknown"))")
@@ -96,21 +87,15 @@ final class JsRuntime: NSObject {
         if let plugin = plugin {
             // inject getConfigs
             let configValuesArray = plugin.configValues.map { configValue in
-                [
-                    "key": configValue.key,
-                    "value": configValue.value,
-                ]
+                ["key": configValue.key, "value": configValue.value]
             }
 
             let configValuesJson: String
             do {
                 let jsonData = try JSONSerialization.data(
-                    withJSONObject: configValuesArray, options: []
-                )
+                    withJSONObject: configValuesArray, options: [])
                 configValuesJson = String(data: jsonData, encoding: .utf8) ?? "[]"
-            } catch {
-                configValuesJson = "[]"
-            }
+            } catch { configValuesJson = "[]" }
 
             let getConfigs = """
                 function getConfigs() {
@@ -159,14 +144,10 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         request.httpMethod = method
 
         if let headers = params["headers"] as? [String: String] {
-            for (key, value) in headers {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
+            for (key, value) in headers { request.setValue(value, forHTTPHeaderField: key) }
         }
 
-        if let body = params["body"] as? String {
-            request.httpBody = body.data(using: .utf8)
-        }
+        if let body = params["body"] as? String { request.httpBody = body.data(using: .utf8) }
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -187,23 +168,21 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
             "ok": httpResponse.statusCode >= 200 && httpResponse.statusCode < 300,
             "status": httpResponse.statusCode,
             "statusText": HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode),
-            "headers": responseHeaders,
-            "data": responseTextBase64,
-            "url": httpResponse.url?.absoluteString ?? url,
+            "headers": responseHeaders, "data": responseTextBase64,
+            "url": httpResponse.url?.absoluteString ?? url
         ]
     }
 
-    func userContentController(
-        _: WKUserContentController, didReceive message: WKScriptMessage
-    ) async -> (Any?, String?) {
+    func userContentController(_: WKUserContentController, didReceive message: WKScriptMessage)
+        async -> (Any?, String?)
+    {
         guard let body = message.body as? [String: Any] else {
             let error = "Invalid message body"
             Logger.jsRuntime.error(error)
             return (nil, error)
         }
 
-        guard let methodStr = body["method"] as? String,
-            let method = Method(rawValue: methodStr)
+        guard let methodStr = body["method"] as? String, let method = Method(rawValue: methodStr)
         else {
             let error = "Invalid or missing method"
             Logger.jsRuntime.error(error)
@@ -215,8 +194,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         let start = Date()
         defer {
             Logger.jsRuntime.debug(
-                "\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms"
-            )
+                "\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms")
         }
 
         guard let params = body["params"] as? [String: Any] else {
@@ -225,8 +203,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
             return (nil, error)
         }
 
-        switch method {
-        case .log:
+        switch method { case .log:
             guard let from = params["from"] as? String,
                 let logMessage = params["message"] as? String
             else {
@@ -235,104 +212,107 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 return (nil, error)
             }
             Logger.jsRuntime.info("[\(from)] \(logMessage)")
-        case .fetch:
-            do {
-                let resp = try await handleFetch(params)
+            case .fetch:
+                do {
+                    let resp = try await handleFetch(params)
 
-                return (resp, nil)
-            } catch {
-                Logger.jsRuntime.error("Fetch failed", error: error)
-                return (nil, "Fetch failed")
-            }
-        case .s2t:
-            let text = params["text"] as? String ?? ""
-            guard let converter = s2tConverter else {
-                return (text, "Failed to initialize OpenCC s2t")
-            }
-            let result = converter.convert(text)
-            return (result, nil)
-        case .t2s:
-            let text = params["text"] as? String ?? ""
-            guard let converter = t2sConverter else {
-                return (text, "Failed to initialize OpenCC t2s")
-            }
-            let result = converter.convert(text)
-            return (result, nil)
-        case .setValue:
-            let key = params["key"] as? String ?? ""
-            let value = params["value"] as? String ?? ""
-            let from = params["from"] as? String
-
-            guard let pluginId = from else {
-                Logger.jsRuntime.error("Missing pluginId")
-                return (nil, "Missing plugin ID")
-            }
-
-            guard let dbPool = DbService.shared.appDb else {
-                Logger.jsRuntime.error("Database not available")
-                return (nil, "Database not available")
-            }
-
-            do {
-                try await dbPool.write { db in
-                    let kvPair = JsRuntimeKvPairModel(pluginId: pluginId, key: key, value: value)
-                    try kvPair.save(db)
+                    return (resp, nil)
+                } catch {
+                    Logger.jsRuntime.error("Fetch failed", error: error)
+                    return (nil, "Fetch failed")
                 }
-            } catch {
-                Logger.jsRuntime.error("Failed to save value", error: error)
-                return (nil, "Failed to save value")
-            }
-        case .getValue:
-            let key = params["key"] as? String ?? ""
-            let from = params["from"] as? String
-
-            guard let pluginId = from else {
-                Logger.jsRuntime.error("Missing pluginId")
-                return (nil, "Missing plugin ID")
-            }
-
-            guard let dbPool = DbService.shared.appDb else {
-                Logger.jsRuntime.error("Database not available")
-                return (nil, "Database not available")
-            }
-
-            do {
-                let kvPair = try await dbPool.read { db in
-                    try JsRuntimeKvPairModel.fetchOne(db, key: ["pluginId": pluginId, "key": key])
+            case .s2t:
+                let text = params["text"] as? String ?? ""
+                guard let converter = s2tConverter else {
+                    return (text, "Failed to initialize OpenCC s2t")
                 }
-                return (kvPair?.value, nil)
-            } catch {
-                Logger.jsRuntime.error("Failed to fetch value", error: error)
-                return (nil, "Failed to fetch value")
-            }
-        case .removeValue:
-            let key = params["key"] as? String ?? ""
-            let from = params["from"] as? String
+                let result = converter.convert(text)
+                return (result, nil)
+            case .t2s:
+                let text = params["text"] as? String ?? ""
+                guard let converter = t2sConverter else {
+                    return (text, "Failed to initialize OpenCC t2s")
+                }
+                let result = converter.convert(text)
+                return (result, nil)
+            case .setValue:
+                let key = params["key"] as? String ?? ""
+                let value = params["value"] as? String ?? ""
+                let from = params["from"] as? String
 
-            guard let pluginId = from else {
-                Logger.jsRuntime.error("Missing pluginId")
-                return (nil, "Missing plugin ID")
-            }
-
-            guard let dbPool = DbService.shared.appDb else {
-                Logger.jsRuntime.error("Database not available")
-                return (nil, "Database not available")
-            }
-
-            do {
-                let deleted = try await dbPool.write { db in
-                    try JsRuntimeKvPairModel.deleteOne(db, key: ["pluginId": pluginId, "key": key])
+                guard let pluginId = from else {
+                    Logger.jsRuntime.error("Missing pluginId")
+                    return (nil, "Missing plugin ID")
                 }
 
-                return (deleted, nil)
-            } catch {
-                Logger.jsRuntime.error("Failed to remove value", error: error)
-                return (nil, "Failed to remove value")
-            }
-        default:
-            let error = "Unexpected method: \(methodStr)"
-            Logger.jsRuntime.warning(error)
-            return (nil, error)
+                guard let dbPool = DbService.shared.appDb else {
+                    Logger.jsRuntime.error("Database not available")
+                    return (nil, "Database not available")
+                }
+
+                do {
+                    try await dbPool.write { db in
+                        let kvPair = JsRuntimeKvPairModel(
+                            pluginId: pluginId, key: key, value: value)
+                        try kvPair.save(db)
+                    }
+                } catch {
+                    Logger.jsRuntime.error("Failed to save value", error: error)
+                    return (nil, "Failed to save value")
+                }
+            case .getValue:
+                let key = params["key"] as? String ?? ""
+                let from = params["from"] as? String
+
+                guard let pluginId = from else {
+                    Logger.jsRuntime.error("Missing pluginId")
+                    return (nil, "Missing plugin ID")
+                }
+
+                guard let dbPool = DbService.shared.appDb else {
+                    Logger.jsRuntime.error("Database not available")
+                    return (nil, "Database not available")
+                }
+
+                do {
+                    let kvPair = try await dbPool.read { db in
+                        try JsRuntimeKvPairModel.fetchOne(
+                            db, key: ["pluginId": pluginId, "key": key])
+                    }
+                    return (kvPair?.value, nil)
+                } catch {
+                    Logger.jsRuntime.error("Failed to fetch value", error: error)
+                    return (nil, "Failed to fetch value")
+                }
+            case .removeValue:
+                let key = params["key"] as? String ?? ""
+                let from = params["from"] as? String
+
+                guard let pluginId = from else {
+                    Logger.jsRuntime.error("Missing pluginId")
+                    return (nil, "Missing plugin ID")
+                }
+
+                guard let dbPool = DbService.shared.appDb else {
+                    Logger.jsRuntime.error("Database not available")
+                    return (nil, "Database not available")
+                }
+
+                do {
+                    let deleted = try await dbPool.write { db in
+                        try JsRuntimeKvPairModel.deleteOne(
+                            db, key: ["pluginId": pluginId, "key": key])
+                    }
+
+                    return (deleted, nil)
+                } catch {
+                    Logger.jsRuntime.error("Failed to remove value", error: error)
+                    return (nil, "Failed to remove value")
+                }
+            default:
+                let error = "Unexpected method: \(methodStr)"
+                Logger.jsRuntime.warning(error)
+                return (nil, error)
         }
 
         return (nil, nil)

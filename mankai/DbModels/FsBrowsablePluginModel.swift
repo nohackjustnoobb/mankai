@@ -25,8 +25,6 @@ struct FsBrowsablePluginModel {
     }
 }
 
-extension FsBrowsablePluginModel: TableRecord {
-    static let databaseTableName = "fsbrowsableplugin"
-}
+extension FsBrowsablePluginModel: TableRecord { static let databaseTableName = "fsbrowsableplugin" }
 
 extension FsBrowsablePluginModel: Codable, FetchableRecord, PersistableRecord {}

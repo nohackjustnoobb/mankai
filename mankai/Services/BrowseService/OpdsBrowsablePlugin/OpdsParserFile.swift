@@ -16,10 +16,7 @@ struct OpdsParserFile: ParserFile {
     private let temporaryDirectory: URL
 
     init(
-        cacheKey: String,
-        remoteURL: URL,
-        fileName: String,
-        session: OpdsSession,
+        cacheKey: String, remoteURL: URL, fileName: String, session: OpdsSession,
         temporaryDirectory: URL
     ) {
         self.cacheKey = cacheKey
@@ -34,15 +31,11 @@ struct OpdsParserFile: ParserFile {
         return try Data(contentsOf: localURL)
     }
 
-    func getUrl() async throws -> URL {
-        try await localURL()
-    }
+    func getUrl() async throws -> URL { try await localURL() }
 
     private func localURL() async throws -> URL {
         let localURL = BrowsableFileUtilities.parserCacheURL(
-            for: "\(cacheKey)/\(fileName)",
-            in: temporaryDirectory
-        )
+            for: "\(cacheKey)/\(fileName)", in: temporaryDirectory)
         return try await ParserFileDownloadRegistry.shared.file(at: localURL) {
             [session, remoteURL] localURL in
             Logger.opdsBrowsablePlugin.info("Downloading OPDS parser file: \(remoteURL)")

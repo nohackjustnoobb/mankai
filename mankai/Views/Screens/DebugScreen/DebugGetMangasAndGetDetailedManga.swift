@@ -13,11 +13,8 @@ struct InfoRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.body)
+            Text(label).font(.caption).foregroundColor(.secondary)
+            Text(value).font(.body)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -52,14 +49,12 @@ struct DebugGetMangasAndGetDetailedManga: View {
     var body: some View {
         Group {
             if manga == nil && detailedManga == nil {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     if let manga = manga {
                         DebugMangas(
-                            mangas: [manga], plugin: plugin, title: String(localized: "manga")
-                        )
+                            mangas: [manga], plugin: plugin, title: String(localized: "manga"))
                     }
 
                     if let detailedManga = detailedManga {
@@ -69,46 +64,37 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     InfoRow(label: String(localized: "id"), value: detailedManga.id)
                                     InfoRow(
                                         label: String(localized: "cover"),
-                                        value: detailedManga.cover ?? String(localized: "nil")
-                                    )
+                                        value: detailedManga.cover ?? String(localized: "nil"))
                                     InfoRow(
                                         label: String(localized: "title"),
-                                        value: detailedManga.title ?? String(localized: "nil")
-                                    )
+                                        value: detailedManga.title ?? String(localized: "nil"))
                                     InfoRow(
                                         label: String(localized: "status"),
-                                        value: detailedManga.status.localizedName
-                                    )
+                                        value: detailedManga.status.localizedName)
                                     InfoRow(
                                         label: String(localized: "description"),
                                         value: detailedManga.description ?? String(localized: "nil")
                                     )
                                     InfoRow(
                                         label: String(localized: "updatedAt"),
-                                        value: dateText(detailedManga.updatedAt)
-                                    )
+                                        value: dateText(detailedManga.updatedAt))
                                     InfoRow(
                                         label: String(localized: "authors"),
                                         value: detailedManga.authors.isEmpty
                                             ? String(localized: "nil")
-                                            : detailedManga.authors.joined(separator: ", ")
-                                    )
+                                            : detailedManga.authors.joined(separator: ", "))
                                     InfoRow(
                                         label: String(localized: "genres"),
                                         value: detailedManga.genres.isEmpty
                                             ? String(localized: "nil")
-                                            : detailedManga.genres.map { $0.rawValue }.joined(
-                                                separator: ", "
-                                            )
-                                    )
+                                            : detailedManga.genres.map { $0.rawValue }
+                                                .joined(separator: ", "))
                                     InfoRow(
                                         label: String(localized: "latestChapter"),
-                                        value: chapterText(detailedManga.latestChapter)
-                                    )
+                                        value: chapterText(detailedManga.latestChapter))
                                     InfoRow(
                                         label: String(localized: "totalChapters"),
-                                        value:
-                                            "\(detailedManga.chapters.flatMap(\.chapters).count)"
+                                        value: "\(detailedManga.chapters.flatMap(\.chapters).count)"
                                     )
                                 }
                             }
@@ -116,26 +102,20 @@ struct DebugGetMangasAndGetDetailedManga: View {
 
                         if detailedManga.chapters.isEmpty {
                             Section("chapters") {
-                                Text("noChaptersAvailable")
-                                    .foregroundColor(.secondary)
-                                    .italic()
+                                Text("noChaptersAvailable").foregroundColor(.secondary).italic()
                             }
                         } else {
                             ForEach(detailedManga.chapters, id: \.title) { group in
                                 Section(group.title) {
-                                    ForEach(group.chapters, id: \.id) {
-                                        chapter in
+                                    ForEach(group.chapters, id: \.id) { chapter in
                                         if plugin.supports(.chapter) {
                                             NavigationLink(
                                                 destination: DebugGetChapter(
-                                                    plugin: plugin,
-                                                    manga: detailedManga,
-                                                    chapter: chapter
-                                                )
+                                                    plugin: plugin, manga: detailedManga,
+                                                    chapter: chapter)
                                             ) {
                                                 Text(chapterText(chapter))
-                                                    .frame(
-                                                        maxWidth: .infinity, alignment: .leading)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
                                             }
                                         } else {
                                             Text(chapterText(chapter))

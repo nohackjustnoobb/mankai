@@ -20,26 +20,20 @@ enum ScriptType: String {
     case getImage
 }
 
-@Codable
-private struct JsPluginMetadata {
+@Codable private struct JsPluginMetadata {
     let id: String
     let name: String?
     let version: String?
     let description: String?
-    @DecodingDefault([])
-    let authors: [String]
+    @DecodingDefault([]) let authors: [String]
     let repository: String?
     let updatesUrl: String?
-    @DecodingDefault([])
-    let availableGenres: [Genre]
-    @DecodingDefault([:])
-    let scripts: [String: String]
-    @DecodingDefault([])
-    let configs: [Config]
+    @DecodingDefault([]) let availableGenres: [Genre]
+    @DecodingDefault([:]) let scripts: [String: String]
+    @DecodingDefault([]) let configs: [Config]
     let getImageHeaders: [String: String]?
     let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.allCases)
-    let capabilities: [PluginCapability]
+    @DecodingDefault(PluginCapability.allCases) let capabilities: [PluginCapability]
 }
 
 final class JsPlugin: Plugin {
@@ -56,55 +50,31 @@ final class JsPlugin: Plugin {
     private var _cooldown: Cooldown?
     private var _capabilities: [PluginCapability]
 
-    override var id: String {
-        _id
-    }
+    override var id: String { _id }
 
-    override var name: String? {
-        _name
-    }
+    override var name: String? { _name }
 
-    override var version: String? {
-        _version
-    }
+    override var version: String? { _version }
 
-    override var description: String? {
-        _description
-    }
+    override var description: String? { _description }
 
-    override var authors: [String] {
-        _authors
-    }
+    override var authors: [String] { _authors }
 
-    override var repository: String? {
-        _repository
-    }
+    override var repository: String? { _repository }
 
-    override var availableGenres: [Genre] {
-        _availableGenres
-    }
+    override var availableGenres: [Genre] { _availableGenres }
 
-    override var configs: [Config] {
-        _configs
-    }
+    override var configs: [Config] { _configs }
 
-    override var cooldown: Cooldown? {
-        _cooldown
-    }
+    override var cooldown: Cooldown? { _cooldown }
 
-    override var capabilities: [PluginCapability] {
-        _capabilities
-    }
+    override var capabilities: [PluginCapability] { _capabilities }
 
     private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
-    var updatesUrl: String? {
-        _updatesUrl
-    }
+    var updatesUrl: String? { _updatesUrl }
 
-    override var shouldCache: Bool {
-        true
-    }
+    override var shouldCache: Bool { true }
 
     // MARK: - Methods Scripts
 
@@ -112,22 +82,15 @@ final class JsPlugin: Plugin {
     private var _funcName: [ScriptType: String] = [:]
     private var _scriptsNoExport: [ScriptType: String] = [:]
 
-    override var tags: [String] {
-        [String(localized: "js")]
-    }
+    override var tags: [String] { [String(localized: "js")] }
 
     // MARK: - Init
 
     init(
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
-        authors: [String] = [],
-        repository: String? = nil,
-        updatesUrl: String? = nil,
-        availableGenres: [Genre] = [],
-        scripts: [ScriptType: String] = [:],
-        configs: [Config] = [],
-        getImageHeaders: [String: String]? = nil,
-        cooldown: Cooldown? = nil,
+        authors: [String] = [], repository: String? = nil, updatesUrl: String? = nil,
+        availableGenres: [Genre] = [], scripts: [ScriptType: String] = [:], configs: [Config] = [],
+        getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
         capabilities: [PluginCapability] = PluginCapability.allCases
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
@@ -148,23 +111,16 @@ final class JsPlugin: Plugin {
         for (scriptType, script) in scripts {
             guard
                 let regex = try? NSRegularExpression(
-                    pattern: "export\\{(.*) as default\\};", options: []
-                ),
+                    pattern: "export\\{(.*) as default\\};", options: []),
                 let match = regex.firstMatch(
                     in: script, options: [], range: NSRange(location: 0, length: script.utf16.count)
-                ),
-                let funcRange = Range(match.range(at: 1), in: script)
-            else {
-                fatalError("Invalid script format for \(scriptType.rawValue)")
-            }
+                ), let funcRange = Range(match.range(at: 1), in: script)
+            else { fatalError("Invalid script format for \(scriptType.rawValue)") }
 
-            let funcName = String(script[funcRange]).trimmingCharacters(
-                in: .whitespacesAndNewlines
-            )
+            let funcName = String(script[funcRange]).trimmingCharacters(in: .whitespacesAndNewlines)
             let cleanedScript = regex.stringByReplacingMatches(
-                in: script, options: [],
-                range: NSRange(location: 0, length: script.utf16.count), withTemplate: ""
-            )
+                in: script, options: [], range: NSRange(location: 0, length: script.utf16.count),
+                withTemplate: "")
 
             _funcName[scriptType] = funcName
             _scriptsNoExport[scriptType] = cleanedScript
@@ -172,57 +128,38 @@ final class JsPlugin: Plugin {
     }
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
-        for configValue in configValues {
-            _configValues[configValue.key] = configValue
-        }
+        for configValue in configValues { _configValues[configValue.key] = configValue }
     }
 
     static func fromJson(_ json: [String: Any]) -> JsPlugin? {
-        guard let metadata = try? JsPluginMetadata.decoded(from: json)
-        else { return nil }
+        guard let metadata = try? JsPluginMetadata.decoded(from: json) else { return nil }
 
         return fromMetadata(metadata)
     }
 
     private static func fromMetadata(_ metadata: JsPluginMetadata) -> JsPlugin? {
         let scripts = metadata.scripts.reduce(into: [ScriptType: String]()) { result, entry in
-            if let scriptType = ScriptType(rawValue: entry.key) {
-                result[scriptType] = entry.value
-            }
+            if let scriptType = ScriptType(rawValue: entry.key) { result[scriptType] = entry.value }
         }
 
         return JsPlugin(
-            id: metadata.id,
-            name: metadata.name,
-            version: metadata.version,
-            description: metadata.description,
-            authors: metadata.authors,
-            repository: metadata.repository,
-            updatesUrl: metadata.updatesUrl,
-            availableGenres: metadata.availableGenres,
-            scripts: scripts,
-            configs: metadata.configs,
-            getImageHeaders: metadata.getImageHeaders,
-            cooldown: metadata.cooldown,
-            capabilities: metadata.capabilities
-        )
+            id: metadata.id, name: metadata.name, version: metadata.version,
+            description: metadata.description, authors: metadata.authors,
+            repository: metadata.repository, updatesUrl: metadata.updatesUrl,
+            availableGenres: metadata.availableGenres, scripts: scripts, configs: metadata.configs,
+            getImageHeaders: metadata.getImageHeaders, cooldown: metadata.cooldown,
+            capabilities: metadata.capabilities)
     }
 
     static func fromUrl(_ urlString: String) async -> JsPlugin? {
         let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmed) else {
-            return nil
-        }
+        guard let url = URL(string: trimmed) else { return nil }
 
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else {
-            return nil
-        }
+        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
 
         guard let metadata = try? JsPluginMetadata.decoded(from: data),
             let plugin = fromMetadata(metadata)
-        else {
-            return nil
-        }
+        else { return nil }
 
         let configMap = Dictionary(uniqueKeysWithValues: plugin.configs.map { ($0.key, $0) })
         let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -234,9 +171,7 @@ final class JsPlugin: Plugin {
             matchedConfigValues.append(ConfigValue(key: item.name, value: parsedValue))
         }
 
-        if !matchedConfigValues.isEmpty {
-            plugin.setConfigValues(matchedConfigValues)
-        }
+        if !matchedConfigValues.isEmpty { plugin.setConfigValues(matchedConfigValues) }
 
         return plugin
     }
@@ -244,9 +179,7 @@ final class JsPlugin: Plugin {
     static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
         guard let metaData = jsPluginModel.meta.data(using: .utf8),
             let metadata = try? JsPluginMetadata.decoded(from: metaData)
-        else {
-            return nil
-        }
+        else { return nil }
 
         let configValues = jsPluginModel.configValues.data(using: .utf8)
             .flatMap { try? [ConfigValue].decoded(from: $0) }
@@ -254,9 +187,7 @@ final class JsPlugin: Plugin {
         let plugin = fromMetadata(metadata)
 
         // Update config values if they exist
-        if let configValues = configValues,
-            let plugin = plugin
-        {
+        if let configValues = configValues, let plugin = plugin {
             plugin.setConfigValues(configValues)
         }
 
@@ -282,9 +213,7 @@ final class JsPlugin: Plugin {
                     }
                 }
             }
-        } catch {
-            Logger.jsPlugin.error("Failed to load plugins from GRDB", error: error)
-        }
+        } catch { Logger.jsPlugin.error("Failed to load plugins from GRDB", error: error) }
 
         return results
     }
@@ -302,20 +231,10 @@ final class JsPlugin: Plugin {
         }
 
         let metadata = JsPluginMetadata(
-            id: id,
-            name: name,
-            version: version,
-            description: description,
-            authors: authors,
-            repository: repository,
-            updatesUrl: updatesUrl,
-            availableGenres: availableGenres,
-            scripts: scriptsDict,
-            configs: configs,
-            getImageHeaders: _getImageHeaders,
-            cooldown: cooldown,
-            capabilities: capabilities
-        )
+            id: id, name: name, version: version, description: description, authors: authors,
+            repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
+            scripts: scriptsDict, configs: configs, getImageHeaders: _getImageHeaders,
+            cooldown: cooldown, capabilities: capabilities)
         let metaData = try metadata.encodedData()
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw MankaiErrorCode.pluginJavascriptFailedToEncodeMetaData.makeError()
@@ -330,10 +249,7 @@ final class JsPlugin: Plugin {
         // Save to database
         try dbPool.write { db in
             let jsPluginModel = JsPluginModel(
-                id: id,
-                meta: metaString,
-                configValues: configValuesString
-            )
+                id: id, meta: metaString, configValues: configValuesString)
             try jsPluginModel.save(db)
         }
     }
@@ -344,19 +260,12 @@ final class JsPlugin: Plugin {
             throw MankaiErrorCode.pluginJavascriptDatabaseNotAvailable.makeError()
         }
 
-        try dbPool.write { db in
-            _ =
-                try JsPluginModel
-                .filter(Column("id") == id)
-                .deleteAll(db)
-        }
+        try dbPool.write { db in _ = try JsPluginModel.filter(Column("id") == id).deleteAll(db) }
     }
 
     override func isOnline() async throws -> Bool {
         Logger.jsPlugin.debug("Checking isOnline for plugin: \(id)")
-        if _scripts[.isOnline] == nil {
-            fatalError("Script for isOnline is not defined")
-        }
+        if _scripts[.isOnline] == nil { fatalError("Script for isOnline is not defined") }
 
         let script = "\(_scriptsNoExport[.isOnline]!) return await \(_funcName[.isOnline]!)();"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
@@ -371,9 +280,7 @@ final class JsPlugin: Plugin {
     override func getSuggestions(_ query: String) async throws -> [String] {
         Logger.jsPlugin.debug("Getting suggestions for query: \(query) (plugin: \(id))")
 
-        if _scripts[.getSuggestion] == nil {
-            fatalError("Script for getSuggestion is not defined")
-        }
+        if _scripts[.getSuggestion] == nil { fatalError("Script for getSuggestion is not defined") }
 
         let script =
             "\(_scriptsNoExport[.getSuggestion]!) return await \(_funcName[.getSuggestion]!)(\(JsRuntime.javascriptStringLiteral(query)));"
@@ -386,16 +293,14 @@ final class JsPlugin: Plugin {
         return suggestions
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         Logger.jsPlugin.debug(
             "Searching for: \(query), page: \(page), genre: \(genre), status: \(status), isAuthor: \(isAuthor) (plugin: \(id))"
         )
 
-        if _scripts[.search] == nil {
-            fatalError("Script for search is not defined")
-        }
+        if _scripts[.search] == nil { fatalError("Script for search is not defined") }
 
         let script =
             "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\(JsRuntime.javascriptStringLiteral(query)),\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue),\(isAuthor));"
@@ -410,12 +315,9 @@ final class JsPlugin: Plugin {
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         Logger.jsPlugin.debug(
-            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))"
-        )
+            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
 
-        if _scripts[.getList] == nil {
-            fatalError("Script for getList is not defined")
-        }
+        if _scripts[.getList] == nil { fatalError("Script for getList is not defined") }
 
         let script =
             "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\(JsRuntime.javascriptStringLiteral(genre.rawValue)),\(status.rawValue));"
@@ -430,9 +332,7 @@ final class JsPlugin: Plugin {
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         Logger.jsPlugin.debug("Getting \(ids.count) mangas (plugin: \(id))")
-        if _scripts[.getMangas] == nil {
-            fatalError("Script for getMangas is not defined")
-        }
+        if _scripts[.getMangas] == nil { fatalError("Script for getMangas is not defined") }
 
         let idsJson = try ids.encodedData()
         let idsString = String(data: idsJson, encoding: .utf8) ?? "[]"
@@ -471,18 +371,14 @@ final class JsPlugin: Plugin {
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         Logger.jsPlugin.debug("Getting chapter: \(chapter.id) (plugin: \(id))")
 
-        if _scripts[.getChapter] == nil {
-            fatalError("Script for getChapter is not defined")
-        }
+        if _scripts[.getChapter] == nil { fatalError("Script for getChapter is not defined") }
 
         let mangaJson = try manga.encodedData()
         let chapterJson = try chapter.encodedData()
 
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
             let chapterString = String(data: chapterJson, encoding: .utf8)
-        else {
-            throw MankaiErrorCode.pluginJavascriptInvalidMangaOrChapterFormat.makeError()
-        }
+        else { throw MankaiErrorCode.pluginJavascriptInvalidMangaOrChapterFormat.makeError() }
 
         let script =
             "\(_scriptsNoExport[.getChapter]!) return await \(_funcName[.getChapter]!)(\(mangaString),\(chapterString));"
@@ -502,9 +398,7 @@ final class JsPlugin: Plugin {
             return try await requestImage(url: url, headers: headers)
         }
 
-        if _scripts[.getImage] == nil {
-            fatalError("Script for getImage is not defined")
-        }
+        if _scripts[.getImage] == nil { fatalError("Script for getImage is not defined") }
 
         let script =
             "\(_scriptsNoExport[.getImage]!) return await \(_funcName[.getImage]!)(\(JsRuntime.javascriptStringLiteral(url)));"
@@ -521,9 +415,7 @@ final class JsPlugin: Plugin {
         guard let proxyRequest = result as? [String: Any],
             let proxyUrl = proxyRequest["url"] as? String,
             let headers = proxyRequest["headers"] as? [String: String]
-        else {
-            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImage.makeError()
-        }
+        else { throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForImage.makeError() }
 
         return try await requestImage(url: proxyUrl, headers: headers)
     }
@@ -534,9 +426,7 @@ final class JsPlugin: Plugin {
         }
 
         var request = URLRequest(url: url)
-        for (key, value) in headers {
-            request.setValue(value, forHTTPHeaderField: key)
-        }
+        for (key, value) in headers { request.setValue(value, forHTTPHeaderField: key) }
 
         let (data, _) = try await URLSession.shared.data(for: request)
 
@@ -544,9 +434,7 @@ final class JsPlugin: Plugin {
     }
 
     func checkForUpdates() async {
-        guard let updatesUrl = updatesUrl else {
-            return
-        }
+        guard let updatesUrl = updatesUrl else { return }
 
         Logger.jsPlugin.info("Checking for updates for plugin: \(id)")
 
@@ -580,9 +468,7 @@ final class JsPlugin: Plugin {
 
                 try savePlugin()
                 Logger.jsPlugin.info("Plugin updated successfully: \(id)")
-            } catch {
-                Logger.jsPlugin.error("Failed to save updated plugin: \(id)", error: error)
-            }
+            } catch { Logger.jsPlugin.error("Failed to save updated plugin: \(id)", error: error) }
         } else {
             Logger.jsPlugin.info("Plugin is up to date: \(id)")
         }

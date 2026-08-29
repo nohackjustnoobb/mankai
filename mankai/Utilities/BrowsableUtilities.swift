@@ -15,10 +15,9 @@ actor ParserFileDownloadRegistry {
 
     private var downloadTasks: [String: Task<URL, Error>] = [:]
 
-    func file(
-        at localURL: URL,
-        download: @escaping @Sendable (URL) async throws -> Void
-    ) async throws -> URL {
+    func file(at localURL: URL, download: @escaping @Sendable (URL) async throws -> Void)
+        async throws -> URL
+    {
         let fileManager = FileManager.default
         let key = localURL.path(percentEncoded: false)
 
@@ -33,9 +32,7 @@ actor ParserFileDownloadRegistry {
         }
 
         try fileManager.createDirectory(
-            at: localURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
+            at: localURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         let task = Task<URL, Error> {
             do {
@@ -61,8 +58,7 @@ actor ParserFileDownloadRegistry {
 
 enum BrowsableFileUtilities {
     static func resolveIdentity<Session: BrowsableSession>(
-        using session: Session,
-        invalidPluginError: @autoclosure () -> Error
+        using session: Session, invalidPluginError: @autoclosure () -> Error
     ) async throws -> (id: String, shouldSync: Bool) {
         if let data = try await session.fileIfExists(path: ".mankai") {
             guard let value = String(data: data, encoding: .utf8) else {
@@ -70,9 +66,7 @@ enum BrowsableFileUtilities {
             }
 
             let id = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !id.isEmpty else {
-                throw invalidPluginError()
-            }
+            guard !id.isEmpty else { throw invalidPluginError() }
             return (id: id, shouldSync: true)
         }
 
@@ -82,15 +76,13 @@ enum BrowsableFileUtilities {
             return (id: id, shouldSync: true)
         } catch {
             Session.logger.warning(
-                "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-            )
+                "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)")
             return (id: id, shouldSync: false)
         }
     }
 
     static func parserCacheURL(for relativePath: String, in directory: URL) -> URL {
-        let hash = SHA256.hash(data: Data(relativePath.utf8))
-            .map { String(format: "%02x", $0) }
+        let hash = SHA256.hash(data: Data(relativePath.utf8)).map { String(format: "%02x", $0) }
             .joined()
         let extensionName = (relativePath as NSString).pathExtension
         let fileName = extensionName.isEmpty ? hash : "\(hash).\(extensionName)"
@@ -113,8 +105,7 @@ enum BrowsableFileUtilities {
     }
 
     static func uniqueFileName(for source: URL, existingNames: Set<String>) -> String {
-        let baseName = source.lastPathComponent
-            .replacingOccurrences(of: "/", with: "_")
+        let baseName = source.lastPathComponent.replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "\\", with: "_")
         let stem = (baseName as NSString).deletingPathExtension
         let extensionName = (baseName as NSString).pathExtension
@@ -151,36 +142,27 @@ enum BrowsableMangaUtilities {
             guard
                 let genre = Genre.allCases.first(where: {
                     $0 != .all && normalizedGenreName($0.rawValue) == normalizedValue
-                }),
-                seen.insert(genre).inserted
-            else {
-                continue
-            }
+                }), seen.insert(genre).inserted
+            else { continue }
             result.append(genre)
         }
         return result
     }
 
     private static func normalizedGenreName(_ value: String) -> String {
-        value.lowercased().unicodeScalars
-            .filter(CharacterSet.alphanumerics.contains)
-            .map(String.init)
-            .joined()
+        value.lowercased().unicodeScalars.filter(CharacterSet.alphanumerics.contains)
+            .map(String.init).joined()
     }
 }
 
 enum BrowsablePluginStyle {
     static let systemImagePalette: [Color] = [
-        .red, .orange, .yellow, .green, .mint,
-        .teal, .cyan, .blue, .indigo, .purple,
-        .pink, .brown,
+        .red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink, .brown
     ]
 
     static func systemImageColor(for id: String) -> Color {
         var hash: UInt64 = 5381
-        for byte in id.utf8 {
-            hash = (hash &<< 5) &+ hash &+ UInt64(byte)
-        }
+        for byte in id.utf8 { hash = (hash &<< 5) &+ hash &+ UInt64(byte) }
         let index = Int(hash % UInt64(systemImagePalette.count))
         return systemImagePalette[index]
     }

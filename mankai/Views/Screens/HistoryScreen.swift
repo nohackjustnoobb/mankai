@@ -20,10 +20,8 @@ struct HistoryScreen: View {
             Group {
                 if records.isEmpty && !isLoading {
                     ContentUnavailableView(
-                        "noHistory",
-                        systemImage: "clock.badge.xmark",
-                        description: Text("noHistoryDescription")
-                    )
+                        "noHistory", systemImage: "clock.badge.xmark",
+                        description: Text("noHistoryDescription"))
                 } else {
                     List {
                         Section {
@@ -36,26 +34,16 @@ struct HistoryScreen: View {
                                     }
                             }
 
-                            if isLoading {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity)
-                            }
+                            if isLoading { ProgressView().frame(maxWidth: .infinity) }
                         } header: {
                             Spacer(minLength: 0)
                         }
                     }
                 }
             }
-            .navigationTitle("history")
-            .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                if records.isEmpty {
-                    loadInitialRecords()
-                }
-            }
-            .onReceive(HistoryService.shared.objectWillChange) {
-                refreshRecords()
-            }
+            .navigationTitle("history").navigationBarTitleDisplayMode(.inline)
+            .onAppear { if records.isEmpty { loadInitialRecords() } }
+            .onReceive(HistoryService.shared.objectWillChange) { refreshRecords() }
         }
     }
 
@@ -93,13 +81,10 @@ struct HistoryItemView: View {
     var body: some View {
         Group {
             if isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity)
+                ProgressView().frame(maxWidth: .infinity)
             } else {
                 NavigationLink(destination: {
-                    if let manga = manga,
-                        let plugin = plugin
-                    {
+                    if let manga = manga, let plugin = plugin {
                         MangaDetailsScreen(plugin: plugin, manga: manga)
                     } else {
                         ContentUnavailableView {
@@ -114,9 +99,7 @@ struct HistoryItemView: View {
                             .aspectRatio(3 / 4, contentMode: .fit)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(manga?.title ?? record.mangaId)
-                                .font(.headline)
-                                .lineLimit(1)
+                            Text(manga?.title ?? record.mangaId).font(.headline).lineLimit(1)
 
                             HStack {
                                 if let chapterTitle = record.chapterTitle {
@@ -126,35 +109,25 @@ struct HistoryItemView: View {
                                     Text(
                                         String(
                                             format: String(localized: "chapterFormat"),
-                                            record.chapterId
-                                        )
-                                    )
+                                            record.chapterId))
                                 }
 
                                 Text("•")
                                 Text(
                                     String(
                                         format: String(localized: "historyPageFormat"),
-                                        record.page + 1
-                                    )
-                                )
+                                        record.page + 1))
                             }
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
 
-                            Text(record.datetime.formatted())
-                                .font(.caption)
+                            Text(record.datetime.formatted()).font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
                     }
                 }
             }
         }
-        .frame(height: 100)
-        .onAppear {
-            loadMangaData()
-        }
+        .frame(height: 100).onAppear { loadMangaData() }
     }
 
     private func loadMangaData() {
@@ -166,9 +139,7 @@ struct HistoryItemView: View {
         if let mangaModel = getMangaModel(mangaId: record.mangaId, pluginId: record.pluginId),
             let infoData = mangaModel.info.data(using: .utf8)
         {
-            do {
-                manga = try JSONDecoder().decode(Manga.self, from: infoData)
-            } catch {
+            do { manga = try JSONDecoder().decode(Manga.self, from: infoData) } catch {
                 Logger.ui.error("Failed to decode manga data", error: error)
             }
         }
@@ -176,9 +147,7 @@ struct HistoryItemView: View {
         // If not found locally, try fetching from plugin
         if manga == nil, let plugin = plugin, plugin.supports(.batchMangas) {
             Task {
-                do {
-                    manga = try await plugin.getManga(id: record.mangaId)
-                } catch {
+                do { manga = try await plugin.getManga(id: record.mangaId) } catch {
                     Logger.ui.error("Failed to fetch manga from plugin", error: error)
                 }
 
@@ -188,16 +157,16 @@ struct HistoryItemView: View {
             isLoading = false
         }
 
-        if manga == nil {
-            Logger.ui.warning("Failed to load manga for record: \(record)")
-        }
+        if manga == nil { Logger.ui.warning("Failed to load manga for record: \(record)") }
     }
 
     private func getMangaModel(mangaId: String, pluginId: String) -> MangaModel? {
-        return try? DbService.shared.appDb?.read { db in
-            try MangaModel
-                .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+        return try? DbService.shared.appDb?
+            .read { db in
+                try MangaModel.filter(
+                    Column("mangaId") == mangaId && Column("pluginId") == pluginId
+                )
                 .fetchOne(db)
-        }
+            }
     }
 }

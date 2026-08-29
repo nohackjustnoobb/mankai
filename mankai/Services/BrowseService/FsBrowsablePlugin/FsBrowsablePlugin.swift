@@ -28,26 +28,18 @@ struct FilesystemSession: BrowsableSession {
         let target = try sourceURL(for: path)
         let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey]
         let entries = try fileManager.contentsOfDirectory(
-            at: target,
-            includingPropertiesForKeys: Array(resourceKeys)
-        )
+            at: target, includingPropertiesForKeys: Array(resourceKeys))
 
         return try entries.compactMap { entry in
             let values = try entry.resourceValues(forKeys: resourceKeys)
-            guard values.isDirectory == true || values.isRegularFile == true else {
-                return nil
-            }
+            guard values.isDirectory == true || values.isRegularFile == true else { return nil }
             return BrowsableSessionEntry(
-                name: entry.lastPathComponent,
-                isDirectory: values.isDirectory == true,
-                isRegularFile: values.isRegularFile == true
-            )
+                name: entry.lastPathComponent, isDirectory: values.isDirectory == true,
+                isRegularFile: values.isRegularFile == true)
         }
     }
 
-    func download(path: String) async throws -> Data {
-        try Data(contentsOf: sourceURL(for: path))
-    }
+    func download(path: String) async throws -> Data { try Data(contentsOf: sourceURL(for: path)) }
 
     func upload(data: Data, path: String) async throws {
         try data.write(to: sourceURL(for: path), options: .atomic)
@@ -58,15 +50,10 @@ struct FilesystemSession: BrowsableSession {
     }
 
     func createDirectory(path: String) async throws {
-        try fileManager.createDirectory(
-            at: sourceURL(for: path),
-            withIntermediateDirectories: true
-        )
+        try fileManager.createDirectory(at: sourceURL(for: path), withIntermediateDirectories: true)
     }
 
-    func localURL(for path: String?) throws -> URL? {
-        try sourceURL(for: path)
-    }
+    func localURL(for path: String?) throws -> URL? { try sourceURL(for: path) }
 
     func sourceURL(for relativePath: String?) throws -> URL {
         guard let relativePath, !relativePath.isEmpty else { return rootURL }
@@ -82,32 +69,22 @@ struct FilesystemSession: BrowsableSession {
 }
 
 class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
-    override var name: String? {
-        displayName ?? dirName
-    }
+    override var name: String? { displayName ?? dirName }
 
-    var url: URL {
-        configuration
-    }
+    var url: URL { configuration }
 
     private var isAccessingSecurityScopedResource = false
     private lazy var dirName: String = url.lastPathComponent
 
     init(url: URL, id: String, name: String?, shouldSync: Bool = true) throws {
         Logger.fsBrowsablePlugin.debug("Initializing FsBrowsablePlugin with url: \(url.path)")
-        try super.init(
-            id: id,
-            name: name,
-            configuration: url,
-            shouldSync: shouldSync
-        )
+        try super.init(id: id, name: name, configuration: url, shouldSync: shouldSync)
 
         if !(self is AppDirBrowsablePlugin) {
             isAccessingSecurityScopedResource = url.startAccessingSecurityScopedResource()
             if !isAccessingSecurityScopedResource {
                 Logger.fsBrowsablePlugin.error(
-                    "Failed to start accessing security scoped resource for plugin: \(id)"
-                )
+                    "Failed to start accessing security scoped resource for plugin: \(id)")
             }
         }
     }
@@ -116,9 +93,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         guard url.startAccessingSecurityScopedResource() else {
             throw MankaiErrorCode.browseFilesystemFailedToAccessFolder.makeError()
         }
-        defer {
-            url.stopAccessingSecurityScopedResource()
-        }
+        defer { url.stopAccessingSecurityScopedResource() }
 
         let fileManager = FileManager.default
         if !fileManager.fileExists(atPath: url.path) {
@@ -139,8 +114,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
                 shouldSync = true
             } catch {
                 Logger.fsBrowsablePlugin.warning(
-                    "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)"
-                )
+                    "Failed to write .mankai for plugin \(id), using a local-only ID: \(error)")
                 shouldSync = false
             }
         }
@@ -148,11 +122,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         try self.init(url: url, id: id, name: name, shouldSync: shouldSync)
     }
 
-    deinit {
-        if isAccessingSecurityScopedResource {
-            url.stopAccessingSecurityScopedResource()
-        }
-    }
+    deinit { if isAccessingSecurityScopedResource { url.stopAccessingSecurityScopedResource() } }
 
     static func loadPlugins() -> [FsBrowsablePlugin] {
         Logger.fsBrowsablePlugin.debug("Loading book plugins")
@@ -162,11 +132,7 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         }
 
         var models: [FsBrowsablePluginModel]
-        do {
-            models = try dbPool.read { db in
-                try FsBrowsablePluginModel.fetchAll(db)
-            }
-        } catch {
+        do { models = try dbPool.read { db in try FsBrowsablePluginModel.fetchAll(db) } } catch {
             Logger.fsBrowsablePlugin.error("Failed to fetch FsBrowsablePluginModels: \(error)")
             return []
         }
@@ -176,24 +142,17 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
             var isStale = false
             do {
                 let url = try URL(
-                    resolvingBookmarkData: model.bookmarkData,
-                    options: .withoutUI,
-                    relativeTo: nil,
-                    bookmarkDataIsStale: &isStale
-                )
+                    resolvingBookmarkData: model.bookmarkData, options: .withoutUI, relativeTo: nil,
+                    bookmarkDataIsStale: &isStale)
 
                 if isStale {
                     Logger.fsBrowsablePlugin.warning(
                         "Bookmark data is stale for plugin: \(model.id)")
                     let newBookmarkData = try url.bookmarkData(
-                        options: .minimalBookmark,
-                        includingResourceValuesForKeys: nil,
-                        relativeTo: nil
-                    )
+                        options: .minimalBookmark, includingResourceValuesForKeys: nil,
+                        relativeTo: nil)
                     model.bookmarkData = newBookmarkData
-                    try dbPool.write { db in
-                        try model.update(db)
-                    }
+                    try dbPool.write { db in try model.update(db) }
                 }
 
                 guard url.startAccessingSecurityScopedResource() else {
@@ -202,21 +161,14 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
                     )
                     continue
                 }
-                defer {
-                    url.stopAccessingSecurityScopedResource()
-                }
+                defer { url.stopAccessingSecurityScopedResource() }
 
                 try results.append(
                     FsBrowsablePlugin(
-                        url: url,
-                        id: model.id,
-                        name: model.name,
-                        shouldSync: model.shouldSync
-                    ))
+                        url: url, id: model.id, name: model.name, shouldSync: model.shouldSync))
             } catch {
                 Logger.fsBrowsablePlugin.error(
-                    "Failed to resolve bookmark for plugin \(model.id): \(error)"
-                )
+                    "Failed to resolve bookmark for plugin \(model.id): \(error)")
             }
         }
         return results
@@ -229,17 +181,12 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         }
 
         let bookmarkData = try url.bookmarkData(
-            options: .minimalBookmark,
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil
-        )
+            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
         try db.write { db in
             try FsBrowsablePluginModel(
-                id: id,
-                name: displayName,
-                bookmarkData: bookmarkData,
-                shouldSync: shouldSync
-            ).save(db)
+                id: id, name: displayName, bookmarkData: bookmarkData, shouldSync: shouldSync
+            )
+            .save(db)
         }
     }
 
@@ -249,17 +196,12 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        _ = try db.write { db in
-            try FsBrowsablePluginModel.deleteOne(db, key: id)
-        }
+        _ = try db.write { db in try FsBrowsablePluginModel.deleteOne(db, key: id) }
         try super.deletePlugin()
     }
 
     override func parserFile(relativePath: String, cacheKey: String) async throws -> ParserFile {
-        try FsParserFile(
-            cacheKey: cacheKey,
-            url: session.sourceURL(for: relativePath)
-        )
+        try FsParserFile(cacheKey: cacheKey, url: session.sourceURL(for: relativePath))
     }
 
 }

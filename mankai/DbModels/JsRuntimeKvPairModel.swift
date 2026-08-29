@@ -26,8 +26,6 @@ struct JsRuntimeKvPairModel {
     }
 }
 
-extension JsRuntimeKvPairModel: TableRecord {
-    static let databaseTableName = "jsruntimekvpair"
-}
+extension JsRuntimeKvPairModel: TableRecord { static let databaseTableName = "jsruntimekvpair" }
 
 extension JsRuntimeKvPairModel: Codable, FetchableRecord, PersistableRecord {}

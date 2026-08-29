@@ -22,8 +22,6 @@ struct JsPluginModel {
     }
 }
 
-extension JsPluginModel: TableRecord {
-    static let databaseTableName = "jsplugin"
-}
+extension JsPluginModel: TableRecord { static let databaseTableName = "jsplugin" }
 
 extension JsPluginModel: Codable, FetchableRecord, PersistableRecord {}

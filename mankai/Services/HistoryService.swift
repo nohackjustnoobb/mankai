@@ -12,9 +12,7 @@ final class HistoryService: ObservableObject {
     /// The shared singleton instance of HistoryService.
     static let shared = HistoryService()
 
-    private init() {
-        Logger.historyService.debug("Initializing HistoryService")
-    }
+    private init() { Logger.historyService.debug("Initializing HistoryService") }
 
     /// Retrieves a history record for a specific manga.
     /// - Parameters:
@@ -25,11 +23,13 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug(
             "Getting history for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
-            return try DbService.shared.appDb?.read { db in
-                try RecordModel
-                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+            return try DbService.shared.appDb?
+                .read { db in
+                    try RecordModel.filter(
+                        Column("mangaId") == mangaId && Column("pluginId") == pluginId
+                    )
                     .fetchOne(db)
-            }
+                }
         } catch {
             Logger.historyService.error("Failed to get history record", error: error)
             return nil
@@ -43,9 +43,8 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug("Getting history for \(ids.count) records")
         do {
             let keys = ids.map { ["mangaId": $0.mangaId, "pluginId": $0.pluginId] }
-            let result = try DbService.shared.appDb?.read { db in
-                try RecordModel.fetchAll(db, keys: keys)
-            }
+            let result = try DbService.shared.appDb?
+                .read { db in try RecordModel.fetchAll(db, keys: keys) }
             return result ?? []
         } catch {
             Logger.historyService.error("Failed to get history records", error: error)
@@ -63,21 +62,22 @@ final class HistoryService: ObservableObject {
         let result = try await update(record: record, manga: manga)
 
         do {
-            try await DbService.shared.appDb?.write { db in
-                // Set updates to false in the corresponding saved if it exists
-                if var saved =
-                    try SavedModel
-                    .filter(
-                        Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId
-                            && Column("updates") == true
-                    )
-                    .fetchOne(db)
-                {
-                    saved.updates = false
-                    saved.datetime = Date()
-                    try saved.update(db)
+            try await DbService.shared.appDb?
+                .write { db in
+                    // Set updates to false in the corresponding saved if it exists
+                    if var saved =
+                        try SavedModel.filter(
+                            Column("mangaId") == record.mangaId
+                                && Column("pluginId") == record.pluginId
+                                && Column("updates") == true
+                        )
+                        .fetchOne(db)
+                    {
+                        saved.updates = false
+                        saved.datetime = Date()
+                        try saved.update(db)
+                    }
                 }
-            }
         } catch {
             Logger.historyService.error(
                 "Failed to update saved model after adding history", error: error)
@@ -96,14 +96,13 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug("Updating history record for mangaId: \(record.mangaId)")
         var result: Bool?
         do {
-            result = try await DbService.shared.appDb?.write { db in
-                if let manga = manga {
-                    try? manga.update(db)
-                }
-                try record.upsert(db)
+            result = try await DbService.shared.appDb?
+                .write { db in
+                    if let manga = manga { try? manga.update(db) }
+                    try record.upsert(db)
 
-                return true
-            }
+                    return true
+                }
         } catch {
             Logger.historyService.error("Failed to update history record", error: error)
             throw error
@@ -114,9 +113,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
 
         return result
     }
@@ -130,19 +127,14 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug("Batch updating \(records.count) records")
         var result: Bool?
         do {
-            result = try await DbService.shared.appDb?.write { db in
-                if let mangas = mangas {
-                    for manga in mangas {
-                        try? manga.update(db)
-                    }
-                }
+            result = try await DbService.shared.appDb?
+                .write { db in
+                    if let mangas = mangas { for manga in mangas { try? manga.update(db) } }
 
-                for record in records {
-                    try record.upsert(db)
-                }
+                    for record in records { try record.upsert(db) }
 
-                return true
-            }
+                    return true
+                }
         } catch {
             Logger.historyService.error("Failed to batch update history records", error: error)
             throw error
@@ -153,9 +145,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
 
         return result
     }
@@ -167,22 +157,20 @@ final class HistoryService: ObservableObject {
     /// - Returns: A list of `RecordModel` objects.
     func getAll(limit: Int? = nil, offset: Int = 0, shouldSync: Bool? = nil) -> [RecordModel] {
         Logger.historyService.debug(
-            "Getting all history records, limit: \(String(describing: limit)), offset: \(offset)"
-        )
+            "Getting all history records, limit: \(String(describing: limit)), offset: \(offset)")
         do {
-            let result = try DbService.shared.appDb?.read { db in
-                var request = RecordModel.order(Column("datetime").desc)
+            let result = try DbService.shared.appDb?
+                .read { db in
+                    var request = RecordModel.order(Column("datetime").desc)
 
-                if let limit = limit {
-                    request = request.limit(limit, offset: offset)
+                    if let limit = limit { request = request.limit(limit, offset: offset) }
+
+                    if let shouldSync = shouldSync {
+                        request = request.filter(Column("shouldSync") == shouldSync)
+                    }
+
+                    return try request.fetchAll(db)
                 }
-
-                if let shouldSync = shouldSync {
-                    request = request.filter(Column("shouldSync") == shouldSync)
-                }
-
-                return try request.fetchAll(db)
-            }
             return result ?? []
         } catch {
             Logger.historyService.error("Failed to get all history records", error: error)
@@ -196,19 +184,18 @@ final class HistoryService: ObservableObject {
     func getAllSince(date: Date?, shouldSync: Bool? = nil) -> [RecordModel] {
         Logger.historyService.debug("Getting history records since: \(String(describing: date))")
         do {
-            let result = try DbService.shared.appDb?.read { db in
-                var request = RecordModel.order(Column("datetime").desc)
+            let result = try DbService.shared.appDb?
+                .read { db in
+                    var request = RecordModel.order(Column("datetime").desc)
 
-                if let shouldSync = shouldSync {
-                    request = request.filter(Column("shouldSync") == shouldSync)
+                    if let shouldSync = shouldSync {
+                        request = request.filter(Column("shouldSync") == shouldSync)
+                    }
+
+                    if let date = date { request = request.filter(Column("datetime") > date) }
+
+                    return try request.fetchAll(db)
                 }
-
-                if let date = date {
-                    request = request.filter(Column("datetime") > date)
-                }
-
-                return try request.fetchAll(db)
-            }
             return result ?? []
         } catch {
             Logger.historyService.error("Failed to get history records since date", error: error)

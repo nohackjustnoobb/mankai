@@ -18,13 +18,10 @@ struct MangaItemView: View {
         VStack(alignment: .center, spacing: 8) {
             // Cover Image
             MangaCoverView(
-                coverUrl: manga.cover,
-                plugin: plugin,
+                coverUrl: manga.cover, plugin: plugin,
                 tag: manga.status == .completed
                     ? String(localized: "mangaCompleted")
-                    : saved?.updates == true
-                        ? String(localized: "new")
-                        : nil,
+                    : saved?.updates == true ? String(localized: "new") : nil,
                 tagColor: (saved?.updates == true ? .green : .red)
             )
             .aspectRatio(3 / 4, contentMode: .fit)
@@ -32,10 +29,7 @@ struct MangaItemView: View {
             VStack(alignment: .center) {
                 // Title
                 if let title = manga.title {
-                    Text(title)
-                        .font(.caption)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
+                    Text(title).font(.caption).foregroundColor(.primary).lineLimit(1)
                 }
 
                 // Latest Chapter
@@ -45,10 +39,7 @@ struct MangaItemView: View {
                             Text(title)
                         } else {
                             Text(
-                                String(
-                                    format: String(localized: "chapterFormat"),
-                                    record.chapterId
-                                )
+                                String(format: String(localized: "chapterFormat"), record.chapterId)
                             )
                         }
 
@@ -63,19 +54,13 @@ struct MangaItemView: View {
 
                         } else {
                             Text(
-                                String(
-                                    format: String(localized: "chapterFormat"),
-                                    latestChapter.id
-                                )
+                                String(format: String(localized: "chapterFormat"), latestChapter.id)
                             )
                         }
                     }
                 }
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .font(.caption2).foregroundColor(.secondary).foregroundStyle(.secondary)
+                .lineLimit(1).frame(maxWidth: .infinity, alignment: .center)
             }
             .frame(maxWidth: .infinity)
         }

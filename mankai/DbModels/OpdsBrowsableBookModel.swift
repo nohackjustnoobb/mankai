@@ -23,8 +23,6 @@ struct OpdsBrowsableBookModel {
     }
 }
 
-extension OpdsBrowsableBookModel: TableRecord {
-    static let databaseTableName = "opdsbrowsablebook"
-}
+extension OpdsBrowsableBookModel: TableRecord { static let databaseTableName = "opdsbrowsablebook" }
 
 extension OpdsBrowsableBookModel: Codable, FetchableRecord, PersistableRecord {}

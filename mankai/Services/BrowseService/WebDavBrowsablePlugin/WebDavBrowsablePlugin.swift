@@ -17,21 +17,13 @@ struct WebDavConnectionConfiguration {
     init(baseURL: String, username: String? = nil, password: String? = nil) throws {
         let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard var components = URLComponents(string: trimmedURL),
-            let scheme = components.scheme?.lowercased(),
-            scheme == "http" || scheme == "https",
-            components.host?.isEmpty == false,
-            components.user == nil,
-            components.password == nil,
-            components.query == nil,
-            components.fragment == nil
-        else {
-            throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError()
-        }
+            let scheme = components.scheme?.lowercased(), scheme == "http" || scheme == "https",
+            components.host?.isEmpty == false, components.user == nil, components.password == nil,
+            components.query == nil, components.fragment == nil
+        else { throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError() }
 
         components.scheme = scheme
-        if !components.percentEncodedPath.hasSuffix("/") {
-            components.percentEncodedPath += "/"
-        }
+        if !components.percentEncodedPath.hasSuffix("/") { components.percentEncodedPath += "/" }
         guard let normalizedURL = components.url else {
             throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError()
         }
@@ -62,9 +54,7 @@ actor WebDavSession: BrowsableSession {
     init(configuration: WebDavConnectionConfiguration) {
         self.configuration = configuration
         account = MankaiWebDavAccount(
-            username: configuration.username ?? "",
-            baseURL: configuration.baseURL.absoluteString
-        )
+            username: configuration.username ?? "", baseURL: configuration.baseURL.absoluteString)
     }
 
     func disconnect() async {}
@@ -72,9 +62,7 @@ actor WebDavSession: BrowsableSession {
     func list(path: String) async throws -> [BrowsableSessionEntry] {
         let files: [WebDAVFile] = try await withCheckedThrowingContinuation { continuation in
             client.listFiles(
-                atPath: path,
-                account: account,
-                password: configuration.password ?? "",
+                atPath: path, account: account, password: configuration.password ?? "",
                 caching: .disableCache
             ) { files, error in
                 if let error {
@@ -89,9 +77,7 @@ actor WebDavSession: BrowsableSession {
         }
         return files.map { file in
             BrowsableSessionEntry(
-                name: file.fileName,
-                isDirectory: file.isDirectory,
-                isRegularFile: !file.isDirectory
+                name: file.fileName, isDirectory: file.isDirectory, isRegularFile: !file.isDirectory
             )
         }
     }
@@ -99,9 +85,7 @@ actor WebDavSession: BrowsableSession {
     func downloadIfExists(path: String) async throws -> Data? {
         try await withCheckedThrowingContinuation { continuation in
             client.download(
-                fileAtPath: path,
-                account: account,
-                password: configuration.password ?? "",
+                fileAtPath: path, account: account, password: configuration.password ?? "",
                 caching: .disableCache
             ) { data, error in
                 if let error {
@@ -124,9 +108,7 @@ actor WebDavSession: BrowsableSession {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<Void, Error>) in
             client.createFolder(
-                atPath: path,
-                account: account,
-                password: configuration.password ?? ""
+                atPath: path, account: account, password: configuration.password ?? ""
             ) { error in
                 if let error {
                     continuation.resume(throwing: Self.requestError(error))
@@ -141,10 +123,7 @@ actor WebDavSession: BrowsableSession {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<Void, Error>) in
             client.upload(
-                data: data,
-                toPath: path,
-                account: account,
-                password: configuration.password ?? ""
+                data: data, toPath: path, account: account, password: configuration.password ?? ""
             ) { error in
                 if let error {
                     continuation.resume(throwing: Self.requestError(error))
@@ -159,10 +138,7 @@ actor WebDavSession: BrowsableSession {
         try await withCheckedThrowingContinuation {
             (continuation: CheckedContinuation<Void, Error>) in
             client.upload(
-                file: file,
-                toPath: path,
-                account: account,
-                password: configuration.password ?? ""
+                file: file, toPath: path, account: account, password: configuration.password ?? ""
             ) { error in
                 if let error {
                     continuation.resume(throwing: Self.requestError(error))
@@ -178,8 +154,9 @@ actor WebDavSession: BrowsableSession {
     }
 }
 
-final class WebDavBrowsablePlugin:
-    GenericBrowsablePlugin<WebDavConnectionConfiguration, WebDavSession>
+final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
+    WebDavConnectionConfiguration, WebDavSession
+>
 {
 
     /// Creates a new WebDAV plugin after validating the connection and resolving its identity.
@@ -187,71 +164,46 @@ final class WebDavBrowsablePlugin:
         do {
             let identity = try await BrowsableFileUtilities.resolveIdentity(
                 using: session,
-                invalidPluginError: MankaiErrorCode.browseWebDavInvalidPlugin.makeError()
-            )
+                invalidPluginError: MankaiErrorCode.browseWebDavInvalidPlugin.makeError())
 
             try self.init(
-                id: identity.id,
-                name: name,
-                configuration: session.configuration,
-                session: session,
-                shouldSync: identity.shouldSync
-            )
+                id: identity.id, name: name, configuration: session.configuration, session: session,
+                shouldSync: identity.shouldSync)
         } catch {
             Logger.webDavBrowsablePlugin.error(
                 "Failed to create WebDAV browsable plugin for \(session.configuration.baseURL.absoluteString)",
-                error: error
-            )
+                error: error)
             throw error
         }
     }
 
     init(
-        id: String,
-        name: String?,
-        configuration: WebDavConnectionConfiguration,
-        session: WebDavSession? = nil,
-        shouldSync: Bool = true
+        id: String, name: String?, configuration: WebDavConnectionConfiguration,
+        session: WebDavSession? = nil, shouldSync: Bool = true
     ) throws {
-        try super.init(
-            id: id,
-            name: name,
-            configuration: configuration,
-            session: session,
-            temporaryDirectoryName: "webdav",
-            shouldSync: shouldSync
-        )
+        try super
+            .init(
+                id: id, name: name, configuration: configuration, session: session,
+                temporaryDirectoryName: "webdav", shouldSync: shouldSync)
     }
 
-    var baseURL: URL {
-        configuration.baseURL
-    }
+    var baseURL: URL { configuration.baseURL }
 
-    var username: String? {
-        configuration.username
-    }
+    var username: String? { configuration.username }
 
-    var password: String? {
-        configuration.password
-    }
+    var password: String? { configuration.password }
 
     override var name: String? {
-        if let displayName {
-            return displayName
-        }
+        if let displayName { return displayName }
 
         let host = baseURL.host ?? baseURL.absoluteString
         let path = baseURL.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         return path.isEmpty ? host : "\(host)/\(path)"
     }
 
-    override var tags: [String] {
-        ["WebDAV"]
-    }
+    override var tags: [String] { ["WebDAV"] }
 
-    override var systemImageName: String {
-        "network"
-    }
+    override var systemImageName: String { "network" }
 
     static func loadPlugins() -> [WebDavBrowsablePlugin] {
         Logger.webDavBrowsablePlugin.debug("Loading WebDAV browsable plugins")
@@ -261,15 +213,10 @@ final class WebDavBrowsablePlugin:
         }
 
         let models: [WebDavBrowsablePluginModel]
-        do {
-            models = try dbPool.read { db in
-                try WebDavBrowsablePluginModel.fetchAll(db)
-            }
-        } catch {
+        do { models = try dbPool.read { db in try WebDavBrowsablePluginModel.fetchAll(db) } } catch
+        {
             Logger.webDavBrowsablePlugin.error(
-                "Failed to fetch WebDavBrowsablePluginModels",
-                error: error
-            )
+                "Failed to fetch WebDavBrowsablePluginModels", error: error)
             return []
         }
 
@@ -277,22 +224,14 @@ final class WebDavBrowsablePlugin:
         for model in models {
             do {
                 let configuration = try WebDavConnectionConfiguration(
-                    baseURL: model.baseURL,
-                    username: model.username,
-                    password: model.password
-                )
+                    baseURL: model.baseURL, username: model.username, password: model.password)
                 try results.append(
                     WebDavBrowsablePlugin(
-                        id: model.id,
-                        name: model.name,
-                        configuration: configuration,
-                        shouldSync: model.shouldSync
-                    ))
+                        id: model.id, name: model.name, configuration: configuration,
+                        shouldSync: model.shouldSync))
             } catch {
                 Logger.webDavBrowsablePlugin.error(
-                    "Failed to load WebDAV plugin \(model.id)",
-                    error: error
-                )
+                    "Failed to load WebDAV plugin \(model.id)", error: error)
             }
         }
         return results
@@ -305,16 +244,9 @@ final class WebDavBrowsablePlugin:
         }
 
         let model = WebDavBrowsablePluginModel(
-            id: id,
-            name: displayName,
-            baseURL: baseURL.absoluteString,
-            username: username,
-            password: password,
-            shouldSync: shouldSync
-        )
-        try db.write { db in
-            try model.save(db)
-        }
+            id: id, name: displayName, baseURL: baseURL.absoluteString, username: username,
+            password: password, shouldSync: shouldSync)
+        try db.write { db in try model.save(db) }
     }
 
     override func deletePlugin() throws {
@@ -323,9 +255,7 @@ final class WebDavBrowsablePlugin:
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
 
-        _ = try db.write { db in
-            try WebDavBrowsablePluginModel.deleteOne(db, key: id)
-        }
+        _ = try db.write { db in try WebDavBrowsablePluginModel.deleteOne(db, key: id) }
         try super.deletePlugin()
     }
 

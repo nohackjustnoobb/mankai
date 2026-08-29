@@ -46,12 +46,8 @@ class CacheWrapper: Plugin {
         super.init()
         updateInMemoryCacheItemCount()
         inMemoryCacheItemCountObserver = NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: nil
-        ) { [weak self] _ in
-            self?.updateInMemoryCacheItemCount()
-        }
+            forName: UserDefaults.didChangeNotification, object: nil, queue: nil
+        ) { [weak self] _ in self?.updateInMemoryCacheItemCount() }
         Logger.cacheWrapper.debug("Initialized CacheWrapper for plugin: \(plugin.id)")
     }
 
@@ -63,93 +59,53 @@ class CacheWrapper: Plugin {
 
     // MARK: - Metadata Delegation
 
-    override var id: String {
-        plugin.id
-    }
+    override var id: String { plugin.id }
 
-    override var name: String? {
-        plugin.name
-    }
+    override var name: String? { plugin.name }
 
-    override var version: String? {
-        plugin.version
-    }
+    override var version: String? { plugin.version }
 
-    override var tags: [String] {
-        plugin.tags
-    }
+    override var tags: [String] { plugin.tags }
 
-    override var description: String? {
-        plugin.description
-    }
+    override var description: String? { plugin.description }
 
-    override var authors: [String] {
-        plugin.authors
-    }
+    override var authors: [String] { plugin.authors }
 
-    override var repository: String? {
-        plugin.repository
-    }
+    override var repository: String? { plugin.repository }
 
-    override var availableGenres: [Genre] {
-        plugin.availableGenres
-    }
+    override var availableGenres: [Genre] { plugin.availableGenres }
 
-    override var configs: [Config] {
-        plugin.configs
-    }
+    override var configs: [Config] { plugin.configs }
 
-    override var cooldown: Cooldown? {
-        plugin.cooldown
-    }
+    override var cooldown: Cooldown? { plugin.cooldown }
 
-    override var capabilities: [PluginCapability] {
-        plugin.capabilities
-    }
+    override var capabilities: [PluginCapability] { plugin.capabilities }
 
-    override var shouldSync: Bool {
-        plugin.shouldSync
-    }
+    override var shouldSync: Bool { plugin.shouldSync }
 
-    override var shouldCache: Bool {
-        plugin.shouldCache
-    }
+    override var shouldCache: Bool { plugin.shouldCache }
 
-    override var canDownload: Bool {
-        plugin.canDownload
-    }
+    override var canDownload: Bool { plugin.canDownload }
 
     // MARK: - Configs Delegation
 
-    override var configValues: [ConfigValue] {
-        plugin.configValues
-    }
+    override var configValues: [ConfigValue] { plugin.configValues }
 
-    override func getConfig(_ key: String) -> Any {
-        return plugin.getConfig(key)
-    }
+    override func getConfig(_ key: String) -> Any { return plugin.getConfig(key) }
 
     override func setConfig(key: String, value: Any) throws {
         try plugin.setConfig(key: key, value: value)
     }
 
-    override func resetConfigs() throws {
-        try plugin.resetConfigs()
-    }
+    override func resetConfigs() throws { try plugin.resetConfigs() }
 
     // MARK: - Methods Delegation (Non-cached)
 
-    override func savePlugin() throws {
-        try plugin.savePlugin()
-    }
+    override func savePlugin() throws { try plugin.savePlugin() }
 
-    override func deletePlugin() throws {
-        try plugin.deletePlugin()
-    }
+    override func deletePlugin() throws { try plugin.deletePlugin() }
 
-    override func isOnline() async throws -> Bool {
-        return try await plugin.isOnline()
-    }
+    override func isOnline() async throws -> Bool { return try await plugin.isOnline() }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         return try await plugin.getMangas(ids)
@@ -190,13 +146,10 @@ class CacheWrapper: Plugin {
         cache.setObject(data as AnyObject, forKey: key as NSString)
     }
 
-    private func getOrLoadCachedData<T>(
-        for key: String,
-        load: @escaping () async throws -> T
-    ) async throws -> T {
-        if let cachedData = getCachedData(for: key, as: T.self) {
-            return cachedData
-        }
+    private func getOrLoadCachedData<T>(for key: String, load: @escaping () async throws -> T)
+        async throws -> T
+    {
+        if let cachedData = getCachedData(for: key, as: T.self) { return cachedData }
 
         let data = try await requestRegistry.value(for: key) { [self] () -> AnyObject in
             if let cachedData = getCachedData(for: key, as: T.self) {
@@ -218,9 +171,7 @@ class CacheWrapper: Plugin {
         Logger.cacheWrapper.info("Clearing all in-memory cache")
         cache.removeAllObjects()
 
-        DispatchQueue.main.async {
-            self.objectWillChange.send()
-        }
+        DispatchQueue.main.async { self.objectWillChange.send() }
     }
 
     // MARK: - Methods (Cached)
@@ -232,24 +183,21 @@ class CacheWrapper: Plugin {
         }
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         let cacheKey = getCacheKey(
             for: .search,
-            with: [query, String(page), genre.rawValue, String(status.rawValue), String(isAuthor)]
-        )
+            with: [query, String(page), genre.rawValue, String(status.rawValue), String(isAuthor)])
         return try await getOrLoadCachedData(for: cacheKey) {
             try await self.plugin.search(
-                query, page: page, genre: genre, status: status, isAuthor: isAuthor
-            )
+                query, page: page, genre: genre, status: status, isAuthor: isAuthor)
         }
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         let cacheKey = getCacheKey(
-            for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)]
-        )
+            for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)])
         return try await getOrLoadCachedData(for: cacheKey) {
             try await self.plugin.getList(page: page, genre: genre, status: status)
         }

@@ -35,32 +35,29 @@ enum MankaiErrorDomain: String {
     case update = "app.mankai.update"
 
     var codePrefix: Int {
-        switch self {
-        case .readerAdjacency: return 10
-        case .auth: return 20
-        case .browse: return 29
-        case .browseArchive: return 30
-        case .browseFilesystem: return 31
-        case .browseSmb: return 34
-        case .browseNfs: return 37
-        case .browseWebDav: return 35
-        case .browseOpds: return 36
-        case .browsePdf: return 32
-        case .browseEpub: return 33
-        case .chapter: return 40
-        case .download: return 50
-        case .history: return 60
-        case .library: return 70
-        case .plugin: return 80
-        case .pluginDummy: return 81
-        case .pluginDownload: return 82
-        case .pluginFilesystem: return 83
-        case .pluginHttp: return 84
-        case .pluginJavascript: return 85
-        case .sync: return 90
-        case .syncHttp: return 91
-        case .syncSupabase: return 92
-        case .update: return 93
+        switch self { case .readerAdjacency: return 10 case .auth: return 20 case .browse: return 29
+            case .browseArchive: return 30
+            case .browseFilesystem: return 31
+            case .browseSmb: return 34
+            case .browseNfs: return 37
+            case .browseWebDav: return 35
+            case .browseOpds: return 36
+            case .browsePdf: return 32
+            case .browseEpub: return 33
+            case .chapter: return 40
+            case .download: return 50
+            case .history: return 60
+            case .library: return 70
+            case .plugin: return 80
+            case .pluginDummy: return 81
+            case .pluginDownload: return 82
+            case .pluginFilesystem: return 83
+            case .pluginHttp: return 84
+            case .pluginJavascript: return 85
+            case .sync: return 90
+            case .syncHttp: return 91
+            case .syncSupabase: return 92
+            case .update: return 93
         }
     }
 }
@@ -208,8 +205,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
         .authInvalidUrl: .init(domain: .auth, code: 11, messageKey: "invalidUrl"),
         .authRequestFailed: .init(domain: .auth, code: 12, messageKey: "httpRequestFailed"),
 
-        .browseInvalidPlugin: .init(
-            domain: .browse, code: 1, messageKey: "invalidBrowsablePlugin"),
+        .browseInvalidPlugin: .init(domain: .browse, code: 1, messageKey: "invalidBrowsablePlugin"),
         .browseArchiveNoImagesFoundInArchive: .init(
             domain: .browseArchive, code: 1, messageKey: "noImagesFoundInArchive"),
         .browseArchiveEntryNotFound: .init(
@@ -233,10 +229,7 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .browseNfs, code: 1, messageKey: "invalidNfsConnectionConfiguration"),
         .browseNfsInvalidPlugin: .init(domain: .browseNfs, code: 2, messageKey: "invalidNfsPlugin"),
         .browseWebDavInvalidConnectionConfiguration: .init(
-            domain: .browseWebDav,
-            code: 1,
-            messageKey: "invalidWebDavConnectionConfiguration"
-        ),
+            domain: .browseWebDav, code: 1, messageKey: "invalidWebDavConnectionConfiguration"),
         .browseWebDavInvalidPlugin: .init(
             domain: .browseWebDav, code: 2, messageKey: "invalidWebDavPlugin"),
         .browseWebDavRequestFailed: .init(
@@ -372,16 +365,12 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .syncSupabase, code: 2, messageKey: "supabaseNotConfigured"),
         .syncSupabaseNotReady: .init(
             domain: .syncSupabase, code: 3, messageKey: "supabaseNotReady"),
-        .updateSyncFailed: .init(domain: .update, code: 1, messageKey: "syncFailed"),
+        .updateSyncFailed: .init(domain: .update, code: 1, messageKey: "syncFailed")
     ]
 
-    var definition: MankaiErrorDefinition {
-        Self.definitions[self]!
-    }
+    var definition: MankaiErrorDefinition { Self.definitions[self]! }
 
-    var errorCode: Int {
-        definition.domain.codePrefix * 100 + definition.code
-    }
+    var errorCode: Int { definition.domain.codePrefix * 100 + definition.code }
 
     func matches(_ error: Error) -> Bool {
         let error = error as NSError
@@ -389,26 +378,17 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     }
 
     func makeError(
-        messageOverride: String? = nil,
-        messageArguments: [CVarArg] = [],
-        underlyingError: Error? = nil,
-        additionalUserInfo: [String: Any] = [:]
+        messageOverride: String? = nil, messageArguments: [CVarArg] = [],
+        underlyingError: Error? = nil, additionalUserInfo: [String: Any] = [:]
     ) -> NSError {
         var userInfo = additionalUserInfo
         let message = messageOverride ?? String(localized: definition.messageKey)
         userInfo[NSLocalizedDescriptionKey] =
             messageArguments.isEmpty
-            ? message
-            : String(format: message, locale: .current, arguments: messageArguments)
+            ? message : String(format: message, locale: .current, arguments: messageArguments)
 
-        if let underlyingError {
-            userInfo[NSUnderlyingErrorKey] = underlyingError
-        }
+        if let underlyingError { userInfo[NSUnderlyingErrorKey] = underlyingError }
 
-        return NSError(
-            domain: definition.domain.rawValue,
-            code: errorCode,
-            userInfo: userInfo
-        )
+        return NSError(domain: definition.domain.rawValue, code: errorCode, userInfo: userInfo)
     }
 }

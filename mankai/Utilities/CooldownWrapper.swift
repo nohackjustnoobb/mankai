@@ -36,9 +36,7 @@ private actor AsyncSemaphore {
     private var availablePermits: Int
     private var waiters: [Waiter] = []
 
-    init(permits: Int) {
-        availablePermits = permits
-    }
+    init(permits: Int) { availablePermits = permits }
 
     func acquire() async throws {
         try Task.checkCancellation()
@@ -104,106 +102,65 @@ class CooldownWrapper: Plugin {
 
         if let milliseconds = cooldown.default, milliseconds > 0 {
             Logger.cooldownWrapper.debug(
-                "Configured plugin cooldown of \(milliseconds)ms for plugin: \(plugin.id)"
-            )
+                "Configured plugin cooldown of \(milliseconds)ms for plugin: \(plugin.id)")
         }
         if let milliseconds = cooldown.getImage, milliseconds > 0 {
             Logger.cooldownWrapper.debug(
-                "Configured getImage cooldown of \(milliseconds)ms for plugin: \(plugin.id)"
-            )
+                "Configured getImage cooldown of \(milliseconds)ms for plugin: \(plugin.id)")
         }
         if let concurrency = cooldown.getImageConcurrency, concurrency > 0 {
             Logger.cooldownWrapper.debug(
-                "Configured getImage concurrency limit of \(concurrency) for plugin: \(plugin.id)"
-            )
+                "Configured getImage concurrency limit of \(concurrency) for plugin: \(plugin.id)")
         }
     }
 
     // MARK: - Metadata Delegation
 
-    override var id: String {
-        plugin.id
-    }
+    override var id: String { plugin.id }
 
-    override var name: String? {
-        plugin.name
-    }
+    override var name: String? { plugin.name }
 
-    override var version: String? {
-        plugin.version
-    }
+    override var version: String? { plugin.version }
 
-    override var tags: [String] {
-        plugin.tags
-    }
+    override var tags: [String] { plugin.tags }
 
-    override var description: String? {
-        plugin.description
-    }
+    override var description: String? { plugin.description }
 
-    override var authors: [String] {
-        plugin.authors
-    }
+    override var authors: [String] { plugin.authors }
 
-    override var repository: String? {
-        plugin.repository
-    }
+    override var repository: String? { plugin.repository }
 
-    override var availableGenres: [Genre] {
-        plugin.availableGenres
-    }
+    override var availableGenres: [Genre] { plugin.availableGenres }
 
-    override var configs: [Config] {
-        plugin.configs
-    }
+    override var configs: [Config] { plugin.configs }
 
-    override var cooldown: Cooldown? {
-        plugin.cooldown
-    }
+    override var cooldown: Cooldown? { plugin.cooldown }
 
-    override var capabilities: [PluginCapability] {
-        plugin.capabilities
-    }
+    override var capabilities: [PluginCapability] { plugin.capabilities }
 
-    override var shouldSync: Bool {
-        plugin.shouldSync
-    }
+    override var shouldSync: Bool { plugin.shouldSync }
 
-    override var shouldCache: Bool {
-        plugin.shouldCache
-    }
+    override var shouldCache: Bool { plugin.shouldCache }
 
-    override var canDownload: Bool {
-        plugin.canDownload
-    }
+    override var canDownload: Bool { plugin.canDownload }
 
     // MARK: - Config Delegation
 
-    override var configValues: [ConfigValue] {
-        plugin.configValues
-    }
+    override var configValues: [ConfigValue] { plugin.configValues }
 
-    override func getConfig(_ key: String) -> Any {
-        plugin.getConfig(key)
-    }
+    override func getConfig(_ key: String) -> Any { plugin.getConfig(key) }
 
     override func setConfig(key: String, value: Any) throws {
         try plugin.setConfig(key: key, value: value)
     }
 
-    override func resetConfigs() throws {
-        try plugin.resetConfigs()
-    }
+    override func resetConfigs() throws { try plugin.resetConfigs() }
 
     // MARK: - Method Delegation
 
-    override func savePlugin() throws {
-        try plugin.savePlugin()
-    }
+    override func savePlugin() throws { try plugin.savePlugin() }
 
-    override func deletePlugin() throws {
-        try plugin.deletePlugin()
-    }
+    override func deletePlugin() throws { try plugin.deletePlugin() }
 
     private func wait(
         milliseconds: Int?, using scheduler: CooldownScheduler, before operation: String
@@ -211,110 +168,92 @@ class CooldownWrapper: Plugin {
         guard let milliseconds, milliseconds > 0 else { return }
 
         Logger.cooldownWrapper.debug(
-            "Checking cooldown (\(milliseconds)ms) before \(operation) for plugin: \(plugin.id)"
-        )
+            "Checking cooldown (\(milliseconds)ms) before \(operation) for plugin: \(plugin.id)")
         let didWait = try await scheduler.wait(milliseconds: milliseconds)
 
         if didWait {
             Logger.cooldownWrapper.debug(
-                "Cooldown wait completed before \(operation) for plugin: \(plugin.id)"
-            )
+                "Cooldown wait completed before \(operation) for plugin: \(plugin.id)")
         } else {
             Logger.cooldownWrapper.debug(
-                "No cooldown wait needed before \(operation) for plugin: \(plugin.id)"
-            )
+                "No cooldown wait needed before \(operation) for plugin: \(plugin.id)")
         }
     }
 
     override func isOnline() async throws -> Bool {
         try await wait(
-            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "isOnline"
-        )
+            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "isOnline")
         return try await plugin.isOnline()
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler,
-            before: "getSuggestions"
-        )
+            before: "getSuggestions")
         return try await plugin.getSuggestions(query)
     }
 
-    override func search(
-        _ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool
-    ) async throws -> [Manga] {
+    override func search(_ query: String, page: UInt, genre: Genre, status: Status, isAuthor: Bool)
+        async throws -> [Manga]
+    {
         try await wait(
-            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "search"
-        )
+            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "search")
         return try await plugin.search(
-            query, page: page, genre: genre, status: status, isAuthor: isAuthor
-        )
+            query, page: page, genre: genre, status: status, isAuthor: isAuthor)
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         try await wait(
-            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getList"
-        )
+            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getList")
         return try await plugin.getList(page: page, genre: genre, status: status)
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         try await wait(
-            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getMangas"
-        )
+            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getMangas")
         return try await plugin.getMangas(ids)
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler,
-            before: "getDetailedManga"
-        )
+            before: "getDetailedManga")
         return try await plugin.getDetailedManga(id)
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         try await wait(
-            milliseconds: configuredCooldown.default, using: pluginScheduler,
-            before: "getChapter"
-        )
+            milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getChapter")
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
     override func getImage(_ url: String) async throws -> Data {
         guard let imageSemaphore else {
             try await wait(
-                milliseconds: configuredCooldown.getImage, using: imageScheduler,
-                before: "getImage"
+                milliseconds: configuredCooldown.getImage, using: imageScheduler, before: "getImage"
             )
             return try await plugin.getImage(url)
         }
 
         Logger.cooldownWrapper.debug(
-            "Waiting for getImage concurrency permit for plugin: \(plugin.id)"
-        )
+            "Waiting for getImage concurrency permit for plugin: \(plugin.id)")
         try await imageSemaphore.acquire()
         Logger.cooldownWrapper.debug(
-            "Acquired getImage concurrency permit for plugin: \(plugin.id)"
-        )
+            "Acquired getImage concurrency permit for plugin: \(plugin.id)")
 
         do {
             try await wait(
-                milliseconds: configuredCooldown.getImage, using: imageScheduler,
-                before: "getImage"
+                milliseconds: configuredCooldown.getImage, using: imageScheduler, before: "getImage"
             )
             let data = try await plugin.getImage(url)
             await imageSemaphore.release()
             Logger.cooldownWrapper.debug(
-                "Released getImage concurrency permit for plugin: \(plugin.id)"
-            )
+                "Released getImage concurrency permit for plugin: \(plugin.id)")
             return data
         } catch {
             await imageSemaphore.release()
             Logger.cooldownWrapper.debug(
-                "Released getImage concurrency permit after failure for plugin: \(plugin.id)"
-            )
+                "Released getImage concurrency permit after failure for plugin: \(plugin.id)")
             throw error
         }
     }
@@ -356,9 +295,7 @@ private final class EditableCooldownWrapper: CooldownWrapper, Editable {
         try await editablePlugin.upsertChapter(chapter)
     }
 
-    func deleteChapter(id: String) async throws {
-        try await editablePlugin.deleteChapter(id: id)
-    }
+    func deleteChapter(id: String) async throws { try await editablePlugin.deleteChapter(id: id) }
 
     func arrangeChapterOrder(ids: [String]) async throws {
         try await editablePlugin.arrangeChapterOrder(ids: ids)

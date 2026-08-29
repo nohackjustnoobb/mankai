@@ -29,11 +29,8 @@ struct DebugMangas: View {
                 if plugin.supports(.batchMangas) || plugin.supports(.mangaDetails) {
                     NavigationLink(
                         destination: DebugGetMangasAndGetDetailedManga(
-                            mangaId: manga.id, plugin: plugin
-                        )
-                    ) {
-                        mangaRow(manga)
-                    }
+                            mangaId: manga.id, plugin: plugin)
+                    ) { mangaRow(manga) }
                 } else {
                     mangaRow(manga)
                 }
@@ -44,48 +41,30 @@ struct DebugMangas: View {
     private func mangaRow(_ manga: Manga) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("id")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(manga.id)
-                    .font(.caption)
-                    .foregroundColor(.primary)
+                Text("id").font(.caption).foregroundColor(.secondary)
+                Text(manga.id).font(.caption).foregroundColor(.primary)
                 Spacer()
-                Text("status")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(manga.status.localizedName)
-                    .font(.caption)
-                    .foregroundColor(.primary)
+                Text("status").font(.caption).foregroundColor(.secondary)
+                Text(manga.status.localizedName).font(.caption).foregroundColor(.primary)
             }
 
             HStack {
-                Text("title").font(.caption)
-                    .foregroundColor(.secondary)
-                Text(manga.title ?? String(localized: "nil"))
-                    .font(.caption)
+                Text("title").font(.caption).foregroundColor(.secondary)
+                Text(manga.title ?? String(localized: "nil")).font(.caption)
                     .foregroundColor(.primary)
                 Spacer()
             }
 
             HStack {
-                Text("cover")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(manga.cover ?? String(localized: "nil"))
-                    .font(.caption)
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
+                Text("cover").font(.caption).foregroundColor(.secondary)
+                Text(manga.cover ?? String(localized: "nil")).font(.caption)
+                    .foregroundColor(.primary).lineLimit(1)
                 Spacer()
             }
 
             HStack {
-                Text("latestChapter")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text(chapterText(manga.latestChapter))
-                    .font(.caption)
-                    .foregroundColor(.primary)
+                Text("latestChapter").font(.caption).foregroundColor(.secondary)
+                Text(chapterText(manga.latestChapter)).font(.caption).foregroundColor(.primary)
                     .lineLimit(1)
                 Spacer()
             }

@@ -21,14 +21,10 @@ struct Entity {
 
     /// Display name for a file after its manga metadata has been parsed.
     func displayName(using manga: DetailedManga?) -> String {
-        guard case .book(_) = type, let manga else {
-            return displayName
-        }
+        guard case .book(_) = type, let manga else { return displayName }
 
         let allChapters = manga.chapters.flatMap(\.chapters)
-        if allChapters.count == 1,
-            let chapterTitle = allChapters.first?.title
-        {
+        if allChapters.count == 1, let chapterTitle = allChapters.first?.title {
             return chapterTitle
         }
         return manga.title ?? displayName
@@ -53,9 +49,9 @@ protocol Browsable {
     /// Parses a supported manga file at the given path.
     func parseFile(path: String, fileType: String) async throws -> DetailedManga
 
-    /// Returns the absolute filesystem URL for the given relative path, if the
-    /// plugin is backed by a local filesystem directory. Returns `nil` for
-    /// non-filesystem plugins.
+    /// Returns the absolute filesystem URL for the given relative path,
+    /// if the plugin is backed by a local filesystem directory.
+    /// Returns `nil` for non-filesystem plugins.
     /// - Parameter path: A path relative to the plugin's root, or `nil` for the root.
     func absoluteURL(for path: String?) -> URL?
 }
@@ -70,8 +66,7 @@ protocol Importable {
 
     /// Imports a file from the given URL into the plugin's import directory.
     ///
-    /// The caller is responsible for ensuring the source resource is accessible
-    /// (e.g. by starting security-scoped access if needed).
+    /// The caller is responsible for ensuring the source resource is accessible (e.g. by starting security-scoped access if needed).
     ///
     /// - Parameter source: The URL of the file to import.
     func importFile(from source: URL) async throws
@@ -80,9 +75,7 @@ protocol Importable {
 typealias BrowsablePlugin = Browsable & Plugin
 typealias ImportableBrowsablePlugin = Browsable & Importable & Plugin
 
-protocol LocalBrowsablePluginConvertible {
-    func convertToLocalPlugin()
-}
+protocol LocalBrowsablePluginConvertible { func convertToLocalPlugin() }
 
 enum BrowsePluginAddConflictResolution {
     case reject
@@ -126,9 +119,7 @@ final class BrowseService: ObservableObject {
         let fsBrowsablePlugins = FsBrowsablePlugin.loadPlugins()
         Logger.browseService.info("Loaded \(fsBrowsablePlugins.count) fs browsable plugins")
 
-        for plugin in fsBrowsablePlugins {
-            _plugins[plugin.id] = plugin
-        }
+        for plugin in fsBrowsablePlugins { _plugins[plugin.id] = plugin }
     }
 
     private func loadSmbBrowsablePlugins() {
@@ -136,9 +127,7 @@ final class BrowseService: ObservableObject {
         let smbBrowsablePlugins = SmbBrowsablePlugin.loadPlugins()
         Logger.browseService.info("Loaded \(smbBrowsablePlugins.count) SMB browsable plugins")
 
-        for plugin in smbBrowsablePlugins {
-            _plugins[plugin.id] = plugin
-        }
+        for plugin in smbBrowsablePlugins { _plugins[plugin.id] = plugin }
     }
 
     private func loadNfsBrowsablePlugins() {
@@ -146,39 +135,29 @@ final class BrowseService: ObservableObject {
         let nfsBrowsablePlugins = NfsBrowsablePlugin.loadPlugins()
         Logger.browseService.info("Loaded \(nfsBrowsablePlugins.count) NFS browsable plugins")
 
-        for plugin in nfsBrowsablePlugins {
-            _plugins[plugin.id] = plugin
-        }
+        for plugin in nfsBrowsablePlugins { _plugins[plugin.id] = plugin }
     }
 
     private func loadWebDavBrowsablePlugins() {
         Logger.browseService.debug("Loading WebDAV browsable plugins")
         let webDavBrowsablePlugins = WebDavBrowsablePlugin.loadPlugins()
-        Logger.browseService.info(
-            "Loaded \(webDavBrowsablePlugins.count) WebDAV browsable plugins")
+        Logger.browseService.info("Loaded \(webDavBrowsablePlugins.count) WebDAV browsable plugins")
 
-        for plugin in webDavBrowsablePlugins {
-            _plugins[plugin.id] = plugin
-        }
+        for plugin in webDavBrowsablePlugins { _plugins[plugin.id] = plugin }
     }
 
     private func loadOpdsBrowsablePlugins() {
         Logger.browseService.debug("Loading OPDS browsable plugins")
         let opdsBrowsablePlugins = OpdsBrowsablePlugin.loadPlugins()
-        Logger.browseService.info(
-            "Loaded \(opdsBrowsablePlugins.count) OPDS browsable plugins")
+        Logger.browseService.info("Loaded \(opdsBrowsablePlugins.count) OPDS browsable plugins")
 
-        for plugin in opdsBrowsablePlugins {
-            _plugins[plugin.id] = plugin
-        }
+        for plugin in opdsBrowsablePlugins { _plugins[plugin.id] = plugin }
     }
 
     /// Retrieves a plugin by its identifier.
     /// - Parameter id: The unique identifier of the plugin.
     /// - Returns: The `BrowsablePlugin` instance if found, otherwise `nil`.
-    func getPlugin(_ id: String) -> BrowsablePlugin? {
-        return _plugins[id]
-    }
+    func getPlugin(_ id: String) -> BrowsablePlugin? { return _plugins[id] }
 
     /// Retrieves an importable plugin by its identifier.
     func getImportablePlugin(_ id: String) -> ImportableBrowsablePlugin? {
@@ -191,28 +170,24 @@ final class BrowseService: ObservableObject {
     ///   - conflictResolution: How to handle an existing plugin with the same identifier.
     /// - Throws: An error if saving the plugin fails.
     func addPlugin(
-        _ plugin: BrowsablePlugin,
-        conflictResolution: BrowsePluginAddConflictResolution = .reject
+        _ plugin: BrowsablePlugin, conflictResolution: BrowsePluginAddConflictResolution = .reject
     ) throws {
         let originalPluginID = plugin.id
         let existingPlugin = _plugins[originalPluginID]
         var shouldOverwriteExisting = false
 
         if existingPlugin != nil {
-            switch conflictResolution {
-            case .reject:
+            switch conflictResolution { case .reject:
                 Logger.browseService.warning("Plugin ID already exists: \(plugin.id)")
                 throw MankaiErrorCode.pluginDuplicateId.makeError(
                     messageArguments: [plugin.id],
-                    additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id]
-                )
-            case .overwrite:
-                shouldOverwriteExisting = true
-            case .makeLocal:
-                guard let convertible = plugin as? LocalBrowsablePluginConvertible else {
-                    throw MankaiErrorCode.browseInvalidPlugin.makeError()
-                }
-                convertible.convertToLocalPlugin()
+                    additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id])
+                case .overwrite: shouldOverwriteExisting = true
+                case .makeLocal:
+                    guard let convertible = plugin as? LocalBrowsablePluginConvertible else {
+                        throw MankaiErrorCode.browseInvalidPlugin.makeError()
+                    }
+                    convertible.convertToLocalPlugin()
             }
         }
 
@@ -220,32 +195,23 @@ final class BrowseService: ObservableObject {
             Logger.browseService.warning("Local plugin ID already exists: \(plugin.id)")
             throw MankaiErrorCode.pluginDuplicateId.makeError(
                 messageArguments: [plugin.id],
-                additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id]
-            )
+                additionalUserInfo: [MankaiErrorUserInfoKey.pluginId: plugin.id])
         }
 
         Logger.browseService.debug("Adding plugin: \(plugin.id)")
         do {
-            if shouldOverwriteExisting, let existingPlugin {
-                try existingPlugin.deletePlugin()
-            }
+            if shouldOverwriteExisting, let existingPlugin { try existingPlugin.deletePlugin() }
             try plugin.savePlugin()
             _plugins[plugin.id] = plugin
 
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self.objectWillChange.send() }
 
             Logger.browseService.info("Plugin added successfully: \(plugin.id)")
         } catch {
             if shouldOverwriteExisting, let existingPlugin {
-                do {
-                    try existingPlugin.savePlugin()
-                } catch {
+                do { try existingPlugin.savePlugin() } catch {
                     Logger.browseService.error(
-                        "Failed to restore overwritten plugin: \(originalPluginID)",
-                        error: error
-                    )
+                        "Failed to restore overwritten plugin: \(originalPluginID)", error: error)
                 }
             }
             Logger.browseService.error("Failed to save plugin: \(plugin.id)", error: error)
@@ -259,9 +225,7 @@ final class BrowseService: ObservableObject {
     func removePlugin(_ id: String) throws {
         Logger.browseService.debug("Removing plugin: \(id)")
         if let plugin = _plugins.removeValue(forKey: id) {
-            DispatchQueue.main.async {
-                self.objectWillChange.send()
-            }
+            DispatchQueue.main.async { self.objectWillChange.send() }
 
             do {
                 try plugin.deletePlugin()

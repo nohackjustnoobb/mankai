@@ -16,41 +16,28 @@ private struct OverscrollView: View {
     let availability: ReaderChapterAvailability
 
     var body: some View {
-        positionedContent
-            .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+        positionedContent.background(Color(uiColor: .systemBackground).ignoresSafeArea())
     }
 
-    @ViewBuilder
-    private var positionedContent: some View {
+    @ViewBuilder private var positionedContent: some View {
         if availability != .available {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            content.frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if orientation == .vertical {
-            content
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity,
-                    alignment: placeAtTop ? .top : .bottom
-                )
+            content.frame(
+                maxWidth: .infinity, maxHeight: .infinity, alignment: placeAtTop ? .top : .bottom)
         } else {
-            content
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: 200,
-                    alignment: placeAtLeading ? .leading : .trailing
-                )
-                .padding()
+            content.frame(
+                maxWidth: .infinity, maxHeight: 200,
+                alignment: placeAtLeading ? .leading : .trailing
+            )
+            .padding()
         }
     }
 
     private var content: some View {
         VStack(spacing: 16) {
-            Image(systemName: imageName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 48, height: 48)
-            Text(message)
-                .multilineTextAlignment(.center)
+            Image(systemName: imageName).resizable().scaledToFit().frame(width: 48, height: 48)
+            Text(message).multilineTextAlignment(.center)
         }
         .foregroundStyle(Color(uiColor: .secondaryLabel))
     }
@@ -66,49 +53,42 @@ private struct OverscrollView: View {
     }
 
     private var imageName: String {
-        switch availability {
-        case .unavailable:
-            return "xmark"
-        case .locked:
-            return "lock.fill"
-        case .available:
-            if orientation == .vertical {
-                return step == .previous ? "chevron.up" : "chevron.down"
-            } else if readingDirection == .rightToLeft {
-                return step == .previous ? "chevron.right" : "chevron.left"
-            } else {
-                return step == .previous ? "chevron.left" : "chevron.right"
-            }
+        switch availability { case .unavailable: return "xmark" case .locked: return "lock.fill"
+            case .available:
+                if orientation == .vertical {
+                    return step == .previous ? "chevron.up" : "chevron.down"
+                } else if readingDirection == .rightToLeft {
+                    return step == .previous ? "chevron.right" : "chevron.left"
+                } else {
+                    return step == .previous ? "chevron.left" : "chevron.right"
+                }
         }
     }
 
     private var message: String {
-        switch availability {
-        case .unavailable:
+        switch availability { case .unavailable:
             return step == .previous
-                ? String(localized: "noPreviousChapter")
-                : String(localized: "noNextChapter")
-        case .locked:
-            return step == .previous
-                ? String(localized: "previousChapterIsLocked")
-                : String(localized: "nextChapterIsLocked")
-        case .available:
-            if pageTransition == .pageCurl {
+                ? String(localized: "noPreviousChapter") : String(localized: "noNextChapter")
+            case .locked:
                 return step == .previous
-                    ? String(localized: "turnToLoadPreviousChapter")
-                    : String(localized: "turnToLoadNextChapter")
-            }
-            return step == .previous
-                ? String(localized: "pullToLoadPreviousChapter")
-                : String(localized: "pullToLoadNextChapter")
+                    ? String(localized: "previousChapterIsLocked")
+                    : String(localized: "nextChapterIsLocked")
+            case .available:
+                if pageTransition == .pageCurl {
+                    return step == .previous
+                        ? String(localized: "turnToLoadPreviousChapter")
+                        : String(localized: "turnToLoadNextChapter")
+                }
+                return step == .previous
+                    ? String(localized: "pullToLoadPreviousChapter")
+                    : String(localized: "pullToLoadNextChapter")
         }
     }
 }
 
 private typealias OverscrollHostingController = UIHostingController<OverscrollView>
 
-private final class PagedReaderViewController: UIViewController,
-    UIPageViewControllerDataSource,
+private final class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
     UIPageViewControllerDelegate
 {
     private var renderState: ReaderRenderState
@@ -142,8 +122,7 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     init(
-        state: ReaderRenderState,
-        configuration: ReaderRenderConfiguration,
+        state: ReaderRenderState, configuration: ReaderRenderConfiguration,
         actions: ReaderRenderActions
     ) {
         renderState = state
@@ -151,25 +130,14 @@ private final class PagedReaderViewController: UIViewController,
         self.actions = actions
         leadingOverscrollController = UIHostingController(
             rootView: ReaderOverscrollIndicator(
-                progress: 0,
-                direction: .up,
-                step: .previous,
-                availability: state.previousChapter
-            )
-        )
+                progress: 0, direction: .up, step: .previous, availability: state.previousChapter))
         trailingOverscrollController = UIHostingController(
             rootView: ReaderOverscrollIndicator(
-                progress: 0,
-                direction: .down,
-                step: .next,
-                availability: state.nextChapter
-            )
-        )
+                progress: 0, direction: .down, step: .next, availability: state.nextChapter))
         super.init(nibName: nil, bundle: nil)
     }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
+    @available(*, unavailable) required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -188,9 +156,7 @@ private final class PagedReaderViewController: UIViewController,
 
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        if configuration.pageTransition == .scroll {
-            updateScrollOverscrollLayout()
-        }
+        if configuration.pageTransition == .scroll { updateScrollOverscrollLayout() }
     }
 
     override func viewDidLayoutSubviews() {
@@ -204,15 +170,13 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     func apply(
-        state: ReaderRenderState,
-        configuration: ReaderRenderConfiguration,
+        state: ReaderRenderState, configuration: ReaderRenderConfiguration,
         actions: ReaderRenderActions
     ) {
         let chapterChanged = renderedChapterID != state.chapterID
         let contentChanged = renderedRevision != state.revision
         let presentationChanged =
-            self.configuration.navigationOrientation
-            != configuration.navigationOrientation
+            self.configuration.navigationOrientation != configuration.navigationOrientation
             || self.configuration.readingDirection != configuration.readingDirection
             || self.configuration.pageTransition != configuration.pageTransition
 
@@ -222,13 +186,9 @@ private final class PagedReaderViewController: UIViewController,
 
         guard isViewLoaded else { return }
 
-        if chapterChanged {
-            currentGroup = 0
-        }
+        if chapterChanged { currentGroup = 0 }
 
-        if presentationChanged {
-            recreatePageViewController()
-        }
+        if presentationChanged { recreatePageViewController() }
 
         if chapterChanged || contentChanged || presentationChanged {
             applyCurrentState(force: true)
@@ -252,10 +212,7 @@ private final class PagedReaderViewController: UIViewController,
             let placeholder = UIViewController()
             placeholder.view.backgroundColor = .systemBackground
             pageViewController.setViewControllers(
-                [placeholder],
-                direction: .forward,
-                animated: false
-            )
+                [placeholder], direction: .forward, animated: false)
             return
         }
 
@@ -268,14 +225,12 @@ private final class PagedReaderViewController: UIViewController,
         currentGroup = min(max(currentGroup, 0), renderState.groups.count - 1)
 
         if let visiblePage = pageViewController.viewControllers?.first
-            as? PageContentViewController,
-            visiblePage.pageIndex == currentGroup,
+            as? PageContentViewController, visiblePage.pageIndex == currentGroup,
             visiblePage.urls == renderState.groups[currentGroup].urls
         {
             visiblePage.apply(
                 images: images(for: renderState.groups[currentGroup]),
-                readingDirection: configuration.readingDirection
-            )
+                readingDirection: configuration.readingDirection)
         } else {
             showGroup(currentGroup, direction: .forward, animated: false)
         }
@@ -290,17 +245,9 @@ private final class PagedReaderViewController: UIViewController,
             usesHorizontalRightToLeftNavigation ? .max : .min
         let options: [UIPageViewController.OptionsKey: Any]? =
             transitionStyle == .pageCurl
-            ? [
-                .spineLocation: NSNumber(
-                    value: spineLocation.rawValue
-                )
-            ]
-            : nil
+            ? [.spineLocation: NSNumber(value: spineLocation.rawValue)] : nil
         pageViewController = UIPageViewController(
-            transitionStyle: transitionStyle,
-            navigationOrientation: orientation,
-            options: options
-        )
+            transitionStyle: transitionStyle, navigationOrientation: orientation, options: options)
         pageViewController.dataSource = self
         pageViewController.delegate = self
         addChild(pageViewController)
@@ -312,23 +259,17 @@ private final class PagedReaderViewController: UIViewController,
             pageContainerScrollView.addSubview(pageViewController.view)
             NSLayoutConstraint.activate([
                 pageViewController.view.topAnchor.constraint(
-                    equalTo: pageContainerScrollView.contentLayoutGuide.topAnchor
-                ),
+                    equalTo: pageContainerScrollView.contentLayoutGuide.topAnchor),
                 pageViewController.view.leadingAnchor.constraint(
-                    equalTo: pageContainerScrollView.contentLayoutGuide.leadingAnchor
-                ),
+                    equalTo: pageContainerScrollView.contentLayoutGuide.leadingAnchor),
                 pageViewController.view.trailingAnchor.constraint(
-                    equalTo: pageContainerScrollView.contentLayoutGuide.trailingAnchor
-                ),
+                    equalTo: pageContainerScrollView.contentLayoutGuide.trailingAnchor),
                 pageViewController.view.bottomAnchor.constraint(
-                    equalTo: pageContainerScrollView.contentLayoutGuide.bottomAnchor
-                ),
+                    equalTo: pageContainerScrollView.contentLayoutGuide.bottomAnchor),
                 pageViewController.view.widthAnchor.constraint(
-                    equalTo: pageContainerScrollView.frameLayoutGuide.widthAnchor
-                ),
+                    equalTo: pageContainerScrollView.frameLayoutGuide.widthAnchor),
                 pageViewController.view.heightAnchor.constraint(
-                    equalTo: pageContainerScrollView.frameLayoutGuide.heightAnchor
-                ),
+                    equalTo: pageContainerScrollView.frameLayoutGuide.heightAnchor)
             ])
             updateScrollOverscrollLayout()
             setupPageTransitionOverscrollTracking()
@@ -340,7 +281,7 @@ private final class PagedReaderViewController: UIViewController,
                 pageViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
                 pageViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
                 pageViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                pageViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                pageViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
             ])
         }
         pageViewController.didMove(toParent: self)
@@ -360,7 +301,7 @@ private final class PagedReaderViewController: UIViewController,
             pageContainerScrollView.topAnchor.constraint(equalTo: view.topAnchor),
             pageContainerScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             pageContainerScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            pageContainerScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            pageContainerScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         leadingOverscrollController.sizingOptions = .intrinsicContentSize
@@ -385,20 +326,15 @@ private final class PagedReaderViewController: UIViewController,
             leadingIndicator.topAnchor.constraint(equalTo: leadingOverscrollView.topAnchor),
             leadingIndicator.leadingAnchor.constraint(equalTo: leadingOverscrollView.leadingAnchor),
             leadingIndicator.trailingAnchor.constraint(
-                equalTo: leadingOverscrollView.trailingAnchor
-            ),
+                equalTo: leadingOverscrollView.trailingAnchor),
             leadingIndicator.bottomAnchor.constraint(equalTo: leadingOverscrollView.bottomAnchor),
 
             trailingIndicator.topAnchor.constraint(equalTo: trailingOverscrollView.topAnchor),
             trailingIndicator.leadingAnchor.constraint(
-                equalTo: trailingOverscrollView.leadingAnchor
-            ),
+                equalTo: trailingOverscrollView.leadingAnchor),
             trailingIndicator.trailingAnchor.constraint(
-                equalTo: trailingOverscrollView.trailingAnchor
-            ),
-            trailingIndicator.bottomAnchor.constraint(
-                equalTo: trailingOverscrollView.bottomAnchor
-            ),
+                equalTo: trailingOverscrollView.trailingAnchor),
+            trailingIndicator.bottomAnchor.constraint(equalTo: trailingOverscrollView.bottomAnchor)
         ])
     }
 
@@ -414,48 +350,36 @@ private final class PagedReaderViewController: UIViewController,
         if configuration.navigationOrientation == .vertical {
             overscrollPositionConstraints = [
                 leadingOverscrollView.centerXAnchor.constraint(
-                    equalTo: pageContainerScrollView.centerXAnchor
-                ),
+                    equalTo: pageContainerScrollView.centerXAnchor),
                 leadingOverscrollView.bottomAnchor.constraint(
                     equalTo: pageContainerScrollView.topAnchor,
-                    constant: -READER_OVERSCROLL_MINIMUM_SPACING
-                ),
+                    constant: -READER_OVERSCROLL_MINIMUM_SPACING),
                 leadingOverscrollView.widthAnchor.constraint(
-                    equalTo: pageContainerScrollView.widthAnchor,
-                ),
+                    equalTo: pageContainerScrollView.widthAnchor),
                 trailingOverscrollView.centerXAnchor.constraint(
-                    equalTo: pageContainerScrollView.centerXAnchor
-                ),
+                    equalTo: pageContainerScrollView.centerXAnchor),
                 trailingOverscrollView.topAnchor.constraint(
                     equalTo: pageContainerScrollView.bottomAnchor,
-                    constant: READER_OVERSCROLL_MINIMUM_SPACING
-                ),
+                    constant: READER_OVERSCROLL_MINIMUM_SPACING),
                 trailingOverscrollView.widthAnchor.constraint(
-                    equalTo: pageContainerScrollView.widthAnchor
-                ),
+                    equalTo: pageContainerScrollView.widthAnchor)
             ]
         } else {
             overscrollPositionConstraints = [
                 leadingOverscrollView.centerYAnchor.constraint(
-                    equalTo: pageContainerScrollView.centerYAnchor
-                ),
+                    equalTo: pageContainerScrollView.centerYAnchor),
                 leadingOverscrollView.trailingAnchor.constraint(
                     equalTo: pageContainerScrollView.leadingAnchor,
-                    constant: -READER_OVERSCROLL_MINIMUM_SPACING
-                ),
+                    constant: -READER_OVERSCROLL_MINIMUM_SPACING),
                 leadingOverscrollView.heightAnchor.constraint(
-                    equalTo: pageContainerScrollView.heightAnchor
-                ),
+                    equalTo: pageContainerScrollView.heightAnchor),
                 trailingOverscrollView.centerYAnchor.constraint(
-                    equalTo: pageContainerScrollView.centerYAnchor
-                ),
+                    equalTo: pageContainerScrollView.centerYAnchor),
                 trailingOverscrollView.leadingAnchor.constraint(
                     equalTo: pageContainerScrollView.trailingAnchor,
-                    constant: READER_OVERSCROLL_MINIMUM_SPACING
-                ),
+                    constant: READER_OVERSCROLL_MINIMUM_SPACING),
                 trailingOverscrollView.heightAnchor.constraint(
-                    equalTo: pageContainerScrollView.heightAnchor
-                ),
+                    equalTo: pageContainerScrollView.heightAnchor)
             ]
         }
 
@@ -487,81 +411,55 @@ private final class PagedReaderViewController: UIViewController,
         let leadingProgress =
             leadingIsAtBoundary
             ? readerOverscrollProgress(
-                leadingOverscrollDistance,
-                spacing: READER_OVERSCROLL_MINIMUM_SPACING
-            )
-            : 0
+                leadingOverscrollDistance, spacing: READER_OVERSCROLL_MINIMUM_SPACING) : 0
         let trailingProgress =
             trailingIsAtBoundary
             ? readerOverscrollProgress(
-                trailingOverscrollDistance,
-                spacing: READER_OVERSCROLL_MINIMUM_SPACING
-            )
-            : 0
+                trailingOverscrollDistance, spacing: READER_OVERSCROLL_MINIMUM_SPACING) : 0
 
         leadingOverscrollView.isHidden = !leadingIsAtBoundary
         trailingOverscrollView.isHidden = !trailingIsAtBoundary
         if configuration.navigationOrientation == .vertical {
             leadingOverscrollView.transform = CGAffineTransform(
-                translationX: 0,
-                y: leadingIsAtBoundary ? leadingOverscrollDistance : 0
-            )
+                translationX: 0, y: leadingIsAtBoundary ? leadingOverscrollDistance : 0)
             trailingOverscrollView.transform = CGAffineTransform(
-                translationX: 0,
-                y: trailingIsAtBoundary ? -trailingOverscrollDistance : 0
-            )
+                translationX: 0, y: trailingIsAtBoundary ? -trailingOverscrollDistance : 0)
         } else {
             leadingOverscrollView.transform = CGAffineTransform(
-                translationX: leadingIsAtBoundary ? leadingOverscrollDistance : 0,
-                y: 0
-            )
+                translationX: leadingIsAtBoundary ? leadingOverscrollDistance : 0, y: 0)
             trailingOverscrollView.transform = CGAffineTransform(
-                translationX: trailingIsAtBoundary ? -trailingOverscrollDistance : 0,
-                y: 0
-            )
+                translationX: trailingIsAtBoundary ? -trailingOverscrollDistance : 0, y: 0)
         }
         leadingOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(leadingProgress),
             direction: configuration.navigationOrientation == .vertical ? .up : .left,
-            step: leadingStep,
-            availability: leadingAvailability
-        )
+            step: leadingStep, availability: leadingAvailability)
         trailingOverscrollController.rootView = ReaderOverscrollIndicator(
             progress: Double(trailingProgress),
             direction: configuration.navigationOrientation == .vertical ? .down : .right,
-            step: trailingStep,
-            availability: trailingAvailability
-        )
+            step: trailingStep, availability: trailingAvailability)
     }
 
     private func setupPageTransitionOverscrollTracking() {
         pageTransitionScrollObservation = nil
         guard configuration.pageTransition == .scroll,
-            let transitionScrollView = pageViewController.view.subviews.compactMap({
-                $0 as? UIScrollView
-            }).first
+            let transitionScrollView = pageViewController.view.subviews
+                .compactMap({ $0 as? UIScrollView }).first
         else { return }
 
         pageTransitionScrollView = transitionScrollView
         transitionScrollView.panGestureRecognizer.addTarget(
-            self,
-            action: #selector(handlePageTransitionPan(_:))
-        )
+            self, action: #selector(handlePageTransitionPan(_:)))
         pageTransitionScrollObservation = transitionScrollView.observe(
-            \.contentOffset,
-            options: [.new]
-        ) { [weak self] scrollView, _ in
-            self?.updateOverscrollDistances(from: scrollView)
-        }
+            \.contentOffset, options: [.new]
+        ) { [weak self] scrollView, _ in self?.updateOverscrollDistances(from: scrollView) }
     }
 
     private func tearDownPageTransitionOverscrollTracking() {
         overscrollGestureGeneration += 1
         pageTransitionScrollObservation = nil
-        pageTransitionScrollView?.panGestureRecognizer.removeTarget(
-            self,
-            action: #selector(handlePageTransitionPan(_:))
-        )
+        pageTransitionScrollView?.panGestureRecognizer
+            .removeTarget(self, action: #selector(handlePageTransitionPan(_:)))
         pageTransitionScrollView = nil
         isTrackingPageTransitionOverscroll = false
         leadingOverscrollDistance = 0
@@ -592,68 +490,58 @@ private final class PagedReaderViewController: UIViewController,
     @objc private func handlePageTransitionPan(_ gesture: UIPanGestureRecognizer) {
         guard let transitionScrollView = pageTransitionScrollView else { return }
 
-        switch gesture.state {
-        case .began:
+        switch gesture.state { case .began:
             overscrollGestureGeneration += 1
             isTrackingPageTransitionOverscroll = true
             pageTransitionRestingOffset =
                 configuration.navigationOrientation == .vertical
-                ? transitionScrollView.contentOffset.y
-                : transitionScrollView.contentOffset.x
+                ? transitionScrollView.contentOffset.y : transitionScrollView.contentOffset.x
             leadingOverscrollDistance = 0
             trailingOverscrollDistance = 0
             updateScrollOverscrollIndicators()
-        case .changed:
-            updateOverscrollDistances(from: transitionScrollView)
-        case .ended:
-            updateOverscrollDistances(from: transitionScrollView)
+            case .changed: updateOverscrollDistances(from: transitionScrollView)
+            case .ended:
+                updateOverscrollDistances(from: transitionScrollView)
 
-            let requestedStep: ReaderStep?
-            if readerOverscrollProgress(
-                leadingOverscrollDistance,
-                spacing: READER_OVERSCROLL_MINIMUM_SPACING
-            ) >= 1 {
-                requestedStep = usesHorizontalRightToLeftNavigation ? .next : .previous
-            } else if readerOverscrollProgress(
-                trailingOverscrollDistance,
-                spacing: READER_OVERSCROLL_MINIMUM_SPACING
-            ) >= 1 {
-                requestedStep = usesHorizontalRightToLeftNavigation ? .previous : .next
-            } else {
-                requestedStep = nil
-            }
-
-            if let requestedStep {
-                let isAtBoundary =
-                    requestedStep == .previous
-                    ? currentGroup == 0
-                    : currentGroup == renderState.groups.count - 1
-                let availability =
-                    requestedStep == .previous
-                    ? renderState.previousChapter
-                    : renderState.nextChapter
-                if !renderState.groups.isEmpty, isAtBoundary, availability == .available {
-                    actions.requestChapterStep(requestedStep)
+                let requestedStep: ReaderStep?
+                if readerOverscrollProgress(
+                    leadingOverscrollDistance, spacing: READER_OVERSCROLL_MINIMUM_SPACING) >= 1
+                {
+                    requestedStep = usesHorizontalRightToLeftNavigation ? .next : .previous
+                } else if readerOverscrollProgress(
+                    trailingOverscrollDistance, spacing: READER_OVERSCROLL_MINIMUM_SPACING) >= 1
+                {
+                    requestedStep = usesHorizontalRightToLeftNavigation ? .previous : .next
+                } else {
+                    requestedStep = nil
                 }
-            }
 
-            resetPageTransitionOverscroll(after: 0.5)
-        case .cancelled, .failed:
-            resetPageTransitionOverscroll(after: 0.5)
-        default:
-            break
+                if let requestedStep {
+                    let isAtBoundary =
+                        requestedStep == .previous
+                        ? currentGroup == 0 : currentGroup == renderState.groups.count - 1
+                    let availability =
+                        requestedStep == .previous
+                        ? renderState.previousChapter : renderState.nextChapter
+                    if !renderState.groups.isEmpty, isAtBoundary, availability == .available {
+                        actions.requestChapterStep(requestedStep)
+                    }
+                }
+
+                resetPageTransitionOverscroll(after: 0.5)
+            case .cancelled, .failed: resetPageTransitionOverscroll(after: 0.5)
+            default: break
         }
     }
 
     private func updateOverscrollDistances(from scrollView: UIScrollView) {
-        guard isTrackingPageTransitionOverscroll,
-            scrollView === pageTransitionScrollView
-        else { return }
+        guard isTrackingPageTransitionOverscroll, scrollView === pageTransitionScrollView else {
+            return
+        }
 
         let currentOffset =
             configuration.navigationOrientation == .vertical
-            ? scrollView.contentOffset.y
-            : scrollView.contentOffset.x
+            ? scrollView.contentOffset.y : scrollView.contentOffset.x
         let offsetDelta = currentOffset - pageTransitionRestingOffset
         leadingOverscrollDistance = max(-offsetDelta, 0)
         trailingOverscrollDistance = max(offsetDelta, 0)
@@ -718,9 +606,7 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     private func showGroup(
-        _ groupIndex: Int,
-        direction: UIPageViewController.NavigationDirection,
-        animated: Bool
+        _ groupIndex: Int, direction: UIPageViewController.NavigationDirection, animated: Bool
     ) {
         guard renderState.groups.indices.contains(groupIndex) else { return }
         let page = makePageContentViewController(for: groupIndex)
@@ -731,61 +617,42 @@ private final class PagedReaderViewController: UIViewController,
     private func makePageContentViewController(for groupIndex: Int) -> PageContentViewController {
         guard renderState.groups.indices.contains(groupIndex) else {
             return PageContentViewController(
-                pageIndex: 0,
-                urls: [],
-                images: [:],
-                readingDirection: configuration.readingDirection
-            )
+                pageIndex: 0, urls: [], images: [:],
+                readingDirection: configuration.readingDirection)
         }
         let group = renderState.groups[groupIndex]
         return PageContentViewController(
-            pageIndex: groupIndex,
-            urls: group.urls,
-            images: images(for: group),
-            readingDirection: configuration.readingDirection
-        )
+            pageIndex: groupIndex, urls: group.urls, images: images(for: group),
+            readingDirection: configuration.readingDirection)
     }
 
     private func images(for group: ReaderGroup) -> [String: ReaderImageState] {
         Dictionary(
-            uniqueKeysWithValues: group.urls.map { url in
-                (url, renderState.images[url] ?? .loading)
-            }
-        )
+            uniqueKeysWithValues: group.urls.map { url in (url, renderState.images[url] ?? .loading)
+            })
     }
 
     private func makeOverscrollViewController(step: ReaderStep) -> UIViewController {
         UIHostingController(
             rootView: OverscrollView(
-                step: step,
-                orientation: configuration.navigationOrientation,
+                step: step, orientation: configuration.navigationOrientation,
                 readingDirection: configuration.readingDirection,
                 pageTransition: configuration.pageTransition,
                 availability: step == .previous
-                    ? renderState.previousChapter
-                    : renderState.nextChapter
-            )
-        )
+                    ? renderState.previousChapter : renderState.nextChapter))
     }
 
     func pageViewController(
-        _: UIPageViewController,
-        viewControllerBefore viewController: UIViewController
-    ) -> UIViewController? {
-        adjacentViewController(to: viewController, before: true)
-    }
+        _: UIPageViewController, viewControllerBefore viewController: UIViewController
+    ) -> UIViewController? { adjacentViewController(to: viewController, before: true) }
 
     func pageViewController(
-        _: UIPageViewController,
-        viewControllerAfter viewController: UIViewController
-    ) -> UIViewController? {
-        adjacentViewController(to: viewController, before: false)
-    }
+        _: UIPageViewController, viewControllerAfter viewController: UIViewController
+    ) -> UIViewController? { adjacentViewController(to: viewController, before: false) }
 
-    private func adjacentViewController(
-        to viewController: UIViewController,
-        before: Bool
-    ) -> UIViewController? {
+    private func adjacentViewController(to viewController: UIViewController, before: Bool)
+        -> UIViewController?
+    {
         guard !(viewController is OverscrollHostingController),
             let content = viewController as? PageContentViewController
         else { return nil }
@@ -812,10 +679,8 @@ private final class PagedReaderViewController: UIViewController,
     }
 
     func pageViewController(
-        _: UIPageViewController,
-        didFinishAnimating _: Bool,
-        previousViewControllers _: [UIViewController],
-        transitionCompleted completed: Bool
+        _: UIPageViewController, didFinishAnimating _: Bool,
+        previousViewControllers _: [UIViewController], transitionCompleted completed: Bool
     ) {
         guard completed, let visibleController = pageViewController.viewControllers?.first else {
             return
@@ -824,8 +689,7 @@ private final class PagedReaderViewController: UIViewController,
         if let overscroll = visibleController as? OverscrollHostingController {
             let availability =
                 overscroll.rootView.step == .previous
-                ? renderState.previousChapter
-                : renderState.nextChapter
+                ? renderState.previousChapter : renderState.nextChapter
             guard availability == .available else { return }
             actions.requestChapterStep(overscroll.rootView.step)
             return
@@ -857,9 +721,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
     private var errorIcons: [String: UIImageView] = [:]
 
     init(
-        pageIndex: Int,
-        urls: [String],
-        images: [String: ReaderImageState],
+        pageIndex: Int, urls: [String], images: [String: ReaderImageState],
         readingDirection: ReadingDirection
     ) {
         self.pageIndex = pageIndex
@@ -869,8 +731,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         super.init(nibName: nil, bundle: nil)
     }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
+    @available(*, unavailable) required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -917,7 +778,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             contentStackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentStackView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            contentStackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor),
+            contentStackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
         ])
 
         let orderedURLs = readingDirection == .rightToLeft ? Array(urls.reversed()) : urls
@@ -960,7 +821,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
                 errorIcon.centerXAnchor.constraint(equalTo: container.centerXAnchor),
                 errorIcon.centerYAnchor.constraint(equalTo: container.centerYAnchor),
                 errorIcon.widthAnchor.constraint(equalToConstant: 48),
-                errorIcon.heightAnchor.constraint(equalToConstant: 48),
+                errorIcon.heightAnchor.constraint(equalToConstant: 48)
             ])
 
             let widthConstraint = container.widthAnchor.constraint(equalToConstant: 1)
@@ -991,14 +852,11 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         let availableWidth = max(view.bounds.width, 1)
 
         for url in urls {
-            guard let imageView = imageViews[url],
-                let loadingIndicator = loadingIndicators[url],
-                let errorIcon = errorIcons[url],
-                let widthConstraint = imageWidthConstraints[url]
+            guard let imageView = imageViews[url], let loadingIndicator = loadingIndicators[url],
+                let errorIcon = errorIcons[url], let widthConstraint = imageWidthConstraints[url]
             else { continue }
 
-            switch images[url] ?? .loading {
-            case .success(let image):
+            switch images[url] ?? .loading { case .success(let image):
                 imageView.image = image.uiImage(retainData: true)
                 imageView.isHidden = false
                 loadingIndicator.stopAnimating()
@@ -1009,16 +867,16 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
                     imageWidth = ratio / totalRatio * availableWidth
                 }
                 widthConstraint.constant = imageWidth
-            case .failed:
-                imageView.isHidden = true
-                loadingIndicator.stopAnimating()
-                errorIcon.isHidden = false
-                widthConstraint.constant = availableWidth / CGFloat(urls.count)
-            case .loading:
-                imageView.isHidden = true
-                loadingIndicator.startAnimating()
-                errorIcon.isHidden = true
-                widthConstraint.constant = availableWidth / CGFloat(urls.count)
+                case .failed:
+                    imageView.isHidden = true
+                    loadingIndicator.stopAnimating()
+                    errorIcon.isHidden = false
+                    widthConstraint.constant = availableWidth / CGFloat(urls.count)
+                case .loading:
+                    imageView.isHidden = true
+                    loadingIndicator.startAnimating()
+                    errorIcon.isHidden = true
+                    widthConstraint.constant = availableWidth / CGFloat(urls.count)
             }
         }
     }
@@ -1030,14 +888,11 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             let location = gesture.location(in: contentStackView)
             scrollView.zoom(
                 to: CGRect(x: location.x - 50, y: location.y - 50, width: 100, height: 100),
-                animated: true
-            )
+                animated: true)
         }
     }
 
-    func viewForZooming(in _: UIScrollView) -> UIView? {
-        contentStackView
-    }
+    func viewForZooming(in _: UIScrollView) -> UIView? { contentStackView }
 }
 
 private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
@@ -1046,11 +901,7 @@ private struct PagedReaderViewControllerWrapper: UIViewControllerRepresentable {
     let actions: ReaderRenderActions
 
     func makeUIViewController(context _: Context) -> PagedReaderViewController {
-        PagedReaderViewController(
-            state: state,
-            configuration: configuration,
-            actions: actions
-        )
+        PagedReaderViewController(state: state, configuration: configuration, actions: actions)
     }
 
     func updateUIViewController(_ viewController: PagedReaderViewController, context _: Context) {
@@ -1065,9 +916,6 @@ struct PagedReaderScreen: View {
 
     var body: some View {
         PagedReaderViewControllerWrapper(
-            state: state,
-            configuration: configuration,
-            actions: actions
-        )
+            state: state, configuration: configuration, actions: actions)
     }
 }

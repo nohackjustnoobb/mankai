@@ -22,11 +22,7 @@ struct UpdateMangaModal: View {
             )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text("cancel")
-                    }
+                    Button(action: { dismiss() }) { Text("cancel") }
                 }
             }
         }
@@ -59,9 +55,7 @@ struct UpdateMangaContent: View {
     @State private var isProcessing = false
     @State private var showingDeleteConfirmation = false
 
-    init(
-        plugin: (any Editable)? = nil, manga: DetailedManga? = nil, plugins: [any Editable]
-    ) {
+    init(plugin: (any Editable)? = nil, manga: DetailedManga? = nil, plugins: [any Editable]) {
         self.plugins = plugins
         isCreatingManga = manga == nil
 
@@ -70,44 +64,20 @@ struct UpdateMangaContent: View {
     }
 
     private var title: Binding<String> {
-        Binding<String>(
-            get: {
-                manga.title ?? ""
-            },
-            set: {
-                manga.title = $0
-            }
-        )
+        Binding<String>(get: { manga.title ?? "" }, set: { manga.title = $0 })
     }
 
     private var description: Binding<String> {
-        Binding<String>(
-            get: {
-                manga.description ?? ""
-            },
-            set: {
-                manga.description = $0
-            }
-        )
+        Binding<String>(get: { manga.description ?? "" }, set: { manga.description = $0 })
     }
 
     private var status: Binding<Status> {
-        Binding<Status>(
-            get: {
-                manga.status ?? .onGoing
-            },
-            set: {
-                manga.status = $0
-            }
-        )
+        Binding<Status>(get: { manga.status ?? .onGoing }, set: { manga.status = $0 })
     }
 
     private func loadCoverImage() {
-        guard !isCreatingManga,
-            let coverUrl = manga.cover,
-            !coverUrl.isEmpty,
-            let plugin = plugins.first(where: { $0.id == plugin }),
-            plugin.supports(.image)
+        guard !isCreatingManga, let coverUrl = manga.cover, !coverUrl.isEmpty,
+            let plugin = plugins.first(where: { $0.id == plugin }), plugin.supports(.image)
         else {
             coverImageData = nil
             return
@@ -117,9 +87,7 @@ struct UpdateMangaContent: View {
             do {
                 let imageData = try await plugin.getImage(coverUrl)
                 coverImageData = imageData
-            } catch {
-                coverImageData = nil
-            }
+            } catch { coverImageData = nil }
         }
     }
 
@@ -138,8 +106,7 @@ struct UpdateMangaContent: View {
             }
 
             try await selectedPlugin.upsertChapterGroup(
-                EditableChapterGroup(id: nil, title: trimmedKey, mangaId: manga.id)
-            )
+                EditableChapterGroup(id: nil, title: trimmedKey, mangaId: manga.id))
             if !manga.chapters.contains(where: { $0.title == trimmedKey }) {
                 manga.chapters.append(ChapterGroup(title: trimmedKey, chapters: []))
             }
@@ -198,14 +165,9 @@ struct UpdateMangaContent: View {
             }
 
             let editableManga = EditableManga(
-                id: isCreatingManga ? nil : manga.id,
-                title: manga.title,
-                status: manga.status,
-                description: manga.description,
-                authors: manga.authors,
-                genres: manga.genres,
-                remarks: manga.remarks
-            )
+                id: isCreatingManga ? nil : manga.id, title: manga.title, status: manga.status,
+                description: manga.description, authors: manga.authors, genres: manga.genres,
+                remarks: manga.remarks)
             let newId = try await selectedPlugin.upsertManga(editableManga)
             manga.id = newId
 
@@ -252,8 +214,7 @@ struct UpdateMangaContent: View {
                 Section {
                     Picker("plugin", selection: $plugin) {
                         ForEach(plugins, id: \.id) { plugin in
-                            Text(plugin.name ?? plugin.id)
-                                .tag(plugin.id)
+                            Text(plugin.name ?? plugin.id).tag(plugin.id)
                         }
                     }
 
@@ -268,24 +229,16 @@ struct UpdateMangaContent: View {
                         if let coverImageData = coverImageData,
                             let uiImage = UIImage(data: coverImageData)
                         {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .frame(maxWidth: .infinity)
-                                .scaledToFill()
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            Image(uiImage: uiImage).resizable().frame(maxWidth: .infinity)
+                                .scaledToFill().clipShape(RoundedRectangle(cornerRadius: 8))
                         } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray6))
-                                .frame(maxWidth: .infinity)
-                                .aspectRatio(3 / 4, contentMode: .fit)
+                            RoundedRectangle(cornerRadius: 8).fill(Color(.systemGray6))
+                                .frame(maxWidth: .infinity).aspectRatio(3 / 4, contentMode: .fit)
                                 .overlay {
                                     VStack {
-                                        Image(systemName: "photo.badge.plus")
-                                            .font(.title)
+                                        Image(systemName: "photo.badge.plus").font(.title)
                                             .foregroundStyle(.secondary)
-                                        Text("noCover")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        Text("noCover").font(.caption).foregroundStyle(.secondary)
                                     }
                                 }
                         }
@@ -293,9 +246,7 @@ struct UpdateMangaContent: View {
 
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         HStack {
-                            Image(
-                                systemName: "photo.badge.plus"
-                            )
+                            Image(systemName: "photo.badge.plus")
                             Text(coverImageData != nil ? "changeCover" : "addCover")
                         }
                         .frame(maxWidth: .infinity)
@@ -306,14 +257,11 @@ struct UpdateMangaContent: View {
             Section("info") {
                 TextField("title", text: title)
 
-                TextField("description", text: description, axis: .vertical)
-                    .lineLimit(3...6)
+                TextField("description", text: description, axis: .vertical).lineLimit(3...6)
 
                 Picker("status", selection: status) {
-                    Text("onGoing")
-                        .tag(Status.onGoing)
-                    Text("mangaCompleted")
-                        .tag(Status.completed)
+                    Text("onGoing").tag(Status.onGoing)
+                    Text("mangaCompleted").tag(Status.completed)
                 }
             }
 
@@ -324,11 +272,8 @@ struct UpdateMangaContent: View {
                             Text(author)
                             Spacer()
 
-                            Button(action: {
-                                manga.authors.removeAll { $0 == author }
-                            }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundColor(.red)
+                            Button(action: { manga.authors.removeAll { $0 == author } }) {
+                                Image(systemName: "minus.circle.fill").foregroundColor(.red)
                             }
                         }
                         .swipeActions(allowsFullSwipe: false) {
@@ -341,9 +286,7 @@ struct UpdateMangaContent: View {
                     }
                 }
 
-                Button(action: {
-                    showingAddAuthorAlert = true
-                }) {
+                Button(action: { showingAddAuthorAlert = true }) {
                     HStack {
                         Text("add")
                         Spacer()
@@ -358,11 +301,8 @@ struct UpdateMangaContent: View {
                             Text(LocalizedStringKey(genre.rawValue))
                             Spacer()
 
-                            Button(action: {
-                                manga.genres.removeAll { $0 == genre }
-                            }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundColor(.red)
+                            Button(action: { manga.genres.removeAll { $0 == genre } }) {
+                                Image(systemName: "minus.circle.fill").foregroundColor(.red)
                             }
                         }
                         .swipeActions(allowsFullSwipe: false) {
@@ -381,9 +321,7 @@ struct UpdateMangaContent: View {
                             genre != .all && !manga.genres.contains(genre)
                         }, id: \.self
                     ) { genre in
-                        Button(action: {
-                            manga.genres.append(genre)
-                        }) {
+                        Button(action: { manga.genres.append(genre) }) {
                             Text(LocalizedStringKey(genre.rawValue))
                         }
                     }
@@ -408,10 +346,7 @@ struct UpdateMangaContent: View {
                                 Button(action: {
                                     chapterGroupIndexToRemove = chapterGroupIndex
                                     showingRemoveChapterGroupAlert = true
-                                }) {
-                                    Image(systemName: "minus.circle.fill")
-                                        .foregroundColor(.red)
-                                }
+                                }) { Image(systemName: "minus.circle.fill").foregroundColor(.red) }
                             }
                             .swipeActions(allowsFullSwipe: false) {
                                 Button(role: .destructive) {
@@ -424,9 +359,7 @@ struct UpdateMangaContent: View {
                         }
                     }
 
-                    Button(action: {
-                        showingAddChapterGroupAlert = true
-                    }) {
+                    Button(action: { showingAddChapterGroupAlert = true }) {
                         HStack {
                             Text("add")
                             Spacer()
@@ -438,20 +371,14 @@ struct UpdateMangaContent: View {
             if !isCreatingManga {
                 Section {
                     Button(
-                        "deleteManga",
-                        role: .destructive,
-                        action: {
-                            showingDeleteConfirmation = true
-                        }
-                    )
+                        "deleteManga", role: .destructive,
+                        action: { showingDeleteConfirmation = true })
                 } header: {
                     Spacer(minLength: 0)
                 }
             }
         }
-        .onAppear {
-            loadCoverImage()
-        }
+        .onAppear { loadCoverImage() }
         .onChange(of: selectedPhoto) { _, newPhoto in
             Task {
                 if let newPhoto = newPhoto {
@@ -460,9 +387,7 @@ struct UpdateMangaContent: View {
                             coverImageData = data
                             isCoverChanged = true
                         }
-                    } catch {
-                        Logger.ui.error("Failed to load photo", error: error)
-                    }
+                    } catch { Logger.ui.error("Failed to load photo", error: error) }
                 }
             }
         }
@@ -477,24 +402,16 @@ struct UpdateMangaContent: View {
                 newAuthorName = ""
             }
 
-            Button("cancel", role: .cancel) {
-                newAuthorName = ""
-            }
+            Button("cancel", role: .cancel) { newAuthorName = "" }
         } message: {
             Text("enterAuthorName")
         }
         .alert("addChapterGroup", isPresented: $showingAddChapterGroupAlert) {
             TextField("chapterGroup", text: $newChapterGroup)
 
-            Button("add") {
-                Task {
-                    await createChapterGroup()
-                }
-            }
+            Button("add") { Task { await createChapterGroup() } }
 
-            Button("cancel", role: .cancel) {
-                newChapterGroup = ""
-            }
+            Button("cancel", role: .cancel) { newChapterGroup = "" }
         } message: {
             Text("enterChapterGroup")
         }
@@ -503,15 +420,9 @@ struct UpdateMangaContent: View {
             "removeChapterGroup", isPresented: $showingRemoveChapterGroupAlert,
             titleVisibility: .visible
         ) {
-            Button("remove", role: .destructive) {
-                Task {
-                    await deleteChapterGroup()
-                }
-            }
+            Button("remove", role: .destructive) { Task { await deleteChapterGroup() } }
 
-            Button("cancel", role: .cancel) {
-                chapterGroupIndexToRemove = nil
-            }
+            Button("cancel", role: .cancel) { chapterGroupIndexToRemove = nil }
         } message: {
             Text("removeChapterGroupConfirmation")
         }
@@ -521,19 +432,12 @@ struct UpdateMangaContent: View {
                 errorTitle = ""
             }
         } message: {
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-            }
+            if !errorMessage.isEmpty { Text(errorMessage) }
         }
         .confirmationDialog(
-            "deleteManga", isPresented: $showingDeleteConfirmation,
-            titleVisibility: .visible
+            "deleteManga", isPresented: $showingDeleteConfirmation, titleVisibility: .visible
         ) {
-            Button("delete", role: .destructive) {
-                Task {
-                    await deleteManga()
-                }
-            }
+            Button("delete", role: .destructive) { Task { await deleteManga() } }
 
             Button("cancel", role: .cancel) {}
         } message: {
@@ -543,13 +447,7 @@ struct UpdateMangaContent: View {
         .navigationTitle(isCreatingManga ? "createManga" : "editManga")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(
-                    action: {
-                        Task {
-                            await updateManga()
-                        }
-                    }
-                ) {
+                Button(action: { Task { await updateManga() } }) {
                     if isProcessing {
                         ProgressView()
                     } else {

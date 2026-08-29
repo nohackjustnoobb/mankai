@@ -11,9 +11,7 @@ final class UpdateService: ObservableObject {
     /// The shared singleton instance of UpdateService.
     static let shared = UpdateService()
 
-    private init() {
-        Logger.updateService.debug("Initializing UpdateService")
-    }
+    private init() { Logger.updateService.debug("Initializing UpdateService") }
 
     /// The timestamp of the last update check.
     var lastUpdateTime: Date? {
@@ -33,15 +31,11 @@ final class UpdateService: ObservableObject {
         }
 
         await MainActor.run { isUpdating = true }
-        defer {
-            Task { @MainActor in isUpdating = false }
-        }
+        defer { Task { @MainActor in isUpdating = false } }
 
         Logger.updateService.debug("Starting update process")
 
-        do {
-            try await internalUpdate()
-        } catch {
+        do { try await internalUpdate() } catch {
             Logger.updateService.error("Update failed", error: error)
             if case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToUpdateLibraryFormat")
@@ -60,9 +54,7 @@ final class UpdateService: ObservableObject {
                 let timeInterval = Date().timeIntervalSince(lastSyncTime)
                 if timeInterval > 60 {  // 1 minute in seconds
                     Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
-                    do {
-                        try await SyncService.shared.sync(wait: true, showError: false)
-                    } catch {
+                    do { try await SyncService.shared.sync(wait: true, showError: false) } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
                         throw MankaiErrorCode.updateSyncFailed.makeError(underlyingError: error)
                     }
@@ -70,9 +62,7 @@ final class UpdateService: ObservableObject {
             } else {
                 // No sync has been performed yet
                 Logger.updateService.info("Syncing before update (first sync)")
-                do {
-                    try await SyncService.shared.sync(wait: true, showError: false)
-                } catch {
+                do { try await SyncService.shared.sync(wait: true, showError: false) } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
                     throw MankaiErrorCode.updateSyncFailed.makeError(underlyingError: error)
                 }
@@ -86,9 +76,7 @@ final class UpdateService: ObservableObject {
         // Group saveds by pluginId
         var savedsByPlugin: [String: [SavedModel]] = [:]
         for saved in saveds {
-            if savedsByPlugin[saved.pluginId] == nil {
-                savedsByPlugin[saved.pluginId] = []
-            }
+            if savedsByPlugin[saved.pluginId] == nil { savedsByPlugin[saved.pluginId] = [] }
             savedsByPlugin[saved.pluginId]!.append(saved)
         }
 
@@ -98,8 +86,7 @@ final class UpdateService: ObservableObject {
 
         for (pluginId, pluginSaveds) in savedsByPlugin {
             Logger.updateService.debug(
-                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)"
-            )
+                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
@@ -108,8 +95,7 @@ final class UpdateService: ObservableObject {
 
             guard plugin.supports(.batchMangas) else {
                 Logger.updateService.debug(
-                    "Skipping updates for plugin without batch manga support: \(pluginId)"
-                )
+                    "Skipping updates for plugin without batch manga support: \(pluginId)")
                 continue
             }
 
@@ -120,14 +106,11 @@ final class UpdateService: ObservableObject {
             do {
                 let updatedMangas = try await plugin.getMangas(mangaIds)
                 Logger.updateService.debug(
-                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)"
-                )
+                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
 
                 // Create a dictionary for quick lookup
                 var mangaDict: [String: Manga] = [:]
-                for manga in updatedMangas {
-                    mangaDict[manga.id] = manga
-                }
+                for manga in updatedMangas { mangaDict[manga.id] = manga }
 
                 // Check for updates
                 for saved in pluginSaveds {
@@ -144,8 +127,7 @@ final class UpdateService: ObservableObject {
 
                         if hasUpdate {
                             Logger.updateService.info(
-                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))"
-                            )
+                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
                             // Create updated saved model
                             var updatedSaved = saved
                             updatedSaved.latestChapter = newChapter.encode()
@@ -160,10 +142,7 @@ final class UpdateService: ObservableObject {
                         let mangaInfoString = String(data: mangaInfoData, encoding: .utf8)
                     {
                         let mangaModel = MangaModel(
-                            mangaId: updatedManga.id,
-                            pluginId: pluginId,
-                            info: mangaInfoString
-                        )
+                            mangaId: updatedManga.id, pluginId: pluginId, info: mangaInfoString)
                         updatedMangaModels.append(mangaModel)
                     }
                 }
@@ -185,9 +164,7 @@ final class UpdateService: ObservableObject {
             saveds: updatedSaveds, mangas: updatedMangaModels)
         if !updatedSaveds.isEmpty {
             Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds")
-            do {
-                try await SyncService.shared.sync()
-            } catch {
+            do { try await SyncService.shared.sync() } catch {
                 Logger.updateService.error("Sync failed after update", error: error)
             }
         } else {
@@ -197,9 +174,7 @@ final class UpdateService: ObservableObject {
         // Update last update time
         UserDefaults.standard.set(Date(), forKey: "UpdateService.lastUpdateTime")
 
-        await MainActor.run {
-            self.objectWillChange.send()
-        }
+        await MainActor.run { self.objectWillChange.send() }
         Logger.updateService.debug("Update process completed")
     }
 }

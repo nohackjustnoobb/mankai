@@ -20,22 +20,14 @@ struct AddBrowsableFolderModal: View {
         case webdav
         case opds
 
-        var id: String {
-            rawValue
-        }
+        var id: String { rawValue }
 
         var localizedName: String {
-            switch self {
-            case .filesystem:
-                String(localized: "fs")
-            case .smb:
+            switch self { case .filesystem: String(localized: "fs") case .smb:
                 String(localized: "smb")
-            case .nfs:
-                String(localized: "nfs")
-            case .webdav:
-                String(localized: "webdav")
-            case .opds:
-                String(localized: "opds")
+                case .nfs: String(localized: "nfs")
+                case .webdav: String(localized: "webdav")
+                case .opds: String(localized: "opds")
             }
         }
     }
@@ -79,25 +71,19 @@ struct AddBrowsableFolderModal: View {
     @State private var errorMessage: String?
     @State private var duplicatePlugin: BrowsablePlugin?
 
-    private var isProcessing: Bool {
-        isLoadingShares || isLoadingExports || isAdding
-    }
+    private var isProcessing: Bool { isLoadingShares || isLoadingExports || isAdding }
 
     private var canContinue: Bool {
         guard !isProcessing else { return false }
 
-        switch selectedFolderType {
-        case .filesystem:
-            return selectedFolder != nil
-        case .smb:
+        switch selectedFolderType { case .filesystem: return selectedFolder != nil case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .nfs:
-            return !nfsHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .webdav:
-            return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .opds:
-            return !opdsCatalogURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .nfs: return !nfsHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .webdav:
+                return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .opds:
+                return !opdsCatalogURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
@@ -106,103 +92,58 @@ struct AddBrowsableFolderModal: View {
             Form {
                 Section {
                     Picker("folderType", selection: $selectedFolderType) {
-                        ForEach(FolderType.allCases) { type in
-                            Text(type.localizedName)
-                                .tag(type)
-                        }
+                        ForEach(FolderType.allCases) { type in Text(type.localizedName).tag(type) }
                     }
                     .disabled(isProcessing)
                 } footer: {
-                    switch selectedFolderType {
-                    case .opds:
-                        Text("opdsPluginIdSyncHint")
-                    default:
+                    switch selectedFolderType { case .opds: Text("opdsPluginIdSyncHint") default:
                         Text("pluginIdSyncHint")
                     }
                 }
 
-                Section("displayName") {
-                    TextField("default", text: $name)
-                        .disabled(isProcessing)
-                }
+                Section("displayName") { TextField("default", text: $name).disabled(isProcessing) }
 
-                switch selectedFolderType {
-                case .filesystem:
-                    filesystemConfiguration
-                case .smb:
+                switch selectedFolderType { case .filesystem: filesystemConfiguration case .smb:
                     smbConfiguration
-                case .nfs:
-                    nfsConfiguration
-                case .webdav:
-                    webDavConfiguration
-                case .opds:
-                    opdsConfiguration
+                    case .nfs: nfsConfiguration
+                    case .webdav: webDavConfiguration
+                    case .opds: opdsConfiguration
                 }
             }
-            .navigationTitle("addFolder")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("addFolder").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("cancel") {
-                        dismiss()
-                    }
-                    .disabled(isProcessing)
+                    Button("cancel") { dismiss() }.disabled(isProcessing)
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    primaryAction
-                }
+                ToolbarItem(placement: .confirmationAction) { primaryAction }
             }
             .fileImporter(
-                isPresented: $showingFileImporter,
-                allowedContentTypes: [.folder],
+                isPresented: $showingFileImporter, allowedContentTypes: [.folder],
                 allowsMultipleSelection: false
             ) { result in
-                switch result {
-                case .success(let urls):
-                    selectedFolder = urls.first
-                case .failure(let error):
-                    presentError(error)
+                switch result { case .success(let urls): selectedFolder = urls.first
+                    case .failure(let error): presentError(error)
                 }
             }
-            .navigationDestination(isPresented: $showingShareSelection) {
-                shareSelection
-            }
-            .navigationDestination(isPresented: $showingExportSelection) {
-                exportSelection
-            }
+            .navigationDestination(isPresented: $showingShareSelection) { shareSelection }
+            .navigationDestination(isPresented: $showingExportSelection) { exportSelection }
         }
         .alert(errorTitle, isPresented: errorIsPresented) {
-            Button("ok", role: .cancel) {
-                errorMessage = nil
-            }
+            Button("ok", role: .cancel) { errorMessage = nil }
         } message: {
-            if let errorMessage {
-                Text(errorMessage)
-            }
+            if let errorMessage { Text(errorMessage) }
         }
-        .alert(
-            "duplicatePluginTitle",
-            isPresented: duplicatePluginIsPresented
-        ) {
-            Button("overwrite", role: .destructive) {
-                resolveDuplicatePlugin(with: .overwrite)
-            }
-            Button("addAsLocalPlugin") {
-                resolveDuplicatePlugin(with: .makeLocal)
-            }
-            Button("cancel", role: .cancel) {
-                duplicatePlugin = nil
-            }
+        .alert("duplicatePluginTitle", isPresented: duplicatePluginIsPresented) {
+            Button("overwrite", role: .destructive) { resolveDuplicatePlugin(with: .overwrite) }
+            Button("addAsLocalPlugin") { resolveDuplicatePlugin(with: .makeLocal) }
+            Button("cancel", role: .cancel) { duplicatePlugin = nil }
         } message: {
             if let duplicatePlugin {
                 Text(
                     String(
                         format: String(localized: "duplicateBrowsablePluginIdMessageFormat"),
-                        locale: .current,
-                        duplicatePlugin.id
-                    )
-                )
+                        locale: .current, duplicatePlugin.id))
             }
         }
     }
@@ -216,8 +157,7 @@ struct AddBrowsableFolderModal: View {
                     Text("selectFolder")
                     Spacer()
                     Text(selectedFolder?.lastPathComponent ?? String(localized: "none"))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .foregroundStyle(.secondary).lineLimit(1)
                 }
             }
             .disabled(isProcessing)
@@ -226,23 +166,15 @@ struct AddBrowsableFolderModal: View {
 
     private var smbConfiguration: some View {
         Section {
-            TextField("server", text: $host)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .disabled(isProcessing)
+            TextField("server", text: $host).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().disabled(isProcessing)
 
-            TextField("port", text: $port)
-                .keyboardType(.numberPad)
-                .disabled(isProcessing)
+            TextField("port", text: $port).keyboardType(.numberPad).disabled(isProcessing)
 
-            TextField("username", text: $username)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.username)
-                .disabled(isProcessing)
+            TextField("username", text: $username).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().textContentType(.username).disabled(isProcessing)
 
-            SecureField("password", text: $password)
-                .textContentType(.password)
+            SecureField("password", text: $password).textContentType(.password)
                 .disabled(isProcessing)
         } header: {
             Text("smbSettings")
@@ -253,30 +185,21 @@ struct AddBrowsableFolderModal: View {
 
     private var nfsConfiguration: some View {
         Section("nfsSettings") {
-            TextField("server", text: $nfsHost)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .disabled(isProcessing)
+            TextField("server", text: $nfsHost).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().disabled(isProcessing)
         }
     }
 
     private var webDavConfiguration: some View {
         Section {
-            TextField("serverUrl", text: $webDavServerURL)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.URL)
+            TextField("serverUrl", text: $webDavServerURL).keyboardType(.URL)
+                .textInputAutocapitalization(.never).autocorrectionDisabled().textContentType(.URL)
                 .disabled(isProcessing)
 
-            TextField("username", text: $webDavUsername)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.username)
-                .disabled(isProcessing)
+            TextField("username", text: $webDavUsername).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().textContentType(.username).disabled(isProcessing)
 
-            SecureField("password", text: $webDavPassword)
-                .textContentType(.password)
+            SecureField("password", text: $webDavPassword).textContentType(.password)
                 .disabled(isProcessing)
         } header: {
             Text("webdavSettings")
@@ -287,21 +210,14 @@ struct AddBrowsableFolderModal: View {
 
     private var opdsConfiguration: some View {
         Section {
-            TextField("catalogUrl", text: $opdsCatalogURL)
-                .keyboardType(.URL)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.URL)
+            TextField("catalogUrl", text: $opdsCatalogURL).keyboardType(.URL)
+                .textInputAutocapitalization(.never).autocorrectionDisabled().textContentType(.URL)
                 .disabled(isProcessing)
 
-            TextField("username", text: $opdsUsername)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .textContentType(.username)
-                .disabled(isProcessing)
+            TextField("username", text: $opdsUsername).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().textContentType(.username).disabled(isProcessing)
 
-            SecureField("password", text: $opdsPassword)
-                .textContentType(.password)
+            SecureField("password", text: $opdsPassword).textContentType(.password)
                 .disabled(isProcessing)
         } header: {
             Text("opdsSettings")
@@ -314,10 +230,8 @@ struct AddBrowsableFolderModal: View {
         List {
             if shares.isEmpty {
                 ContentUnavailableView(
-                    "noSmbShares",
-                    systemImage: "externaldrive.badge.xmark",
-                    description: Text("noSmbSharesDescription")
-                )
+                    "noSmbShares", systemImage: "externaldrive.badge.xmark",
+                    description: Text("noSmbSharesDescription"))
             } else {
                 Section {
                     ForEach(shares, id: \.name) { share in
@@ -328,16 +242,13 @@ struct AddBrowsableFolderModal: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     Label(share.name, systemImage: "externaldrive.fill")
                                     if let remark = share.remark, !remark.isEmpty {
-                                        Text(remark)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        Text(remark).font(.caption).foregroundStyle(.secondary)
                                             .lineLimit(2)
                                     }
                                 }
                                 Spacer()
                                 if selectedShare == share {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
+                                    Image(systemName: "checkmark").foregroundStyle(.tint)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -349,19 +260,14 @@ struct AddBrowsableFolderModal: View {
                 }
             }
         }
-        .navigationTitle("selectShare")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("selectShare").navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(isAdding)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     addSmbFolder()
                 } label: {
-                    if isAdding {
-                        ProgressView()
-                    } else {
-                        Text("add")
-                    }
+                    if isAdding { ProgressView() } else { Text("add") }
                 }
                 .disabled(selectedShare == nil || isProcessing)
             }
@@ -372,10 +278,8 @@ struct AddBrowsableFolderModal: View {
         List {
             if exports.isEmpty {
                 ContentUnavailableView(
-                    "noNfsExports",
-                    systemImage: "externaldrive.badge.xmark",
-                    description: Text("noNfsExportsDescription")
-                )
+                    "noNfsExports", systemImage: "externaldrive.badge.xmark",
+                    description: Text("noNfsExportsDescription"))
             } else {
                 Section {
                     ForEach(exports, id: \.self) { export in
@@ -386,8 +290,7 @@ struct AddBrowsableFolderModal: View {
                                 Label(export, systemImage: "externaldrive.fill")
                                 Spacer()
                                 if selectedExport == export {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
+                                    Image(systemName: "checkmark").foregroundStyle(.tint)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -399,99 +302,68 @@ struct AddBrowsableFolderModal: View {
                 }
             }
         }
-        .navigationTitle("selectExport")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("selectExport").navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(isAdding)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
                     addNfsFolder()
                 } label: {
-                    if isAdding {
-                        ProgressView()
-                    } else {
-                        Text("add")
-                    }
+                    if isAdding { ProgressView() } else { Text("add") }
                 }
                 .disabled(selectedExport == nil || isProcessing)
             }
         }
     }
 
-    @ViewBuilder
-    private var primaryAction: some View {
-        switch selectedFolderType {
-        case .filesystem:
+    @ViewBuilder private var primaryAction: some View {
+        switch selectedFolderType { case .filesystem:
             Button {
                 addFilesystemFolder()
             } label: {
-                if isAdding {
-                    ProgressView()
-                } else {
-                    Text("add")
-                }
+                if isAdding { ProgressView() } else { Text("add") }
             }
             .disabled(!canContinue)
-        case .smb:
-            Button {
-                discoverShares()
-            } label: {
-                if isLoadingShares || isAdding {
-                    ProgressView()
-                } else {
-                    Text("selectShare")
+            case .smb:
+                Button {
+                    discoverShares()
+                } label: {
+                    if isLoadingShares || isAdding { ProgressView() } else { Text("selectShare") }
                 }
-            }
-            .disabled(!canContinue)
-        case .nfs:
-            Button {
-                discoverExports()
-            } label: {
-                if isLoadingExports || isAdding {
-                    ProgressView()
-                } else {
-                    Text("selectExport")
+                .disabled(!canContinue)
+            case .nfs:
+                Button {
+                    discoverExports()
+                } label: {
+                    if isLoadingExports || isAdding { ProgressView() } else { Text("selectExport") }
                 }
-            }
-            .disabled(!canContinue)
-        case .webdav:
-            Button {
-                addWebDavFolder()
-            } label: {
-                if isAdding {
-                    ProgressView()
-                } else {
-                    Text("add")
+                .disabled(!canContinue)
+            case .webdav:
+                Button {
+                    addWebDavFolder()
+                } label: {
+                    if isAdding { ProgressView() } else { Text("add") }
                 }
-            }
-            .disabled(!canContinue)
-        case .opds:
-            Button {
-                addOpdsPlugin()
-            } label: {
-                if isAdding {
-                    ProgressView()
-                } else {
-                    Text("add")
+                .disabled(!canContinue)
+            case .opds:
+                Button {
+                    addOpdsPlugin()
+                } label: {
+                    if isAdding { ProgressView() } else { Text("add") }
                 }
-            }
-            .disabled(!canContinue)
+                .disabled(!canContinue)
         }
     }
 
     private var errorIsPresented: Binding<Bool> {
-        Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )
+        Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
     }
 
     private func discoverShares() {
         guard let portValue = parsedPort else {
             presentError(
                 MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError(),
-                title: "failedToDiscoverSmbShares"
-            )
+                title: "failedToDiscoverSmbShares")
             return
         }
 
@@ -501,11 +373,7 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let discoveredShares = try await SmbSession.discoverShares(
-                    host: host,
-                    port: portValue,
-                    username: username,
-                    password: password
-                )
+                    host: host, port: portValue, username: username, password: password)
 
                 shares = discoveredShares
                 if discoveredShares.count == 1 {
@@ -516,9 +384,7 @@ struct AddBrowsableFolderModal: View {
 
                 selectedShare = nil
                 showingShareSelection = true
-            } catch {
-                presentError(error, title: "failedToDiscoverSmbShares")
-            }
+            } catch { presentError(error, title: "failedToDiscoverSmbShares") }
         }
     }
 
@@ -538,9 +404,7 @@ struct AddBrowsableFolderModal: View {
 
                 selectedExport = nil
                 showingExportSelection = true
-            } catch {
-                presentError(error, title: "failedToDiscoverNfsExports")
-            }
+            } catch { presentError(error, title: "failedToDiscoverNfsExports") }
         }
     }
 
@@ -554,16 +418,12 @@ struct AddBrowsableFolderModal: View {
             do {
                 let plugin = try FsBrowsablePlugin(url: selectedFolder, name: name)
                 addPlugin(plugin)
-            } catch {
-                presentError(error)
-            }
+            } catch { presentError(error) }
         }
     }
 
     private func addSmbFolder() {
-        guard let selectedShare,
-            let portValue = parsedPort
-        else { return }
+        guard let selectedShare, let portValue = parsedPort else { return }
 
         isAdding = true
         Task { @MainActor in
@@ -571,18 +431,12 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let configuration = try SmbConnectionConfiguration(
-                    host: host,
-                    port: portValue,
-                    share: selectedShare.name,
-                    username: username,
-                    password: password
-                )
+                    host: host, port: portValue, share: selectedShare.name, username: username,
+                    password: password)
                 let session = SmbSession(configuration: configuration)
                 let plugin = try await SmbBrowsablePlugin(session: session, name: name)
                 addPlugin(plugin)
-            } catch {
-                presentError(error)
-            }
+            } catch { presentError(error) }
         }
     }
 
@@ -595,15 +449,11 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let configuration = try NfsConnectionConfiguration(
-                    host: nfsHost,
-                    export: selectedExport
-                )
+                    host: nfsHost, export: selectedExport)
                 let session = NfsSession(configuration: configuration)
                 let plugin = try await NfsBrowsablePlugin(session: session, name: name)
                 addPlugin(plugin)
-            } catch {
-                presentError(error)
-            }
+            } catch { presentError(error) }
         }
     }
 
@@ -614,16 +464,11 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let configuration = try WebDavConnectionConfiguration(
-                    baseURL: webDavServerURL,
-                    username: webDavUsername,
-                    password: webDavPassword
-                )
+                    baseURL: webDavServerURL, username: webDavUsername, password: webDavPassword)
                 let session = WebDavSession(configuration: configuration)
                 let plugin = try await WebDavBrowsablePlugin(session: session, name: name)
                 addPlugin(plugin)
-            } catch {
-                presentError(error)
-            }
+            } catch { presentError(error) }
         }
     }
 
@@ -634,33 +479,23 @@ struct AddBrowsableFolderModal: View {
 
             do {
                 let configuration = try OpdsConnectionConfiguration(
-                    catalogURL: opdsCatalogURL,
-                    username: opdsUsername,
-                    password: opdsPassword
-                )
+                    catalogURL: opdsCatalogURL, username: opdsUsername, password: opdsPassword)
                 let session = OpdsSession(configuration: configuration)
                 let plugin = try await OpdsBrowsablePlugin(session: session, name: name)
                 addPlugin(plugin)
-            } catch {
-                presentError(error)
-            }
+            } catch { presentError(error) }
         }
     }
 
     private var parsedPort: Int? {
         guard let portValue = Int(port.trimmingCharacters(in: .whitespacesAndNewlines)),
             (1...65535).contains(portValue)
-        else {
-            return nil
-        }
+        else { return nil }
         return portValue
     }
 
     private var duplicatePluginIsPresented: Binding<Bool> {
-        Binding(
-            get: { duplicatePlugin != nil },
-            set: { if !$0 { duplicatePlugin = nil } }
-        )
+        Binding(get: { duplicatePlugin != nil }, set: { if !$0 { duplicatePlugin = nil } })
     }
 
     private func addPlugin(_ plugin: BrowsablePlugin) {
@@ -669,32 +504,21 @@ struct AddBrowsableFolderModal: View {
             dismiss()
         } catch let error where MankaiErrorCode.pluginDuplicateId.matches(error) {
             duplicatePlugin = plugin
-        } catch {
-            presentError(error)
-        }
+        } catch { presentError(error) }
     }
 
-    private func resolveDuplicatePlugin(
-        with conflictResolution: BrowsePluginAddConflictResolution
-    ) {
+    private func resolveDuplicatePlugin(with conflictResolution: BrowsePluginAddConflictResolution)
+    {
         guard let duplicatePlugin else { return }
         self.duplicatePlugin = nil
 
         do {
-            try browseService.addPlugin(
-                duplicatePlugin,
-                conflictResolution: conflictResolution
-            )
+            try browseService.addPlugin(duplicatePlugin, conflictResolution: conflictResolution)
             dismiss()
-        } catch {
-            presentError(error)
-        }
+        } catch { presentError(error) }
     }
 
-    private func presentError(
-        _ error: Error,
-        title: LocalizedStringKey = "failedToAddFolder"
-    ) {
+    private func presentError(_ error: Error, title: LocalizedStringKey = "failedToAddFolder") {
         errorTitle = title
         errorMessage = error.localizedDescription
     }

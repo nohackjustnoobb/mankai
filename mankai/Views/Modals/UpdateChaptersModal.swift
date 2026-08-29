@@ -35,8 +35,7 @@ struct UpdateChaptersModal: View {
         self.isRootOfSheet = isRootOfSheet
         chapterGroupTitle =
             manga.chapters.indices.contains(chapterGroupIndex)
-            ? manga.chapters[chapterGroupIndex].title
-            : nil
+            ? manga.chapters[chapterGroupIndex].title : nil
     }
 
     private func fetchChapters() {
@@ -75,9 +74,7 @@ struct UpdateChaptersModal: View {
 
         Task {
             do {
-                for chapter in chaptersToDelete {
-                    try await plugin.deleteChapter(id: chapter.id)
-                }
+                for chapter in chaptersToDelete { try await plugin.deleteChapter(id: chapter.id) }
 
                 fetchChapters()
             } catch {
@@ -95,10 +92,7 @@ struct UpdateChaptersModal: View {
                 }
 
                 try await plugin.upsertChapter(
-                    EditableChapter(
-                        id: chapterId, title: newTitle, chapterGroupId: groupId
-                    )
-                )
+                    EditableChapter(id: chapterId, title: newTitle, chapterGroupId: groupId))
 
                 fetchChapters()
             } catch {
@@ -108,40 +102,23 @@ struct UpdateChaptersModal: View {
         }
     }
 
-    @ViewBuilder
-    private var chapterList: some View {
+    @ViewBuilder private var chapterList: some View {
         List {
             Section {
-                Button("add") {
-                    showingAddAlert = true
-                }
-                .padding(.horizontal, 20)
+                Button("add") { showingAddAlert = true }.padding(.horizontal, 20)
 
                 ForEach(chapters, id: \.id) { chapter in
                     NavigationLink(destination: {
                         UpdateChapterModal(
-                            plugin: plugin,
-                            manga: manga,
-                            chapter: chapter,
-                            onRename: { id, title in
-                                renameChapter(for: id, to: title)
-                            }
-                        )
-                    }) {
-                        Text(chapter.title ?? chapter.id)
-                            .foregroundColor(.primary)
-                    }
+                            plugin: plugin, manga: manga, chapter: chapter,
+                            onRename: { id, title in renameChapter(for: id, to: title) })
+                    }) { Text(chapter.title ?? chapter.id).foregroundColor(.primary) }
                     .padding(.horizontal, 20)
                 }
-                .onMove(perform: moveChapter)
-                .onDelete(perform: deleteChapter)
+                .onMove(perform: moveChapter).onDelete(perform: deleteChapter)
             } header: {
-                Text("editChaptersInstructions")
-                    .font(.caption)
-                    .textCase(.none)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom)
+                Text("editChaptersInstructions").font(.caption).textCase(.none)
+                    .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.bottom)
             }
             .listRowInsets(EdgeInsets())
         }
@@ -151,18 +128,13 @@ struct UpdateChaptersModal: View {
     var body: some View {
         NavigationView {
             if isRootOfSheet {
-                chapterList
-                    .navigationTitleWithSubtitle(
-                        title: Text("editChapters"),
-                        subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
-                    )
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("close") {
-                                dismiss()
-                            }
-                        }
-                    }
+                chapterList.navigationTitleWithSubtitle(
+                    title: Text("editChapters"),
+                    subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+                )
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("close") { dismiss() } }
+                }
             } else {
                 chapterList
             }
@@ -180,9 +152,7 @@ struct UpdateChaptersModal: View {
 
                             try await plugin.upsertChapter(
                                 EditableChapter(
-                                    id: nil, title: trimmedName, chapterGroupId: groupId
-                                )
-                            )
+                                    id: nil, title: trimmedName, chapterGroupId: groupId))
 
                             fetchChapters()
                         } catch {
@@ -193,9 +163,7 @@ struct UpdateChaptersModal: View {
                 }
                 newChapterName = ""
             }
-            Button("cancel", role: .cancel) {
-                newChapterName = ""
-            }
+            Button("cancel", role: .cancel) { newChapterName = "" }
         } message: {
             Text("enterChapterTitle")
         }
@@ -206,8 +174,7 @@ struct UpdateChaptersModal: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(
-            title: Text("editChapters"),
-            subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
+            title: Text("editChapters"), subtitle: Text(LocalizedStringKey(chapterGroupTitle ?? ""))
         )
         .task {
             do {

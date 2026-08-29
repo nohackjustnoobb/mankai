@@ -18,11 +18,8 @@ struct HomeFilterModal: View {
     @State private var tempShowPlugins: [String]
 
     init(
-        isPresented: Binding<Bool>,
-        showPlugins: Binding<[String]>,
-        availablePlugins: [Plugin],
-        availableFolders: [BrowsablePlugin],
-        onReset: @escaping () -> Void,
+        isPresented: Binding<Bool>, showPlugins: Binding<[String]>, availablePlugins: [Plugin],
+        availableFolders: [BrowsablePlugin], onReset: @escaping () -> Void,
         onApply: @escaping () -> Void
     ) {
         _isPresented = isPresented
@@ -39,40 +36,29 @@ struct HomeFilterModal: View {
             List {
                 if !availablePlugins.isEmpty {
                     Section("plugins") {
-                        ForEach(availablePlugins, id: \.id) { plugin in
-                            filterButton(for: plugin)
-                        }
+                        ForEach(availablePlugins, id: \.id) { plugin in filterButton(for: plugin) }
                     }
                 }
 
                 if !availableFolders.isEmpty {
                     Section("folders") {
-                        ForEach(availableFolders, id: \.id) { folder in
-                            filterButton(for: folder)
-                        }
+                        ForEach(availableFolders, id: \.id) { folder in filterButton(for: folder) }
                     }
                 }
 
                 Section {
                     Button(
-                        "reset",
-                        role: .destructive,
+                        "reset", role: .destructive,
                         action: {
                             onReset()
                             isPresented = false
-                        }
-                    )
+                        })
                 }
             }
-            .navigationTitle("filters")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("filters").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(action: {
-                        isPresented = false
-                    }) {
-                        Text("cancel")
-                    }
+                    Button(action: { isPresented = false }) { Text("cancel") }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -80,16 +66,11 @@ struct HomeFilterModal: View {
                         showPlugins = tempShowPlugins
                         onApply()
                         isPresented = false
-                    }) {
-                        Text("done")
-                    }
+                    }) { Text("done") }
                 }
             }
         }
-        .presentationDetents([.medium])
-        .onAppear {
-            tempShowPlugins = showPlugins
-        }
+        .presentationDetents([.medium]).onAppear { tempShowPlugins = showPlugins }
     }
 
     private func filterButton(for plugin: Plugin) -> some View {
@@ -101,12 +82,9 @@ struct HomeFilterModal: View {
             }
         } label: {
             HStack {
-                Text(plugin.name ?? plugin.id)
-                    .foregroundColor(.primary)
+                Text(plugin.name ?? plugin.id).foregroundColor(.primary)
                 Spacer()
-                if tempShowPlugins.contains(plugin.id) {
-                    Image(systemName: "checkmark")
-                }
+                if tempShowPlugins.contains(plugin.id) { Image(systemName: "checkmark") }
             }
         }
     }

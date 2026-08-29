@@ -24,8 +24,6 @@ struct HttpPluginModel {
     }
 }
 
-extension HttpPluginModel: TableRecord {
-    static let databaseTableName = "httpplugin"
-}
+extension HttpPluginModel: TableRecord { static let databaseTableName = "httpplugin" }
 
 extension HttpPluginModel: Codable, FetchableRecord, PersistableRecord {}

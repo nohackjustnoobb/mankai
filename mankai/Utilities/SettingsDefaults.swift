@@ -25,9 +25,7 @@ enum SettingsDefaults {
     static let smartGroupingSensitivity: Double = 0.5
 
     /// Default Reader
-    static var readerType: ReaderType {
-        UIDevice.isIPad ? .paged : .continuous
-    }
+    static var readerType: ReaderType { UIDevice.isIPad ? .paged : .continuous }
 
     // Continuous Reader Defaults
     static let CR_readingDirection: ReadingDirection = .rightToLeft
