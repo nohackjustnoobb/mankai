@@ -8,6 +8,7 @@
 import Foundation
 import GRDB
 import NFSKit
+import SwiftUI
 
 struct NfsConnectionConfiguration {
     let host: String
@@ -309,7 +310,7 @@ final class NfsBrowsablePlugin: GenericBrowsablePlugin<NfsConnectionConfiguratio
 
     override var tags: [String] { ["NFS"] }
 
-    override var systemImageName: String { "network" }
+    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "NFS", color: color)) }
 
     static func loadPlugins() -> [NfsBrowsablePlugin] {
         Logger.nfsBrowsablePlugin.debug("Loading NFS browsable plugins")

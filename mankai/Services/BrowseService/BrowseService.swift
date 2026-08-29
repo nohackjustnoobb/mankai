@@ -37,11 +37,11 @@ protocol Browsable {
     /// When `nil`, the plugin uses its backend-specific default name.
     var displayName: String? { get set }
 
-    /// The name of the system image used to represent this plugin.
-    var systemImageName: String { get }
+    /// The icon used to represent this plugin.
+    var icon: AnyView { get }
 
-    /// The color of the system image used to represent this plugin.
-    var systemImageColor: Color { get }
+    /// The color used to visually distinguish this plugin.
+    var color: Color { get }
 
     /// Returns the entities at the given path.
     func getEntities(path: String?) async throws -> [Entity]

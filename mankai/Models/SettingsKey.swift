@@ -12,6 +12,7 @@ enum SettingsKey: String {
     case showDebugScreen
     case downsampleImages
     case checkClipboard
+    case browseViewMode
 
     /// Cache Settings
     case inMemoryCacheItemCount
@@ -36,6 +37,11 @@ enum SettingsKey: String {
     case PR_readingDirection
     case PR_tapNavigation
     case PR_tapNavigationBehavior
+}
+
+enum BrowseViewMode: String {
+    case grid
+    case list
 }
 
 enum ReaderType: Int {

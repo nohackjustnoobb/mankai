@@ -27,8 +27,12 @@ struct BrowseTab: View {
                         NavigationLink {
                             BrowseScreen(plugin: plugin)
                         } label: {
-                            Label(plugin.name ?? plugin.id, systemImage: plugin.systemImageName)
-                                .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
+                            Label {
+                                Text(plugin.name ?? plugin.id)
+                            } icon: {
+                                plugin.icon
+                            }
+                            .labelStyle(ColorfulIconLabelStyle(color: plugin.color))
                         }
                         .swipeActions(allowsFullSwipe: false) {
                             if !(plugin is AppDirBrowsablePlugin) {

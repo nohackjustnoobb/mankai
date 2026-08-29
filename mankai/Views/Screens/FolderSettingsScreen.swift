@@ -35,9 +35,9 @@ struct FolderSettingsScreen: View {
                             }
                         }
                     } icon: {
-                        Image(systemName: plugin.systemImageName)
+                        plugin.icon
                     }
-                    .labelStyle(ColorfulIconLabelStyle(color: plugin.systemImageColor))
+                    .labelStyle(ColorfulIconLabelStyle(color: plugin.color))
                 }
             }
         }

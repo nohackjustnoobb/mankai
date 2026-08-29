@@ -2797,6 +2797,22 @@
     "GNU GPLv3" : {
       "shouldTranslate" : false
     },
+    "gridView" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grid View"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "格狀顯示"
+          }
+        }
+      }
+    },
     "harem" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
@@ -3960,6 +3976,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按狀態篩選列表"
+          }
+        }
+      }
+    },
+    "listView" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "List View"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "列表顯示"
           }
         }
       }

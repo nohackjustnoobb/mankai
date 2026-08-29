@@ -40,7 +40,6 @@ struct DebugGetImage: View {
                                 Text("url")
                                 Spacer()
                                 Text(url).foregroundColor(.secondary).lineLimit(1)
-                                    .truncationMode(.middle)
                             }
                         }
                     } else {

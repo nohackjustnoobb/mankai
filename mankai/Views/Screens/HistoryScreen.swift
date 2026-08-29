@@ -99,12 +99,18 @@ struct HistoryItemView: View {
                             .aspectRatio(3 / 4, contentMode: .fit)
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(manga?.title ?? record.mangaId).font(.headline).lineLimit(1)
-
                             HStack {
+                                Text(manga?.title ?? record.mangaId).lineLimit(1)
+
+                                if !record.shouldSync {
+                                    Image("custom.arrow.trianglehead.2.clockwise.rotate.90.slash")
+                                        .foregroundStyle(.orange).font(.subheadline)
+                                }
+                            }
+
+                            HStack(spacing: 4) {
                                 if let chapterTitle = record.chapterTitle {
                                     Text(chapterTitle)
-
                                 } else {
                                     Text(
                                         String(

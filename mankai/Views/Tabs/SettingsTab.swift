@@ -38,7 +38,7 @@ struct SettingsTab: View {
 
                 Section {
                     NavigationLink(destination: PluginSettingsScreen()) {
-                        Label("plugins", systemImage: "puzzlepiece.extension.fill")
+                        Label("plugins", systemImage: "square.stack.3d.up.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red))
                     }
 

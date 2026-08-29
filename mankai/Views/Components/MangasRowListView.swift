@@ -26,7 +26,7 @@ struct MangasRowListView: View {
                 HStack(spacing: 4) {
                     Text(plugin.name ?? plugin.id).font(.title3).foregroundColor(.primary)
                         .fontWeight(.semibold)
-                    Image(systemName: "chevron.right").foregroundColor(.secondary)
+                    Image(systemName: "chevron.right").font(.callout).foregroundColor(.secondary)
                         .foregroundStyle(.secondary)
                     Spacer()
                 }

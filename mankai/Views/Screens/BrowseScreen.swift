@@ -8,54 +8,112 @@
 import SwiftUI
 
 struct BrowseScreen: View {
+    private struct TopRightCornerTriangle: Shape {
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.closeSubpath()
+            return path
+        }
+    }
+
     let plugin: BrowsablePlugin
     let entry: Entity?
-    let systemImageColor: Color?
+    let color: Color?
 
     @Environment(\.openURL) private var openURL
+    @AppStorage(SettingsKey.browseViewMode.rawValue) private var viewModeRawValue = SettingsDefaults
+        .browseViewMode.rawValue
 
     @State private var entities: [Entity] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
     @State private var isParsing: Bool = false
     @State private var parsedMangas: [String: DetailedManga] = [:]
+    @State private var unreadMangaPaths: Set<String> = []
     @State private var parsingPaths: Set<String> = []
     @State private var parseErrors: [String: String] = [:]
 
-    init(plugin: BrowsablePlugin, entry: Entity? = nil, systemImageColor: Color? = nil) {
+    init(plugin: BrowsablePlugin, entry: Entity? = nil, color: Color? = nil) {
         self.plugin = plugin
         self.entry = entry
-        self.systemImageColor = systemImageColor ?? plugin.systemImageColor
+        self.color = color ?? plugin.color
     }
 
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 20)], spacing: 20) {
-                ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
-                    switch entity.type { case .directory:
-                        NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity)) {
-                            directoryView(entity: entity)
+            if viewMode == .grid {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 20)], spacing: 20) {
+                    ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
+                        switch entity.type { case .directory:
+                            NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity))
+                            { directoryView(entity: entity) }
+                            .buttonStyle(.plain)
+                            case .book:
+                                if let manga = parsedMangas[entity.path] {
+                                    NavigationLink(
+                                        destination: MangaDetailsScreen(
+                                            plugin: plugin, manga: manga.toManga())
+                                    ) {
+                                        mangaView(
+                                            manga: manga, entity: entity,
+                                            isUnread: unreadMangaPaths.contains(entity.path))
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    filePlaceholderView(
+                                        entity: entity,
+                                        isParsing: parsingPaths.contains(entity.path),
+                                        errorMessage: parseErrors[entity.path])
+                                }
                         }
-                        .buttonStyle(.plain)
-                        case .book:
-                            if let manga = parsedMangas[entity.path] {
-                                NavigationLink(
-                                    destination: MangaDetailsScreen(
-                                        plugin: plugin, manga: manga.toManga())
-                                ) { mangaView(manga: manga, entity: entity) }
-                                .buttonStyle(.plain)
-                            } else {
-                                filePlaceholderView(
-                                    entity: entity, isParsing: parsingPaths.contains(entity.path),
-                                    errorMessage: parseErrors[entity.path])
-                            }
                     }
                 }
+                .padding()
+            } else {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(entities.enumerated()), id: \.offset) { index, entity in
+                        switch entity.type { case .directory:
+                            NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity))
+                            { directoryListView(entity: entity) }
+                            .buttonStyle(.plain)
+                            case .book(let fileType):
+                                if let manga = parsedMangas[entity.path] {
+                                    NavigationLink(
+                                        destination: MangaDetailsScreen(
+                                            plugin: plugin, manga: manga.toManga())
+                                    ) {
+                                        mangaListView(
+                                            manga: manga, entity: entity, fileType: fileType,
+                                            isUnread: unreadMangaPaths.contains(entity.path))
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    filePlaceholderListView(
+                                        entity: entity, fileType: fileType,
+                                        isParsing: parsingPaths.contains(entity.path),
+                                        errorMessage: parseErrors[entity.path])
+                                }
+                        }
+
+                        if index < entities.count - 1 { Divider().padding(.leading, 72) }
+                    }
+                }
+                .padding(.horizontal)
             }
-            .padding()
         }
         .navigationTitle(navigationTitle).navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: toggleViewMode) {
+                    Label(
+                        viewMode == .grid ? "listView" : "gridView",
+                        systemImage: viewMode == .grid ? "list.bullet" : "square.grid.2x2")
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 if folderURL != nil {
                     Button {
@@ -84,12 +142,21 @@ struct BrowseScreen: View {
         .onAppear { loadEntities() }
     }
 
+    private var viewMode: BrowseViewMode {
+        BrowseViewMode(rawValue: viewModeRawValue) ?? SettingsDefaults.browseViewMode
+    }
+
     private var navigationTitle: String {
         if let entry { return entry.displayName }
         return plugin.name ?? plugin.id
     }
 
     private var folderURL: URL? { plugin.absoluteURL(for: entry?.path) }
+
+    private func toggleViewMode() {
+        viewModeRawValue =
+            viewMode == .grid ? BrowseViewMode.list.rawValue : BrowseViewMode.grid.rawValue
+    }
 
     private func openInFilesApp() {
         guard let folderURL else { return }
@@ -104,6 +171,7 @@ struct BrowseScreen: View {
         isLoading = true
         errorMessage = nil
         parsedMangas = [:]
+        unreadMangaPaths = []
         parsingPaths = []
         parseErrors = [:]
 
@@ -131,8 +199,11 @@ struct BrowseScreen: View {
 
                     do {
                         let manga = try await plugin.parseFile(path: filePath, fileType: fileType)
+                        let isUnread =
+                            HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
                         await MainActor.run {
                             self.parsedMangas[filePath] = manga
+                            if isUnread { self.unreadMangaPaths.insert(filePath) }
                             self.parsingPaths.remove(filePath)
                         }
                     } catch {
@@ -165,7 +236,7 @@ struct BrowseScreen: View {
                 Image("FolderIcon").resizable().scaledToFit()
                     .overlay {
                         Image("FolderIcon").renderingMode(.template).resizable().scaledToFit()
-                            .foregroundStyle(systemImageColor ?? .accentColor).blendMode(.hue)
+                            .foregroundStyle(color ?? .accentColor).blendMode(.hue)
                     }
                     .compositingGroup()
             }
@@ -175,13 +246,121 @@ struct BrowseScreen: View {
         }
     }
 
-    private func mangaView(manga: DetailedManga, entity: Entity) -> some View {
+    private func mangaView(manga: DetailedManga, entity: Entity, isUnread: Bool) -> some View {
         VStack(spacing: 8) {
-            thumbnailView { MangaCoverView(coverUrl: manga.cover, plugin: plugin) }
+            thumbnailView { mangaThumbnail(manga: manga, isUnread: isUnread) }
 
             Text(entity.displayName(using: manga)).font(.caption).foregroundColor(.primary)
                 .lineLimit(2).multilineTextAlignment(.center).frame(maxWidth: .infinity)
         }
+    }
+
+    private func listThumbnail<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        Color.clear.frame(width: 56, height: 72)
+            .overlay { content().frame(maxWidth: .infinity, maxHeight: .infinity) }
+    }
+
+    private func directoryListView(entity: Entity) -> some View {
+        HStack(spacing: 16) {
+            listThumbnail {
+                Image("FolderIcon").resizable().scaledToFit()
+                    .overlay {
+                        Image("FolderIcon").renderingMode(.template).resizable().scaledToFit()
+                            .foregroundStyle(color ?? .accentColor).blendMode(.hue)
+                    }
+                    .compositingGroup()
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entity.displayName).font(.body).foregroundStyle(.primary).lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 8).contentShape(Rectangle())
+    }
+
+    private func mangaListView(
+        manga: DetailedManga, entity: Entity, fileType: String, isUnread: Bool
+    ) -> some View {
+        HStack(spacing: 16) {
+            listThumbnail {
+                mangaThumbnail(manga: manga, isUnread: isUnread, cornerRadius: 6, markerScale: 0.35)
+            }
+
+            bookListMetadata(
+                title: entity.displayName(using: manga), entity: entity, fileType: fileType)
+
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 8).contentShape(Rectangle())
+    }
+
+    private func mangaThumbnail(
+        manga: DetailedManga, isUnread: Bool, cornerRadius: CGFloat? = nil,
+        markerScale: CGFloat = 0.25
+    ) -> some View {
+        let effectiveCornerRadius: CGFloat =
+            if let cornerRadius { cornerRadius } else if #available(iOS 26.0, *) { 12 } else { 8 }
+
+        return MangaCoverView(coverUrl: manga.cover, plugin: plugin, cornerRadius: cornerRadius)
+            .overlay {
+                RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                    .strokeBorder(Color(uiColor: .separator))
+            }
+            .overlay {
+                if isUnread {
+                    GeometryReader { proxy in
+                        let markerSize = min(proxy.size.width, proxy.size.height) * markerScale
+
+                        TopRightCornerTriangle().fill(color ?? .accentColor).opacity(0.9)
+                            .frame(width: markerSize, height: markerSize)
+                            .frame(
+                                maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
+
+    }
+
+    private func filePlaceholderListView(
+        entity: Entity, fileType: String, isParsing: Bool, errorMessage: String?
+    ) -> some View {
+        HStack(spacing: 16) {
+            listThumbnail {
+                documentThumbnail(
+                    fileType: fileType, isParsing: isParsing, hasError: errorMessage != nil)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                bookListMetadata(title: entity.displayName, entity: entity, fileType: fileType)
+
+                if let errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle").font(.caption)
+                        .foregroundStyle(.orange).lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 8).contentShape(Rectangle())
+    }
+
+    private func bookListMetadata(title: String, entity: Entity, fileType: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.body).foregroundStyle(.primary).lineLimit(2)
+
+            HStack(spacing: 8) {
+                Text(entity.name).lineLimit(1)
+                Spacer(minLength: 0)
+                Text(fileType.uppercased()).smallTagStyle()
+            }
+            .font(.subheadline).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func filePlaceholderView(entity: Entity, isParsing: Bool, errorMessage: String?)
@@ -192,30 +371,33 @@ struct BrowseScreen: View {
 
         return VStack(spacing: 8) {
             thumbnailView {
-                ZStack(alignment: .bottomLeading) {
-                    Image("DocumentIcon").resizable().scaledToFill().clipped()
-
-                    if errorMessage != nil {
-                        Image(systemName: "exclamationmark.triangle").font(.title2)
-                            .foregroundStyle(.orange).padding(12)
-                            .background(.regularMaterial, in: Circle())
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if isParsing {
-                        ProgressView().padding(12).background(.regularMaterial, in: Circle())
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-
-                    Text(fileType.uppercased()).font(.caption2).fontWeight(.semibold)
-                        .foregroundStyle(errorMessage == nil ? Color.primary : Color.orange)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-                        .padding(12)
-                }
+                documentThumbnail(
+                    fileType: fileType, isParsing: isParsing, hasError: errorMessage != nil)
             }
 
             Text(entity.displayName).font(.caption).foregroundColor(.primary).lineLimit(2)
                 .multilineTextAlignment(.center).frame(maxWidth: .infinity)
         }
         .help(errorMessage ?? "")
+    }
+
+    private func documentThumbnail(fileType: String, isParsing: Bool, hasError: Bool) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            Image("DocumentIcon").resizable().scaledToFill().clipped()
+
+            if hasError {
+                Image(systemName: "exclamationmark.triangle").font(.title2).foregroundStyle(.orange)
+                    .padding(12).background(.regularMaterial, in: Circle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if isParsing {
+                ProgressView().padding(12).background(.regularMaterial, in: Circle())
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            Text(fileType.uppercased()).font(.caption2).fontWeight(.semibold)
+                .foregroundStyle(hasError ? Color.orange : Color.primary).padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6)).padding(12)
+        }
     }
 }

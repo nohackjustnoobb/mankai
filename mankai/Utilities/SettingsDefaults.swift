@@ -13,6 +13,7 @@ enum SettingsDefaults {
     static let showDebugScreen: Bool = false
     static let downsampleImages: Bool = true
     static let checkClipboard: Bool = false
+    static let browseViewMode: BrowseViewMode = .list
 
     // Cache Settings
     static let inMemoryCacheItemCount: Int = 100

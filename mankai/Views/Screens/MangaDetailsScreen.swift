@@ -254,7 +254,14 @@ struct MangaDetailsScreen: View {
 
                     if let record = record {
                         HStack(spacing: 4) {
-                            Text("lastRead")
+                            HStack {
+                                if !record.shouldSync {
+                                    Image("custom.arrow.trianglehead.2.clockwise.rotate.90.slash")
+                                        .foregroundStyle(.orange)
+                                }
+
+                                Text("lastRead")
+                            }
 
                             if let chapterTitle = record.chapterTitle {
                                 Text("•")

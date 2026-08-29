@@ -14,7 +14,7 @@ struct PluginSettingsScreen: View {
     var body: some View {
         List {
             SettingsHeaderView(
-                image: Image(systemName: "puzzlepiece.extension.fill"), color: .red,
+                image: Image(systemName: "square.stack.3d.up.fill"), color: .red,
                 title: String(localized: "plugins"),
                 description: String(localized: "pluginsDescription"))
 

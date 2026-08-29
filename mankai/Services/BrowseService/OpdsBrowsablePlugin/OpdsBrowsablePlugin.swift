@@ -113,9 +113,9 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
 
     override var canDownload: Bool { false }
 
-    var systemImageName: String { "books.vertical.fill" }
+    var icon: AnyView { AnyView(Image(systemName: "books.vertical.fill")) }
 
-    var systemImageColor: Color { BrowsablePluginStyle.systemImageColor(for: _id) }
+    var color: Color { BrowsablePluginStyle.color(for: _id) }
 
     convenience init(session: OpdsSession, name: String?) async throws {
         let rootCatalog = try await session.get(url: session.configuration.catalogURL)

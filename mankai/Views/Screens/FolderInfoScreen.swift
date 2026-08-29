@@ -94,7 +94,6 @@ struct FolderInfoScreen: View {
                 Section("filesystemSettings") {
                     LabeledContent("folder") {
                         Text(filesystemPlugin.url.path(percentEncoded: false)).lineLimit(1)
-                            .truncationMode(.middle)
                     }
                 }
                 case let smbPlugin as SmbBrowsablePlugin:
@@ -111,15 +110,12 @@ struct FolderInfoScreen: View {
                     Section("nfsSettings") {
                         LabeledContent("server") { Text(nfsPlugin.host) }
 
-                        LabeledContent("export") {
-                            Text(nfsPlugin.export).lineLimit(1).truncationMode(.middle)
-                        }
+                        LabeledContent("export") { Text(nfsPlugin.export).lineLimit(1) }
                     }
                 case let webDavPlugin as WebDavBrowsablePlugin:
                     Section("webdavSettings") {
                         LabeledContent("serverUrl") {
                             Text(webDavPlugin.baseURL.absoluteString).lineLimit(1)
-                                .truncationMode(.middle)
                         }
 
                         credentialFields
@@ -128,7 +124,6 @@ struct FolderInfoScreen: View {
                     Section("opdsSettings") {
                         LabeledContent("catalogUrl") {
                             Text(opdsPlugin.configuration.catalogURL.absoluteString).lineLimit(1)
-                                .truncationMode(.middle)
                         }
 
                         credentialFields

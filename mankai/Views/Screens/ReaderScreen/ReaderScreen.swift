@@ -795,8 +795,7 @@ struct ReaderScreen: View {
         systemImage: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) { Image(systemName: systemImage).frame(minWidth: 44, minHeight: 32) }
-            .buttonStyle(.plain).disabled(!enabled).accessibilityLabel(label)
-            .foregroundStyle(.accent)
+            .buttonStyle(.plain).disabled(!enabled).foregroundStyle(.accent)
     }
 
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {

@@ -8,6 +8,7 @@
 import Foundation
 import GRDB
 import SwiftSMB
+import SwiftUI
 
 struct SmbConnectionConfiguration {
     let host: String
@@ -224,7 +225,7 @@ final class SmbBrowsablePlugin: GenericBrowsablePlugin<SmbConnectionConfiguratio
 
     override var tags: [String] { ["SMB"] }
 
-    override var systemImageName: String { "network" }
+    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "SMB", color: color)) }
 
     static func loadPlugins() -> [SmbBrowsablePlugin] {
         Logger.smbBrowsablePlugin.debug("Loading SMB browsable plugins")

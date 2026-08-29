@@ -23,9 +23,9 @@ struct DebugGetChapter: View {
                             if plugin.supports(.image) {
                                 NavigationLink(destination: {
                                     DebugGetImage(plugin: plugin, url: url)
-                                }) { Text(url).lineLimit(1).truncationMode(.middle) }
+                                }) { Text(url).lineLimit(1) }
                             } else {
-                                Text(url).lineLimit(1).truncationMode(.middle)
+                                Text(url).lineLimit(1)
                             }
                         }
                     }

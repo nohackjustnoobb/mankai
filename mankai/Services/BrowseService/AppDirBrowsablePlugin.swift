@@ -33,9 +33,9 @@ final class AppDirBrowsablePlugin: FsBrowsablePlugin {
 
     override var name: String? { String(localized: "localDir") }
 
-    override var systemImageName: String { "iphone" }
+    override var icon: AnyView { AnyView(Image(systemName: "iphone")) }
 
-    override var systemImageColor: Color { .accentColor }
+    override var color: Color { .accentColor }
 
     /// Built-in plugin, do nothing
     override func savePlugin() throws {}

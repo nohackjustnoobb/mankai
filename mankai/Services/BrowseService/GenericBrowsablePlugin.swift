@@ -120,7 +120,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     var displayName: String?
 
-    var systemImageName: String { "folder.fill" }
+    var icon: AnyView { AnyView(Image(systemName: "folder.fill")) }
 
     override var availableGenres: [Genre] { Genre.allCases }
 
@@ -130,7 +130,7 @@ where Session: BrowsableSession, Session.Config == Config {
 
     override var canDownload: Bool { false }
 
-    var systemImageColor: Color { BrowsablePluginStyle.systemImageColor(for: _id) }
+    var color: Color { BrowsablePluginStyle.color(for: _id) }
 
     var supportedExtensions: [String] { extensionsIndex.keys.sorted() }
 

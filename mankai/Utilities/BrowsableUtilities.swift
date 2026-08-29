@@ -155,15 +155,28 @@ enum BrowsableMangaUtilities {
     }
 }
 
+struct LabeledFolderIcon: View {
+    let label: String
+    let color: Color
+
+    var body: some View {
+        Image(systemName: "folder.fill")
+            .overlay {
+                Text(label).font(.system(size: 6, weight: .bold, design: .rounded))
+                    .foregroundStyle(color).offset(y: 2)
+            }
+    }
+}
+
 enum BrowsablePluginStyle {
-    static let systemImagePalette: [Color] = [
+    static let palette: [Color] = [
         .red, .orange, .yellow, .green, .mint, .teal, .cyan, .blue, .indigo, .purple, .pink, .brown
     ]
 
-    static func systemImageColor(for id: String) -> Color {
+    static func color(for id: String) -> Color {
         var hash: UInt64 = 5381
         for byte in id.utf8 { hash = (hash &<< 5) &+ hash &+ UInt64(byte) }
-        let index = Int(hash % UInt64(systemImagePalette.count))
-        return systemImagePalette[index]
+        let index = Int(hash % UInt64(palette.count))
+        return palette[index]
     }
 }

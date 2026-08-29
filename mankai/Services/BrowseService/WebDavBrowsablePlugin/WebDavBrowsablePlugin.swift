@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import SwiftUI
 import WebDAV
 
 struct WebDavConnectionConfiguration {
@@ -203,7 +204,7 @@ final class WebDavBrowsablePlugin: GenericBrowsablePlugin<
 
     override var tags: [String] { ["WebDAV"] }
 
-    override var systemImageName: String { "network" }
+    override var icon: AnyView { AnyView(LabeledFolderIcon(label: "DAV", color: color)) }
 
     static func loadPlugins() -> [WebDavBrowsablePlugin] {
         Logger.webDavBrowsablePlugin.debug("Loading WebDAV browsable plugins")
