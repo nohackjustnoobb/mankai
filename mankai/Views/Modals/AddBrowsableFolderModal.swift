@@ -16,6 +16,7 @@ struct AddBrowsableFolderModal: View {
     enum FolderType: String, CaseIterable, Identifiable {
         case filesystem
         case smb
+        case sftp
         case nfs
         case webdav
         case opds
@@ -25,6 +26,7 @@ struct AddBrowsableFolderModal: View {
         var localizedName: String {
             switch self { case .filesystem: String(localized: "fs") case .smb:
                 String(localized: "smb")
+                case .sftp: String(localized: "sftp")
                 case .nfs: String(localized: "nfs")
                 case .webdav: String(localized: "webdav")
                 case .opds: String(localized: "opds")
@@ -47,6 +49,12 @@ struct AddBrowsableFolderModal: View {
     @State private var shares: [SMB.Share] = []
     @State private var selectedShare: SMB.Share?
     @State private var showingShareSelection = false
+
+    // SFTP state
+    @State private var sftpHost = ""
+    @State private var sftpPort = "22"
+    @State private var sftpUsername = ""
+    @State private var sftpPassword = ""
 
     // NFS state
     @State private var nfsHost = ""
@@ -79,6 +87,10 @@ struct AddBrowsableFolderModal: View {
         switch selectedFolderType { case .filesystem: return selectedFolder != nil case .smb:
             return !host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 && !port.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            case .sftp:
+                return !sftpHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    && !sftpPort.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    && !sftpUsername.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .nfs: return !nfsHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             case .webdav:
                 return !webDavServerURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -105,6 +117,7 @@ struct AddBrowsableFolderModal: View {
 
                 switch selectedFolderType { case .filesystem: filesystemConfiguration case .smb:
                     smbConfiguration
+                    case .sftp: sftpConfiguration
                     case .nfs: nfsConfiguration
                     case .webdav: webDavConfiguration
                     case .opds: opdsConfiguration
@@ -166,7 +179,7 @@ struct AddBrowsableFolderModal: View {
 
     private var smbConfiguration: some View {
         Section {
-            TextField("server", text: $host).textInputAutocapitalization(.never)
+            TextField("host", text: $host).textInputAutocapitalization(.never)
                 .autocorrectionDisabled().disabled(isProcessing)
 
             TextField("port", text: $port).keyboardType(.numberPad).disabled(isProcessing)
@@ -185,8 +198,27 @@ struct AddBrowsableFolderModal: View {
 
     private var nfsConfiguration: some View {
         Section("nfsSettings") {
-            TextField("server", text: $nfsHost).textInputAutocapitalization(.never)
+            TextField("host", text: $nfsHost).textInputAutocapitalization(.never)
                 .autocorrectionDisabled().disabled(isProcessing)
+        }
+    }
+
+    private var sftpConfiguration: some View {
+        Section {
+            TextField("host", text: $sftpHost).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().disabled(isProcessing)
+
+            TextField("port", text: $sftpPort).keyboardType(.numberPad).disabled(isProcessing)
+
+            TextField("username", text: $sftpUsername).textInputAutocapitalization(.never)
+                .autocorrectionDisabled().textContentType(.username).disabled(isProcessing)
+
+            SecureField("password", text: $sftpPassword).textContentType(.password)
+                .disabled(isProcessing)
+        } header: {
+            Text("sftpSettings")
+        } footer: {
+            Text("sftpSettingsFooter")
         }
     }
 
@@ -331,6 +363,13 @@ struct AddBrowsableFolderModal: View {
                     if isLoadingShares || isAdding { ProgressView() } else { Text("selectShare") }
                 }
                 .disabled(!canContinue)
+            case .sftp:
+                Button {
+                    addSftpFolder()
+                } label: {
+                    if isAdding { ProgressView() } else { Text("add") }
+                }
+                .disabled(!canContinue)
             case .nfs:
                 Button {
                     discoverExports()
@@ -457,6 +496,26 @@ struct AddBrowsableFolderModal: View {
         }
     }
 
+    private func addSftpFolder() {
+        guard let portValue = parsedSftpPort else {
+            presentError(MankaiErrorCode.browseSftpInvalidConnectionConfiguration.makeError())
+            return
+        }
+
+        isAdding = true
+        Task { @MainActor in
+            defer { isAdding = false }
+
+            do {
+                let configuration = try SftpConnectionConfiguration(
+                    host: sftpHost, port: portValue, username: sftpUsername, password: sftpPassword)
+                let session = SftpSession(configuration: configuration)
+                let plugin = try await SftpBrowsablePlugin(session: session, name: name)
+                addPlugin(plugin)
+            } catch { presentError(error) }
+        }
+    }
+
     private func addWebDavFolder() {
         isAdding = true
         Task { @MainActor in
@@ -489,6 +548,13 @@ struct AddBrowsableFolderModal: View {
 
     private var parsedPort: Int? {
         guard let portValue = Int(port.trimmingCharacters(in: .whitespacesAndNewlines)),
+            (1...65535).contains(portValue)
+        else { return nil }
+        return portValue
+    }
+
+    private var parsedSftpPort: Int? {
+        guard let portValue = Int(sftpPort.trimmingCharacters(in: .whitespacesAndNewlines)),
             (1...65535).contains(portValue)
         else { return nil }
         return portValue

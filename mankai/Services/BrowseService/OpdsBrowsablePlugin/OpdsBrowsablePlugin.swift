@@ -18,14 +18,10 @@ struct OpdsConnectionConfiguration {
     var password: String?
 
     init(catalogURL: String, username: String? = nil, password: String? = nil) throws {
-        let trimmedURL = catalogURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard var components = URLComponents(string: trimmedURL),
-            let scheme = components.scheme?.lowercased(), scheme == "http" || scheme == "https",
-            components.host?.isEmpty == false
+        guard
+            let normalizedURL = BrowsableConnectionUtilities.normalizedHTTPURL(
+                catalogURL, allowsCredentials: true, allowsQuery: true, allowsFragment: true)
         else { throw URLError(.badURL) }
-
-        components.scheme = scheme
-        guard let normalizedURL = components.url else { throw URLError(.badURL) }
 
         self.catalogURL = normalizedURL
         self.username = username.trimmed

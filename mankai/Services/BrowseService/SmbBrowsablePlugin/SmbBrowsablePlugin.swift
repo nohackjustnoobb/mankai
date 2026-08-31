@@ -21,19 +21,14 @@ struct SmbConnectionConfiguration {
         host: String, port: Int = 445, share: String, username: String? = nil,
         password: String? = nil
     ) throws {
-        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedShare = share.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !trimmedHost.isEmpty else {
-            throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
-        }
-        guard (1...65535).contains(port) else {
-            throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError()
-        }
-        guard !trimmedShare.isEmpty, !trimmedShare.contains("/"), !trimmedShare.contains("\\")
+        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
+            BrowsableConnectionUtilities.isValidPort(port),
+            BrowsablePathUtilities.isValidComponent(trimmedShare), !trimmedShare.contains("\\")
         else { throw MankaiErrorCode.browseSmbInvalidConnectionConfiguration.makeError() }
 
-        self.host = trimmedHost
+        self.host = normalizedHost
         self.port = port
         self.share = trimmedShare
         self.username = username.trimmed
@@ -57,7 +52,7 @@ actor SmbSession: BrowsableSession {
 
     nonisolated let configuration: SmbConnectionConfiguration
     private var connection: SMB.Connection?
-    private var connectionTask: Task<Void, Error>?
+    private var connectionTask: Task<SMB.Connection, Error>?
 
     init(configuration: SmbConnectionConfiguration) { self.configuration = configuration }
 
@@ -132,7 +127,28 @@ actor SmbSession: BrowsableSession {
     }
 
     func withConnectedConnection<T>(_ operation: (SMB.Connection) throws -> T) async throws -> T {
-        try await ensureConnected()
+        if connection?.isConnected != true {
+            if let connectionTask {
+                connection = try await connectionTask.value
+            } else {
+                let configuration = configuration
+                let task = Task {
+                    try SMB.connect(
+                        server: configuration.server, credentials: configuration.credentials,
+                        share: configuration.share)
+                }
+                connectionTask = task
+
+                do {
+                    connection = try await task.value
+                    connectionTask = nil
+                } catch {
+                    connectionTask = nil
+                    throw error
+                }
+            }
+        }
+
         guard let connection else {
             throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
         }
@@ -141,35 +157,6 @@ actor SmbSession: BrowsableSession {
             invalidateConnection()
             throw error
         }
-    }
-
-    private func ensureConnected() async throws {
-        if connection?.isConnected == true { return }
-
-        if let connectionTask {
-            try await connectionTask.value
-            return
-        }
-
-        let task = Task { [weak self] in
-            guard let self else { return }
-            try await self.openConnection()
-        }
-        connectionTask = task
-
-        do {
-            try await task.value
-            connectionTask = nil
-        } catch {
-            connectionTask = nil
-            throw error
-        }
-    }
-
-    private func openConnection() async throws {
-        connection = try SMB.connect(
-            server: configuration.server, credentials: configuration.credentials,
-            share: configuration.share)
     }
 
     private func invalidateConnection() {

@@ -15,13 +15,11 @@ struct NfsConnectionConfiguration {
     let export: String
 
     init(host: String, export: String) throws {
-        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedExport = export.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard let normalizedHost = Self.normalizedHost(trimmedHost),
-            Self.serverURL(forNormalizedHost: normalizedHost) != nil, !trimmedExport.isEmpty,
-            trimmedExport.hasPrefix("/"), !trimmedExport.contains("\\"),
-            !trimmedExport.contains("\0")
+        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
+            BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: normalizedHost) != nil,
+            BrowsablePathUtilities.isValidAbsolutePath(trimmedExport)
         else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
 
         self.host = normalizedHost
@@ -30,34 +28,7 @@ struct NfsConnectionConfiguration {
 
     var serverURL: URL {
         // Validation in the initializer guarantees this URL can be built.
-        Self.serverURL(forNormalizedHost: host)!
-    }
-
-    static func serverURL(host: String) throws -> URL {
-        let trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let normalizedHost = normalizedHost(trimmedHost),
-            let url = serverURL(forNormalizedHost: normalizedHost)
-        else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
-        return url
-    }
-
-    private static func normalizedHost(_ host: String) -> String? {
-        guard !host.isEmpty, host.rangeOfCharacter(from: .whitespacesAndNewlines) == nil,
-            !host.contains("/"), !host.contains("\\"), !host.contains("@")
-        else { return nil }
-
-        if host.hasPrefix("["), host.hasSuffix("]"), host.count > 2 {
-            return String(host.dropFirst().dropLast())
-        }
-        return host
-    }
-
-    private static func serverURL(forNormalizedHost host: String) -> URL? {
-        var components = URLComponents()
-        components.scheme = "nfs"
-        components.host = host
-        guard let url = components.url, url.host?.isEmpty == false else { return nil }
-        return url
+        BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: host)!
     }
 }
 
@@ -71,13 +42,15 @@ actor NfsSession: BrowsableSession {
     nonisolated let configuration: NfsConnectionConfiguration
 
     private var client: NFSClient?
-    private var connectionTask: Task<Void, Error>?
+    private var connectionTask: Task<NFSClient, Error>?
 
     init(configuration: NfsConnectionConfiguration) { self.configuration = configuration }
 
     /// Returns the exports advertised by an NFS server.
     static func discoverExports(host: String) async throws -> [String] {
-        let url = try NfsConnectionConfiguration.serverURL(host: host)
+        guard let normalizedHost = BrowsableConnectionUtilities.normalizedHost(host),
+            let url = BrowsableConnectionUtilities.serverURL(scheme: "nfs", host: normalizedHost)
+        else { throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError() }
         guard let client = try NFSClient(url: url) else {
             throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError()
         }
@@ -86,7 +59,6 @@ actor NfsSession: BrowsableSession {
             client.listExports { result in continuation.resume(with: result) }
         }
         return Array(Set(exports.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }))
-            .filter { !$0.isEmpty && $0.hasPrefix("/") }
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
@@ -229,19 +201,33 @@ actor NfsSession: BrowsableSession {
         if let client { return client }
 
         if let connectionTask {
-            try await connectionTask.value
-            guard let client else { throw MankaiErrorCode.browseNfsInvalidPlugin.makeError() }
+            let client = try await connectionTask.value
+            self.client = client
             return client
         }
 
-        let task = Task { [weak self] in
-            guard let self else { return }
-            try await self.openConnection()
+        let configuration = configuration
+        let task = Task {
+            guard let client = try NFSClient(url: configuration.serverURL) else {
+                throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError()
+            }
+
+            try await withCheckedThrowingContinuation {
+                (continuation: CheckedContinuation<Void, Error>) in
+                client.connect(export: configuration.export) { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
+                }
+            }
+            return client
         }
         connectionTask = task
 
         do {
-            try await task.value
+            client = try await task.value
             connectionTask = nil
         } catch {
             connectionTask = nil
@@ -250,20 +236,6 @@ actor NfsSession: BrowsableSession {
 
         guard let client else { throw MankaiErrorCode.browseNfsInvalidPlugin.makeError() }
         return client
-    }
-
-    private func openConnection() async throws {
-        guard let client = try NFSClient(url: configuration.serverURL) else {
-            throw MankaiErrorCode.browseNfsInvalidConnectionConfiguration.makeError()
-        }
-
-        try await withCheckedThrowingContinuation {
-            (continuation: CheckedContinuation<Void, Error>) in
-            client.connect(export: configuration.export) { error in
-                if let error { continuation.resume(throwing: error) } else { continuation.resume() }
-            }
-        }
-        self.client = client
     }
 
     private func invalidate(_ failedClient: NFSClient) {

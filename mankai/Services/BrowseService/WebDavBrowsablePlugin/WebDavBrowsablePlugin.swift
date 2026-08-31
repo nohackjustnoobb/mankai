@@ -16,18 +16,10 @@ struct WebDavConnectionConfiguration {
     var password: String?
 
     init(baseURL: String, username: String? = nil, password: String? = nil) throws {
-        let trimmedURL = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard var components = URLComponents(string: trimmedURL),
-            let scheme = components.scheme?.lowercased(), scheme == "http" || scheme == "https",
-            components.host?.isEmpty == false, components.user == nil, components.password == nil,
-            components.query == nil, components.fragment == nil
+        guard
+            let normalizedURL = BrowsableConnectionUtilities.normalizedHTTPURL(
+                baseURL, ensuresTrailingSlash: true)
         else { throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError() }
-
-        components.scheme = scheme
-        if !components.percentEncodedPath.hasSuffix("/") { components.percentEncodedPath += "/" }
-        guard let normalizedURL = components.url else {
-            throw MankaiErrorCode.browseWebDavInvalidConnectionConfiguration.makeError()
-        }
 
         self.baseURL = normalizedURL
         self.username = username.trimmed
@@ -83,8 +75,8 @@ actor WebDavSession: BrowsableSession {
         }
     }
 
-    func downloadIfExists(path: String) async throws -> Data? {
-        try await withCheckedThrowingContinuation { continuation in
+    func download(path: String) async throws -> Data {
+        let data: Data? = try await withCheckedThrowingContinuation { continuation in
             client.download(
                 fileAtPath: path, account: account, password: configuration.password ?? "",
                 caching: .disableCache
@@ -96,12 +88,7 @@ actor WebDavSession: BrowsableSession {
                 }
             }
         }
-    }
-
-    func download(path: String) async throws -> Data {
-        guard let data = try await downloadIfExists(path: path) else {
-            throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError()
-        }
+        guard let data else { throw MankaiErrorCode.browseFilesystemEntryNotFound.makeError() }
         return data
     }
 

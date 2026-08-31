@@ -19,7 +19,7 @@
 
 </div>
 
-Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and macOS via Mac Catalyst. It supports iOS and iPadOS 17.0 or later and macOS 14.0 or later, and is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
+Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and macOS via Mac Catalyst. It supports iOS and iPadOS 17.0+ and macOS 14.0+, and is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
 
 ![Demo](assets/demo.png)
 
@@ -81,7 +81,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - [x] **WebDAV** - Web Distributed Authoring and Versioning support.
 - [x] **NFS** - Network File System support.
 - [ ] **FTP** - File Transfer Protocol support.
-- [ ] **SFTP** - SSH File Transfer Protocol support.
+- [x] **SFTP** - SSH File Transfer Protocol support.
 
 ### Parsers
 
@@ -125,6 +125,7 @@ Mankai supports remote sources for browsing and reading manga stored on remote s
 | :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
 | **OPDS 1.2** | Browse OPDS 1.2 catalogs over HTTP or HTTPS with optional username and password authentication. Supports OPDS Page Streaming Extension (OPDS-PSE). | [Komga](https://github.com/gotson/komga), [calibre](https://github.com/kovidgoyal/calibre) |
 | **SMB**      | Browse and read manga from an SMB share, with optional username and password authentication.                                                       | [crazy-max/docker-samba](https://github.com/crazy-max/docker-samba)                        |
+| **SFTP**     | Browse, read, and import manga from an SFTP directory using username and password authentication.                                                  | openssh-server                                                                             |
 | **NFS**      | Browse, read, and import manga from an exported NFS directory.                                                                                     | nfs-kernel-server                                                                          |
 | **WebDAV**   | Browse and read manga from a WebDAV folder over HTTP or HTTPS, with optional username and password authentication.                                 | [hacdias/webdav](https://github.com/hacdias/webdav)                                        |
 

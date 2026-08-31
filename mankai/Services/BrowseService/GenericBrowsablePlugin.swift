@@ -234,7 +234,7 @@ where Session: BrowsableSession, Session.Config == Config {
         let parentPath = path ?? ""
         return try await session.list(path: parentPath)
             .compactMap { entry in
-                guard !entry.name.isEmpty, !entry.name.hasPrefix(".") else { return nil }
+                guard !entry.name.hasPrefix(".") else { return nil }
 
                 let entryPath = parentPath.isEmpty ? entry.name : "\(parentPath)/\(entry.name)"
                 return BrowsableEntry(
