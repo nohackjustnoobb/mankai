@@ -17,32 +17,6 @@ struct AppearanceSettingsScreen: View {
 
     var body: some View {
         List {
-            Section {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 16) {
-                    ForEach(AppAccentColor.allCases) { accentColor in
-                        Button {
-                            accentColorRawValue = accentColor.rawValue
-                        } label: {
-                            ZStack {
-                                Circle().fill(accentColor.color).frame(width: 40, height: 40)
-
-                                if selectedAccentColor == accentColor {
-                                    Image(systemName: "checkmark").fontWeight(.bold)
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("accentColor")
-            } footer: {
-                Text("accentColorDescription")
-            }
-
             if UIApplication.shared.supportsAlternateIcons {
                 Section {
                     ForEach(AppIconOption.allCases) { icon in
@@ -80,6 +54,42 @@ struct AppearanceSettingsScreen: View {
                 } footer: {
                     Text("appIconDescription")
                 }
+            }
+
+            Section {
+                ForEach(AppAccentColor.allCases) { accentColor in
+                    Button {
+                        accentColorRawValue = accentColor.rawValue
+                    } label: {
+                        HStack(spacing: 16) {
+                            Circle().fill(accentColor.color).frame(width: 36, height: 36)
+                                .overlay {
+                                    Circle().stroke(Color(uiColor: .separator), lineWidth: 0.5)
+                                }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(accentColor.localizedName).foregroundStyle(.primary)
+
+                                if accentColor == .sakura {
+                                    Text("default").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
+                            if selectedAccentColor == accentColor {
+                                Image(systemName: "checkmark.circle.fill").font(.title2)
+                                    .foregroundStyle(.tint)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            } header: {
+                Text("accentColor")
+            } footer: {
+                Text("accentColorDescription")
             }
         }
         .navigationTitle("appearance").navigationBarTitleDisplayMode(.inline)
