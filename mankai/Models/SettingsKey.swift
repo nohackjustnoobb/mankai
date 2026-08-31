@@ -13,6 +13,7 @@ enum SettingsKey: String {
     case downsampleImages
     case checkClipboard
     case browseViewMode
+    case accentColor
 
     /// Cache Settings
     case inMemoryCacheItemCount

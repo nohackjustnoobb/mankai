@@ -118,6 +118,38 @@
         }
       }
     },
+    "accentColor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Color"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "強調色"
+          }
+        }
+      }
+    },
+    "accentColorDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the color used for buttons, links, and other controls throughout the app."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇App內按鈕、連結及其他控制項使用的顏色。"
+          }
+        }
+      }
+    },
     "action" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
@@ -164,6 +196,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用中"
+          }
+        }
+      }
+    },
+    "activity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活動"
           }
         }
       }
@@ -362,6 +410,22 @@
         }
       }
     },
+    "appearance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
+        }
+      }
+    },
     "appFsPluginDescription" : {
       "localizations" : {
         "en" : {
@@ -374,6 +438,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "這是一個內建插件，允許用戶直接在應用程式的本地目錄中儲存和管理漫畫。"
+          }
+        }
+      }
+    },
+    "appIcon" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Icon"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App圖示"
+          }
+        }
+      }
+    },
+    "appIconDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the icon that appears on your Home Screen."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇顯示在主畫面的App圖示。"
+          }
+        }
+      }
+    },
+    "appIconUnavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternate app icons aren't available on this device."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此裝置無法使用其他App圖示。"
+          }
+        }
+      }
+    },
+    "appIconUpdateFailed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Change App Icon"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法更改App圖示"
           }
         }
       }
@@ -1424,6 +1552,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "詳情"
+          }
+        }
+      }
+    },
+    "developer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發者"
           }
         }
       }
@@ -3075,22 +3219,6 @@
         }
       }
     },
-    "imageScaling" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Image Scaling"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "圖片縮放"
-          }
-        }
-      }
-    },
     "imageSize" : {
       "localizations" : {
         "en" : {
@@ -3894,6 +4022,38 @@
         }
       }
     },
+    "libraryAndData" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library & Data"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書庫與資料"
+          }
+        }
+      }
+    },
+    "libraryUpdates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library Updates"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書庫更新"
+          }
+        }
+      }
+    },
     "license" : {
       "localizations" : {
         "en" : {
@@ -3922,6 +4082,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法載入授權條款"
+          }
+        }
+      }
+    },
+    "lily" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lily"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百合"
           }
         }
       }
@@ -5847,6 +6023,22 @@
         }
       }
     },
+    "readingMode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading Mode"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀模式"
+          }
+        }
+      }
+    },
     "readOnly" : {
       "localizations" : {
         "en" : {
@@ -6181,6 +6373,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "愛情"
+          }
+        }
+      }
+    },
+    "sakura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sakura"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "櫻花"
           }
         }
       }
@@ -6837,6 +7045,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "狀態"
+          }
+        }
+      }
+    },
+    "storageAndPerformance" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage & Performance"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存空間與效能"
           }
         }
       }

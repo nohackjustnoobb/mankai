@@ -26,6 +26,27 @@ struct ReaderSettingsScreen: View {
                 title: String(localized: "reader"),
                 description: String(localized: "readerDescription"))
 
+            Section("readingMode") {
+                Picker(
+                    String(localized: "readerType"),
+                    selection: Binding(
+                        get: {
+                            ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
+                        }, set: { readerTypeRawValue = $0.rawValue })
+                ) {
+                    Text(ReaderType.paged.localizedName).tag(ReaderType.paged)
+                    Text(ReaderType.continuous.localizedName).tag(ReaderType.continuous)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle(
+                        String(localized: "respectMangaReadingDirection"),
+                        isOn: $respectMangaReadingDirection)
+                    Text("respectMangaReadingDirectionDescription").font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
             Section("imageGrouping") {
                 Picker(
                     String(localized: "imageLayout"),
@@ -52,27 +73,6 @@ struct ReaderSettingsScreen: View {
                         Text("smartGroupingSensitivityDescription").font(.caption)
                             .foregroundColor(.secondary)
                     }
-                }
-            }
-
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle(
-                        String(localized: "respectMangaReadingDirection"),
-                        isOn: $respectMangaReadingDirection)
-                    Text("respectMangaReadingDirectionDescription").font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Picker(
-                    String(localized: "readerType"),
-                    selection: Binding(
-                        get: {
-                            ReaderType(rawValue: readerTypeRawValue) ?? SettingsDefaults.readerType
-                        }, set: { readerTypeRawValue = $0.rawValue })
-                ) {
-                    Text(ReaderType.paged.localizedName).tag(ReaderType.paged)
-                    Text(ReaderType.continuous.localizedName).tag(ReaderType.continuous)
                 }
             }
 

@@ -20,14 +20,26 @@ struct SettingsTab: View {
                             .labelStyle(ColorfulIconLabelStyle(color: .gray))
                     }
 
+                    NavigationLink(destination: AppearanceSettingsScreen()) {
+                        Label("appearance", systemImage: "paintpalette.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .pink))
+                    }
+
                     NavigationLink(destination: ReaderSettingsScreen()) {
                         Label("reader", systemImage: "book.pages.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .orange))
                     }
+                }
 
-                    NavigationLink(destination: HistoryScreen()) {
-                        Label("history", systemImage: "clock.arrow.circlepath")
-                            .labelStyle(ColorfulIconLabelStyle(color: .indigo))
+                Section("libraryAndData") {
+                    NavigationLink(destination: FolderSettingsScreen()) {
+                        Label("folders", systemImage: "folder.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
+                    }
+
+                    NavigationLink(destination: PluginSettingsScreen()) {
+                        Label("plugins", systemImage: "square.stack.3d.up.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .red))
                     }
 
                     NavigationLink(destination: SyncSettingsScreen()) {
@@ -36,20 +48,15 @@ struct SettingsTab: View {
                     }
                 }
 
-                Section {
-                    NavigationLink(destination: PluginSettingsScreen()) {
-                        Label("plugins", systemImage: "square.stack.3d.up.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .red))
-                    }
-
-                    NavigationLink(destination: FolderSettingsScreen()) {
-                        Label("folders", systemImage: "folder.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
+                Section("activity") {
+                    NavigationLink(destination: HistoryScreen()) {
+                        Label("history", systemImage: "clock.arrow.circlepath")
+                            .labelStyle(ColorfulIconLabelStyle(color: .indigo))
                     }
                 }
 
                 if showDebugScreen {
-                    Section {
+                    Section("developer") {
                         NavigationLink(destination: DebugScreen()) {
                             Label("debug", systemImage: "curlybraces")
                                 .labelStyle(ColorfulIconLabelStyle(color: .yellow))

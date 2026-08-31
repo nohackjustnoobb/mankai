@@ -248,7 +248,7 @@ struct MangaDetailsScreen: View {
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered).tint(saved != nil ? nil : .accent)
+                        .buttonStyle(.bordered).tint(saved != nil ? nil : Color.accentColor)
                         .frame(maxWidth: .infinity)
                     }
 

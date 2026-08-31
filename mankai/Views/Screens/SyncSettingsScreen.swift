@@ -30,6 +30,10 @@ struct SyncSettingsScreen: View {
             }
 
             if let engine = syncService.engine {
+                if engine is HttpEngine { HttpEngineConfigView() }
+
+                if engine is SupabaseEngine { SupabaseEngineConfigView() }
+
                 Section("syncStatus") {
                     LabeledContent("status") {
                         HStack(spacing: 8) {
@@ -57,12 +61,6 @@ struct SyncSettingsScreen: View {
                     }
                     .disabled(isSyncing || !engine.active)
                 }
-            }
-
-            if let engine = syncService.engine {
-                if engine is HttpEngine { HttpEngineConfigView() }
-
-                if engine is SupabaseEngine { SupabaseEngineConfigView() }
             }
 
             if syncService.engine != nil {

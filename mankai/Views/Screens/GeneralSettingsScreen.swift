@@ -26,7 +26,9 @@ struct GeneralSettingsScreen: View {
 
     var body: some View {
         List {
-            Section {
+            Section { Toggle("checkClipboard", isOn: $checkClipboard) }
+
+            Section("libraryUpdates") {
                 LabeledContent("lastUpdateTime") {
                     if let lastUpdateTime = updateService.lastUpdateTime {
                         Text(lastUpdateTime, style: .relative).foregroundColor(.secondary)
@@ -36,14 +38,12 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
-            Section("imageScaling") {
+            Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Toggle("downsampleImages", isOn: $downsampleImages)
                     Text("downsampleImagesDescription").font(.caption).foregroundColor(.secondary)
                 }
-            }
 
-            Section {
                 Picker("inMemoryCacheItemCount", selection: $inMemoryCacheItemCount) {
                     Text("25").tag(25)
                     Text("50").tag(50)
@@ -90,13 +90,7 @@ struct GeneralSettingsScreen: View {
                 } message: {
                     Text("clearCacheMessage")
                 }
-            } header: {
-                Text("cache")
-            } footer: {
-                Text("cacheDescription")
-            }
 
-            Section {
                 LabeledContent("indexSize") {
                     Button(role: .destructive) {
                         showClearIndexCacheAlert = true
@@ -120,10 +114,10 @@ struct GeneralSettingsScreen: View {
                     Text("clearIndexMessage")
                 }
             } header: {
-                Text("index")
+                Text("storageAndPerformance")
+            } footer: {
+                Text("cacheDescription")
             }
-
-            Section { Toggle("checkClipboard", isOn: $checkClipboard) }
 
             Section("about") {
                 LabeledContent("version") { Text(appVersion) }
@@ -137,7 +131,7 @@ struct GeneralSettingsScreen: View {
                 NavigationLink("thirdPartyLicenses") { ThirdPartyLicensesScreen() }
             }
 
-            Section { Toggle("showDebugScreen", isOn: $showDebugScreen) }
+            Section("developer") { Toggle("showDebugScreen", isOn: $showDebugScreen) }
         }
         .navigationTitle("general").navigationBarTitleDisplayMode(.inline)
         .onAppear {

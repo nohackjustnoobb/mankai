@@ -14,6 +14,7 @@ enum SettingsDefaults {
     static let downsampleImages: Bool = true
     static let checkClipboard: Bool = false
     static let browseViewMode: BrowseViewMode = .list
+    static let accentColor: AppAccentColor = .sakura
 
     // Cache Settings
     static let inMemoryCacheItemCount: Int = 100

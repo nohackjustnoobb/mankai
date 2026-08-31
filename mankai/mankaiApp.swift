@@ -8,6 +8,9 @@
 import SwiftUI
 
 @main struct mankai: App {
+    @AppStorage(SettingsKey.accentColor.rawValue) private var accentColorRawValue: String =
+        SettingsDefaults.accentColor.rawValue
+
     init() {
         // Initialize SyncService to start periodic syncing
         _ = SyncService.shared
@@ -30,5 +33,12 @@ import SwiftUI
         }
     }
 
-    var body: some Scene { WindowGroup { MainScreen() } }
+    var body: some Scene {
+        WindowGroup {
+            MainScreen()
+                .accentColor(
+                    (AppAccentColor(rawValue: accentColorRawValue) ?? SettingsDefaults.accentColor)
+                        .color)
+        }
+    }
 }

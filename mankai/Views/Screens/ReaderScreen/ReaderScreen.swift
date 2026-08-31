@@ -767,7 +767,7 @@ struct ReaderScreen: View {
                     )
                     .frame(minWidth: 72)
                 }
-                .buttonStyle(.plain).foregroundStyle(.accent)
+                .buttonStyle(.plain).foregroundStyle(Color.accentColor)
 
                 controlButton(
                     systemImage: "chevron.right", label: "nextPage", enabled: canStepGroup(.next)
@@ -795,7 +795,7 @@ struct ReaderScreen: View {
         systemImage: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void
     ) -> some View {
         Button(action: action) { Image(systemName: systemImage).frame(minWidth: 44, minHeight: 32) }
-            .buttonStyle(.plain).disabled(!enabled).foregroundStyle(.accent)
+            .buttonStyle(.plain).disabled(!enabled).foregroundStyle(Color.accentColor)
     }
 
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {
