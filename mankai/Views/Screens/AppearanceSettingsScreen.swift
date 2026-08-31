@@ -14,6 +14,7 @@ struct AppearanceSettingsScreen: View {
     @State private var selectedIcon: AppIconOption = .sakura
     @State private var pendingIcon: AppIconOption?
     @State private var errorMessage: String?
+    @State private var showsAccentColorRestartNotice = false
 
     var body: some View {
         List {
@@ -59,7 +60,10 @@ struct AppearanceSettingsScreen: View {
             Section {
                 ForEach(AppAccentColor.allCases) { accentColor in
                     Button {
+                        guard selectedAccentColor != accentColor else { return }
                         accentColorRawValue = accentColor.rawValue
+                        showsAccentColorRestartNotice =
+                            ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 17
                     } label: {
                         HStack(spacing: 16) {
                             Circle().fill(accentColor.color).frame(width: 36, height: 36)
@@ -104,6 +108,11 @@ struct AppearanceSettingsScreen: View {
             Button("ok", role: .cancel) { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
+        }
+        .alert("accentColorRestartNoticeTitle", isPresented: $showsAccentColorRestartNotice) {
+            Button("ok", role: .cancel) {}
+        } message: {
+            Text("accentColorRestartNoticeMessage")
         }
     }
 

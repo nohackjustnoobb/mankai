@@ -150,6 +150,38 @@
         }
       }
     },
+    "accentColorRestartNoticeMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You may need to restart the app for the new accent color to take effect."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新的強調色可能需要重新啟動App後才會生效。"
+          }
+        }
+      }
+    },
+    "accentColorRestartNoticeTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart May Be Required"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可能需要重新啟動"
+          }
+        }
+      }
+    },
     "action" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
