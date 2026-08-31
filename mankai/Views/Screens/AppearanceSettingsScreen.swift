@@ -151,28 +151,32 @@ struct AppearanceSettingsScreen: View {
 private enum AppIconOption: String, CaseIterable, Identifiable {
     case sakura
     case lily
+    case rose
 
     var id: Self { self }
 
     init(alternateIconName: String?) {
-        switch alternateIconName { case nil: self = .sakura case "LilyIcon": self = .lily default:
-            self = .sakura
+        switch alternateIconName { case nil: self = .sakura case "LilyIcon": self = .lily
+            case "RoseIcon": self = .rose
+            default: self = .sakura
         }
     }
 
     var alternateIconName: String? {
-        switch self { case .sakura: nil case .lily: "LilyIcon"
+        switch self { case .sakura: nil case .lily: "LilyIcon" case .rose: "RoseIcon"
         }
     }
 
     var previewAssetName: String {
-        switch self { case .sakura: "SakuraIconPreview" case .lily: "LilyIconPreview"
+        switch self { case .sakura: "SakuraIconPreview" case .lily: "LilyIconPreview" case .rose:
+            "RoseIconPreview"
         }
     }
 
     var localizedName: String {
         switch self { case .sakura: String(localized: "sakura") case .lily:
             String(localized: "lily")
+            case .rose: String(localized: "rose")
         }
     }
 }

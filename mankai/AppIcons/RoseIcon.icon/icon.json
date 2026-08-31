@@ -2,31 +2,27 @@
   "fill" : "automatic",
   "groups" : [
     {
-      "blend-mode" : "normal",
       "blur-material" : null,
-      "hidden" : false,
       "layers" : [
         {
-          "blend-mode" : "normal",
           "image-name" : "icon.svg",
           "name" : "icon",
           "position" : {
-            "scale" : 1.83,
+            "scale" : 1.64,
             "translation-in-points" : [
               0,
-              0
+              30
             ]
           }
         }
       ],
-      "lighting" : "individual",
       "shadow" : {
         "kind" : "neutral",
-        "opacity" : 0.75
+        "opacity" : 0.5
       },
       "specular" : true,
       "translucency" : {
-        "enabled" : false,
+        "enabled" : true,
         "value" : 0.25
       }
     }

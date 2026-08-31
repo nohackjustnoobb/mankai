@@ -3347,6 +3347,22 @@
         }
       }
     },
+    "host" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主機"
+          }
+        }
+      }
+    },
     "http" : {
       "localizations" : {
         "en" : {
@@ -6661,6 +6677,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "愛情"
+          }
+        }
+      }
+    },
+    "rose" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rose"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "玫瑰"
           }
         }
       }
