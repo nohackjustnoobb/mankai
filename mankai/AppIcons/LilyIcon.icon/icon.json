@@ -1,5 +1,7 @@
 {
-  "fill" : "automatic",
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.89676,0.91828,0.87104,1.00000"
+  },
   "groups" : [
     {
       "blend-mode" : "normal",
