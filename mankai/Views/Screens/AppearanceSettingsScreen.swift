@@ -152,24 +152,28 @@ private enum AppIconOption: String, CaseIterable, Identifiable {
     case sakura
     case lily
     case rose
+    case higanbana
 
     var id: Self { self }
 
     init(alternateIconName: String?) {
         switch alternateIconName { case nil: self = .sakura case "LilyIcon": self = .lily
             case "RoseIcon": self = .rose
+            case "HiganbanaIcon": self = .higanbana
             default: self = .sakura
         }
     }
 
     var alternateIconName: String? {
         switch self { case .sakura: nil case .lily: "LilyIcon" case .rose: "RoseIcon"
+            case .higanbana: "HiganbanaIcon"
         }
     }
 
     var previewAssetName: String {
         switch self { case .sakura: "SakuraIconPreview" case .lily: "LilyIconPreview" case .rose:
             "RoseIconPreview"
+            case .higanbana: "HiganbanaIconPreview"
         }
     }
 
@@ -177,6 +181,7 @@ private enum AppIconOption: String, CaseIterable, Identifiable {
         switch self { case .sakura: String(localized: "sakura") case .lily:
             String(localized: "lily")
             case .rose: String(localized: "rose")
+            case .higanbana: String(localized: "higanbana")
         }
     }
 }
