@@ -113,7 +113,8 @@ struct ChaptersModal: View {
                 .navigationTitleWithSubtitle(
                     title: Text(LocalizedStringKey(chapterGroupTitle)),
                     subtitle: Text(
-                        String(format: String(localized: "chapterCountFormat"), chapters.count))
+                        String.localizedStringWithFormat(
+                            String(localized: "chapterCountFormat"), chapters.count))
                 )
                 .onAppear {
                     if let record = record { proxy.scrollTo(record.chapterId, anchor: .center) }

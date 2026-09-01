@@ -110,8 +110,11 @@ struct DownloadedMangaRow: View {
                     Text(manga.title ?? manga.id).font(.headline).lineLimit(1)
 
                     if let chapterCount = totalChapterCount {
-                        Text(String(format: String(localized: "chapterCountFormat"), chapterCount))
-                            .font(.subheadline).foregroundStyle(.secondary)
+                        Text(
+                            String.localizedStringWithFormat(
+                                String(localized: "chapterCountFormat"), chapterCount)
+                        )
+                        .font(.subheadline).foregroundStyle(.secondary)
                     }
                 }
 

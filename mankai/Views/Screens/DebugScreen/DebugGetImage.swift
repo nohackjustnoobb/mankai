@@ -30,9 +30,8 @@ struct DebugGetImage: View {
                                 Text("imageSize")
                                 Spacer()
                                 Text(
-                                    String(
-                                        format: String(localized: "byteCountFormat"),
-                                        imageData.count)
+                                    String.localizedStringWithFormat(
+                                        String(localized: "byteCountFormat"), imageData.count)
                                 )
                                 .foregroundColor(.secondary)
                             }
@@ -47,9 +46,8 @@ struct DebugGetImage: View {
                             VStack {
                                 Text("failedToLoadImage").font(.headline)
                                 Text(
-                                    String(
-                                        format: String(localized: "dataSizeMessageFormat"),
-                                        imageData.count)
+                                    String.localizedStringWithFormat(
+                                        String(localized: "dataSizeMessageFormat"), imageData.count)
                                 )
                                 .font(.caption).foregroundColor(.secondary)
                             }

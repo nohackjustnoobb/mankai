@@ -145,7 +145,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇App內按鈕、連結及其他控制項使用的顏色。"
+            "value" : "選擇 App 內按鈕、連結及其他控制項使用的顏色。"
           }
         }
       }
@@ -161,7 +161,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新的強調色可能需要重新啟動App後才會生效。"
+            "value" : "新的強調色可能需要重新啟動 App 後才會生效。"
           }
         }
       }
@@ -275,7 +275,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "加入為本機插件"
+            "value" : "加入為本機外掛模組"
           }
         }
       }
@@ -371,7 +371,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增插件"
+            "value" : "新增外掛模組"
           }
         }
       }
@@ -387,7 +387,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增插件"
+            "value" : "新增外掛模組"
           }
         }
       }
@@ -437,7 +437,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任意"
+            "value" : "任何"
           }
         }
       }
@@ -469,7 +469,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這是一個內建插件，允許用戶直接在應用程式的本地目錄中儲存和管理漫畫。"
+            "value" : "這是內置外掛模組，讓用戶直接在 App 的本機目錄儲存和管理漫畫。"
           }
         }
       }
@@ -485,7 +485,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App圖示"
+            "value" : "App 圖示"
           }
         }
       }
@@ -501,7 +501,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇顯示在主畫面的App圖示。"
+            "value" : "選擇顯示在主畫面的 App 圖示。"
           }
         }
       }
@@ -517,7 +517,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此裝置無法使用其他App圖示。"
+            "value" : "此裝置無法使用其他 App 圖示。"
           }
         }
       }
@@ -533,7 +533,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法更改App圖示"
+            "value" : "無法更改 App 圖示"
           }
         }
       }
@@ -731,7 +731,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "內建"
+            "value" : "內置"
           }
         }
       }
@@ -739,15 +739,27 @@
     "byteCountFormat" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Bytes"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Byte"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Bytes"
+                }
+              }
+            }
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld位元組"
+            "value" : "%lld 位元組"
           }
         }
       }
@@ -859,7 +871,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您確定要取消此下載嗎？"
+            "value" : "你確定要取消此下載嗎？"
           }
         }
       }
@@ -949,15 +961,27 @@
     "chapterCountFormat" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld Chapters"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Chapter"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Chapters"
+                }
+              }
+            }
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld話"
+            "value" : "%lld 話"
           }
         }
       }
@@ -973,7 +997,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第%@話"
+            "value" : "第 %@ 話"
           }
         }
       }
@@ -1085,7 +1109,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "檢查剪貼簿"
+            "value" : "檢查剪貼板"
           }
         }
       }
@@ -1149,7 +1173,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這將移除所有快取檔案，包含索引快取。您確定要繼續嗎？"
+            "value" : "這將移除所有快取檔案，包含索引快取。你確定要繼續嗎？"
           }
         }
       }
@@ -1165,7 +1189,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您確定要清除快取嗎？"
+            "value" : "你確定要清除快取嗎？"
           }
         }
       }
@@ -1197,7 +1221,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "索引可加快瀏覽速度。清除後將需要重新建立，可能會暫時減慢速度。您確定要繼續嗎？"
+            "value" : "索引可加快瀏覽速度。清除後將需要重新建立，可能會暫時減慢速度。你確定要繼續嗎？"
           }
         }
       }
@@ -1513,7 +1537,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Config Failed"
+            "value" : "Configuration Failed"
           }
         },
         "zh-Hant" : {
@@ -1529,7 +1553,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Configs"
+            "value" : "Configuration"
           }
         },
         "zh-Hant" : {
@@ -1663,7 +1687,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "資料庫不可用"
+            "value" : "無法使用資料庫"
           }
         }
       }
@@ -1671,15 +1695,27 @@
     "dataSizeMessageFormat" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Data Size: %lld Bytes"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Data Size: %lld Byte"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Data Size: %lld Bytes"
+                }
+              }
+            }
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "資料大小：%lld位元組"
+            "value" : "資料大小：%lld 位元組"
           }
         }
       }
@@ -1695,7 +1731,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "偵錯"
+            "value" : "除錯"
           }
         }
       }
@@ -1759,7 +1795,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您確定要刪除這部漫畫嗎？"
+            "value" : "你確定要刪除這部漫畫嗎？"
           }
         }
       }
@@ -1903,7 +1939,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "離線資料庫不可用"
+            "value" : "無法使用離線資料庫"
           }
         }
       }
@@ -1919,7 +1955,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "此插件已停用下載功能"
+            "value" : "此外掛模組已停用下載功能"
           }
         }
       }
@@ -2047,7 +2083,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法使用虛擬插件"
+            "value" : "無法使用虛擬外掛模組"
           }
         }
       }
@@ -2063,7 +2099,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ID為「%@」的插件已存在。你可以覆寫該插件，或將新插件加入為不跨裝置同步的本機插件。"
+            "value" : "ID 為「%@」的外掛模組已存在。你可以覆寫該外掛模組，或將新外掛模組加入為不跨裝置同步的本機外掛模組。"
           }
         }
       }
@@ -2079,7 +2115,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ID為「%@」的插件已存在。要覆寫嗎？"
+            "value" : "ID 為「%@」的外掛模組已存在。要覆寫嗎？"
           }
         }
       }
@@ -2095,7 +2131,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件ID重複"
+            "value" : "外掛模組 ID 重複"
           }
         }
       }
@@ -2281,7 +2317,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Entry not found"
+            "value" : "Entry Not Found"
           }
         },
         "zh-Hant" : {
@@ -2303,7 +2339,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到EPUB資源"
+            "value" : "找不到 EPUB 資源"
           }
         }
       }
@@ -2417,7 +2453,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增資料夾失敗"
+            "value" : "加入資料夾失敗"
           }
         }
       }
@@ -2449,7 +2485,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新增插件失敗"
+            "value" : "新增外掛模組失敗"
           }
         }
       }
@@ -2459,13 +2495,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to check updates for plugin %@"
+            "value" : "Failed to Check Updates for Plugin %@"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法更新插件 %@ 的漫畫"
+            "value" : "無法檢查外掛模組 %@ 的更新"
           }
         }
       }
@@ -2529,7 +2565,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到NFS匯出目錄"
+            "value" : "找不到 NFS 匯出目錄"
           }
         }
       }
@@ -2545,7 +2581,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到SMB共用"
+            "value" : "找不到 SMB 共用"
           }
         }
       }
@@ -2571,13 +2607,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Encode Config Values Data"
+            "value" : "Failed to Encode Configuration Values"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "編碼設定值資料失敗"
+            "value" : "編碼設定值失敗"
           }
         }
       }
@@ -2683,7 +2719,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Load Mangas"
+            "value" : "Failed to Load Manga"
           }
         },
         "zh-Hant" : {
@@ -2715,13 +2751,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Parse plugin"
+            "value" : "Failed to Parse Plugin"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解析插件失敗"
+            "value" : "解析外掛模組失敗"
           }
         }
       }
@@ -2769,7 +2805,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "移除插件失敗"
+            "value" : "移除外掛模組失敗"
           }
         }
       }
@@ -2785,7 +2821,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法算繪PDF頁面"
+            "value" : "無法算繪 PDF 頁面"
           }
         }
       }
@@ -2811,7 +2847,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Reset Configs"
+            "value" : "Failed to Reset Configuration"
           }
         },
         "zh-Hant" : {
@@ -2859,13 +2895,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Set Config Value"
+            "value" : "Failed to Set Configuration Value"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "設定值失敗"
+            "value" : "無法設定選項值"
           }
         }
       }
@@ -2971,15 +3007,27 @@
     "fileCountFormat" : {
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld files"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld file"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld files"
+                }
+              }
+            }
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%lld 檔案"
+            "value" : "%lld 個檔案"
           }
         }
       }
@@ -3117,13 +3165,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "FsPlugin Settings"
+            "value" : "File System Plugin Settings"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fs插件設定"
+            "value" : "檔案系統外掛模組設定"
           }
         }
       }
@@ -3302,7 +3350,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "page %lld"
+            "value" : "Page %lld"
           }
         },
         "zh-Hant" : {
@@ -3422,7 +3470,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "HTTP 插件設定"
+            "value" : "HTTP 外掛模組設定"
           }
         }
       }
@@ -3448,13 +3496,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Id"
+            "value" : "ID"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Id"
+            "value" : "ID"
           }
         }
       }
@@ -3630,7 +3678,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "資訊"
+            "value" : "資料"
           }
         }
       }
@@ -3662,7 +3710,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "圖片的Base64字串無效"
+            "value" : "圖片的 Base64 字串無效"
           }
         }
       }
@@ -3678,7 +3726,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "瀏覽插件無效"
+            "value" : "瀏覽外掛模組無效"
           }
         }
       }
@@ -3710,7 +3758,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的EPUB容器"
+            "value" : "無效的 EPUB 容器"
           }
         }
       }
@@ -3726,7 +3774,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的EPUB套件"
+            "value" : "無效的 EPUB 套件"
           }
         }
       }
@@ -3774,7 +3822,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "JSON回應無效"
+            "value" : "JSON 回應無效"
           }
         }
       }
@@ -3822,7 +3870,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的NFS連線設定"
+            "value" : "無效的 NFS 連線設定"
           }
         }
       }
@@ -3838,7 +3886,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的NFS資料夾"
+            "value" : "無效的 NFS 資料夾"
           }
         }
       }
@@ -3854,7 +3902,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的OPDS檔案"
+            "value" : "無效的 OPDS 檔案"
           }
         }
       }
@@ -3870,7 +3918,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDS插件無效"
+            "value" : "OPDS 外掛模組無效"
           }
         }
       }
@@ -3886,7 +3934,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效的PDF檔案"
+            "value" : "無效的 PDF 檔案"
           }
         }
       }
@@ -4046,7 +4094,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTP連線設定無效"
+            "value" : "SFTP 連線設定無效"
           }
         }
       }
@@ -4062,7 +4110,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTP插件無效"
+            "value" : "SFTP 外掛模組無效"
           }
         }
       }
@@ -4078,7 +4126,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMB連線設定無效"
+            "value" : "SMB 連線設定無效"
           }
         }
       }
@@ -4094,7 +4142,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMB插件無效"
+            "value" : "SMB 外掛模組無效"
           }
         }
       }
@@ -4110,7 +4158,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無效URL"
+            "value" : "無效 URL"
           }
         }
       }
@@ -4126,7 +4174,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV連線設定無效"
+            "value" : "WebDAV 連線設定無效"
           }
         }
       }
@@ -4142,7 +4190,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV插件無效"
+            "value" : "WebDAV 外掛模組無效"
           }
         }
       }
@@ -4187,13 +4235,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "JsPlugin Settings"
+            "value" : "JavaScript Plugin Settings"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Js插件設定"
+            "value" : "JavaScript 外掛模組設定"
           }
         }
       }
@@ -4209,7 +4257,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "JS執行環境"
+            "value" : "JS 執行環境"
           }
         }
       }
@@ -4337,7 +4385,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "書櫃"
+            "value" : "書庫"
           }
         }
       }
@@ -4503,7 +4551,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本地目錄"
+            "value" : "本機目錄"
           }
         }
       }
@@ -4679,7 +4727,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manga not found"
+            "value" : "Manga Not Found"
           }
         },
         "zh-Hant" : {
@@ -4695,7 +4743,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mangas"
+            "value" : "Manga"
           }
         },
         "zh-Hant" : {
@@ -4769,7 +4817,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "缺少章節ID"
+            "value" : "缺少章節 ID"
           }
         }
       }
@@ -4801,7 +4849,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "缺少插件ID"
+            "value" : "缺少外掛模組 ID"
           }
         }
       }
@@ -4897,7 +4945,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "導航方向"
+            "value" : "導覽方向"
           }
         }
       }
@@ -5009,7 +5057,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "NFS設定"
+            "value" : "NFS 設定"
           }
         }
       }
@@ -5099,7 +5147,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Config"
+            "value" : "No Configuration"
           }
         },
         "zh-Hant" : {
@@ -5169,7 +5217,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有資料夾被選擇"
+            "value" : "尚未選擇資料夾"
           }
         }
       }
@@ -5201,7 +5249,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有歷史紀錄"
+            "value" : "沒有歷史記錄"
           }
         }
       }
@@ -5217,7 +5265,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您閱讀過的漫畫會顯示在這裡"
+            "value" : "你閱讀過的漫畫會顯示在這裡"
           }
         }
       }
@@ -5227,13 +5275,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Images Found In Archive"
+            "value" : "No Images Found in Archive"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有找到圖片在歸檔中"
+            "value" : "壓縮檔內找不到圖片"
           }
         }
       }
@@ -5249,7 +5297,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有網路連線"
+            "value" : "沒有網絡連線"
           }
         }
       }
@@ -5265,7 +5313,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您要切換到下載嗎？"
+            "value" : "你要切換到下載嗎？"
           }
         }
       }
@@ -5275,7 +5323,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Mangas Available"
+            "value" : "No Manga Available"
           }
         },
         "zh-Hant" : {
@@ -5329,7 +5377,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有NFS匯出目錄"
+            "value" : "沒有 NFS 匯出目錄"
           }
         }
       }
@@ -5361,7 +5409,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "PDF中找不到頁面"
+            "value" : "PDF 中找不到頁面"
           }
         }
       }
@@ -5377,7 +5425,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有可用的插件"
+            "value" : "沒有可用的外掛模組"
           }
         }
       }
@@ -5393,7 +5441,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "安裝插件以瀏覽漫畫"
+            "value" : "安裝外掛模組以瀏覽漫畫"
           }
         }
       }
@@ -5425,7 +5473,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "EPUB中找不到可讀取的圖片"
+            "value" : "EPUB 中找不到可讀取的圖片"
           }
         }
       }
@@ -5521,7 +5569,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有SMB共用"
+            "value" : "沒有 SMB 共用"
           }
         }
       }
@@ -5629,7 +5677,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "On Going"
+            "value" : "Ongoing"
           }
         },
         "zh-Hant" : {
@@ -5685,7 +5733,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件會使用OPDS目錄提供的ID，確保在不同裝置間保持一致。若目錄未提供ID，插件會使用僅限本機的ID，相關紀錄將不會同步。"
+            "value" : "外掛模組會使用 OPDS 目錄提供的 ID，確保在不同裝置間保持一致。若目錄未提供 ID，外掛模組會使用僅限本機的 ID，相關記錄將不會同步。"
           }
         }
       }
@@ -5701,7 +5749,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OPDS設定"
+            "value" : "OPDS 設定"
           }
         }
       }
@@ -5717,7 +5765,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "輸入OPDS目錄的完整HTTP或HTTPS網址。使用者名稱和密碼可選。"
+            "value" : "輸入 OPDS 目錄的完整 HTTP 或 HTTPS 網址。用戶名稱和密碼並非必填。"
           }
         }
       }
@@ -5889,13 +5937,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Parser not found"
+            "value" : "Parser Not Found"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "解析器未找到"
+            "value" : "找不到解析器"
           }
         }
       }
@@ -5927,7 +5975,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "不支援受密碼保護的PDF檔案"
+            "value" : "不支援受密碼保護的 PDF 檔案"
           }
         }
       }
@@ -5943,7 +5991,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到PDF頁面"
+            "value" : "找不到 PDF 頁面"
           }
         }
       }
@@ -5959,7 +6007,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件"
+            "value" : "外掛模組"
           }
         }
       }
@@ -5975,7 +6023,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件ID為空"
+            "value" : "外掛模組 ID 為空"
           }
         }
       }
@@ -5985,13 +6033,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plugin ID not found"
+            "value" : "Plugin ID Not Found"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件ID未找到"
+            "value" : "找不到外掛模組 ID"
           }
         }
       }
@@ -6007,7 +6055,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mankai會在此資料夾儲存「.mankai」檔案，讓插件 ID 在不同裝置間保持一致。如果無法寫入此檔案，插件將使用本機 ID，其紀錄亦不會同步。"
+            "value" : "Mankai 會在此資料夾儲存「.mankai」檔案，讓外掛模組 ID 在不同裝置間保持一致。如果無法寫入此檔案，外掛模組將使用本機 ID，其記錄亦不會同步。"
           }
         }
       }
@@ -6023,7 +6071,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "未找到插件"
+            "value" : "找不到外掛模組"
           }
         }
       }
@@ -6039,7 +6087,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件"
+            "value" : "外掛模組"
           }
         }
       }
@@ -6055,7 +6103,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "管理你的插件程式，包括新增、設定、移除等操作。"
+            "value" : "管理你的外掛模組，包括新增、設定和移除等操作。"
           }
         }
       }
@@ -6071,7 +6119,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "插件類型"
+            "value" : "外掛模組類型"
           }
         }
       }
@@ -6167,7 +6215,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "不支援受保護的EPUB內容"
+            "value" : "不支援受保護的 EPUB 內容"
           }
         }
       }
@@ -6482,7 +6530,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您確定要移除這個資料夾嗎？"
+            "value" : "你確定要移除這個資料夾嗎？"
           }
         }
       }
@@ -6498,7 +6546,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "移除插件"
+            "value" : "移除外掛模組"
           }
         }
       }
@@ -6514,7 +6562,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你確定要移除這個插件嗎？"
+            "value" : "你確定要移除這個外掛模組嗎？"
           }
         }
       }
@@ -6556,7 +6604,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reset Configs"
+            "value" : "Reset Configuration"
           }
         },
         "zh-Hant" : {
@@ -6572,7 +6620,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to reset all configs?"
+            "value" : "Are you sure you want to reset all configuration settings?"
           }
         },
         "zh-Hant" : {
@@ -6610,7 +6658,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "確定要重設Supabase的設定嗎？"
+            "value" : "確定要重設 Supabase 的設定嗎？"
           }
         }
       }
@@ -6642,7 +6690,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "若漫畫有指定閱讀方向，將自動採用該方向，並覆蓋您的預設設定。"
+            "value" : "若漫畫有指定閱讀方向，將自動採用該方向，並覆蓋你的預設設定。"
           }
         }
       }
@@ -6750,7 +6798,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save Configs"
+            "value" : "Save Configuration"
           }
         },
         "zh-Hant" : {
@@ -6974,7 +7022,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "找不到所選插件"
+            "value" : "找不到所選外掛模組"
           }
         }
       }
@@ -7098,7 +7146,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Server Url"
+            "value" : "Server URL"
           }
         },
         "zh-Hant" : {
@@ -7152,7 +7200,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SFTP設定"
+            "value" : "SFTP 設定"
           }
         }
       }
@@ -7168,7 +7216,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "只能存取使用者目錄內的檔案和資料夾。"
+            "value" : "只能存取用戶目錄內的檔案和資料夾。"
           }
         }
       }
@@ -7296,7 +7344,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "SMB設定"
+            "value" : "SMB 設定"
           }
         }
       }
@@ -7312,7 +7360,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用者名稱和密碼可選。"
+            "value" : "用戶名稱和密碼並非必填。"
           }
         }
       }
@@ -7606,7 +7654,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "切換導航方向"
+            "value" : "切換導覽方向"
           }
         }
       }
@@ -7654,7 +7702,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "設定你的漫畫書櫃如何在裝置間同步。"
+            "value" : "設定你的漫畫書庫如何在裝置間同步。"
           }
         }
       }
@@ -7766,7 +7814,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點擊翻頁"
+            "value" : "點一下翻頁"
           }
         }
       }
@@ -7782,7 +7830,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點擊導航行為"
+            "value" : "點一下翻頁方式"
           }
         }
       }
@@ -7798,7 +7846,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點擊重試"
+            "value" : "點一下以重試"
           }
         }
       }
@@ -7830,7 +7878,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "測試JS"
+            "value" : "測試 JS"
           }
         }
       }
@@ -7864,7 +7912,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第三方軟體授權"
+            "value" : "第三方軟件授權"
           }
         }
       }
@@ -8021,7 +8069,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "URLS"
+            "value" : "URLs"
           }
         },
         "zh-Hant" : {
@@ -8043,7 +8091,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用JSON"
+            "value" : "使用 JSON"
           }
         }
       }
@@ -8059,7 +8107,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "使用者名稱"
+            "value" : "用戶名稱"
           }
         }
       }
@@ -8136,7 +8184,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "單行卷"
+            "value" : "單行本"
           }
         }
       }
@@ -8186,7 +8234,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV請求失敗"
+            "value" : "WebDAV 請求失敗"
           }
         }
       }
@@ -8202,7 +8250,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebDAV設定"
+            "value" : "WebDAV 設定"
           }
         }
       }
@@ -8218,7 +8266,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "輸入WebDAV資料夾的完整HTTP或HTTPS網址。使用者名稱和密碼可選。"
+            "value" : "輸入 WebDAV 資料夾的完整 HTTP 或 HTTPS 網址。用戶名稱和密碼並非必填。"
           }
         }
       }
@@ -8234,7 +8282,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WebView尚未初始化"
+            "value" : "WebView 尚未初始化"
           }
         }
       }

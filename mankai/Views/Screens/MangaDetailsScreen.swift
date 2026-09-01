@@ -216,8 +216,8 @@ struct MangaDetailsScreen: View {
 
                         if let chapters = mangaData?.chapters {
                             Text(
-                                String(
-                                    format: String(localized: "chapterCountFormat"),
+                                String.localizedStringWithFormat(
+                                    String(localized: "chapterCountFormat"),
                                     chapters.flatMap(\.chapters).count))
                         }
 
@@ -332,8 +332,8 @@ struct MangaDetailsScreen: View {
                                             .foregroundColor(.primary)
 
                                         Text(
-                                            String(
-                                                format: String(localized: "chapterCountFormat"),
+                                            String.localizedStringWithFormat(
+                                                String(localized: "chapterCountFormat"),
                                                 group.chapters.count)
                                         )
                                         .smallTagStyle()
@@ -417,9 +417,8 @@ struct MangaDetailsScreen: View {
                                             VStack(alignment: .leading) {
                                                 Text(LocalizedStringKey(selectedChapterGroup.title))
                                                 Text(
-                                                    String(
-                                                        format: String(
-                                                            localized: "chapterCountFormat"),
+                                                    String.localizedStringWithFormat(
+                                                        String(localized: "chapterCountFormat"),
                                                         chapters.count)
                                                 )
                                                 .font(.caption).foregroundStyle(.secondary)

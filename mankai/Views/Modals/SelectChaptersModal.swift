@@ -147,7 +147,8 @@ struct SelectChaptersModal: View {
                         Text(LocalizedStringKey(groupTitle)).foregroundColor(.primary)
 
                         Text(
-                            String(format: String(localized: "chapterCountFormat"), chapters.count)
+                            String.localizedStringWithFormat(
+                                String(localized: "chapterCountFormat"), chapters.count)
                         )
                         .smallTagStyle()
                     }
