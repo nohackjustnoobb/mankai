@@ -1,5 +1,5 @@
 //
-//  AdjacencyModelWrapper.swift
+//  SmartGrouping.swift
 //  mankai
 //
 //  Created by Travis XU on 12/2/2026.
@@ -10,11 +10,11 @@ import CoreImage
 import CoreML
 import Foundation
 
-// MARK: - AdjacencyModelWrapper
+// MARK: - SmartGrouping
 
-actor AdjacencyModelWrapper {
+actor SmartGrouping {
     /// The shared singleton instance.
-    static let shared = AdjacencyModelWrapper()
+    static let shared = SmartGrouping()
 
     /// The expected input size for the model (width × height).
     static let inputSize = CGSize(width: 224, height: 224)
@@ -25,7 +25,7 @@ actor AdjacencyModelWrapper {
     // MARK: - Properties
 
     private struct Runtime {
-        let model: AdjacencyModel
+        let model: SmartGroupingModel
         let ciContext: CIContext
     }
 
@@ -63,15 +63,15 @@ actor AdjacencyModelWrapper {
         let buffer = try createPixelBuffer(
             from: inputImage, width: targetW, height: targetH, ciContext: runtime.ciContext)
 
-        let input = AdjacencyModelInput(image: buffer)
+        let input = SmartGroupingModelInput(image: buffer)
 
         try Task.checkCancellation()
-        Logger.adjacencyModel.debug("Predicting adjacency for image pair")
+        Logger.smartGrouping.debug("Predicting adjacency for image pair")
         let output = try runtime.model.prediction(input: input)
         try Task.checkCancellation()
 
         let score = output.adjacency_score[0].doubleValue
-        Logger.adjacencyModel.debug("Prediction result: \(score)")
+        Logger.smartGrouping.debug("Prediction result: \(score)")
         return score
     }
 
@@ -115,9 +115,9 @@ actor AdjacencyModelWrapper {
         if let runtime { return runtime }
 
         let loadedRuntime = Runtime(
-            model: try AdjacencyModel(configuration: .init()), ciContext: CIContext())
+            model: try SmartGroupingModel(configuration: .init()), ciContext: CIContext())
         runtime = loadedRuntime
-        Logger.adjacencyModel.debug("Adjacency model loaded")
+        Logger.smartGrouping.debug("Smart grouping model loaded")
         return loadedRuntime
     }
 
@@ -126,8 +126,8 @@ actor AdjacencyModelWrapper {
 
         cancelScheduledUnload()
 
-        Logger.adjacencyModel.debug(
-            "Scheduling adjacency model unload after 60 seconds without predictions")
+        Logger.smartGrouping.debug(
+            "Scheduling smart grouping model unload after 60 seconds without predictions")
 
         pendingUnloadTask = Task { [weak self] in
             do { try await Task.sleep(for: Self.unloadDelay) } catch { return }
@@ -148,13 +148,13 @@ actor AdjacencyModelWrapper {
 
         pendingUnloadTask?.cancel()
         pendingUnloadTask = nil
-        Logger.adjacencyModel.debug("Cancelled scheduled adjacency model unload")
+        Logger.smartGrouping.debug("Cancelled scheduled smart grouping model unload")
     }
 
     private func unloadRuntime() {
         guard runtime != nil else { return }
 
         runtime = nil
-        Logger.adjacencyModel.debug("Adjacency model unloaded")
+        Logger.smartGrouping.debug("Smart grouping model unloaded")
     }
 }

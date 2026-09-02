@@ -15,10 +15,9 @@ final class AppImage {
         case right
     }
 
-    private static let sourceSlideWidth = AdjacencyModelWrapper.inputSize.width
+    private static let sourceSlideWidth = SmartGrouping.inputSize.width
     private static let outputSlideSize = CGSize(
-        width: AdjacencyModelWrapper.inputSize.width / 2,
-        height: AdjacencyModelWrapper.inputSize.height)
+        width: SmartGrouping.inputSize.width / 2, height: SmartGrouping.inputSize.height)
 
     private var data: Data?
     private var cachedUIImage: UIImage?

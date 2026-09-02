@@ -86,7 +86,7 @@ struct ReaderSettingsScreen: View {
         .onChange(of: smartGrouping) { _, isEnabled in
             guard !isEnabled else { return }
 
-            Task { await AdjacencyModelWrapper.shared.unloadImmediately() }
+            Task { await SmartGrouping.shared.unloadImmediately() }
         }
     }
 }

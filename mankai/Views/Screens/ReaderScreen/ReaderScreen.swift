@@ -1033,7 +1033,7 @@ struct ReaderScreen: View {
                     rightImage: isRightToLeft ? firstImage : secondImage)
             }
 
-        Logger.adjacencyModel.notice(
+        Logger.smartGrouping.notice(
             "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages")
 
         defer {
@@ -1050,16 +1050,16 @@ struct ReaderScreen: View {
                 guard let leftSlide = pair.leftImage.takeSlide(.right),
                     let rightSlide = pair.rightImage.takeSlide(.left)
                 else {
-                    Logger.adjacencyModel.error(
+                    Logger.smartGrouping.error(
                         "Missing generated image slide for adjacency pair \(pair.key)")
                     continue
                 }
 
-                let score = try await AdjacencyModelWrapper.shared.predict(
+                let score = try await SmartGrouping.shared.predict(
                     leftSlide: leftSlide, rightSlide: rightSlide)
 
                 guard !Task.isCancelled, adjacencyKey == key else {
-                    Logger.adjacencyModel.notice(
+                    Logger.smartGrouping.notice(
                         "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
                     )
                     return
@@ -1069,14 +1069,14 @@ struct ReaderScreen: View {
                 completedCount += 1
                 regroup(keepCurrentPageVisible: true)
             } catch is CancellationError {
-                Logger.adjacencyModel.notice(
+                Logger.smartGrouping.notice(
                     "Cancelled adjacency pass after \(completedCount) of \(pairs.count) pending pairs"
                 )
                 return
             } catch { Logger.ui.error("Adjacency check failed", error: error) }
         }
 
-        Logger.adjacencyModel.notice(
+        Logger.smartGrouping.notice(
             "Finished adjacency pass with \(completedCount) predictions, \(checkedPairs.count) pairs checked"
         )
     }
