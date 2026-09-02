@@ -11,6 +11,7 @@ import UIKit
 private struct ReaderChapterLoadKey: Hashable {
     let chapterID: String?
     let retryGeneration: Int
+    let slideReadingDirection: ReadingDirection
 }
 
 private struct ReaderAdjacencyKey: Hashable {
@@ -23,14 +24,10 @@ private struct ReaderAdjacencyKey: Hashable {
 private struct ReaderAdjacencyPair {
     let firstURL: String
     let secondURL: String
-    let leftImage: TempImage
-    let rightImage: TempImage
+    let leftImage: AppImage
+    let rightImage: AppImage
 
     var key: String { ReaderGrouping.pairKey(firstURL, secondURL) }
-
-    var urls: [String] { [firstURL, secondURL] }
-
-    var images: [TempImage] { [leftImage, rightImage] }
 }
 
 private struct ReaderGroupingKey: Equatable {
@@ -140,7 +137,7 @@ private struct ReaderSavedPosition: Equatable {
 }
 
 private enum ReaderImageLoadResult {
-    case success(String, TempImage)
+    case success(String, AppImage)
     case failed(String)
 }
 
@@ -304,9 +301,6 @@ struct ReaderScreen: View {
         .smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private
         var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
-    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages =
-        SettingsDefaults.downsampleImages
-
     /// Continuous Reader
     @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var continuousDirectionRawValue =
         SettingsDefaults.CR_readingDirection.rawValue
@@ -447,6 +441,7 @@ struct ReaderScreen: View {
             get: { readingDirection },
             set: { direction in
                 scheduleCurrentPageNavigationCommand()
+                pendingInitialPage = currentPage
                 switch readerType { case .continuous:
                     continuousDirectionRawValue = direction.rawValue
                     case .paged: pagedDirectionRawValue = direction.rawValue
@@ -535,7 +530,9 @@ struct ReaderScreen: View {
     }
 
     private var chapterLoadKey: ReaderChapterLoadKey {
-        ReaderChapterLoadKey(chapterID: currentChapter?.id, retryGeneration: retryGeneration)
+        ReaderChapterLoadKey(
+            chapterID: currentChapter?.id, retryGeneration: retryGeneration,
+            slideReadingDirection: readingDirection)
     }
 
     private var adjacencyKey: ReaderAdjacencyKey {
@@ -951,12 +948,8 @@ struct ReaderScreen: View {
             pendingInitialPage = nil
             requestPage(min(max(requestedPage, 0), loadedURLs.count - 1), animated: false)
 
-            let retainImageData = smartGrouping && readingDirection != .vertical
-
             await withTaskGroup(of: ReaderImageLoadResult.self) { taskGroup in
-                for url in loadedURLs {
-                    taskGroup.addTask { await loadImage(url: url, retainData: retainImageData) }
-                }
+                for url in loadedURLs { taskGroup.addTask { await loadImage(url: url) } }
 
                 for await result in taskGroup {
                     guard !Task.isCancelled, chapterLoadKey == key else {
@@ -993,18 +986,22 @@ struct ReaderScreen: View {
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
 
-    private func loadImage(url: String, retainData: Bool) async -> ReaderImageLoadResult {
+    private func loadImage(url: String) async -> ReaderImageLoadResult {
         for retry in 0...3 {
             do {
                 try Task.checkCancellation()
-                let data = try await imageData(for: url)
+                let data: Data
+                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url),
+                    downloaded
+                {
+                    data = try await DownloadPlugin.shared.getImage(url)
+                } else {
+                    guard plugin.supports(.image) else { throw ReaderSourceCapabilityError() }
+                    data = try await plugin.getImage(url)
+                }
 
-                let targetSize =
-                    viewportSize == .zero ? UIApplication.windowBounds.size : viewportSize
-                let image = TempImage(data: data)
-                let uiImage = image.uiImage(
-                    downsampledTo: downsampleImages ? targetSize : nil, retainData: retainData)
-                if uiImage != nil { return .success(url, image) }
+                let image = AppImage(data: data, generateSlides: true)
+                if image.uiImage() != nil { return .success(url, image) }
             } catch is CancellationError { return .failed(url) } catch {
                 if retry == 3 { Logger.ui.error("Failed to load reader image", error: error) }
             }
@@ -1015,33 +1012,6 @@ struct ReaderScreen: View {
         }
 
         return .failed(url)
-    }
-
-    private func imageData(for url: String) async throws -> Data {
-        if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url), downloaded {
-            return try await DownloadPlugin.shared.getImage(url)
-        }
-        guard plugin.supports(.image) else { throw ReaderSourceCapabilityError() }
-        return try await plugin.getImage(url)
-    }
-
-    private func restoreImageData(url: String) async -> Data? {
-        for retry in 0...3 {
-            do {
-                try Task.checkCancellation()
-                return try await imageData(for: url)
-            } catch is CancellationError { return nil } catch {
-                if retry == 3 {
-                    Logger.ui.error("Failed to restore reader image data", error: error)
-                }
-            }
-
-            guard retry < 3 else { break }
-            let delay = UInt64(1 << retry) * 1_000_000_000
-            do { try await Task.sleep(nanoseconds: delay) } catch { return nil }
-        }
-
-        return nil
     }
 
     @MainActor private func updateAdjacencyScores(for key: ReaderAdjacencyKey) async {
@@ -1066,44 +1036,27 @@ struct ReaderScreen: View {
         Logger.adjacencyModel.notice(
             "Starting adjacency pass with \(pairs.count) pending pairs for \(urls.count) pages")
 
-        let requiredURLs = Set(pairs.flatMap(\.urls))
-        for url in urls where requiredURLs.contains(url) {
-            guard case .success(let image) = images[url], !image.hasAnalysisSource else { continue }
-
-            guard let data = await restoreImageData(url: url) else { continue }
-            guard !Task.isCancelled, adjacencyKey == key else { return }
-            image.restoreSourceData(data)
-        }
-
-        var remainingImageUses: [ObjectIdentifier: Int] = [:]
-        for image in pairs.flatMap(\.images) {
-            remainingImageUses[ObjectIdentifier(image), default: 0] += 1
-        }
-
-        for state in images.values {
-            guard case .success(let image) = state,
-                remainingImageUses[ObjectIdentifier(image)] == nil
-            else { continue }
-            image.releaseData()
+        defer {
+            for pair in pairs {
+                pair.leftImage.releaseSlides()
+                pair.rightImage.releaseSlides()
+            }
         }
 
         var completedCount = 0
 
         for pair in pairs {
             do {
-                guard
-                    let leftCIImage = consumeCIImage(
-                        from: pair.leftImage, remainingUses: &remainingImageUses),
-                    let rightCIImage = consumeCIImage(
-                        from: pair.rightImage, remainingUses: &remainingImageUses)
+                guard let leftSlide = pair.leftImage.takeSlide(.right),
+                    let rightSlide = pair.rightImage.takeSlide(.left)
                 else {
                     Logger.adjacencyModel.error(
-                        "Missing retained image data for adjacency pair \(pair.key)")
+                        "Missing generated image slide for adjacency pair \(pair.key)")
                     continue
                 }
 
                 let score = try await AdjacencyModelWrapper.shared.predict(
-                    image1: leftCIImage, image2: rightCIImage)
+                    leftSlide: leftSlide, rightSlide: rightSlide)
 
                 guard !Task.isCancelled, adjacencyKey == key else {
                     Logger.adjacencyModel.notice(
@@ -1126,26 +1079,6 @@ struct ReaderScreen: View {
         Logger.adjacencyModel.notice(
             "Finished adjacency pass with \(completedCount) predictions, \(checkedPairs.count) pairs checked"
         )
-    }
-
-    private func consumeCIImage(from image: TempImage, remainingUses: inout [ObjectIdentifier: Int])
-        -> CIImage?
-    {
-        let identifier = ObjectIdentifier(image)
-        guard let remainingUseCount = remainingUses[identifier], remainingUseCount > 0 else {
-            return nil
-        }
-
-        let hasFutureUse = remainingUseCount > 1
-        guard let ciImage = image.ciImage(retainData: hasFutureUse) else { return nil }
-
-        if hasFutureUse {
-            remainingUses[identifier] = remainingUseCount - 1
-        } else {
-            remainingUses.removeValue(forKey: identifier)
-        }
-
-        return ciImage
     }
 
     private func regroup(keepCurrentPageVisible: Bool = false) {

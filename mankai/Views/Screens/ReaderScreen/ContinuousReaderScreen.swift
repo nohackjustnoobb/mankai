@@ -412,7 +412,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func view(for state: ReaderImageState) -> UIView {
         switch state { case .success(let image):
-            let imageView = UIImageView(image: image.uiImage(retainData: true))
+            let imageView = UIImageView(image: image.uiImage())
             imageView.contentMode = .scaleToFill
             return imageView
             case .failed:
@@ -453,7 +453,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func view(_ view: UIView, matches state: ReaderImageState) -> Bool {
         switch state { case .success(let image):
-            return (view as? UIImageView)?.image === image.uiImage(retainData: true)
+            return (view as? UIImageView)?.image === image.uiImage()
             case .failed: return view.viewWithTag(CONTINUOUS_ERROR_IMAGE_TAG) != nil
             case .loading: return view.viewWithTag(CONTINUOUS_LOADING_IMAGE_TAG) != nil
         }
