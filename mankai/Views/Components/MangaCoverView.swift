@@ -5,9 +5,12 @@
 //  Created by Travis XU on 27/6/2025.
 //
 
+import ImageIO
 import SwiftUI
 
 struct MangaCoverView: View {
+    private static let thumbnailMaxPixelSize: CGFloat = 1024
+
     let coverUrl: String?
     let plugin: Plugin?
     var tag: String? = nil
@@ -82,12 +85,33 @@ struct MangaCoverView: View {
 
         Task {
             if plugin.supports(.image), let data = try? await plugin.getImage(coverUrl) {
-                self.image = AppImage(data: data, generateSlides: false).uiImage()
+                self.image = Self.downsampledThumbnail(data: data)
             } else if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                self.image = AppImage(data: data, generateSlides: false).uiImage()
+                self.image = Self.downsampledThumbnail(data: data)
             }
 
             self.isLoading = false
         }
+    }
+
+    private static func downsampledThumbnail(data: Data) -> UIImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+            return nil
+        }
+
+        let thumbnailOptions =
+            [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: thumbnailMaxPixelSize
+            ] as CFDictionary
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
     }
 }

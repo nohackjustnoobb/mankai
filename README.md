@@ -55,6 +55,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
+- **On-Device AI Upscaling**: Sharpen low-resolution pages with optional [2× AnimeSharp upscaling](#animesharp-upscaling).
 - **Library & History**: Manage your collection and track reading progress.
 - **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
 - **Download Manager**: Save manga chapters for offline access.
@@ -92,7 +93,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 
 ### AI Features
 
-- [ ] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
+- [x] **AI Upscaling** - Enhance low-resolution pages for a sharper reading experience.
 - [ ] **Smart Dark Mode** - Transform page images into dark-friendly versions with AI while preserving readable line art, contrast, and important details.
 
 ## Plugins
@@ -135,6 +136,25 @@ Mankai provides two high-performance reading modes, both implemented in UIKit to
 
 - **Continuous Reader**: A traditional webtoon-style vertical scrolling experience.
 - **Paged Reader**: A paginated experience supporting vertical and horizontal navigation, with scroll and page-curl transition styles.
+
+### AnimeSharp Upscaling
+
+Mankai can optionally upscale low-resolution reader images to twice their original pixel dimensions with AnimeSharp.
+
+- **Core ML Conversion**: [2x-AnimeSharpV4-CoreML](https://github.com/nohackjustnoobb/2x-AnimeSharpV4-CoreML)
+- **Model Credit**: [`2x-AnimeSharpV4_Fast_RCAN_PU`](https://huggingface.co/Kim2091/2x-AnimeSharpV4) by [Kim2091](https://huggingface.co/Kim2091), licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+#### Performance
+
+Core ML Performance Report medians on an **iPhone 15** for one 256 × 256 input tile (producing a 512 × 512 output tile):
+
+| Compute Units                     | Prediction (Median) | Load (Median) | Compilation (Median) |
+| :-------------------------------- | :------------------ | :------------ | :------------------- |
+| **All (CPU, GPU, Neural Engine)** | 66.81 ms            | 165.94 ms     | 1,433.16 ms          |
+| **CPU Only**                      | 247.41 ms           | 147.71 ms     | 480.85 ms            |
+| **CPU + GPU**                     | 318.23 ms           | 163.75 ms     | 465.51 ms            |
+
+End-to-end page processing time varies with the source image dimensions because larger pages require more tiles.
 
 ### Smart Grouping
 

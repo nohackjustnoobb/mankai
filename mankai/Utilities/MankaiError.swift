@@ -9,6 +9,7 @@ import Foundation
 
 enum MankaiErrorDomain: String {
     case readerAdjacency = "app.mankai.reader.adjacency"
+    case readerUpscaling = "app.mankai.reader.upscaling"
     case auth = "app.mankai.auth"
     case browse = "app.mankai.browse"
     case browseArchive = "app.mankai.browse.archive"
@@ -36,7 +37,9 @@ enum MankaiErrorDomain: String {
     case update = "app.mankai.update"
 
     var codePrefix: Int {
-        switch self { case .readerAdjacency: return 10 case .auth: return 20 case .browse: return 29
+        switch self { case .readerAdjacency: return 10 case .readerUpscaling: return 11 case .auth:
+            return 20
+            case .browse: return 29
             case .browseArchive: return 30
             case .browseFilesystem: return 31
             case .browseSmb: return 34
@@ -78,6 +81,9 @@ enum MankaiErrorUserInfoKey {
 enum MankaiErrorCode: CaseIterable, Hashable {
     case readerAdjacencyInvalidInputImage
     case readerAdjacencyFailedToCreatePixelBuffer
+    case readerUpscalingInvalidInputImage
+    case readerUpscalingFailedToCreatePixelBuffer
+    case readerUpscalingInvalidTileContext
 
     case authMissingCredentialsOrServerUrl
     case authInvalidServerUrl
@@ -191,6 +197,12 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .readerAdjacency, code: 1, messageKey: "invalidInputImage"),
         .readerAdjacencyFailedToCreatePixelBuffer: .init(
             domain: .readerAdjacency, code: 2, messageKey: "failedToCreatePixelBuffer"),
+        .readerUpscalingInvalidInputImage: .init(
+            domain: .readerUpscaling, code: 1, messageKey: "invalidInputImage"),
+        .readerUpscalingFailedToCreatePixelBuffer: .init(
+            domain: .readerUpscaling, code: 2, messageKey: "failedToCreatePixelBuffer"),
+        .readerUpscalingInvalidTileContext: .init(
+            domain: .readerUpscaling, code: 3, messageKey: "invalidTileContext"),
 
         .authMissingCredentialsOrServerUrl: .init(
             domain: .auth, code: 1, messageKey: "missingCredentialsOrServerUrl"),

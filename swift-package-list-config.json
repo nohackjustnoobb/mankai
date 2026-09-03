@@ -1,0 +1,7 @@
+{
+    "project": {
+        "customPackagesFilePaths": [
+            "custom-packages.json"
+        ]
+    }
+}

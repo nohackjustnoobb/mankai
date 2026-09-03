@@ -741,6 +741,7 @@ struct ReaderScreen: View {
     private func controls(bottomSafeAreaInset: CGFloat) -> some View {
         let pageCount = max(urls.count, 1)
         let displayedPage = min(currentPage + 1, pageCount)
+        let sliderUpperBound = Double(max(pageCount, 2))
 
         return VStack(spacing: 10) {
             HStack {
@@ -780,9 +781,9 @@ struct ReaderScreen: View {
                 value: Binding(
                     get: { Double(displayedPage) },
                     set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
-                in: 1...Double(pageCount), step: 1
+                in: 1...sliderUpperBound, step: 1
             )
-            .disabled(urls.isEmpty)
+            .disabled(urls.count <= 1)
         }
         .modifier(ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset))
         .contentShape(Rectangle()).ignoresSafeArea(edges: .bottom)
@@ -1000,8 +1001,7 @@ struct ReaderScreen: View {
                     data = try await plugin.getImage(url)
                 }
 
-                let image = AppImage(data: data, generateSlides: true)
-                if image.uiImage() != nil { return .success(url, image) }
+                if let image = AppImage(data: data) { return .success(url, image) }
             } catch is CancellationError { return .failed(url) } catch {
                 if retry == 3 { Logger.ui.error("Failed to load reader image", error: error) }
             }
@@ -1047,8 +1047,8 @@ struct ReaderScreen: View {
 
         for pair in pairs {
             do {
-                guard let leftSlide = pair.leftImage.takeSlide(.right),
-                    let rightSlide = pair.rightImage.takeSlide(.left)
+                guard let leftSlide = await pair.leftImage.takeSlide(.right),
+                    let rightSlide = await pair.rightImage.takeSlide(.left)
                 else {
                     Logger.smartGrouping.error(
                         "Missing generated image slide for adjacency pair \(pair.key)")

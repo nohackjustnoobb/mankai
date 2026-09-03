@@ -24,6 +24,7 @@ enum LogCategory: String {
     case ui = "UI"
     case reader = "Reader"
     case smartGrouping = "SmartGrouping"
+    case upscaling = "Upscaling"
 
     // Plugin Types
     case fsPlugin = "FsPlugin"
@@ -184,6 +185,7 @@ extension Logger {
     static let ui = Logger(category: .ui)
     static let reader = Logger(category: .reader)
     static let smartGrouping = Logger(category: .smartGrouping)
+    static let upscaling = Logger(category: .upscaling)
 
     // Plugin Types
     static let fsPlugin = Logger(category: .fsPlugin)

@@ -5,11 +5,12 @@
 //  Created by Travis XU on 10/8/2026.
 //
 
+import Combine
 import CoreImage
-import ImageIO
 import UIKit
 
-final class AppImage {
+/// A reader image that displays its source immediately, then publishes a processed replacement.
+final class AppImage: ObservableObject {
     enum SlideEdge {
         case left
         case right
@@ -18,51 +19,70 @@ final class AppImage {
     private static let sourceSlideWidth = SmartGrouping.inputSize.width
     private static let outputSlideSize = CGSize(
         width: SmartGrouping.inputSize.width / 2, height: SmartGrouping.inputSize.height)
+    private static let upscalingTileContext = 16
 
-    private var data: Data?
-    private var cachedUIImage: UIImage?
+    @Published private(set) var image: UIImage
+    @Published private(set) var isProcessingFinished = false
+
+    private var processingTask: Task<UIImage?, Never>?
+    private var slideTask: Task<(left: CIImage, right: CIImage)?, Never>?
     private var leftSlide: CIImage?
     private var rightSlide: CIImage?
 
-    var size: CGSize { uiImage()?.size ?? .zero }
+    var size: CGSize { image.size }
 
-    init(data: Data, generateSlides: Bool) {
-        self.data = data
+    init?(data: Data) {
+        guard let image = UIImage(data: data) else { return nil }
+        self.image = image
 
-        guard generateSlides,
-            let image = CIImage(data: data, options: [.applyOrientationProperty: true]),
-            let slides = Self.makeSlides(from: image)
-        else { return }
+        slideTask = Task.detached(priority: .utility) {
+            guard !Task.isCancelled,
+                let image = CIImage(data: data, options: [.applyOrientationProperty: true])
+            else { return nil }
 
-        leftSlide = slides.left
-        rightSlide = slides.right
-    }
-
-    func uiImage() -> UIImage? {
-        if let cachedUIImage { return cachedUIImage }
-        guard let data else { return nil }
-
-        let shouldDownsample =
-            (UserDefaults.standard.object(forKey: SettingsKey.downsampleImages.rawValue) as? Bool)
-            ?? SettingsDefaults.downsampleImages
-
-        let image =
-            shouldDownsample
-            ? Self.downsample(
-                data: data, to: UIApplication.windowBounds.size, scale: UIScreen.main.scale)
-            : UIImage(data: data)
-
-        if let image {
-            cachedUIImage = image
-            self.data = nil
+            return Self.makeSlides(from: image)
         }
 
-        return image
+        let processingTask: Task<UIImage?, Never> = Task.detached(priority: .utility) {
+            let processors = await Self.makeProcessors()
+            guard !processors.isEmpty,
+                var processedImage = CIImage(data: data, options: [.applyOrientationProperty: true])
+            else { return nil }
+
+            do {
+                for processor in processors {
+                    processedImage = try await processor.process(image: processedImage)
+                    try Task.checkCancellation()
+                }
+            } catch is CancellationError { return nil } catch {
+                Logger.ui.error("Failed to process reader image", error: error)
+                return nil
+            }
+
+            return UIImage(ciImage: processedImage)
+        }
+        self.processingTask = processingTask
+
+        Task { @MainActor [weak self] in
+            let processedImage = await processingTask.value
+            guard !processingTask.isCancelled, let self else { return }
+
+            if let processedImage { self.image = processedImage }
+            isProcessingFinished = true
+        }
     }
 
     /// Returns one generated edge slide and releases the stored reference immediately.
     /// Each edge can only be read once.
-    func takeSlide(_ edge: SlideEdge) -> CIImage? {
+    @MainActor func takeSlide(_ edge: SlideEdge) async -> CIImage? {
+        if let slideTask {
+            if let slides = await slideTask.value {
+                leftSlide = slides.left
+                rightSlide = slides.right
+            }
+            self.slideTask = nil
+        }
+
         switch edge { case .left:
             defer { leftSlide = nil }
             return leftSlide
@@ -72,9 +92,16 @@ final class AppImage {
         }
     }
 
-    func releaseSlides() {
+    @MainActor func releaseSlides() {
+        slideTask?.cancel()
+        slideTask = nil
         leftSlide = nil
         rightSlide = nil
+    }
+
+    deinit {
+        processingTask?.cancel()
+        slideTask?.cancel()
     }
 
     private static func makeSlides(from image: CIImage) -> (left: CIImage, right: CIImage)? {
@@ -107,30 +134,25 @@ final class AppImage {
             .cropped(to: CGRect(origin: .zero, size: outputSlideSize))
     }
 
-    private static func downsample(data: Data, to pointSize: CGSize, scale: CGFloat) -> UIImage? {
-        guard pointSize.width.isFinite, pointSize.height.isFinite, pointSize.width > 0,
-            pointSize.height > 0, scale.isFinite, scale > 0
-        else { return nil }
+    @MainActor private static func makeProcessors() -> [any ImageProcessor] {
+        let shouldUpscale =
+            (UserDefaults.standard.object(forKey: SettingsKey.animeSharpUpscaling.rawValue) as? Bool)
+            ?? SettingsDefaults.animeSharpUpscaling
+        let shouldDownsample =
+            (UserDefaults.standard.object(forKey: SettingsKey.downsampleImages.rawValue) as? Bool)
+            ?? SettingsDefaults.downsampleImages
+        let pointSize = UIApplication.windowBounds.size
 
-        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
-        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
-            return nil
+        var processors: [any ImageProcessor] = []
+
+        if shouldUpscale {
+            processors.append(
+                UpscalingImageProcessor(context: upscalingTileContext, pointSize: pointSize))
         }
 
-        // Intentional set to 2 to make the downsample effect more significant
-        let maxPixelSize = Swift.max(pointSize.width, pointSize.height) * 2
-        let thumbnailOptions =
-            [
-                kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceShouldCacheImmediately: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
-            ] as CFDictionary
+        if shouldDownsample { processors.append(DownsampleImageProcessor(pointSize: pointSize)) }
 
-        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
-            return nil
-        }
-
-        return UIImage(cgImage: cgImage, scale: scale, orientation: .up)
+        return processors
     }
+
 }

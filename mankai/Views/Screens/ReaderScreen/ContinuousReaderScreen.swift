@@ -5,6 +5,7 @@
 //  Created by Travis XU on 30/6/2025.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -37,6 +38,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
     private var isNavigationCommandApplicationScheduled = false
     private var lastReportedViewportSize = CGSize.zero
     private var imageViews: [String: UIView] = [:]
+    private var imageSubscriptions: [String: AnyCancellable] = [:]
 
     private var isResizing = false
 
@@ -177,6 +179,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         for url in staleURLs {
             imageViews[url]?.removeFromSuperview()
             imageViews[url] = nil
+            imageSubscriptions[url] = nil
         }
 
         updateOverscrollViews()
@@ -188,6 +191,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         scrollView.setContentOffset(.zero, animated: false)
         imageViews.values.forEach { $0.removeFromSuperview() }
         imageViews.removeAll()
+        imageSubscriptions.removeAll()
         groups.removeAll()
         currentGroupIndex = nil
         startY = 0
@@ -410,10 +414,15 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         return wrapper
     }
 
-    private func view(for state: ReaderImageState) -> UIView {
+    private func view(for state: ReaderImageState, url: String) -> UIView {
         switch state { case .success(let image):
-            let imageView = UIImageView(image: image.uiImage())
+            let imageView = UIImageView(image: image.image)
             imageView.contentMode = .scaleToFill
+            imageSubscriptions[url] = image.$image.receive(on: DispatchQueue.main)
+                .sink { [weak self, weak imageView] processedImage in
+                    imageView?.image = processedImage
+                    self?.view.setNeedsLayout()
+                }
             return imageView
             case .failed:
                 let errorIconName: String
@@ -445,7 +454,8 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         }
 
         imageViews[url]?.removeFromSuperview()
-        let newView = view(for: state)
+        imageSubscriptions[url] = nil
+        let newView = view(for: state, url: url)
         newView.frame = frame
         imageViews[url] = newView
         containerView.addSubview(newView)
@@ -453,7 +463,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
 
     private func view(_ view: UIView, matches state: ReaderImageState) -> Bool {
         switch state { case .success(let image):
-            return (view as? UIImageView)?.image === image.uiImage()
+            return (view as? UIImageView)?.image === image.image
             case .failed: return view.viewWithTag(CONTINUOUS_ERROR_IMAGE_TAG) != nil
             case .loading: return view.viewWithTag(CONTINUOUS_LOADING_IMAGE_TAG) != nil
         }

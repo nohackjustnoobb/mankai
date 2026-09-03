@@ -1,0 +1,15 @@
+{
+  "MLModelVersionStringKey" : "--",
+  "MLModelDescriptionKey" : "2x anime image super-resolution using AnimeSharpV4",
+  "MLModelCreatorDefinedKey" : {
+    "com.github.apple.coremltools.version" : "9.0",
+    "com.github.apple.coremltools.source" : "torch==2.7.0",
+    "com.github.apple.coremltools.conversion_date" : "2026-09-02",
+    "com.github.apple.coremltools.source_dialect" : "TorchScript",
+    "source_repository" : "https:\/\/huggingface.co\/Kim2091\/2x-AnimeSharpV4",
+    "source_weights" : "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors",
+    "conversion_precision" : "float16"
+  },
+  "MLModelAuthorKey" : "Kim2091 (model), conversion tooling in this project",
+  "MLModelLicenseKey" : "CC BY-NC-SA 4.0"
+}

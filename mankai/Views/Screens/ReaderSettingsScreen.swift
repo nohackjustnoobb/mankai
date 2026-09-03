@@ -14,6 +14,10 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.respectMangaReadingDirection.rawValue) private
         var respectMangaReadingDirection: Bool = SettingsDefaults.respectMangaReadingDirection
+    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
+        SettingsDefaults.downsampleImages
+    @AppStorage(SettingsKey.animeSharpUpscaling.rawValue) private var animeSharpUpscaling: Bool =
+        SettingsDefaults.animeSharpUpscaling
     @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping: Bool =
         SettingsDefaults.smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
@@ -44,6 +48,19 @@ struct ReaderSettingsScreen: View {
                         isOn: $respectMangaReadingDirection)
                     Text("respectMangaReadingDirectionDescription").font(.caption)
                         .foregroundColor(.secondary)
+                }
+            }
+
+            Section("imageProcessing") {
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("animeSharpUpscaling", isOn: $animeSharpUpscaling)
+                    Text("animeSharpUpscalingDescription").font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("downsampleImages", isOn: $downsampleImages)
+                    Text("downsampleImagesDescription").font(.caption).foregroundColor(.secondary)
                 }
             }
 
@@ -83,6 +100,11 @@ struct ReaderSettingsScreen: View {
             }
         }
         .navigationTitle("reader").navigationBarTitleDisplayMode(.inline)
+        .onChange(of: animeSharpUpscaling) { _, isEnabled in
+            guard !isEnabled else { return }
+
+            Task { await Upscaling.shared.unloadImmediately() }
+        }
         .onChange(of: smartGrouping) { _, isEnabled in
             guard !isEnabled else { return }
 

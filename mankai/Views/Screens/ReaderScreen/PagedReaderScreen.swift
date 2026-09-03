@@ -5,6 +5,7 @@
 //  Created by Travis XU on 7/2/2026.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -719,6 +720,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
     private var imageWidthConstraints: [String: NSLayoutConstraint] = [:]
     private var loadingIndicators: [String: UIActivityIndicatorView] = [:]
     private var errorIcons: [String: UIImageView] = [:]
+    private var imageSubscriptions: [String: AnyCancellable] = [:]
 
     init(
         pageIndex: Int, urls: [String], images: [String: ReaderImageState],
@@ -857,7 +859,8 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             else { continue }
 
             switch images[url] ?? .loading { case .success(let image):
-                imageView.image = image.uiImage()
+                if imageSubscriptions[url] == nil { observe(image, for: url) }
+                imageView.image = image.image
                 imageView.isHidden = false
                 loadingIndicator.stopAnimating()
                 errorIcon.isHidden = true
@@ -879,6 +882,15 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
                     widthConstraint.constant = availableWidth / CGFloat(urls.count)
             }
         }
+    }
+
+    private func observe(_ image: AppImage, for url: String) {
+        imageSubscriptions[url] = image.$image.receive(on: DispatchQueue.main)
+            .sink { [weak self] processedImage in
+                guard let self else { return }
+                imageViews[url]?.image = processedImage
+                updateContent()
+            }
     }
 
     @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {

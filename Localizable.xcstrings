@@ -426,6 +426,38 @@
         }
       }
     },
+    "animeSharpUpscaling" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2× AnimeSharp Upscaling"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2× AnimeSharp 圖片放大"
+          }
+        }
+      }
+    },
+    "animeSharpUpscalingDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upscale low-resolution reader images to twice their original resolution with AnimeSharp. Images already large enough for the display are left unchanged. This uses more processing power and memory."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 AnimeSharp 將低解析度的閱讀器圖片放大至原始解析度的兩倍。已足以配合螢幕顯示的圖片不會放大。此功能會使用更多運算資源和記憶體。"
+          }
+        }
+      }
+    },
     "any" : {
       "localizations" : {
         "en" : {
@@ -3555,6 +3587,22 @@
         }
       }
     },
+    "imageProcessing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Processing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片處理"
+          }
+        }
+      }
+    },
     "imageSize" : {
       "localizations" : {
         "en" : {
@@ -4143,6 +4191,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SMB 外掛模組無效"
+          }
+        }
+      }
+    },
+    "invalidTileContext" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Tile Context"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效的圖塊上下文範圍"
           }
         }
       }

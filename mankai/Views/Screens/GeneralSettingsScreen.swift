@@ -14,8 +14,6 @@ struct GeneralSettingsScreen: View {
         Int = SettingsDefaults.diskCacheSizeLimit.rawValue
     @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
         SettingsDefaults.showDebugScreen
-    @AppStorage(SettingsKey.downsampleImages.rawValue) private var downsampleImages: Bool =
-        SettingsDefaults.downsampleImages
     @AppStorage(SettingsKey.checkClipboard.rawValue) private var checkClipboard: Bool =
         SettingsDefaults.checkClipboard
     @ObservedObject private var updateService = UpdateService.shared
@@ -39,11 +37,6 @@ struct GeneralSettingsScreen: View {
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("downsampleImages", isOn: $downsampleImages)
-                    Text("downsampleImagesDescription").font(.caption).foregroundColor(.secondary)
-                }
-
                 Picker("inMemoryCacheItemCount", selection: $inMemoryCacheItemCount) {
                     Text("25").tag(25)
                     Text("50").tag(50)
