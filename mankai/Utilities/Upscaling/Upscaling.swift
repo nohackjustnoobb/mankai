@@ -14,7 +14,7 @@ import Foundation
 /// Runs `UpscalingModel` on images of any pixel dimensions by splitting them into tiles.
 ///
 /// `context` pixels are included around every tile's useful area so the model can infer across tile boundaries.
-/// The corresponding part of the model output is discarded when the tiles are stitched together.
+/// Neighboring outputs are feathered across their shared context when the tiles are stitched together.
 actor Upscaling {
     static let shared = Upscaling()
 
@@ -60,6 +60,10 @@ actor Upscaling {
         let contentSize = Self.inputTileSize - (2 * context)
         let horizontalTileCount = (sourceWidth + contentSize - 1) / contentSize
         let verticalTileCount = (sourceHeight + contentSize - 1) / contentSize
+        let blendWidth = context * Self.scaleFactor
+        let outputBounds = CGRect(
+            x: 0, y: 0, width: CGFloat(sourceWidth * Self.scaleFactor),
+            height: CGFloat(sourceHeight * Self.scaleFactor))
 
         Logger.upscaling.debug(
             "Upscaling \(sourceWidth)x\(sourceHeight) image using \(horizontalTileCount)x\(verticalTileCount) tiles with \(context)-pixel context"
@@ -76,16 +80,17 @@ actor Upscaling {
 
         for y in Swift.stride(from: 0, to: sourceHeight, by: contentSize) {
             let contentHeight = min(contentSize, sourceHeight - y)
+            let inputY = Self.inputOrigin(for: y, sourceLength: sourceHeight, context: context)
 
             for x in Swift.stride(from: 0, to: sourceWidth, by: contentSize) {
                 try Task.checkCancellation()
 
                 let contentWidth = min(contentSize, sourceWidth - x)
-                let tile = makeInputTile(
-                    from: paddedSource, contentX: x, contentY: y, context: context)
+                let inputX = Self.inputOrigin(for: x, sourceLength: sourceWidth, context: context)
+                let tile = makeInputTile(from: paddedSource, inputX: inputX, inputY: inputY)
 
                 Logger.upscaling.trace(
-                    "Predicting tile at (\(x), \(y)) with \(contentWidth)x\(contentHeight) useful pixels"
+                    "Predicting tile at (\(inputX), \(inputY)) for content at (\(x), \(y)) with \(contentWidth)x\(contentHeight) useful pixels"
                 )
 
                 runtime.ciContext.render(
@@ -97,11 +102,14 @@ actor Upscaling {
 
                 let prediction = try runtime.model.prediction(input_image: inputBuffer)
                 try Task.checkCancellation()
-                let outputTile = usefulOutput(
+                let outputTile = extendedOutput(
                     from: prediction.output_image, contentX: x, contentY: y,
-                    contentWidth: contentWidth, contentHeight: contentHeight, context: context)
+                    contentWidth: contentWidth, contentHeight: contentHeight, inputX: inputX,
+                    inputY: inputY, blendWidth: blendWidth, outputBounds: outputBounds)
 
-                stitchedImage = stitchedImage.map { outputTile.composited(over: $0) } ?? outputTile
+                stitchedImage = stitch(
+                    outputTile, over: stitchedImage, contentX: x, contentY: y,
+                    blendWidth: blendWidth)
             }
         }
 
@@ -110,21 +118,16 @@ actor Upscaling {
             throw MankaiErrorCode.readerUpscalingInvalidInputImage.makeError()
         }
 
-        let outputBounds = CGRect(
-            x: 0, y: 0, width: CGFloat(sourceWidth * Self.scaleFactor),
-            height: CGFloat(sourceHeight * Self.scaleFactor))
         Logger.upscaling.debug(
             "Upscaling completed with \(Int(outputBounds.width))x\(Int(outputBounds.height)) output"
         )
         return stitchedImage.cropped(to: outputBounds)
     }
 
-    private func makeInputTile(from image: CIImage, contentX: Int, contentY: Int, context: Int)
-        -> CIImage
-    {
+    private func makeInputTile(from image: CIImage, inputX: Int, inputY: Int) -> CIImage {
         let tileBounds = CGRect(
-            x: CGFloat(contentX - context), y: CGFloat(contentY - context),
-            width: CGFloat(Self.inputTileSize), height: CGFloat(Self.inputTileSize))
+            x: CGFloat(inputX), y: CGFloat(inputY), width: CGFloat(Self.inputTileSize),
+            height: CGFloat(Self.inputTileSize))
 
         return image.cropped(to: tileBounds)
             .transformed(
@@ -136,21 +139,97 @@ actor Upscaling {
                     height: CGFloat(Self.inputTileSize)))
     }
 
-    private func usefulOutput(
+    private func extendedOutput(
         from pixelBuffer: CVPixelBuffer, contentX: Int, contentY: Int, contentWidth: Int,
-        contentHeight: Int, context: Int
+        contentHeight: Int, inputX: Int, inputY: Int, blendWidth: Int, outputBounds: CGRect
     ) -> CIImage {
-        let scaledContext = context * Self.scaleFactor
-        let usefulBounds = CGRect(
-            x: CGFloat(scaledContext), y: CGFloat(scaledContext),
+        let scale = Self.scaleFactor
+        let contentBounds = CGRect(
+            x: CGFloat(contentX * scale), y: CGFloat(contentY * scale),
             width: CGFloat(contentWidth * Self.scaleFactor),
             height: CGFloat(contentHeight * Self.scaleFactor))
+        let modelBounds = CGRect(
+            x: CGFloat(inputX * scale), y: CGFloat(inputY * scale),
+            width: CGFloat(Self.inputTileSize * scale), height: CGFloat(Self.inputTileSize * scale))
+        let extendedBounds =
+            contentBounds.insetBy(dx: -CGFloat(blendWidth), dy: -CGFloat(blendWidth))
+            .intersection(modelBounds).intersection(outputBounds)
+        let localBounds = extendedBounds.offsetBy(
+            dx: -CGFloat(inputX * scale), dy: -CGFloat(inputY * scale))
 
-        return CIImage(cvPixelBuffer: pixelBuffer).cropped(to: usefulBounds)
+        return CIImage(cvPixelBuffer: pixelBuffer).cropped(to: localBounds)
             .transformed(
                 by: CGAffineTransform(
-                    translationX: CGFloat((contentX * Self.scaleFactor) - scaledContext),
-                    y: CGFloat((contentY * Self.scaleFactor) - scaledContext)))
+                    translationX: CGFloat(inputX * scale), y: CGFloat(inputY * scale)))
+    }
+
+    private func stitch(
+        _ outputTile: CIImage, over stitchedImage: CIImage?, contentX: Int, contentY: Int,
+        blendWidth: Int
+    ) -> CIImage {
+        guard let stitchedImage else { return outputTile }
+        guard blendWidth > 0 else { return outputTile.composited(over: stitchedImage) }
+
+        let bounds = outputTile.extent
+        let width = CGFloat(blendWidth)
+        let contentMinX = CGFloat(contentX * Self.scaleFactor)
+        let contentMinY = CGFloat(contentY * Self.scaleFactor)
+        var mask: CIImage?
+
+        if bounds.minX < contentMinX {
+            mask = smoothGradient(
+                from: CGPoint(x: bounds.minX, y: bounds.midY),
+                to: CGPoint(x: min(bounds.maxX, contentMinX + width), y: bounds.midY),
+                bounds: bounds)
+        }
+
+        if bounds.minY < contentMinY,
+            let bottomMask = smoothGradient(
+                from: CGPoint(x: bounds.midX, y: bounds.minY),
+                to: CGPoint(x: bounds.midX, y: min(bounds.maxY, contentMinY + width)),
+                bounds: bounds)
+        {
+            mask =
+                mask.map {
+                    $0.applyingFilter(
+                        "CIMultiplyCompositing",
+                        parameters: [kCIInputBackgroundImageKey: bottomMask]
+                    )
+                    .cropped(to: bounds)
+                } ?? bottomMask
+        }
+
+        guard let mask else { return outputTile.composited(over: stitchedImage) }
+
+        return
+            outputTile.applyingFilter(
+                "CIBlendWithMask",
+                parameters: [kCIInputBackgroundImageKey: stitchedImage, kCIInputMaskImageKey: mask]
+            )
+            .cropped(to: stitchedImage.extent.union(outputTile.extent))
+    }
+
+    private func smoothGradient(from start: CGPoint, to end: CGPoint, bounds: CGRect) -> CIImage? {
+        guard
+            let filter = CIFilter(
+                name: "CISmoothLinearGradient",
+                parameters: [
+                    "inputPoint0": CIVector(cgPoint: start), "inputPoint1": CIVector(cgPoint: end),
+                    "inputColor0": CIColor(red: 0, green: 0, blue: 0),
+                    "inputColor1": CIColor(red: 1, green: 1, blue: 1)
+                ])
+        else { return nil }
+
+        return filter.outputImage?.cropped(to: bounds)
+    }
+
+    /// Keeps trailing partial tiles close to the image edge instead of filling most of the model input with repeated edge pixels.
+    /// The useful content's position within the input tile may therefore differ from `context` and must be accounted for when cropping output.
+    private static func inputOrigin(for contentOrigin: Int, sourceLength: Int, context: Int) -> Int
+    {
+        let preferredOrigin = contentOrigin - context
+        let trailingOrigin = sourceLength + context - inputTileSize
+        return max(-context, min(preferredOrigin, trailingOrigin))
     }
 
     // MARK: - Runtime Management
