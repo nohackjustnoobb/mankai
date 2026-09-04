@@ -210,7 +210,12 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             super.viewDidLoad()
             view.backgroundColor = .clear
             view.isUserInteractionEnabled = false
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(appDidBecomeActive),
+                name: UIApplication.didBecomeActiveNotification, object: nil)
         }
+
+        deinit { NotificationCenter.default.removeObserver(self) }
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
@@ -239,6 +244,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             }
             showChrome()
         }
+
+        @objc private func appDidBecomeActive() { applyNavigationBarVisibility(animated: true) }
 
         func setNavigationBarHidden(_ isHidden: Bool, animated: Bool) {
             guard shouldHideNavigationBar != isHidden else { return }
