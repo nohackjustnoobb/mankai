@@ -20,15 +20,26 @@ actor Upscaling {
 
     static let inputTileSize = 256
     static let scaleFactor = 2
+    private static let tileBatchSize = 4
 
     /// How long to keep the model loaded after the last upscale.
-    private static let unloadDelay: Duration = .seconds(60)
+    private static let unloadDelay: Duration = .seconds(600)
 
     // MARK: - Properties
 
     private struct Runtime {
         let model: UpscalingModel
         let ciContext: CIContext
+    }
+
+    private struct Tile {
+        let input: UpscalingModelInput
+        let contentX: Int
+        let contentY: Int
+        let contentWidth: Int
+        let contentHeight: Int
+        let inputX: Int
+        let inputY: Int
     }
 
     private var runtime: Runtime?
@@ -49,6 +60,8 @@ actor Upscaling {
     /// 256-pixel tiles; larger values reduce seams at the cost of processing more tiles.
     func upscale(_ image: CIImage, context: Int) throws -> CIImage {
         try Task.checkCancellation()
+        let clock = ContinuousClock()
+        let startedAt = clock.now
         cancelScheduledUnload()
         defer { scheduleUnloadIfNeeded() }
 
@@ -74,9 +87,10 @@ actor Upscaling {
                 by: CGAffineTransform(
                     translationX: -sourceBounds.origin.x, y: -sourceBounds.origin.y))
         let paddedSource = source.clampedToExtent()
-        let inputBuffer = try makePixelBuffer(width: Self.inputTileSize, height: Self.inputTileSize)
 
         var stitchedImage: CIImage?
+        var tileBatch: [Tile] = []
+        tileBatch.reserveCapacity(Self.tileBatchSize)
 
         for y in Swift.stride(from: 0, to: sourceHeight, by: contentSize) {
             let contentHeight = min(contentSize, sourceHeight - y)
@@ -88,9 +102,11 @@ actor Upscaling {
                 let contentWidth = min(contentSize, sourceWidth - x)
                 let inputX = Self.inputOrigin(for: x, sourceLength: sourceWidth, context: context)
                 let tile = makeInputTile(from: paddedSource, inputX: inputX, inputY: inputY)
+                let inputBuffer = try makePixelBuffer(
+                    width: Self.inputTileSize, height: Self.inputTileSize)
 
                 Logger.upscaling.trace(
-                    "Predicting tile at (\(inputX), \(inputY)) for content at (\(x), \(y)) with \(contentWidth)x\(contentHeight) useful pixels"
+                    "Preparing tile at (\(inputX), \(inputY)) for content at (\(x), \(y)) with \(contentWidth)x\(contentHeight) useful pixels"
                 )
 
                 runtime.ciContext.render(
@@ -100,17 +116,25 @@ actor Upscaling {
                         height: CGFloat(Self.inputTileSize)),
                     colorSpace: CGColorSpace(name: CGColorSpace.sRGB))
 
-                let prediction = try runtime.model.prediction(input_image: inputBuffer)
-                try Task.checkCancellation()
-                let outputTile = extendedOutput(
-                    from: prediction.output_image, contentX: x, contentY: y,
-                    contentWidth: contentWidth, contentHeight: contentHeight, inputX: inputX,
-                    inputY: inputY, blendWidth: blendWidth, outputBounds: outputBounds)
+                tileBatch.append(
+                    Tile(
+                        input: UpscalingModelInput(input_image: inputBuffer), contentX: x,
+                        contentY: y, contentWidth: contentWidth, contentHeight: contentHeight,
+                        inputX: inputX, inputY: inputY))
 
-                stitchedImage = stitch(
-                    outputTile, over: stitchedImage, contentX: x, contentY: y,
-                    blendWidth: blendWidth)
+                if tileBatch.count == Self.tileBatchSize {
+                    stitchedImage = try process(
+                        tileBatch, with: runtime, over: stitchedImage, blendWidth: blendWidth,
+                        outputBounds: outputBounds)
+                    tileBatch.removeAll(keepingCapacity: true)
+                }
             }
+        }
+
+        if !tileBatch.isEmpty {
+            stitchedImage = try process(
+                tileBatch, with: runtime, over: stitchedImage, blendWidth: blendWidth,
+                outputBounds: outputBounds)
         }
 
         guard let stitchedImage else {
@@ -118,10 +142,50 @@ actor Upscaling {
             throw MankaiErrorCode.readerUpscalingInvalidInputImage.makeError()
         }
 
+        let elapsed = startedAt.duration(to: clock.now).components
+        let elapsedMilliseconds =
+            (Double(elapsed.seconds) * 1_000)
+            + (Double(elapsed.attoseconds) / 1_000_000_000_000_000)
         Logger.upscaling.debug(
-            "Upscaling completed with \(Int(outputBounds.width))x\(Int(outputBounds.height)) output"
+            "Upscaling completed with \(Int(outputBounds.width))x\(Int(outputBounds.height)) output in \(String(format: "%.2f", elapsedMilliseconds)) ms"
         )
         return stitchedImage.cropped(to: outputBounds)
+    }
+
+    private func process(
+        _ tiles: [Tile], with runtime: Runtime, over stitchedImage: CIImage?, blendWidth: Int,
+        outputBounds: CGRect
+    ) throws -> CIImage? {
+        try Task.checkCancellation()
+        Logger.upscaling.trace("Predicting a batch of \(tiles.count) tiles")
+
+        let predictions = try runtime.model.predictions(inputs: tiles.map(\.input))
+        try Task.checkCancellation()
+
+        guard predictions.count == tiles.count else {
+            Logger.upscaling.error(
+                "Upscaling model returned \(predictions.count) predictions for \(tiles.count) input tiles"
+            )
+            throw MankaiErrorCode.readerUpscalingInvalidInputImage.makeError(
+                messageOverride:
+                    "The upscaling model returned an unexpected number of tile predictions.")
+        }
+
+        var result = stitchedImage
+        for (tile, prediction) in zip(tiles, predictions) {
+            try Task.checkCancellation()
+            let outputTile = extendedOutput(
+                from: prediction.output_image, contentX: tile.contentX, contentY: tile.contentY,
+                contentWidth: tile.contentWidth, contentHeight: tile.contentHeight,
+                inputX: tile.inputX, inputY: tile.inputY, blendWidth: blendWidth,
+                outputBounds: outputBounds)
+
+            result = stitch(
+                outputTile, over: result, contentX: tile.contentX, contentY: tile.contentY,
+                blendWidth: blendWidth)
+        }
+
+        return result
     }
 
     private func makeInputTile(from image: CIImage, inputX: Int, inputY: Int) -> CIImage {
@@ -237,8 +301,15 @@ actor Upscaling {
     private func loadRuntimeIfNeeded() throws -> Runtime {
         if let runtime { return runtime }
 
+        let configuration = MLModelConfiguration()
+        if #available(iOS 18.0, *) {
+            var optimizationHints = MLOptimizationHints()
+            optimizationHints.specializationStrategy = .fastPrediction
+            configuration.optimizationHints = optimizationHints
+        }
+
         let loadedRuntime = Runtime(
-            model: try UpscalingModel(configuration: .init()), ciContext: CIContext())
+            model: try UpscalingModel(configuration: configuration), ciContext: CIContext())
         runtime = loadedRuntime
         Logger.upscaling.debug("Upscaling model loaded")
         return loadedRuntime
