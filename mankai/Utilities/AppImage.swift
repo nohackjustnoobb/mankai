@@ -138,19 +138,31 @@ final class AppImage: ObservableObject {
         let shouldUpscale =
             (UserDefaults.standard.object(forKey: SettingsKey.animeSharpUpscaling.rawValue) as? Bool)
             ?? SettingsDefaults.animeSharpUpscaling
+        let upscaleThreshold =
+            (UserDefaults.standard.object(forKey: SettingsKey.upscaleThreshold.rawValue) as? Double)
+            ?? SettingsDefaults.upscaleThreshold
         let shouldDownsample =
             (UserDefaults.standard.object(forKey: SettingsKey.downsampleImages.rawValue) as? Bool)
             ?? SettingsDefaults.downsampleImages
+        let downsampleAggressiveness =
+            (UserDefaults.standard.object(forKey: SettingsKey.downsampleAggressiveness.rawValue)
+                as? Double) ?? SettingsDefaults.downsampleAggressiveness
         let pointSize = UIApplication.windowBounds.size
 
         var processors: [any ImageProcessor] = []
 
         if shouldUpscale {
             processors.append(
-                UpscalingImageProcessor(context: upscalingTileContext, pointSize: pointSize))
+                UpscalingImageProcessor(
+                    context: upscalingTileContext, pointSize: pointSize, threshold: upscaleThreshold
+                ))
         }
 
-        if shouldDownsample { processors.append(DownsampleImageProcessor(pointSize: pointSize)) }
+        if shouldDownsample {
+            processors.append(
+                DownsampleImageProcessor(
+                    pointSize: pointSize, aggressiveness: downsampleAggressiveness))
+        }
 
         return processors
     }

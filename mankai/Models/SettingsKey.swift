@@ -11,6 +11,7 @@ enum SettingsKey: String {
     case hideBuiltInPlugins
     case showDebugScreen
     case downsampleImages
+    case downsampleAggressiveness
     case checkClipboard
     case browseViewMode
     case accentColor
@@ -24,6 +25,7 @@ enum SettingsKey: String {
     case imageLayout
     case respectMangaReadingDirection
     case animeSharpUpscaling
+    case upscaleThreshold
     case smartGrouping
     case smartGroupingSensitivity
 

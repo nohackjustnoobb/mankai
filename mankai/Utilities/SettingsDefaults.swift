@@ -12,6 +12,7 @@ enum SettingsDefaults {
     static let hideBuiltInPlugins: Bool = false
     static let showDebugScreen: Bool = false
     static let downsampleImages: Bool = true
+    static let downsampleAggressiveness: Double = 0.5
     static let checkClipboard: Bool = false
     static let browseViewMode: BrowseViewMode = .list
     static let accentColor: AppAccentColor = .sakura
@@ -24,6 +25,7 @@ enum SettingsDefaults {
     static let imageLayout: ImageLayout = .auto
     static let respectMangaReadingDirection: Bool = true
     static let animeSharpUpscaling: Bool = false
+    static let upscaleThreshold: Double = 1.5
     static let smartGrouping: Bool = false
     static let smartGroupingSensitivity: Double = 0.5
 
