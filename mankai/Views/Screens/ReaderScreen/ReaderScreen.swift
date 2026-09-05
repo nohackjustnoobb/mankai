@@ -211,8 +211,8 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             view.backgroundColor = .clear
             view.isUserInteractionEnabled = false
             NotificationCenter.default.addObserver(
-                self, selector: #selector(appDidBecomeActive),
-                name: UIApplication.didBecomeActiveNotification, object: nil)
+                self, selector: #selector(sceneDidBecomeActive(_:)),
+                name: UIScene.didActivateNotification, object: nil)
         }
 
         deinit { NotificationCenter.default.removeObserver(self) }
@@ -245,7 +245,12 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
             showChrome()
         }
 
-        @objc private func appDidBecomeActive() { applyNavigationBarVisibility(animated: true) }
+        @objc private func sceneDidBecomeActive(_ notification: Notification) {
+            guard let scene = notification.object as? UIScene,
+                scene === viewIfLoaded?.window?.windowScene
+            else { return }
+            applyNavigationBarVisibility(animated: false)
+        }
 
         func setNavigationBarHidden(_ isHidden: Bool, animated: Bool) {
             guard shouldHideNavigationBar != isHidden else { return }
@@ -256,11 +261,11 @@ private struct ReaderNavigationBarController: UIViewControllerRepresentable {
         private func applyNavigationBarVisibility(animated: Bool) {
             guard let navigationBar = navigationController?.navigationBar else { return }
 
+            // Use untransformed geometry so repeated updates preserve the hidden position.
+            let bottomY = navigationBar.center.y + navigationBar.bounds.height / 2
             let transform =
                 shouldHideNavigationBar
-                ? CGAffineTransform(
-                    translationX: 0, y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
-                ) : .identity
+                ? CGAffineTransform(translationX: 0, y: -bottomY) : .identity
 
             updateNavigationBar(navigationBar, transform: transform, animated: animated)
         }
