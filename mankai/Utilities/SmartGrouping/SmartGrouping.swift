@@ -115,7 +115,8 @@ actor SmartGrouping {
         if let runtime { return runtime }
 
         let loadedRuntime = Runtime(
-            model: try SmartGroupingModel(configuration: .init()), ciContext: CIContext())
+            model: try SmartGroupingModel(configuration: .init()),
+            ciContext: CIContext(options: [.cacheIntermediates: false]))
         runtime = loadedRuntime
         Logger.smartGrouping.debug("Smart grouping model loaded")
         return loadedRuntime

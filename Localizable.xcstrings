@@ -726,62 +726,6 @@
         }
       }
     },
-    "animeSharpUpscaling" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2× AnimeSharp Upscaling"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2倍 AnimeSharpアップスケーリング"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2× AnimeSharp 图片放大"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "2× AnimeSharp 圖片放大"
-          }
-        }
-      }
-    },
-    "animeSharpUpscalingDescription" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upscale low-resolution reader images to twice their original resolution with AnimeSharp. Images already large enough for the display are left unchanged. This uses more processing power and memory."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AnimeSharpを使用して、低解像度のリーダー画像を元の2倍の解像度に拡大します。画面表示に十分な大きさの画像は変更されません。処理能力とメモリの使用量が増加します。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 AnimeSharp 将低分辨率的阅读器图片放大到原始分辨率的两倍。分辨率已足够适配屏幕的图片不会被放大。此功能会占用更多计算资源和内存。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "使用 AnimeSharp 將低解析度的閱讀器圖片放大至原始解析度的兩倍。已足以配合螢幕顯示的圖片不會放大。此功能會使用更多運算資源和記憶體。"
-          }
-        }
-      }
-    },
     "any" : {
       "localizations" : {
         "en" : {
@@ -6383,6 +6327,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "圖片大小"
+          }
+        }
+      }
+    },
+    "imageUpscaling" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4× Real-ESRGAN Upscaling"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4倍 Real-ESRGANアップスケーリング"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4× Real-ESRGAN 图片放大"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4× Real-ESRGAN 圖片放大"
+          }
+        }
+      }
+    },
+    "imageUpscalingDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upscale low-resolution reader images to four times their original resolution with Real-ESRGAN's realesr-animevideov3 model. Images already large enough for the display are left unchanged. Using this together with Downsample Images is recommended to keep memory usage reasonable."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Real-ESRGANのrealesr-animevideov3モデルを使用して、低解像度のリーダー画像を元の4倍の解像度に拡大します。画面表示に十分な大きさの画像は変更されません。メモリ使用量を適切に抑えるため、「画像をダウンサンプリング」と併用することをおすすめします。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Real-ESRGAN 的 realesr-animevideov3 模型将低分辨率的阅读器图片放大到原始分辨率的四倍。分辨率已足够适配屏幕的图片不会被放大。建议与“降低图片分辨率”配合使用，以将内存占用保持在合理水平。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用 Real-ESRGAN 的 realesr-animevideov3 模型將低解析度的閱讀器圖片放大至原始解析度的四倍。已足以配合螢幕顯示的圖片不會放大。建議與「縮小圖片」搭配使用，以將記憶體用量維持在合理範圍。"
           }
         }
       }

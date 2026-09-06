@@ -24,7 +24,7 @@ enum SettingsKey: String {
     case readerType
     case imageLayout
     case respectMangaReadingDirection
-    case animeSharpUpscaling
+    case imageUpscaling
     case upscaleThreshold
     case smartGrouping
     case smartGroupingSensitivity

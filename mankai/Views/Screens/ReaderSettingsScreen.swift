@@ -18,8 +18,8 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.downsampleImages
     @AppStorage(SettingsKey.downsampleAggressiveness.rawValue) private var downsampleAggressiveness:
         Double = SettingsDefaults.downsampleAggressiveness
-    @AppStorage(SettingsKey.animeSharpUpscaling.rawValue) private var animeSharpUpscaling: Bool =
-        SettingsDefaults.animeSharpUpscaling
+    @AppStorage(SettingsKey.imageUpscaling.rawValue) private var imageUpscaling: Bool =
+        SettingsDefaults.imageUpscaling
     @AppStorage(SettingsKey.upscaleThreshold.rawValue) private var upscaleThreshold: Double =
         SettingsDefaults.upscaleThreshold
     @AppStorage(SettingsKey.smartGrouping.rawValue) private var smartGrouping: Bool =
@@ -73,12 +73,11 @@ struct ReaderSettingsScreen: View {
 
             Section("imageProcessing") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Toggle("animeSharpUpscaling", isOn: $animeSharpUpscaling)
-                    Text("animeSharpUpscalingDescription").font(.caption)
-                        .foregroundColor(.secondary)
+                    Toggle("imageUpscaling", isOn: $imageUpscaling)
+                    Text("imageUpscalingDescription").font(.caption).foregroundColor(.secondary)
                 }
 
-                if animeSharpUpscaling {
+                if imageUpscaling {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("upscaleSensitivity")
@@ -150,7 +149,7 @@ struct ReaderSettingsScreen: View {
             }
         }
         .navigationTitle("reader").navigationBarTitleDisplayMode(.inline)
-        .onChange(of: animeSharpUpscaling) { _, isEnabled in
+        .onChange(of: imageUpscaling) { _, isEnabled in
             guard !isEnabled else { return }
 
             Task { await Upscaling.shared.unloadImmediately() }

@@ -55,7 +55,7 @@ Mankai is a powerful, extensible manga reader and manager for iOS, iPadOS, and m
 - **Modern UI**: A responsive interface built with SwiftUI.
 - **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
 - **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
-- **On-Device AI Upscaling**: Sharpen low-resolution pages with optional [2× AnimeSharp upscaling](#animesharp-upscaling).
+- **On-Device AI Upscaling**: Sharpen low-resolution pages with optional [4× Real-ESRGAN upscaling](#real-esrgan-upscaling).
 - **Library & History**: Manage your collection and track reading progress.
 - **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
 - **Download Manager**: Save manga chapters for offline access.
@@ -137,22 +137,23 @@ Mankai provides two high-performance reading modes, both implemented in UIKit to
 - **Continuous Reader**: A traditional webtoon-style vertical scrolling experience.
 - **Paged Reader**: A paginated experience supporting vertical and horizontal navigation, with scroll and page-curl transition styles.
 
-### AnimeSharp Upscaling
+### Real-ESRGAN Upscaling
 
-Mankai can optionally upscale low-resolution reader images to twice their original pixel dimensions with AnimeSharp.
+Mankai can optionally upscale low-resolution reader images to four times their original pixel dimensions with the `realesr-animevideov3` model.
 
-- **Core ML Conversion**: [2x-AnimeSharpV4-CoreML](https://github.com/nohackjustnoobb/2x-AnimeSharpV4-CoreML)
-- **Model Credit**: [`2x-AnimeSharpV4_Fast_RCAN_PU`](https://huggingface.co/Kim2091/2x-AnimeSharpV4) by [Kim2091](https://huggingface.co/Kim2091), licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+- **Core ML Conversion**: [Real-ESRGAN-CoreML](https://github.com/nohackjustnoobb/Real-ESRGAN-CoreML)
+- **Original Model**: [`realesr-animevideov3`](https://github.com/xinntao/Real-ESRGAN/blob/master/docs/anime_video_model.md) from [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN), licensed under the [BSD 3-Clause License](https://github.com/xinntao/Real-ESRGAN/blob/master/LICENSE)
 
 #### Performance
 
-Core ML Performance Report medians on an **iPhone 15** for one 256 × 256 input tile (producing a 512 × 512 output tile):
+Core ML Performance Report medians on an **iPhone 15** running **iOS 26.6.1** for one 256 × 256 input tile (producing a 1024 × 1024 output tile):
 
 | Compute Units                     | Prediction (Median) | Load (Median) | Compilation (Median) |
 | :-------------------------------- | :------------------ | :------------ | :------------------- |
-| **All (CPU, GPU, Neural Engine)** | 66.81 ms            | 165.94 ms     | 1,433.16 ms          |
-| **CPU Only**                      | 247.41 ms           | 147.71 ms     | 480.85 ms            |
-| **CPU + GPU**                     | 318.23 ms           | 163.75 ms     | 465.51 ms            |
+| **All (CPU, GPU, Neural Engine)** | 20.02 ms            | 17.71 ms      | 59.85 ms             |
+| **CPU Only**                      | 102.59 ms           | 39.30 ms      | 122.43 ms            |
+| **CPU + GPU**                     | 103.57 ms           | 11.57 ms      | 59.34 ms             |
+| **CPU + Neural Engine**           | 20.34 ms            | 21.47 ms      | 60.64 ms             |
 
 End-to-end page processing time varies with the source image dimensions because larger pages require more tiles.
 
@@ -176,12 +177,12 @@ Mankai features an advanced **Smart Grouping** system that uses a deep learning 
 
 Performance benchmarks on **iPhone 15**:
 
-| Compute Units           | Prediction (Median) | Load (Median) | Compilation (Median) |
-| :---------------------- | :------------------ | :------------ | :------------------- |
-| **All**                 | 0.94 ms             | 21.77 ms      | 65.11 ms             |
-| **CPU Only**            | 2.28 ms             | 17.94 ms      | 62.82 ms             |
-| **CPU + GPU**           | 8.15 ms             | 21.09 ms      | 81.25 ms             |
-| **CPU + Neural Engine** | 0.91 ms             | 45.80 ms      | 64.19 ms             |
+| Compute Units                     | Prediction (Median) | Load (Median) | Compilation (Median) |
+| :-------------------------------- | :------------------ | :------------ | :------------------- |
+| **All (CPU, GPU, Neural Engine)** | 0.94 ms             | 21.77 ms      | 65.11 ms             |
+| **CPU Only**                      | 2.28 ms             | 17.94 ms      | 62.82 ms             |
+| **CPU + GPU**                     | 8.15 ms             | 21.09 ms      | 81.25 ms             |
+| **CPU + Neural Engine**           | 0.91 ms             | 45.80 ms      | 64.19 ms             |
 
 ## Syncing
 

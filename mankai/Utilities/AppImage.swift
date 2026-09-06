@@ -20,6 +20,7 @@ final class AppImage: ObservableObject {
     private static let outputSlideSize = CGSize(
         width: SmartGrouping.inputSize.width / 2, height: SmartGrouping.inputSize.height)
     private static let upscalingTileContext = 16
+    private static let renderingContext = CIContext(options: [.cacheIntermediates: false])
 
     @Published private(set) var image: UIImage
     @Published private(set) var isProcessingFinished = false
@@ -49,6 +50,10 @@ final class AppImage: ObservableObject {
                 var processedImage = CIImage(data: data, options: [.applyOrientationProperty: true])
             else { return nil }
 
+            Logger.ui.debug(
+                "Processing reader image at \(Int(processedImage.extent.width))x\(Int(processedImage.extent.height))"
+            )
+
             do {
                 for processor in processors {
                     processedImage = try await processor.process(image: processedImage)
@@ -59,7 +64,19 @@ final class AppImage: ObservableObject {
                 return nil
             }
 
-            return UIImage(ciImage: processedImage)
+            Logger.ui.debug(
+                "Processed reader image to \(Int(processedImage.extent.width))x\(Int(processedImage.extent.height))"
+            )
+
+            guard
+                let renderedImage = Self.renderingContext.createCGImage(
+                    processedImage, from: processedImage.extent.integral)
+            else {
+                Logger.ui.error("Failed to render processed reader image")
+                return nil
+            }
+
+            return UIImage(cgImage: renderedImage)
         }
         self.processingTask = processingTask
 
@@ -136,8 +153,8 @@ final class AppImage: ObservableObject {
 
     @MainActor private static func makeProcessors() -> [any ImageProcessor] {
         let shouldUpscale =
-            (UserDefaults.standard.object(forKey: SettingsKey.animeSharpUpscaling.rawValue) as? Bool)
-            ?? SettingsDefaults.animeSharpUpscaling
+            (UserDefaults.standard.object(forKey: SettingsKey.imageUpscaling.rawValue) as? Bool)
+            ?? SettingsDefaults.imageUpscaling
         let upscaleThreshold =
             (UserDefaults.standard.object(forKey: SettingsKey.upscaleThreshold.rawValue) as? Double)
             ?? SettingsDefaults.upscaleThreshold

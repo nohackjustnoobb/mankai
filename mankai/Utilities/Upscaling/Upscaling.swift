@@ -19,7 +19,7 @@ actor Upscaling {
     static let shared = Upscaling()
 
     static let inputTileSize = 256
-    static let scaleFactor = 2
+    static let scaleFactor = 4
     private static let tileBatchSize = 4
 
     /// How long to keep the model loaded after the last upscale.
@@ -54,7 +54,7 @@ actor Upscaling {
         unloadRuntime()
     }
 
-    /// Returns a 2x upscaled image whose origin is zero and whose pixel dimensions are exactly twice those of `image`.
+    /// Returns a 4x upscaled image whose origin is zero and whose pixel dimensions are exactly four times those of `image`.
     ///
     /// Valid context values are `0...127`. A context of `0` processes independent
     /// 256-pixel tiles; larger values reduce seams at the cost of processing more tiles.
@@ -118,7 +118,7 @@ actor Upscaling {
 
                 tileBatch.append(
                     Tile(
-                        input: UpscalingModelInput(input_image: inputBuffer), contentX: x,
+                        input: UpscalingModelInput(inputImage: inputBuffer), contentX: x,
                         contentY: y, contentWidth: contentWidth, contentHeight: contentHeight,
                         inputX: inputX, inputY: inputY))
 
@@ -175,7 +175,7 @@ actor Upscaling {
         for (tile, prediction) in zip(tiles, predictions) {
             try Task.checkCancellation()
             let outputTile = extendedOutput(
-                from: prediction.output_image, contentX: tile.contentX, contentY: tile.contentY,
+                from: prediction.outputImage, contentX: tile.contentX, contentY: tile.contentY,
                 contentWidth: tile.contentWidth, contentHeight: tile.contentHeight,
                 inputX: tile.inputX, inputY: tile.inputY, blendWidth: blendWidth,
                 outputBounds: outputBounds)
@@ -309,7 +309,8 @@ actor Upscaling {
         }
 
         let loadedRuntime = Runtime(
-            model: try UpscalingModel(configuration: configuration), ciContext: CIContext())
+            model: try UpscalingModel(configuration: configuration),
+            ciContext: CIContext(options: [.cacheIntermediates: false]))
         runtime = loadedRuntime
         Logger.upscaling.debug("Upscaling model loaded")
         return loadedRuntime
