@@ -61,6 +61,24 @@ final class JsRuntime: NSObject {
         }
     }
 
+    @MainActor private func ping(_ webview: WKWebView) async -> Bool {
+        await withCheckedContinuation { continuation in
+            var didFinish = false
+
+            webview.evaluateJavaScript("true", in: nil, in: .defaultClient) { result in
+                guard !didFinish else { return }
+                didFinish = true
+                continuation.resume(returning: ((try? result.get()) as? Bool) == true)
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                guard !didFinish else { return }
+                didFinish = true
+                continuation.resume(returning: false)
+            }
+        }
+    }
+
     /// Executes JavaScript in the hidden WKWebView using async/await
     /// - Parameter js: The JavaScript code to execute
     /// - Returns: The result of the JavaScript execution
@@ -78,7 +96,24 @@ final class JsRuntime: NSObject {
         // Inject functions
         let injectedJs = inject(js, from: from, plugin: plugin)
 
-        return try await webview.callAsyncJavaScript(injectedJs, contentWorld: .defaultClient)
+        do {
+            return try await webview.callAsyncJavaScript(injectedJs, contentWorld: .defaultClient)
+        } catch {
+            guard !(await ping(webview)) else { throw error }
+
+            Logger.jsRuntime.warning("WebView did not respond to ping, recreating it")
+            webview.configuration.userContentController.removeScriptMessageHandler(
+                forName: "DEFAULT_BRIDGE", contentWorld: .defaultClient)
+            self.webview = nil
+            await initWebview()
+
+            guard let webview = self.webview else {
+                Logger.jsRuntime.error("WebView not initialized")
+                throw MankaiErrorCode.pluginJavascriptWebViewNotInitialized.makeError()
+            }
+
+            return try await webview.callAsyncJavaScript(injectedJs, contentWorld: .defaultClient)
+        }
     }
 
     private func inject(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) -> String {

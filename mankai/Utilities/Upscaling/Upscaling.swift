@@ -56,8 +56,8 @@ actor Upscaling {
 
     /// Returns a 4x upscaled image whose origin is zero and whose pixel dimensions are exactly four times those of `image`.
     ///
-    /// Valid context values are `0...127`. A context of `0` processes independent
-    /// 256-pixel tiles; larger values reduce seams at the cost of processing more tiles.
+    /// Valid context values are `0...127`. A context of `0` processes independent 256-pixel tiles,
+    /// larger values reduce seams at the cost of processing more tiles.
     func upscale(_ image: CIImage, context: Int) throws -> CIImage {
         try Task.checkCancellation()
         let clock = ContinuousClock()
@@ -368,7 +368,7 @@ actor Upscaling {
 
         guard status == kCVReturnSuccess, let pixelBuffer else {
             Logger.upscaling.error(
-                "Failed to create upscaling pixel buffer; Core Video status: \(status)")
+                "Failed to create upscaling pixel buffer, Core Video status: \(status)")
             throw MankaiErrorCode.readerUpscalingFailedToCreatePixelBuffer.makeError()
         }
 
@@ -377,7 +377,7 @@ actor Upscaling {
 
     private static func validate(context: Int) throws {
         guard context >= 0, context < inputTileSize / 2 else {
-            Logger.upscaling.error("Invalid tile context: \(context); expected 0...127")
+            Logger.upscaling.error("Invalid tile context: \(context), expected 0...127")
             throw MankaiErrorCode.readerUpscalingInvalidTileContext.makeError()
         }
     }
