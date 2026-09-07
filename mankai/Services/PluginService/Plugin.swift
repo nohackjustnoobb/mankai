@@ -76,9 +76,6 @@ struct Cooldown: Codable {
 }
 
 /// Features that a plugin can support.
-///
-/// Plugins currently support every capability by default.
-/// A plugin can later provide a smaller list to disable features it does not implement.
 enum PluginCapability: String, Codable, CaseIterable {
     case onlineCheck
     case suggestions
@@ -91,8 +88,11 @@ enum PluginCapability: String, Codable, CaseIterable {
     case searchByAuthor
     case mangaDetails
     case batchMangas
+    case mangaUpdates
     case chapter
     case image
+
+    static var defaultCapabilities: [PluginCapability] { allCases.filter { $0 != .mangaUpdates } }
 }
 
 class Plugin: Identifiable, ObservableObject {
@@ -122,9 +122,9 @@ class Plugin: Identifiable, ObservableObject {
 
     /// Operations supported by the plugin.
     ///
-    /// Plugins that do not provide capability metadata support every operation by default.
+    /// Plugins that do not provide capability metadata support every non-opt-in operation.
     /// Plugins can override this with a smaller list.
-    var capabilities: [PluginCapability] { PluginCapability.allCases }
+    var capabilities: [PluginCapability] { PluginCapability.defaultCapabilities }
 
     /// Whether manga sourced from this plugin should be synced across devices.
     var shouldSync: Bool { true }
@@ -134,6 +134,11 @@ class Plugin: Identifiable, ObservableObject {
 
     /// Whether manga sourced from this plugin can be downloaded for offline access.
     var canDownload: Bool { true }
+
+    /// Whether this plugin can check saved manga for updates.
+    var canUpdate: Bool {
+        capabilities.contains(.batchMangas) || capabilities.contains(.mangaUpdates)
+    }
 
     // MARK: - Config Values
 
@@ -223,6 +228,22 @@ class Plugin: Identifiable, ObservableObject {
     /// - Returns: A list of `Manga` objects.
     /// - Throws: An error if the request fails.
     func getMangas(_: [String]) async throws -> [Manga] { fatalError("Not Implemented") }
+
+    /// Retrieves patches for manga whose latest chapter has changed.
+    /// - Parameter mangas: Manga IDs paired with their last known latest chapters.
+    /// - Returns: Manga patches for changed entries only.
+    /// - Throws: An error if the request fails.
+    func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
+        let latestChapters = Dictionary(
+            uniqueKeysWithValues: mangas.map { ($0.id, $0.latestChapter.id) })
+        return try await getMangas(mangas.map(\.id))
+            .filter {
+                guard let latestChapter = $0.latestChapter,
+                    let previousChapterId = latestChapters[$0.id]
+                else { return false }
+                return latestChapter.id != previousChapterId
+            }
+    }
 
     /// Retrieves detailed information for a specific manga.
     /// - Parameter id: The ID of the manga.

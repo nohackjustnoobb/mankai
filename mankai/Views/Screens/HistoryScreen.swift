@@ -151,11 +151,17 @@ struct HistoryItemView: View {
         }
 
         // If not found locally, try fetching from plugin
-        if manga == nil, let plugin = plugin, plugin.supports(.batchMangas) {
+        if manga == nil, let plugin = plugin,
+            plugin.supports(.batchMangas) || plugin.supports(.mangaDetails)
+        {
             Task {
-                do { manga = try await plugin.getManga(id: record.mangaId) } catch {
-                    Logger.ui.error("Failed to fetch manga from plugin", error: error)
-                }
+                do {
+                    if plugin.supports(.batchMangas) {
+                        manga = try await plugin.getManga(id: record.mangaId)
+                    } else {
+                        manga = try await plugin.getDetailedManga(record.mangaId).toManga()
+                    }
+                } catch { Logger.ui.error("Failed to fetch manga from plugin", error: error) }
 
                 isLoading = false
             }

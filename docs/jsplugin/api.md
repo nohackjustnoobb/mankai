@@ -15,6 +15,7 @@ JavaScript plugins are read-only sources. The app loads the manifest from a URL 
   - [`search(query, page, genre, status, isAuthor)`](#searchquery-page-genre-status-isauthor)
   - [`getList(page, genre, status)`](#getlistpage-genre-status)
   - [`getMangas(ids)`](#getmangasids)
+  - [`getMangaUpdates(mangas)`](#getmangaupdatesmangas)
   - [`getDetailedManga(id)`](#getdetailedmangaid)
   - [`getChapter(manga, chapter)`](#getchaptermanga-chapter)
   - [`getImage(url)`](#getimageurl)
@@ -42,6 +43,7 @@ type ScriptName =
   | "search"
   | "getList"
   | "getMangas"
+  | "getMangaUpdates"
   | "getDetailedManga"
   | "getChapter"
   | "getImage";
@@ -58,6 +60,7 @@ type PluginCapability =
   | "searchByAuthor"
   | "mangaDetails"
   | "batchMangas"
+  | "mangaUpdates"
   | "chapter"
   | "image";
 
@@ -94,7 +97,7 @@ interface JsPluginManifest {
 | `configs`         | `Config[]`               | User-configurable values exposed to the scripts. Defaults to `[]`.                                                      |
 | `getImageHeaders` | `Record<string, string>` | If present, Mankai downloads every image URL with these native request headers and does not call the `getImage` script. |
 | `cooldown`        | `Cooldown`               | Optional request throttling and image concurrency limits.                                                               |
-| `capabilities`    | `PluginCapability[]`     | Operations supported by the plugin. Defaults to all capabilities.                                                       |
+| `capabilities`    | `PluginCapability[]`     | Operations supported by the plugin. By default, every capability except `mangaUpdates` is enabled.                      |
 
 ### Script format
 
@@ -109,30 +112,33 @@ async function isOnline() {
 export { isOnline as default };
 ```
 
-The marker must use the form `export{functionName as default};`. Mankai removes the marker before execution and calls the named function. Functions may be synchronous or asynchronous; Mankai awaits their result. A script can contain helper functions as well as its exported function.
+The marker must use the form `export{functionName as default};`. Mankai removes the marker before execution and calls the named function. Functions may be synchronous or asynchronous. Mankai awaits their result. A script can contain helper functions as well as its exported function.
 
 The manifest parser does not reject a missing script, but invoking a missing callback fails at runtime. A complete plugin normally provides all callbacks listed below, unless it uses `getImageHeaders` instead of `getImage`.
 
 ## Callback scripts
 
-The optional `capabilities` field accepts the values listed below. If it is omitted, all values are enabled. A plugin can use it to advertise only the operations it implements, so the app can avoid invoking unsupported callbacks.
+The optional `capabilities` field accepts the values listed below. If it is omitted, every capability except `mangaUpdates` is enabled. A plugin can use the field to advertise only the operations it implements, so the app can avoid invoking unsupported callbacks.
 
 ```text
-onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, searchByAuthor, mangaDetails, batchMangas, chapter, image
+onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, searchByAuthor, mangaDetails, batchMangas, mangaUpdates, chapter, image
 ```
+
+Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the plugin should control which manga are marked as updated through the dedicated `getMangaUpdates` callback. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `getMangas` and compares the returned latest chapters. The default behavior requires `batchMangas`.
 
 The keys and function signatures are:
 
-| Key                | Function signature                   | Return value                                        |
-| :----------------- | :----------------------------------- | :-------------------------------------------------- |
-| `isOnline`         | `isOnline()`                         | `boolean`                                           |
-| `getSuggestion`    | `getSuggestion(query)`               | `string[]`                                          |
+| Key                | Function signature                             | Return value                                        |
+| :----------------- | :--------------------------------------------- | :-------------------------------------------------- |
+| `isOnline`         | `isOnline()`                                   | `boolean`                                           |
+| `getSuggestion`    | `getSuggestion(query)`                         | `string[]`                                          |
 | `search`           | `search(query, page, genre, status, isAuthor)` | `Manga[]`                                           |
-| `getList`          | `getList(page, genre, status)`       | `Manga[]`                                           |
-| `getMangas`        | `getMangas(ids)`                     | `Manga[]`                                           |
-| `getDetailedManga` | `getDetailedManga(id)`               | `DetailedManga`                                     |
-| `getChapter`       | `getChapter(manga, chapter)`         | `string[]` of image URLs                            |
-| `getImage`         | `getImage(url)`                      | Base64 image data, or an image proxy request object |
+| `getList`          | `getList(page, genre, status)`                 | `Manga[]`                                           |
+| `getMangas`        | `getMangas(ids)`                               | `Manga[]`                                           |
+| `getMangaUpdates`  | `getMangaUpdates(mangas)`                      | `Manga[]` patches for changed manga only            |
+| `getDetailedManga` | `getDetailedManga(id)`                         | `DetailedManga`                                     |
+| `getChapter`       | `getChapter(manga, chapter)`                   | `string[]` of image URLs                            |
+| `getImage`         | `getImage(url)`                                | Base64 image data, or an image proxy request object |
 
 Details for each argument and result follow.
 
@@ -167,6 +173,35 @@ Return a paginated list from the source, using the same `page`, `genre`, and `st
 ### `getMangas(ids)`
 
 Return lightweight manga objects for the requested string IDs. The result may contain fewer entries if the source no longer has some IDs.
+
+### `getMangaUpdates(mangas)`
+
+Return patches only for manga whose latest chapter has changed. Each request entry contains a manga ID and the latest chapter currently known by Mankai:
+
+This callback lets the plugin control update behavior. Every manga it returns is marked as updated. Exclude the `mangaUpdates` capability when the plugin should use Mankai's default batch comparison instead.
+
+```ts
+interface MangaUpdateRequest {
+  id: string;
+  latestChapter: Chapter;
+}
+```
+
+Each returned `Manga` must contain its `id`. All other properties are patches: Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. Every returned manga is marked as having an update, so do not return unchanged manga.
+
+```js
+async function getMangaUpdates(mangas) {
+  const response = await fetch("https://example.com/manga/updates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(mangas),
+  });
+  if (!response.ok) return [];
+  return await response.json();
+}
+
+export { getMangaUpdates as default };
+```
 
 ### `getDetailedManga(id)`
 
@@ -288,10 +323,10 @@ historical, sports, mature, mecha
 
 ### Statuses
 
-| Name      | Value |
-| :-------- | :---- |
-| `any`     | `0`   |
-| `onGoing` | `1`   |
+| Name        | Value |
+| :---------- | :---- |
+| `any`       | `0`   |
+| `onGoing`   | `1`   |
 | `completed` | `2`   |
 
 ### Reading directions

@@ -144,6 +144,8 @@ class CooldownWrapper: Plugin {
 
     override var canDownload: Bool { plugin.canDownload }
 
+    override var canUpdate: Bool { plugin.canUpdate }
+
     // MARK: - Config Delegation
 
     override var configValues: [ConfigValue] { plugin.configValues }
@@ -212,6 +214,13 @@ class CooldownWrapper: Plugin {
         try await wait(
             milliseconds: configuredCooldown.default, using: pluginScheduler, before: "getMangas")
         return try await plugin.getMangas(ids)
+    }
+
+    override func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
+        try await wait(
+            milliseconds: configuredCooldown.default, using: pluginScheduler,
+            before: "getMangaUpdates")
+        return try await plugin.getMangaUpdates(mangas)
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {

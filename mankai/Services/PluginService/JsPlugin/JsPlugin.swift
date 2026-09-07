@@ -15,6 +15,7 @@ enum ScriptType: String {
     case search
     case getList
     case getMangas
+    case getMangaUpdates
     case getDetailedManga
     case getChapter
     case getImage
@@ -33,7 +34,7 @@ enum ScriptType: String {
     @DecodingDefault([]) let configs: [Config]
     let getImageHeaders: [String: String]?
     let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.allCases) let capabilities: [PluginCapability]
+    @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
 }
 
 final class JsPlugin: Plugin {
@@ -91,7 +92,7 @@ final class JsPlugin: Plugin {
         authors: [String] = [], repository: String? = nil, updatesUrl: String? = nil,
         availableGenres: [Genre] = [], scripts: [ScriptType: String] = [:], configs: [Config] = [],
         getImageHeaders: [String: String]? = nil, cooldown: Cooldown? = nil,
-        capabilities: [PluginCapability] = PluginCapability.allCases
+        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
         _id = id
@@ -346,6 +347,27 @@ final class JsPlugin: Plugin {
         }
 
         return mangas.compactMap { Manga(from: $0) }
+    }
+
+    override func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
+        Logger.jsPlugin.debug("Checking updates for \(mangas.count) mangas (plugin: \(id))")
+        guard supports(.mangaUpdates) else { return try await super.getMangaUpdates(mangas) }
+
+        if _scripts[.getMangaUpdates] == nil {
+            fatalError("Script for getMangaUpdates is not defined")
+        }
+
+        let mangasJson = try mangas.encodedData()
+        let mangasString = String(data: mangasJson, encoding: .utf8) ?? "[]"
+        let script =
+            "\(_scriptsNoExport[.getMangaUpdates]!) return await \(_funcName[.getMangaUpdates]!)(\(mangasString));"
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
+
+        guard let patches = result as? [Any] else {
+            throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForMangas.makeError()
+        }
+
+        return patches.compactMap { Manga(from: $0) }
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {

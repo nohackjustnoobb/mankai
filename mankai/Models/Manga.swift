@@ -50,6 +50,11 @@ struct Chapter: Codable {
     var locked: Bool?
 }
 
+struct MangaUpdateRequest: Codable {
+    var id: String
+    var latestChapter: Chapter
+}
+
 @Codable struct Manga: Identifiable {
     var id: String
     var title: String?

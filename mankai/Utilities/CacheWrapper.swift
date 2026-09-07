@@ -87,6 +87,8 @@ class CacheWrapper: Plugin {
 
     override var canDownload: Bool { plugin.canDownload }
 
+    override var canUpdate: Bool { plugin.canUpdate }
+
     // MARK: - Configs Delegation
 
     override var configValues: [ConfigValue] { plugin.configValues }
@@ -109,6 +111,10 @@ class CacheWrapper: Plugin {
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         return try await plugin.getMangas(ids)
+    }
+
+    override func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
+        return try await plugin.getMangaUpdates(mangas)
     }
 
     // MARK: - Caching Logic

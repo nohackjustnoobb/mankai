@@ -21,7 +21,7 @@ import ReerCodable
     @DecodingDefault(false) let editorEnabled: Bool
     @DecodingDefault([]) let configs: [Config]
     let cooldown: Cooldown?
-    @DecodingDefault(PluginCapability.allCases) let capabilities: [PluginCapability]
+    @DecodingDefault(PluginCapability.defaultCapabilities) let capabilities: [PluginCapability]
 }
 
 class HttpPlugin: Plugin {
@@ -80,7 +80,7 @@ class HttpPlugin: Plugin {
         id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
         version: String? = nil, description: String? = nil, authors: [String] = [],
         repository: String? = nil, availableGenres: [Genre] = [], cooldown: Cooldown? = nil,
-        capabilities: [PluginCapability] = PluginCapability.allCases
+        capabilities: [PluginCapability] = PluginCapability.defaultCapabilities
     ) {
         Logger.httpPlugin.debug("Initializing HttpPlugin: \(id)")
         _id = id
@@ -348,6 +348,15 @@ class HttpPlugin: Plugin {
         try await setup()
         let body = try ids.encodedData()
         let (data, _) = try await authManager.post(path: "/manga", body: body)
+        return try [Manga].decoded(from: data)
+    }
+
+    override func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
+        guard supports(.mangaUpdates) else { return try await super.getMangaUpdates(mangas) }
+
+        try await setup()
+        let body = try mangas.encodedData()
+        let (data, _) = try await authManager.post(path: "/manga/updates", body: body)
         return try [Manga].decoded(from: data)
     }
 

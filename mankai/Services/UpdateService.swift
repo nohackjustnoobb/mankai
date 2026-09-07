@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GRDB
 
 final class UpdateService: ObservableObject {
     /// The shared singleton instance of UpdateService.
@@ -93,69 +94,177 @@ final class UpdateService: ObservableObject {
                 continue  // Skip if plugin doesn't exist
             }
 
-            guard plugin.supports(.batchMangas) else {
-                Logger.updateService.debug(
-                    "Skipping updates for plugin without batch manga support: \(pluginId)")
+            guard plugin.canUpdate else {
+                Logger.updateService.debug("Skipping plugin without update support: \(pluginId)")
                 continue
             }
 
-            // Get manga IDs for this plugin
             let mangaIds = pluginSaveds.map { $0.mangaId }
 
-            // Fetch updated manga data from the plugin
-            do {
-                let updatedMangas = try await plugin.getMangas(mangaIds)
-                Logger.updateService.debug(
-                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
+            let cachedMangaModels =
+                try await DbService.shared.appDb?
+                .read { db in
+                    try MangaModel.filter(
+                        mangaIds.contains(Column("mangaId")) && Column("pluginId") == pluginId
+                    )
+                    .fetchAll(db)
+                } ?? []
+            var cachedMangas: [String: Manga] = [:]
+            for mangaModel in cachedMangaModels {
+                guard let data = mangaModel.info.data(using: .utf8),
+                    let manga = try? JSONDecoder().decode(Manga.self, from: data)
+                else { continue }
+                cachedMangas[mangaModel.mangaId] = manga
+            }
 
-                // Create a dictionary for quick lookup
-                var mangaDict: [String: Manga] = [:]
-                for manga in updatedMangas { mangaDict[manga.id] = manga }
+            var hydrationIds: [String] = []
+            var updateRequests: [MangaUpdateRequest] = []
+            let usesCustomUpdates = plugin.supports(.mangaUpdates)
+            for saved in pluginSaveds {
+                let latestChapter = try? Chapter.decode(saved.latestChapter)
+                if let latestChapter {
+                    updateRequests.append(
+                        MangaUpdateRequest(id: saved.mangaId, latestChapter: latestChapter))
+                }
 
-                // Check for updates
-                for saved in pluginSaveds {
-                    guard let updatedManga = mangaDict[saved.mangaId] else {
-                        continue  // Skip if manga not found in updated data
+                if (usesCustomUpdates && cachedMangas[saved.mangaId] == nil) || latestChapter == nil
+                {
+                    hydrationIds.append(saved.mangaId)
+                }
+            }
+
+            var resolvedMangas: [String: Manga] = [:]
+            var updatePatchIds: Set<String> = []
+            var patchedLatestChapters: [String: Chapter] = [:]
+            var unresolvedHydrationIds = Set(hydrationIds)
+            var pluginHadError = false
+
+            // Hydrate manga
+            if !hydrationIds.isEmpty, plugin.supports(.batchMangas) {
+                do {
+                    let mangas = try await plugin.getMangas(hydrationIds)
+                    for manga in mangas where unresolvedHydrationIds.contains(manga.id) {
+                        resolvedMangas[manga.id] = manga
+                        unresolvedHydrationIds.remove(manga.id)
                     }
+                } catch {
+                    pluginHadError = true
+                    Logger.updateService.error(
+                        "Failed to hydrate manga snapshots in a batch for plugin \(pluginId)",
+                        error: error)
+                }
+            }
 
-                    // Check if there's a new chapter
-                    var hasUpdate = false
+            if !unresolvedHydrationIds.isEmpty, plugin.supports(.mangaDetails) {
+                for mangaId in hydrationIds where unresolvedHydrationIds.contains(mangaId) {
+                    do {
+                        let manga = try await plugin.getDetailedManga(mangaId).toManga()
+                        resolvedMangas[mangaId] = manga
+                        unresolvedHydrationIds.remove(mangaId)
+                    } catch {
+                        pluginHadError = true
+                        Logger.updateService.error(
+                            "Failed to hydrate manga snapshot \(mangaId) for plugin \(pluginId)",
+                            error: error)
+                    }
+                }
+            }
 
-                    if let newChapter = updatedManga.latestChapter {
-                        let oldChapter = try Chapter.decode(saved.latestChapter)
-                        hasUpdate = newChapter.id != oldChapter.id
+            if !unresolvedHydrationIds.isEmpty {
+                Logger.updateService.warning(
+                    "Could not hydrate \(unresolvedHydrationIds.count) manga snapshots for plugin \(pluginId)"
+                )
+            }
 
-                        if hasUpdate {
-                            Logger.updateService.info(
-                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
-                            // Create updated saved model
-                            var updatedSaved = saved
-                            updatedSaved.latestChapter = newChapter.encode()
-                            updatedSaved.datetime = Date()
-                            updatedSaved.updates = true
-                            updatedSaveds.append(updatedSaved)
+            // Update manga
+            if !updateRequests.isEmpty {
+                do {
+                    let requestIds = Set(updateRequests.map(\.id))
+                    let patches = try await plugin.getMangaUpdates(updateRequests)
+                    for patch in patches {
+                        guard requestIds.contains(patch.id) else {
+                            Logger.updateService.warning(
+                                "Ignoring manga update patch for unexpected ID \(patch.id) from plugin \(pluginId)"
+                            )
+                            continue
                         }
-                    }
 
-                    // Update manga model in database
-                    if let mangaInfoData = try? JSONEncoder().encode(updatedManga),
-                        let mangaInfoString = String(data: mangaInfoData, encoding: .utf8)
-                    {
-                        let mangaModel = MangaModel(
-                            mangaId: updatedManga.id, pluginId: pluginId, info: mangaInfoString)
-                        updatedMangaModels.append(mangaModel)
+                        updatePatchIds.insert(patch.id)
+                        if let latestChapter = patch.latestChapter {
+                            patchedLatestChapters[patch.id] = latestChapter
+                        }
+
+                        guard var manga = resolvedMangas[patch.id] ?? cachedMangas[patch.id] else {
+                            if !usesCustomUpdates { resolvedMangas[patch.id] = patch }
+                            continue
+                        }
+
+                        if let title = patch.title { manga.title = title }
+                        if let cover = patch.cover { manga.cover = cover }
+                        if let status = patch.status { manga.status = status }
+                        if let latestChapter = patch.latestChapter {
+                            manga.latestChapter = latestChapter
+                        }
+                        if let meta = patch.meta { manga.meta = meta }
+                        resolvedMangas[patch.id] = manga
                     }
+                } catch {
+                    pluginHadError = true
+                    Logger.updateService.error(
+                        "Failed to check manga updates for plugin \(pluginId)", error: error)
                 }
-            } catch {
-                Logger.updateService.error(
-                    "Error checking updates for plugin \(pluginId)", error: error)
-                if case .online = Reach().connectionStatus() {
-                    let message = String(localized: "failedToCheckUpdatesForPluginFormat")
-                    NotificationService.shared.showWarning(String(format: message, pluginId))
+            }
+
+            let savedsByMangaId = Dictionary(
+                uniqueKeysWithValues: pluginSaveds.map { ($0.mangaId, $0) })
+
+            for mangaId in updatePatchIds {
+                guard var saved = savedsByMangaId[mangaId] else { continue }
+                if let latestChapter = patchedLatestChapters[mangaId] {
+                    saved.latestChapter = latestChapter.encode()
+                }
+                saved.datetime = Date()
+                saved.updates = true
+                updatedSaveds.append(saved)
+                Logger.updateService.info(
+                    "Plugin reported an update for manga: \(mangaId) (Plugin: \(pluginId))")
+            }
+
+            for (mangaId, manga) in resolvedMangas {
+                if let data = try? JSONEncoder().encode(manga),
+                    let info = String(data: data, encoding: .utf8)
+                {
+                    updatedMangaModels.append(
+                        MangaModel(mangaId: mangaId, pluginId: pluginId, info: info))
                 }
 
-                // Skip this plugin if there's an error
-                continue
+                if updatePatchIds.contains(mangaId) { continue }
+
+                // A custom updater alone decides which manga are marked as updated.
+                // Hydration only supplies a local snapshot for applying patches.
+                if usesCustomUpdates { continue }
+
+                guard var saved = savedsByMangaId[mangaId] else { continue }
+                guard let latestChapter = manga.latestChapter else { continue }
+
+                if let previousChapter = try? Chapter.decode(saved.latestChapter) {
+                    guard latestChapter.id != previousChapter.id else { continue }
+                    saved.datetime = Date()
+                    saved.updates = true
+                    saved.latestChapter = latestChapter.encode()
+                    updatedSaveds.append(saved)
+                    Logger.updateService.info(
+                        "Found update for manga: \(mangaId) (Plugin: \(pluginId))")
+                } else {
+                    Logger.updateService.debug(
+                        "Initialized latest chapter snapshot for manga: \(mangaId) (Plugin: \(pluginId))"
+                    )
+                }
+            }
+
+            if pluginHadError, case .online = Reach().connectionStatus() {
+                let message = String(localized: "failedToCheckUpdatesForPluginFormat")
+                NotificationService.shared.showWarning(String(format: message, pluginId))
             }
         }
 
@@ -163,7 +272,9 @@ final class UpdateService: ObservableObject {
         _ = try await SavedService.shared.batchUpdate(
             saveds: updatedSaveds, mangas: updatedMangaModels)
         if !updatedSaveds.isEmpty {
-            Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds")
+            Logger.updateService.info(
+                "Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas"
+            )
             do { try await SyncService.shared.sync() } catch {
                 Logger.updateService.error("Sync failed after update", error: error)
             }

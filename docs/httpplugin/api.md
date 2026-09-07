@@ -14,6 +14,7 @@ To integrate your server with [mankai](https://github.com/nohackjustnoobb/mankai
 - [Manga](#manga)
   - [`GET /manga`](#get-manga)
   - [`POST /manga`](#post-manga)
+  - [`POST /manga/updates`](#post-mangaupdates)
   - [`GET /manga/:id`](#get-mangaid)
   - [`GET /manga/:id/chapter/:chapterId`](#get-mangaidchapterchapterid)
 - [Search](#search)
@@ -62,13 +63,16 @@ type PluginCapability =
   | "searchByAuthor"
   | "mangaDetails"
   | "batchMangas"
+  | "mangaUpdates"
   | "chapter"
   | "image";
 ```
 
 `default` is the optional minimum delay between non-image plugin calls, expressed in milliseconds. `getImage` configures a separate minimum delay between image calls. `getImageConcurrency` optionally limits the number of concurrent image requests.
 
-The optional `capabilities` field defaults to all capabilities when omitted.
+When `capabilities` is omitted, every capability except `mangaUpdates` is enabled. The `mangaUpdates` capability is enabled only when listed explicitly.
+
+Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the server should control which manga are marked as updated through `POST /manga/updates`. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `POST /manga` and compares the returned latest chapters. The default behavior requires `batchMangas`.
 
 ## Authentication (Optional)
 
@@ -134,10 +138,10 @@ Retrieve a paginated list of manga, optionally filtered by genre and/or status.
 
 **Query Parameters**
 
-| Parameter | Type     | Default   | Required | Description                                              |
-| :-------- | :------- | :-------- | :------- | :------------------------------------------------------- |
-| `page`    | `number` | `1`       | No       | The page number to retrieve.                             |
-| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                        |
+| Parameter | Type     | Default   | Required | Description                                                  |
+| :-------- | :------- | :-------- | :------- | :----------------------------------------------------------- |
+| `page`    | `number` | `1`       | No       | The page number to retrieve.                                 |
+| `genre`   | `string` | `"all"`   | No       | Filter results by a single genre.                            |
 | `status`  | `number` | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
 
 **Response — `200 OK`**
@@ -179,6 +183,39 @@ type MangaRequest = string[]; // Array of manga IDs
 **Response — `200 OK`**
 
 Returns the same `MangaListResponse` shape as [`GET /manga`](#get-manga).
+
+### `POST /manga/updates`
+
+Check a batch of manga against the latest chapters currently known by Mankai.
+
+This endpoint lets the server control update behavior. Every manga it returns is marked as updated. Exclude the `mangaUpdates` capability when the server should use Mankai's default batch comparison instead.
+
+**Request Body**
+
+```ts
+interface MangaUpdateRequest {
+  id: string;
+  latestChapter: Chapter;
+}
+
+type MangaUpdatesRequest = MangaUpdateRequest[];
+```
+
+**Response — `200 OK`**
+
+Return a `Manga[]` containing only manga whose latest chapter has changed. Each result is a patch: `id` is required, and Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. Every returned manga is marked as having an update.
+
+```json
+[
+  {
+    "id": "one-piece",
+    "latestChapter": {
+      "id": "1124",
+      "title": "Chapter 1124"
+    }
+  }
+]
+```
 
 ### `GET /manga/:id`
 
@@ -283,13 +320,13 @@ Search for manga by title or author.
 
 **Query Parameters**
 
-| Parameter   | Type      | Default   | Required | Description                                                |
-| :---------- | :-------- | :-------- | :------- | :--------------------------------------------------------- |
-| `query`     | `string`  | `null`    | Yes      | The search query string.                                   |
-| `page`      | `number`  | `1`       | No       | The page number to retrieve.                               |
-| `genre`     | `string`  | `"all"`   | No       | Filter results by a single genre.                          |
-| `status`    | `number`  | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
-| `isAuthor`  | `boolean` | `false`   | No       | Search the authors field instead of the title field.       |
+| Parameter  | Type      | Default   | Required | Description                                                  |
+| :--------- | :-------- | :-------- | :------- | :----------------------------------------------------------- |
+| `query`    | `string`  | `null`    | Yes      | The search query string.                                     |
+| `page`     | `number`  | `1`       | No       | The page number to retrieve.                                 |
+| `genre`    | `string`  | `"all"`   | No       | Filter results by a single genre.                            |
+| `status`   | `number`  | `0` (Any) | No       | Filter by status: `0` = Any, `1` = OnGoing, `2` = Completed. |
+| `isAuthor` | `boolean` | `false`   | No       | Search the authors field instead of the title field.         |
 
 **Response — `200 OK`**
 
