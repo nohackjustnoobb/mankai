@@ -45,7 +45,10 @@ struct BrowseScreen: View {
     var body: some View {
         ScrollView {
             if viewMode == .grid {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 20)], spacing: 20) {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 100), spacing: 20, alignment: .top)],
+                    spacing: 20
+                ) {
                     ForEach(Array(entities.enumerated()), id: \.offset) { _, entity in
                         switch entity.type { case .directory:
                             NavigationLink(destination: BrowseScreen(plugin: plugin, entry: entity))
@@ -287,7 +290,8 @@ struct BrowseScreen: View {
     ) -> some View {
         HStack(spacing: 16) {
             listThumbnail {
-                mangaThumbnail(manga: manga, isUnread: isUnread, cornerRadius: 6, markerScale: 0.35)
+                mangaThumbnail(
+                    manga: manga, isUnread: isUnread, cornerRadius: 6, showsUnreadTag: false)
             }
 
             bookListMetadata(
@@ -301,30 +305,32 @@ struct BrowseScreen: View {
 
     private func mangaThumbnail(
         manga: DetailedManga, isUnread: Bool, cornerRadius: CGFloat? = nil,
-        markerScale: CGFloat = 0.25
+        showsUnreadTag: Bool = true
     ) -> some View {
         let effectiveCornerRadius: CGFloat =
             if let cornerRadius { cornerRadius } else if #available(iOS 26.0, *) { 12 } else { 8 }
 
-        return MangaCoverView(coverUrl: manga.cover, plugin: plugin, cornerRadius: cornerRadius)
-            .overlay {
-                RoundedRectangle(cornerRadius: effectiveCornerRadius)
-                    .strokeBorder(Color(uiColor: .separator))
-            }
-            .overlay {
-                if isUnread {
-                    GeometryReader { proxy in
-                        let markerSize = min(proxy.size.width, proxy.size.height) * markerScale
+        return MangaCoverView(
+            coverUrl: manga.cover, plugin: plugin,
+            tag: isUnread && showsUnreadTag ? String(localized: "unread") : nil,
+            tagColor: isUnread && showsUnreadTag ? .orange : nil, cornerRadius: cornerRadius
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                .strokeBorder(Color(uiColor: .separator))
+        }
+        .overlay {
+            if isUnread && !showsUnreadTag {
+                GeometryReader { proxy in
+                    let markerSize = min(proxy.size.width, proxy.size.height) * 0.35
 
-                        TopRightCornerTriangle().fill(color ?? .accentColor).opacity(0.9)
-                            .frame(width: markerSize, height: markerSize)
-                            .frame(
-                                maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    }
+                    TopRightCornerTriangle().fill(.orange).opacity(0.9)
+                        .frame(width: markerSize, height: markerSize)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
-
+        }
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius))
     }
 
     private func filePlaceholderListView(

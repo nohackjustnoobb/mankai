@@ -12,22 +12,28 @@ struct MangaItemView: View {
     let plugin: Plugin
     var record: RecordModel? = nil
     var saved: SavedModel? = nil
-    var showNotRead: Bool = false
+    var showsUnreadTag: Bool = false
 
     private var latestChapter: Chapter? {
         guard let saved else { return manga.latestChapter }
         return (try? Chapter.decode(saved.latestChapter)) ?? manga.latestChapter
     }
 
+    private var isUnread: Bool { showsUnreadTag && record == nil }
+
+    private var coverTag: (text: String, color: Color)? {
+        if saved?.updates == true { return (String(localized: "new"), .green) }
+        if isUnread { return (String(localized: "unread"), .orange) }
+        if manga.status == .completed { return (String(localized: "mangaCompleted"), .red) }
+        return nil
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             // Cover Image
             MangaCoverView(
-                coverUrl: manga.cover, plugin: plugin,
-                tag: manga.status == .completed
-                    ? String(localized: "mangaCompleted")
-                    : saved?.updates == true ? String(localized: "new") : nil,
-                tagColor: (saved?.updates == true ? .green : .red)
+                coverUrl: manga.cover, plugin: plugin, tag: coverTag?.text,
+                tagColor: coverTag?.color
             )
             .aspectRatio(3 / 4, contentMode: .fit)
 
@@ -49,11 +55,9 @@ struct MangaItemView: View {
                         }
 
                         Text("/")
-                    } else if showNotRead {
-                        Text("notRead")
                     }
 
-                    if let latestChapter, record != nil || !showNotRead {
+                    if let latestChapter {
                         if let title = latestChapter.title {
                             Text(title)
 

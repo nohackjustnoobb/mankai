@@ -17,7 +17,7 @@ struct MangasListView: View {
     let keys: [String]?
     let records: [String: RecordModel]?
     let saveds: [String: SavedModel]?
-    let showNotRead: Bool
+    let showsUnreadTag: Bool
     let allowUnsupportedDetailsNavigation: Bool
 
     /// Simple initializer for single plugin case
@@ -29,7 +29,7 @@ struct MangasListView: View {
         keys = nil
         records = nil
         saveds = nil
-        showNotRead = false
+        showsUnreadTag = false
         allowUnsupportedDetailsNavigation = false
     }
 
@@ -37,7 +37,7 @@ struct MangasListView: View {
     init(
         mangas: [String: Manga], plugins: [String: Plugin], keys: [String],
         records: [String: RecordModel]? = nil, saveds: [String: SavedModel]? = nil,
-        showNotRead: Bool = false, allowUnsupportedDetailsNavigation: Bool = false
+        showsUnreadTag: Bool = false, allowUnsupportedDetailsNavigation: Bool = false
     ) {
         self.mangas = nil
         plugin = nil
@@ -46,7 +46,7 @@ struct MangasListView: View {
         self.keys = keys
         self.records = records
         self.saveds = saveds
-        self.showNotRead = showNotRead
+        self.showsUnreadTag = showsUnreadTag
         self.allowUnsupportedDetailsNavigation = allowUnsupportedDetailsNavigation
     }
 
@@ -54,7 +54,8 @@ struct MangasListView: View {
         LazyVGrid(
             columns: [
                 GridItem(
-                    .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12)
+                    .adaptive(minimum: horizontalSizeClass == .regular ? 140 : 110), spacing: 12,
+                    alignment: .top)
             ], spacing: 12
         ) {
             if let mangas = mangas, let plugin = plugin {
@@ -78,12 +79,12 @@ struct MangasListView: View {
                             ) {
                                 MangaItemView(
                                     manga: manga, plugin: plugin, record: records?[key],
-                                    saved: saveds?[key], showNotRead: showNotRead)
+                                    saved: saveds?[key], showsUnreadTag: showsUnreadTag)
                             }
                         } else {
                             MangaItemView(
                                 manga: manga, plugin: plugin, record: records?[key],
-                                saved: saveds?[key], showNotRead: showNotRead)
+                                saved: saveds?[key], showsUnreadTag: showsUnreadTag)
                         }
                     }
                 }

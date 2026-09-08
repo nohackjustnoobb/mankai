@@ -13,6 +13,7 @@ private enum HomeMangaStatus: String, CaseIterable {
     case onGoing
     case completed
     case updated
+    case unread
 }
 
 private enum HomeDataSource: String, CaseIterable {
@@ -108,7 +109,7 @@ struct HomeTab: View {
                         VStack(spacing: 12) {
                             MangasListView(
                                 mangas: mangas, plugins: plugins, keys: filteredOrders,
-                                records: records, saveds: saveds, showNotRead: true,
+                                records: records, saveds: saveds, showsUnreadTag: true,
                                 allowUnsupportedDetailsNavigation: isDownloadsMode)
                         }
                         .padding()
@@ -136,6 +137,7 @@ struct HomeTab: View {
                             Text("onGoing").tag(HomeMangaStatus.onGoing)
                             Text("mangaCompleted").tag(HomeMangaStatus.completed)
                             Text("updated").tag(HomeMangaStatus.updated)
+                            Text("unread").tag(HomeMangaStatus.unread)
                         }
                         .disabled(isDownloadsMode)
                     } label: {
@@ -331,6 +333,7 @@ struct HomeTab: View {
                         return manga.status == .onGoing
                         case .completed: return manga.status == .completed
                         case .updated: return saved.updates
+                        case .unread: return records[key] == nil
                     }
                 }
             }
