@@ -72,7 +72,7 @@ type PluginCapability =
 
 When `capabilities` is omitted, every capability except `mangaUpdates` is enabled. The `mangaUpdates` capability is enabled only when listed explicitly.
 
-Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the server should control which manga are marked as updated through `POST /manga/updates`. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `POST /manga` and compares the returned latest chapters. The default behavior requires `batchMangas`.
+Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the server should control which manga are marked as updated through `POST /manga/updates`. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `POST /manga`, refreshes the returned metadata, and compares the returned latest chapters. The default behavior requires `batchMangas`.
 
 ## Authentication (Optional)
 
@@ -188,7 +188,7 @@ Returns the same `MangaListResponse` shape as [`GET /manga`](#get-manga).
 
 Check a batch of manga against the latest chapters currently known by Mankai.
 
-This endpoint lets the server control update behavior. Every manga it returns is marked as updated. Exclude the `mangaUpdates` capability when the server should use Mankai's default batch comparison instead.
+This endpoint lets the server control update behavior. Exclude the `mangaUpdates` capability when the server should use Mankai's default batch comparison instead.
 
 **Request Body**
 
@@ -203,16 +203,32 @@ type MangaUpdatesRequest = MangaUpdateRequest[];
 
 **Response — `200 OK`**
 
-Return a `Manga[]` containing only manga whose latest chapter has changed. Each result is a patch: `id` is required, and Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. Every returned manga is marked as having an update.
+Return a `MangaUpdate[]`. Every result must include `id` and `updates`. The `updates` flag alone controls whether Mankai marks the saved manga as updated, metadata is refreshed for every returned result, including results where `updates` is `false`.
+
+All other properties are patches. Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. `latestChapter` advances the saved update-check baseline only when `updates` is `true`. Results omitted from the response are left unchanged.
+
+```ts
+interface MangaUpdate extends Manga {
+  updates: boolean;
+}
+
+type MangaUpdatesResponse = MangaUpdate[];
+```
 
 ```json
 [
   {
     "id": "one-piece",
+    "updates": true,
     "latestChapter": {
       "id": "1124",
       "title": "Chapter 1124"
     }
+  },
+  {
+    "id": "completed-series",
+    "updates": false,
+    "status": 2
   }
 ]
 ```

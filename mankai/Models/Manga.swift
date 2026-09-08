@@ -61,6 +61,8 @@ struct MangaUpdateRequest: Codable {
     var cover: String?
     var status: Status?
     var latestChapter: Chapter?
+    /// Present on `getMangaUpdates` results and controls whether the library entry is marked updated.
+    var updates: Bool?
 
     var meta: String?
 

@@ -14,6 +14,11 @@ struct MangaItemView: View {
     var saved: SavedModel? = nil
     var showNotRead: Bool = false
 
+    private var latestChapter: Chapter? {
+        guard let saved else { return manga.latestChapter }
+        return (try? Chapter.decode(saved.latestChapter)) ?? manga.latestChapter
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
             // Cover Image
@@ -48,7 +53,7 @@ struct MangaItemView: View {
                         Text("notRead")
                     }
 
-                    if let latestChapter = manga.latestChapter, record != nil || !showNotRead {
+                    if let latestChapter, record != nil || !showNotRead {
                         if let title = latestChapter.title {
                             Text(title)
 

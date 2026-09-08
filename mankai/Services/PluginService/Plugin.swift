@@ -229,19 +229,24 @@ class Plugin: Identifiable, ObservableObject {
     /// - Throws: An error if the request fails.
     func getMangas(_: [String]) async throws -> [Manga] { fatalError("Not Implemented") }
 
-    /// Retrieves patches for manga whose latest chapter has changed.
+    /// Retrieves current manga metadata and whether each manga should be marked as updated.
     /// - Parameter mangas: Manga IDs paired with their last known latest chapters.
-    /// - Returns: Manga patches for changed entries only.
+    /// - Returns: Manga values whose `updates` flag is always populated.
     /// - Throws: An error if the request fails.
     func getMangaUpdates(_ mangas: [MangaUpdateRequest]) async throws -> [Manga] {
         let latestChapters = Dictionary(
             uniqueKeysWithValues: mangas.map { ($0.id, $0.latestChapter.id) })
         return try await getMangas(mangas.map(\.id))
-            .filter {
-                guard let latestChapter = $0.latestChapter,
-                    let previousChapterId = latestChapters[$0.id]
-                else { return false }
-                return latestChapter.id != previousChapterId
+            .map { manga in
+                var manga = manga
+                if let latestChapter = manga.latestChapter,
+                    let previousChapterId = latestChapters[manga.id]
+                {
+                    manga.updates = latestChapter.id != previousChapterId
+                } else {
+                    manga.updates = false
+                }
+                return manga
             }
     }
 

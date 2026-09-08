@@ -363,11 +363,11 @@ final class JsPlugin: Plugin {
             "\(_scriptsNoExport[.getMangaUpdates]!) return await \(_funcName[.getMangaUpdates]!)(\(mangasString));"
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
-        guard let patches = result as? [Any] else {
+        guard let updates = result as? [Any] else {
             throw MankaiErrorCode.pluginJavascriptInvalidResultFormatForMangas.makeError()
         }
 
-        return patches.compactMap { Manga(from: $0) }
+        return updates.compactMap { Manga(from: $0) }
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {

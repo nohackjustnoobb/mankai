@@ -124,7 +124,7 @@ The optional `capabilities` field accepts the values listed below. If it is omit
 onlineCheck, suggestions, list, listByGenre, listByStatus, search, searchByGenre, searchByStatus, searchByAuthor, mangaDetails, batchMangas, mangaUpdates, chapter, image
 ```
 
-Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the plugin should control which manga are marked as updated through the dedicated `getMangaUpdates` callback. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `getMangas` and compares the returned latest chapters. The default behavior requires `batchMangas`.
+Plugins with either `batchMangas` or `mangaUpdates` can participate in library update checks. Include `mangaUpdates` when the plugin should control which manga are marked as updated through the dedicated `getMangaUpdates` callback. Exclude `mangaUpdates` to use Mankai's default behavior, which calls `getMangas`, refreshes the returned metadata, and compares the returned latest chapters. The default behavior requires `batchMangas`.
 
 The keys and function signatures are:
 
@@ -135,7 +135,7 @@ The keys and function signatures are:
 | `search`           | `search(query, page, genre, status, isAuthor)` | `Manga[]`                                           |
 | `getList`          | `getList(page, genre, status)`                 | `Manga[]`                                           |
 | `getMangas`        | `getMangas(ids)`                               | `Manga[]`                                           |
-| `getMangaUpdates`  | `getMangaUpdates(mangas)`                      | `Manga[]` patches for changed manga only            |
+| `getMangaUpdates`  | `getMangaUpdates(mangas)`                      | `MangaUpdate[]` metadata patches and update flags   |
 | `getDetailedManga` | `getDetailedManga(id)`                         | `DetailedManga`                                     |
 | `getChapter`       | `getChapter(manga, chapter)`                   | `string[]` of image URLs                            |
 | `getImage`         | `getImage(url)`                                | Base64 image data, or an image proxy request object |
@@ -176,9 +176,7 @@ Return lightweight manga objects for the requested string IDs. The result may co
 
 ### `getMangaUpdates(mangas)`
 
-Return patches only for manga whose latest chapter has changed. Each request entry contains a manga ID and the latest chapter currently known by Mankai:
-
-This callback lets the plugin control update behavior. Every manga it returns is marked as updated. Exclude the `mangaUpdates` capability when the plugin should use Mankai's default batch comparison instead.
+Each request entry contains a manga ID and the latest chapter currently known by Mankai. This callback lets the plugin control update behavior. Exclude the `mangaUpdates` capability when the plugin should use Mankai's default batch comparison instead.
 
 ```ts
 interface MangaUpdateRequest {
@@ -187,7 +185,15 @@ interface MangaUpdateRequest {
 }
 ```
 
-Each returned `Manga` must contain its `id`. All other properties are patches: Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. Every returned manga is marked as having an update, so do not return unchanged manga.
+Return a `MangaUpdate[]`. Every result must include `id` and `updates`. The `updates` flag alone controls whether Mankai marks the saved manga as updated, metadata is refreshed for every returned result, including results where `updates` is `false`.
+
+All other properties are patches. Mankai applies only non-null properties to its existing local manga snapshot. Omitted and `null` properties leave the existing value unchanged. `latestChapter` advances the saved update-check baseline only when `updates` is `true`. Results omitted from the response are left unchanged.
+
+```ts
+interface MangaUpdate extends Manga {
+  updates: boolean;
+}
+```
 
 ```js
 async function getMangaUpdates(mangas) {
@@ -202,6 +208,8 @@ async function getMangaUpdates(mangas) {
 
 export { getMangaUpdates as default };
 ```
+
+For example, a plugin can return `{ id: "completed-series", updates: false, status: 2 }` to refresh the status without showing an unread update.
 
 ### `getDetailedManga(id)`
 

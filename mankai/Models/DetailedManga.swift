@@ -54,6 +54,6 @@ typealias ChapterGroups = [ChapterGroup]
     func toManga() -> Manga {
         Manga(
             id: id, title: title, cover: cover, status: status, latestChapter: latestChapter,
-            meta: meta)
+            updates: nil, meta: meta)
     }
 }

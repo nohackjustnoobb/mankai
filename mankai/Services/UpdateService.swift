@@ -134,15 +134,68 @@ final class UpdateService: ObservableObject {
             }
 
             var resolvedMangas: [String: Manga] = [:]
-            var updatePatchIds: Set<String> = []
-            var patchedLatestChapters: [String: Chapter] = [:]
             var unresolvedHydrationIds = Set(hydrationIds)
             var pluginHadError = false
+            let savedsByMangaId = Dictionary(
+                uniqueKeysWithValues: pluginSaveds.map { ($0.mangaId, $0) })
 
-            // Hydrate manga
-            if !hydrationIds.isEmpty, plugin.supports(.batchMangas) {
+            // Let the update result provide the manga snapshot whenever possible.
+            if !updateRequests.isEmpty {
                 do {
-                    let mangas = try await plugin.getMangas(hydrationIds)
+                    let requestIds = Set(updateRequests.map(\.id))
+                    let results = try await plugin.getMangaUpdates(updateRequests)
+                    for result in results {
+                        guard requestIds.contains(result.id) else {
+                            Logger.updateService.warning(
+                                "Ignoring manga update result for unexpected ID \(result.id) from plugin \(pluginId)"
+                            )
+                            continue
+                        }
+
+                        guard result.updates != nil else {
+                            Logger.updateService.warning(
+                                "Ignoring manga update result without an updates flag for \(result.id) from plugin \(pluginId)"
+                            )
+                            continue
+                        }
+
+                        var manga = cachedMangas[result.id] ?? result
+                        if let title = result.title { manga.title = title }
+                        if let cover = result.cover { manga.cover = cover }
+                        if let status = result.status { manga.status = status }
+                        if let latestChapter = result.latestChapter {
+                            manga.latestChapter = latestChapter
+                        }
+                        if let meta = result.meta { manga.meta = meta }
+                        manga.updates = nil
+                        resolvedMangas[result.id] = manga
+                        unresolvedHydrationIds.remove(result.id)
+
+                        guard result.updates == true, var saved = savedsByMangaId[result.id] else {
+                            continue
+                        }
+
+                        if let latestChapter = result.latestChapter {
+                            saved.latestChapter = latestChapter.encode()
+                        }
+                        saved.datetime = Date()
+                        saved.updates = true
+                        updatedSaveds.append(saved)
+                        Logger.updateService.info(
+                            "Plugin reported an update for manga: \(result.id) (Plugin: \(pluginId))"
+                        )
+                    }
+                } catch {
+                    pluginHadError = true
+                    Logger.updateService.error(
+                        "Failed to check manga updates for plugin \(pluginId)", error: error)
+                }
+            }
+
+            // Hydrate only manga that the update response did not resolve.
+            if !unresolvedHydrationIds.isEmpty, plugin.supports(.batchMangas) {
+                do {
+                    let mangas = try await plugin.getMangas(Array(unresolvedHydrationIds))
                     for manga in mangas where unresolvedHydrationIds.contains(manga.id) {
                         resolvedMangas[manga.id] = manga
                         unresolvedHydrationIds.remove(manga.id)
@@ -176,89 +229,12 @@ final class UpdateService: ObservableObject {
                 )
             }
 
-            // Update manga
-            if !updateRequests.isEmpty {
-                do {
-                    let requestIds = Set(updateRequests.map(\.id))
-                    let patches = try await plugin.getMangaUpdates(updateRequests)
-                    for patch in patches {
-                        guard requestIds.contains(patch.id) else {
-                            Logger.updateService.warning(
-                                "Ignoring manga update patch for unexpected ID \(patch.id) from plugin \(pluginId)"
-                            )
-                            continue
-                        }
-
-                        updatePatchIds.insert(patch.id)
-                        if let latestChapter = patch.latestChapter {
-                            patchedLatestChapters[patch.id] = latestChapter
-                        }
-
-                        guard var manga = resolvedMangas[patch.id] ?? cachedMangas[patch.id] else {
-                            if !usesCustomUpdates { resolvedMangas[patch.id] = patch }
-                            continue
-                        }
-
-                        if let title = patch.title { manga.title = title }
-                        if let cover = patch.cover { manga.cover = cover }
-                        if let status = patch.status { manga.status = status }
-                        if let latestChapter = patch.latestChapter {
-                            manga.latestChapter = latestChapter
-                        }
-                        if let meta = patch.meta { manga.meta = meta }
-                        resolvedMangas[patch.id] = manga
-                    }
-                } catch {
-                    pluginHadError = true
-                    Logger.updateService.error(
-                        "Failed to check manga updates for plugin \(pluginId)", error: error)
-                }
-            }
-
-            let savedsByMangaId = Dictionary(
-                uniqueKeysWithValues: pluginSaveds.map { ($0.mangaId, $0) })
-
-            for mangaId in updatePatchIds {
-                guard var saved = savedsByMangaId[mangaId] else { continue }
-                if let latestChapter = patchedLatestChapters[mangaId] {
-                    saved.latestChapter = latestChapter.encode()
-                }
-                saved.datetime = Date()
-                saved.updates = true
-                updatedSaveds.append(saved)
-                Logger.updateService.info(
-                    "Plugin reported an update for manga: \(mangaId) (Plugin: \(pluginId))")
-            }
-
             for (mangaId, manga) in resolvedMangas {
                 if let data = try? JSONEncoder().encode(manga),
                     let info = String(data: data, encoding: .utf8)
                 {
                     updatedMangaModels.append(
                         MangaModel(mangaId: mangaId, pluginId: pluginId, info: info))
-                }
-
-                if updatePatchIds.contains(mangaId) { continue }
-
-                // A custom updater alone decides which manga are marked as updated.
-                // Hydration only supplies a local snapshot for applying patches.
-                if usesCustomUpdates { continue }
-
-                guard var saved = savedsByMangaId[mangaId] else { continue }
-                guard let latestChapter = manga.latestChapter else { continue }
-
-                if let previousChapter = try? Chapter.decode(saved.latestChapter) {
-                    guard latestChapter.id != previousChapter.id else { continue }
-                    saved.datetime = Date()
-                    saved.updates = true
-                    saved.latestChapter = latestChapter.encode()
-                    updatedSaveds.append(saved)
-                    Logger.updateService.info(
-                        "Found update for manga: \(mangaId) (Plugin: \(pluginId))")
-                } else {
-                    Logger.updateService.debug(
-                        "Initialized latest chapter snapshot for manga: \(mangaId) (Plugin: \(pluginId))"
-                    )
                 }
             }
 
@@ -271,12 +247,15 @@ final class UpdateService: ObservableObject {
         // Batch update all changed saveds and mangas
         _ = try await SavedService.shared.batchUpdate(
             saveds: updatedSaveds, mangas: updatedMangaModels)
-        if !updatedSaveds.isEmpty {
+        if !updatedSaveds.isEmpty || !updatedMangaModels.isEmpty {
             Logger.updateService.info(
                 "Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas"
             )
-            do { try await SyncService.shared.sync() } catch {
-                Logger.updateService.error("Sync failed after update", error: error)
+
+            if !updatedSaveds.isEmpty {
+                do { try await SyncService.shared.sync() } catch {
+                    Logger.updateService.error("Sync failed after update", error: error)
+                }
             }
         } else {
             Logger.updateService.debug("No updates found")
