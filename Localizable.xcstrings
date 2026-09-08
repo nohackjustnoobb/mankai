@@ -1213,7 +1213,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remote resources, such as those on iCloud, may take a while to load. To speed things up, download it first."
+            "value" : "Remote resources, such as files in iCloud, may take a while to load. To speed things up, download them first."
           }
         },
         "ja" : {
@@ -3297,7 +3297,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ Download Completed"
+            "value" : "Download Complete: %@"
           }
         },
         "ja" : {
@@ -3409,7 +3409,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ Download Failed: %@"
+            "value" : "Download Failed for %@: %@"
           }
         },
         "ja" : {
@@ -4447,7 +4447,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Check Updates for Plugin %@"
+            "value" : "Failed to Check Plugin %@ for Updates"
           }
         },
         "ja" : {
@@ -6840,7 +6840,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Manga Meta"
+            "value" : "Invalid Manga Metadata"
           }
         },
         "ja" : {
@@ -8137,7 +8137,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login"
+            "value" : "Log In"
           }
         },
         "ja" : {
@@ -8193,7 +8193,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Logout"
+            "value" : "Log Out"
           }
         },
         "ja" : {
@@ -8221,7 +8221,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to logout?"
+            "value" : "Are you sure you want to log out?"
           }
         },
         "ja" : {
@@ -8395,7 +8395,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manga Meta Missing"
+            "value" : "Manga Metadata Missing"
           }
         },
         "ja" : {
@@ -9483,7 +9483,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你要切換到下載嗎？"
+            "value" : "要切換至已下載內容嗎？"
           }
         }
       }
@@ -11062,62 +11062,6 @@
         }
       }
     },
-    "pullToLoadNextChapter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pull to Load Next Chapter"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "引っ張って次のチャプターを読み込む"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下拉加载下一话"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下拉載入下一話"
-          }
-        }
-      }
-    },
-    "pullToLoadPreviousChapter" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pull to Load Previous Chapter"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "引っ張って前のチャプターを読み込む"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上拉加载上一话"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上拉載入上一話"
-          }
-        }
-      }
-    },
     "queued" : {
       "localizations" : {
         "en" : {
@@ -11778,7 +11722,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to reset supabase config?"
+            "value" : "Are you sure you want to reset the Supabase configuration?"
           }
         },
         "ja" : {
@@ -12750,7 +12694,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ユーザディレクトリ内のファイルとフォルダのみアクセスできます。"
+            "value" : "ユーザディレクトリ内のファイルとフォルダにのみアクセスできます。"
           }
         },
         "zh-Hans" : {
@@ -13590,7 +13534,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Configure how your manga library synchronizes across devices. "
+            "value" : "Configure how your manga library synchronizes across devices."
           }
         },
         "ja" : {
@@ -14656,13 +14600,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "单行本"
+            "value" : "卷"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "單行本"
+            "value" : "卷"
           }
         }
       }

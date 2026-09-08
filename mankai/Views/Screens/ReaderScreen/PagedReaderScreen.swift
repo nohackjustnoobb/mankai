@@ -75,14 +75,9 @@ private struct OverscrollView: View {
                     ? String(localized: "previousChapterIsLocked")
                     : String(localized: "nextChapterIsLocked")
             case .available:
-                if pageTransition == .pageCurl {
-                    return step == .previous
-                        ? String(localized: "turnToLoadPreviousChapter")
-                        : String(localized: "turnToLoadNextChapter")
-                }
                 return step == .previous
-                    ? String(localized: "pullToLoadPreviousChapter")
-                    : String(localized: "pullToLoadNextChapter")
+                    ? String(localized: "turnToLoadPreviousChapter")
+                    : String(localized: "turnToLoadNextChapter")
         }
     }
 }
