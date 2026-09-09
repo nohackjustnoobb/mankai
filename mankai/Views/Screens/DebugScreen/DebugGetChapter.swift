@@ -16,17 +16,14 @@ struct DebugGetChapter: View {
 
     var body: some View {
         Group {
-            if let urls = urls {
+            if !plugin.supports(.chapter) {
+                DebugMethodNotSupported()
+            } else if let urls = urls {
                 List {
                     Section("urls") {
                         ForEach(urls, id: \.self) { url in
-                            if plugin.supports(.image) {
-                                NavigationLink(destination: {
-                                    DebugGetImage(plugin: plugin, url: url)
-                                }) { Text(url).lineLimit(1) }
-                            } else {
-                                Text(url).lineLimit(1)
-                            }
+                            NavigationLink(destination: { DebugGetImage(plugin: plugin, url: url) })
+                            { Text(url).lineLimit(1) }
                         }
                     }
                 }
@@ -35,12 +32,10 @@ struct DebugGetChapter: View {
             }
         }
         .task {
-            guard plugin.supports(.chapter) else {
-                urls = []
-                return
-            }
+            guard plugin.supports(.chapter) else { return }
             urls = try! await plugin.getChapter(manga: manga, chapter: chapter)
             Logger.jsPlugin.debug("urls: \(urls ?? [])")
         }
+        .navigationTitle("getChapter")
     }
 }

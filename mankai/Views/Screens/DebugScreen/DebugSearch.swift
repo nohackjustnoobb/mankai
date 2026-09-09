@@ -1,20 +1,20 @@
 //
-//  DebugGetList.swift
+//  DebugSearch.swift
 //  mankai
 //
-//  Created by Travis XU on 25/6/2025.
+//  Created by Travis XU on 10/9/2026.
 //
 
 import SwiftUI
 
-struct DebugGetList: View {
+struct DebugSearch: View {
     let plugin: JsPlugin
 
     @State var mangas: [Manga]? = nil
 
     var body: some View {
         Group {
-            if !plugin.supportsList() {
+            if !plugin.supportsSearch() {
                 DebugMethodNotSupported()
             } else if let mangas = mangas {
                 List { DebugMangas(mangas: mangas, plugin: plugin) }
@@ -23,10 +23,11 @@ struct DebugGetList: View {
             }
         }
         .task {
-            guard plugin.supportsList() else { return }
-            mangas = try! await plugin.getList(page: 1, genre: .all, status: .any)
-            Logger.jsPlugin.debug("mangas: \(mangas ?? [])")
+            guard plugin.supportsSearch() else { return }
+            mangas = try! await plugin.search(
+                "mankai", page: 1, genre: .all, status: .any, isAuthor: false)
+            Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
-        .navigationTitle("getList")
+        .navigationTitle("search")
     }
 }

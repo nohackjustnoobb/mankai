@@ -22,15 +22,15 @@ struct DebugMangas: View {
     let mangas: [Manga]
     let plugin: JsPlugin
     var title: String? = nil
+    var showsMethodPicker = true
 
     var body: some View {
         Section(title ?? String(localized: "mangas")) {
             ForEach(mangas) { manga in
-                if plugin.supports(.batchMangas) || plugin.supports(.mangaDetails) {
-                    NavigationLink(
-                        destination: DebugGetMangasAndGetDetailedManga(
-                            mangaId: manga.id, plugin: plugin)
-                    ) { mangaRow(manga) }
+                if showsMethodPicker {
+                    NavigationLink(destination: DebugMangaMethods(manga: manga, plugin: plugin)) {
+                        mangaRow(manga)
+                    }
                 } else {
                     mangaRow(manga)
                 }
@@ -67,6 +67,14 @@ struct DebugMangas: View {
                 Text(chapterText(manga.latestChapter)).font(.caption).foregroundColor(.primary)
                     .lineLimit(1)
                 Spacer()
+            }
+
+            if let updates = manga.updates {
+                HStack {
+                    Text("updated").font(.caption).foregroundColor(.secondary)
+                    Text(String(describing: updates)).font(.caption).foregroundColor(.primary)
+                    Spacer()
+                }
             }
         }
     }

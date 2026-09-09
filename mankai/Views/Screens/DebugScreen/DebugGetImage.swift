@@ -15,7 +15,9 @@ struct DebugGetImage: View {
 
     var body: some View {
         Group {
-            if let imageData = imageData {
+            if !plugin.supports(.image) {
+                DebugMethodNotSupported()
+            } else if let imageData = imageData {
                 List {
                     if let uiImage = UIImage(data: imageData) {
                         Section("image") {
@@ -64,5 +66,6 @@ struct DebugGetImage: View {
             imageData = try! await plugin.getImage(url)
             Logger.jsPlugin.debug("imageData count: \(imageData?.count ?? 0)")
         }
+        .navigationTitle("getImage")
     }
 }

@@ -5731,6 +5731,9 @@
     "getMangas" : {
       "shouldTranslate" : false
     },
+    "getMangaUpdates" : {
+      "shouldTranslate" : false
+    },
     "getSuggestion" : {
       "shouldTranslate" : false
     },
@@ -7790,6 +7793,62 @@
         }
       }
     },
+    "latestChapterRequired" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest Chapter Required"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新話が必要です"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要最新章节"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要最新章節"
+          }
+        }
+      }
+    },
+    "latestChapterRequiredDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A latest chapter is required to run this method."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このメソッドを実行するには最新話が必要です。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "运行此方法需要最新章节。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "執行此方法需要最新章節。"
+          }
+        }
+      }
+    },
     "leftToRight" : {
       "localizations" : {
         "en" : {
@@ -8560,6 +8619,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "機甲"
+          }
+        }
+      }
+    },
+    "methodNotSupported" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Method Not Supported"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メソッドはサポートされていません"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支持此方法"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支援此方法"
+          }
+        }
+      }
+    },
+    "methodNotSupportedDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This plugin does not support this method."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このプラグインはこのメソッドをサポートしていません。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此插件不支持此方法。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此外掛程式不支援此方法。"
           }
         }
       }

@@ -88,34 +88,25 @@ struct DebugScreen: View {
                 }
 
                 Section("methods") {
-                    if plugin.supports(.list) {
-                        NavigationLink(destination: DebugGetList(plugin: plugin)) {
-                            Text("getList")
-                        }
+                    NavigationLink(destination: DebugIsOnline(plugin: plugin)) { Text("isOnline") }
+
+                    NavigationLink(destination: DebugGetSuggestion(plugin: plugin)) {
+                        Text("getSuggestion")
                     }
 
-                    if plugin.supports(.batchMangas) { Text("getMangas") }
+                    NavigationLink(destination: DebugSearch(plugin: plugin)) { Text("search") }
 
-                    if plugin.supports(.mangaDetails) { Text("getDetailedManga") }
+                    NavigationLink(destination: DebugGetList(plugin: plugin)) { Text("getList") }
 
-                    if plugin.supports(.chapter) { Text("getChapter") }
+                    Text("getMangas")
 
-                    if plugin.supports(.image) { Text("getImage") }
+                    Text("getMangaUpdates")
 
-                    if plugin.supports(.onlineCheck) || plugin.supports(.search) {
-                        NavigationLink(
-                            destination: DebugSearchAndGetSuggestionAndIsOnline(plugin: plugin)
-                        ) {
-                            Text(
-                                [
-                                    plugin.supports(.onlineCheck) ? "isOnline" : nil,
-                                    plugin.supports(.search) ? "search" : nil,
-                                    plugin.supports(.search) && plugin.supports(.suggestions)
-                                        ? "getSuggestion" : nil
-                                ]
-                                .compactMap { $0 }.joined(separator: " / "))
-                        }
-                    }
+                    Text("getDetailedManga")
+
+                    Text("getChapter")
+
+                    Text("getImage")
                 }
 
             } else {
