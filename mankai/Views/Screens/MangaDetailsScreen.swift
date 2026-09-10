@@ -137,15 +137,8 @@ struct MangaDetailsScreen: View {
                         latestChapter: manga.latestChapter?.encode() ?? "",
                         shouldSync: plugin.shouldSync)
 
-                    let mangaInfo: String
-                    if let mangaData = try? JSONEncoder().encode(manga) {
-                        mangaInfo = String(data: mangaData, encoding: .utf8) ?? "{}"
-                    } else {
-                        mangaInfo = "{}"
-                    }
-
-                    let mangaModel = MangaModel(
-                        mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
+                    let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                        for: manga, pluginId: plugin.id)
 
                     let _ = try await SavedService.shared.add(saved: newSaved, manga: mangaModel)
                 }
@@ -211,7 +204,7 @@ struct MangaDetailsScreen: View {
                     HStack(spacing: 4) {
                         if let updatedAt = mangaData?.updatedAt {
                             Text(updatedAt.formatted(date: .abbreviated, time: .omitted))
-                            Text("•")
+                            Text(verbatim: "•")
                         }
 
                         if let chapters = mangaData?.chapters {
@@ -222,7 +215,7 @@ struct MangaDetailsScreen: View {
                         }
 
                         if let status = mangaData?.status {
-                            Text("•")
+                            Text(verbatim: "•")
                             Text(status.localizedName)
                         }
                     }
@@ -264,10 +257,10 @@ struct MangaDetailsScreen: View {
                             }
 
                             if let chapterTitle = record.chapterTitle {
-                                Text("•")
+                                Text(verbatim: "•")
                                 Text(chapterTitle).lineLimit(1)
                             } else {
-                                Text("•")
+                                Text(verbatim: "•")
                                 Text(
                                     String(
                                         format: String(localized: "chapterFormat"), record.chapterId
@@ -276,7 +269,7 @@ struct MangaDetailsScreen: View {
                                 .lineLimit(1)
                             }
 
-                            Text("•")
+                            Text(verbatim: "•")
                             Text(
                                 String(
                                     format: String(localized: "pageFormat"),

@@ -15,12 +15,12 @@ struct DebugMangaMethods: View {
         List {
             Section("methods") {
                 NavigationLink(destination: DebugGetMangas(mangaIds: [manga.id], plugin: plugin)) {
-                    Text("getMangas")
+                    Text(verbatim: "getMangas")
                 }
 
                 NavigationLink(
                     destination: DebugGetDetailedManga(mangaId: manga.id, plugin: plugin)
-                ) { Text("getDetailedManga") }
+                ) { Text(verbatim: "getDetailedManga") }
             }
         }
         .navigationTitle(manga.title ?? manga.id).navigationBarTitleDisplayMode(.inline)

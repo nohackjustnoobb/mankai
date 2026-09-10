@@ -54,7 +54,7 @@ struct MangaItemView: View {
                             )
                         }
 
-                        Text("/")
+                        Text(verbatim: "/")
                     }
 
                     if let latestChapter {

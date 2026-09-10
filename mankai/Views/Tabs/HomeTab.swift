@@ -5,7 +5,6 @@
 //  Created by Travis XU on 20/6/2025.
 //
 
-import GRDB
 import SwiftUI
 
 private enum HomeMangaStatus: String, CaseIterable {
@@ -21,22 +20,27 @@ private enum HomeDataSource: String, CaseIterable {
     case downloads
 }
 
+private struct HomeLibraryState {
+    var mangas: [String: Manga] = [:]
+    var plugins: [String: Plugin] = [:]
+    var records: [String: RecordModel] = [:]
+    var saveds: [String: SavedModel] = [:]
+    var orders: [String] = []
+    var filteredOrders: [String] = []
+}
+
 struct HomeTab: View {
     private let pluginService = PluginService.shared
     private let browseService = BrowseService.shared
+    @ObservedObject private var updateService = UpdateService.shared
 
-    @State private var mangas: [String: Manga] = [:]
-    @State private var plugins: [String: Plugin] = [:]
-    @State private var records: [String: RecordModel] = [:]
-    @State private var saveds: [String: SavedModel] = [:]
-    @State private var orders: [String] = []
+    @State private var library = HomeLibraryState()
 
     // Filter & Search
     @State private var searchText: String = ""
     @State private var showPlugins: [String] = []
     @State private var status: HomeMangaStatus = .all
     @State private var dataSource: HomeDataSource = .collections
-    @State private var filteredOrders: [String] = []
     @State private var showingFilters = false
     @State private var showingDownloads = false
 
@@ -63,6 +67,17 @@ struct HomeTab: View {
     }
 
     private var isDownloadsMode: Bool { dataSource == .downloads }
+
+    private var homeNavigationSubtitle: Text {
+        if let progress = updateService.progress {
+            guard progress.total > 0 else { return Text("updating") }
+            let format = String(localized: "updatingProgressFormat")
+            return Text(verbatim: String(format: format, progress.completed, progress.total))
+        }
+
+        let format = String(localized: "titleCountFormat")
+        return Text(verbatim: String(format: format, library.orders.count))
+    }
 
     private var allPlugins: [String: Plugin] {
         var pluginsById = Dictionary(
@@ -94,13 +109,13 @@ struct HomeTab: View {
     var body: some View {
         NavigationStack {
             Group {
-                if !isDownloadsMode && orders.isEmpty {
+                if !isDownloadsMode && library.orders.isEmpty {
                     ContentUnavailableView(
                         "noSavedManga", systemImage: "bookmark.slash",
                         description: Text("noSavedMangaDescription"))
-                } else if isDownloadsMode && orders.isEmpty && isLoadingDownloads {
+                } else if isDownloadsMode && library.orders.isEmpty && isLoadingDownloads {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredOrders.isEmpty {
+                } else if library.filteredOrders.isEmpty {
                     ContentUnavailableView(
                         "noResultsFound", systemImage: "magnifyingglass",
                         description: Text("noResultsFoundDescription"))
@@ -108,8 +123,9 @@ struct HomeTab: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             MangasListView(
-                                mangas: mangas, plugins: plugins, keys: filteredOrders,
-                                records: records, saveds: saveds, showsUnreadTag: true,
+                                mangas: library.mangas, plugins: library.plugins,
+                                keys: library.filteredOrders, records: library.records,
+                                saveds: library.saveds, showsUnreadTag: true,
                                 allowUnsupportedDetailsNavigation: isDownloadsMode)
                         }
                         .padding()
@@ -123,7 +139,7 @@ struct HomeTab: View {
                     }
                 }
             }
-            .navigationTitle("home")
+            .navigationTitle("home").navigationSubtitleIfAvailable(homeNavigationSubtitle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
@@ -189,10 +205,13 @@ struct HomeTab: View {
                 initializeShowPlugins()
                 if !isDownloadsMode { updateSaved() }
             }
-            .onReceive(SavedService.shared.objectWillChange) {
-                if !isDownloadsMode { updateSaved() }
+            .onReceive(SavedService.shared.changes) { change in
+                if !isDownloadsMode { applySavedChange(change) }
             }
-            .onReceive(HistoryService.shared.objectWillChange) { updateRecord() }
+            .onReceive(MangaSnapshotService.shared.changes) { change in
+                if !isDownloadsMode { applySnapshotChange(change) }
+            }
+            .onReceive(HistoryService.shared.changes) { change in applyHistoryChange(change) }
             .onReceive(
                 NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
             ) { _ in checkInternetAndPrompt() }
@@ -227,70 +246,144 @@ struct HomeTab: View {
     }
 
     private func updateSaved() {
-        var mangas: [String: Manga] = [:]
-        var plugins: [String: Plugin] = [:]
-        var saveds: [String: SavedModel] = [:]
+        var next = HomeLibraryState()
 
         let savedList: [SavedModel] = SavedService.shared.getAll()
         for saved in savedList {
             let key = "\(saved.pluginId)+\(saved.mangaId)"
 
-            if let plugin = allPlugins[saved.pluginId] { plugins[key] = plugin }
+            if let plugin = allPlugins[saved.pluginId] { next.plugins[key] = plugin }
 
-            if let mangaModel = try? DbService.shared.appDb?
-                .read({ db in
-                    try MangaModel.filter(
-                        Column("mangaId") == saved.mangaId && Column("pluginId") == saved.pluginId
-                    )
-                    .fetchOne(db)
-                })
+            if let manga = MangaSnapshotService.shared.get(
+                mangaId: saved.mangaId, pluginId: saved.pluginId)
             {
-                if let mangaData = mangaModel.info.data(using: .utf8),
-                    let mangaDict = try? JSONSerialization.jsonObject(with: mangaData)
-                        as? [String: Any], let manga = Manga(from: mangaDict)
-                {
-                    mangas[key] = manga
-                }
+                next.mangas[key] = manga
             }
 
-            saveds[key] = saved
+            next.saveds[key] = saved
         }
 
-        self.mangas = mangas
-        self.plugins = plugins
-        self.saveds = saveds
-
-        updateRecord()
-    }
-
-    private func updateRecord() {
-        if isDownloadsMode {
-            updateDownloadRecords(for: orders)
-            return
-        }
-
-        var records: [String: RecordModel] = [:]
-        let ids = saveds.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
-        let historyRecords = HistoryService.shared.get(ids: ids)
-
-        for record in historyRecords {
+        let ids = next.saveds.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
+        for record in HistoryService.shared.get(ids: ids) {
             let key = "\(record.pluginId)+\(record.mangaId)"
-            if saveds[key] != nil { records[key] = record }
+            if next.saveds[key] != nil { next.records[key] = record }
         }
 
-        self.records = records
-
-        sortSaved()
+        sortSaved(&next)
+        library = next
     }
 
-    private func sortSaved() {
-        let keys = mangas.keys
+    private func applySavedChange(_ change: SavedService.Change) {
+        switch change { case .upserted(let changedSaveds, let snapshots):
+            updateSavedItems(changedSaveds, snapshots: snapshots)
+            case .deleted(let mangaId, let pluginId):
+                removeSavedItem(mangaId: mangaId, pluginId: pluginId)
+        }
+    }
+
+    private func updateSavedItems(
+        _ changedSaveds: [SavedModel], snapshots: [MangaSnapshotService.Upsert]
+    ) {
+        guard !changedSaveds.isEmpty || !snapshots.isEmpty else { return }
+        var next = library
+
+        for snapshot in snapshots {
+            let key = "\(snapshot.pluginId)+\(snapshot.manga.id)"
+            next.mangas[key] = snapshot.manga
+            next.plugins[key] = allPlugins[snapshot.pluginId]
+        }
+
+        let changedKeys = changedSaveds.map { saved in
+            let key = "\(saved.pluginId)+\(saved.mangaId)"
+
+            next.saveds[key] = saved
+            next.plugins[key] = allPlugins[saved.pluginId]
+            if next.mangas[key] == nil {
+                next.mangas[key] = MangaSnapshotService.shared.get(
+                    mangaId: saved.mangaId, pluginId: saved.pluginId)
+            }
+
+            return key
+        }
+
+        let changedIds = changedSaveds.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
+        let changedRecords = Dictionary(
+            uniqueKeysWithValues: HistoryService.shared.get(ids: changedIds)
+                .map { ("\($0.pluginId)+\($0.mangaId)", $0) })
+
+        for key in changedKeys { next.records[key] = changedRecords[key] }
+
+        sortSaved(&next)
+        library = next
+    }
+
+    private func removeSavedItem(mangaId: String, pluginId: String) {
+        let key = "\(pluginId)+\(mangaId)"
+        var next = library
+
+        next.mangas[key] = nil
+        next.plugins[key] = nil
+        next.saveds[key] = nil
+        next.records[key] = nil
+        next.orders.removeAll { $0 == key }
+        filterManga(&next)
+        library = next
+    }
+
+    private func applySnapshotChange(_ change: MangaSnapshotService.Change) {
+        var next = library
+
+        switch change { case .upserted(let snapshots):
+            for snapshot in snapshots {
+                let key = "\(snapshot.pluginId)+\(snapshot.manga.id)"
+
+                if next.saveds[key] == nil {
+                    next.saveds[key] = SavedService.shared.get(
+                        mangaId: snapshot.manga.id, pluginId: snapshot.pluginId)
+                }
+
+                guard next.saveds[key] != nil else { continue }
+                next.mangas[key] = snapshot.manga
+                next.plugins[key] = allPlugins[snapshot.pluginId]
+            }
+            sortSaved(&next)
+            case .deleted(let mangaId, let pluginId):
+                let key = "\(pluginId)+\(mangaId)"
+                next.mangas[key] = nil
+                next.orders.removeAll { $0 == key }
+                filterManga(&next)
+        }
+        library = next
+    }
+
+    private func applyHistoryChange(_ change: HistoryService.Change) {
+        var next = library
+
+        switch change { case .upserted(let changedRecords):
+            for record in changedRecords {
+                let key = "\(record.pluginId)+\(record.mangaId)"
+                guard next.orders.contains(key) || next.saveds[key] != nil else { continue }
+                next.records[key] = record
+
+                if !isDownloadsMode {
+                    next.saveds[key] = SavedService.shared.get(
+                        mangaId: record.mangaId, pluginId: record.pluginId)
+                }
+            }
+        }
+
+        if isDownloadsMode { filterManga(&next) } else { sortSaved(&next) }
+        library = next
+    }
+
+    private func sortSaved(_ state: inout HomeLibraryState) {
+        let keys = state.mangas.keys
 
         let sortedKeys = keys.sorted { key1, key2 in
-            let savedDate1 = saveds[key1]?.datetime
-            let recordDate1 = records[key1]?.datetime
-            let savedDate2 = saveds[key2]?.datetime
-            let recordDate2 = records[key2]?.datetime
+            let savedDate1 = state.saveds[key1]?.datetime
+            let recordDate1 = state.records[key1]?.datetime
+            let savedDate2 = state.saveds[key2]?.datetime
+            let recordDate2 = state.records[key2]?.datetime
 
             let newerDate1 = [savedDate1, recordDate1].compactMap { $0 }.max()
             let newerDate2 = [savedDate2, recordDate2].compactMap { $0 }.max()
@@ -303,17 +396,17 @@ struct HomeTab: View {
             }
         }
 
-        orders = sortedKeys
-        filterManga()
+        state.orders = sortedKeys
+        filterManga(&state)
     }
 
-    private func filterManga() {
-        var filtered = orders
+    private func filterManga(_ state: inout HomeLibraryState) {
+        var filtered = state.orders
 
         // Filter by search text
         if !searchText.isEmpty {
             filtered = filtered.filter { key in
-                mangas[key]?.title?.localizedCaseInsensitiveContains(searchText) ?? false
+                state.mangas[key]?.title?.localizedCaseInsensitiveContains(searchText) ?? false
             }
         }
 
@@ -327,19 +420,27 @@ struct HomeTab: View {
             // Filter by status
             if status != .all {
                 filtered = filtered.filter { key in
-                    guard let manga = mangas[key], let saved = saveds[key] else { return false }
+                    guard let manga = state.mangas[key], let saved = state.saveds[key] else {
+                        return false
+                    }
 
                     switch status { case .all: return true case .onGoing:
                         return manga.status == .onGoing
                         case .completed: return manga.status == .completed
                         case .updated: return saved.updates
-                        case .unread: return records[key] == nil
+                        case .unread: return state.records[key] == nil
                     }
                 }
             }
         }
 
-        filteredOrders = filtered
+        state.filteredOrders = filtered
+    }
+
+    private func filterManga() {
+        var next = library
+        filterManga(&next)
+        library = next
     }
 
     private func setStatus(_ newStatus: HomeMangaStatus) {
@@ -369,12 +470,7 @@ struct HomeTab: View {
         isLoadingDownloads = true
         defer { isLoadingDownloads = false }
 
-        mangas = [:]
-        plugins = [:]
-        saveds = [:]
-        records = [:]
-        orders = []
-        filteredOrders = []
+        var next = HomeLibraryState()
         var downloadOrders: [String] = []
 
         if let downloadedMangas = try? await DownloadPlugin.shared.getDownloadedMangas() {
@@ -382,19 +478,20 @@ struct HomeTab: View {
                 if let pluginId = manga.meta {
                     let key = "\(pluginId)+\(manga.id)"
 
-                    mangas[key] = manga
-                    plugins[key] = allPlugins[pluginId] ?? DummyPlugin(pluginId)
+                    next.mangas[key] = manga
+                    next.plugins[key] = allPlugins[pluginId] ?? DummyPlugin(pluginId)
                     downloadOrders.append(key)
                 }
             }
         }
 
-        orders = downloadOrders
-        updateDownloadRecords(for: downloadOrders)
-        filterManga()
+        next.orders = downloadOrders
+        updateDownloadRecords(for: downloadOrders, state: &next)
+        filterManga(&next)
+        library = next
     }
 
-    private func updateDownloadRecords(for keys: [String]) {
+    private func updateDownloadRecords(for keys: [String], state: inout HomeLibraryState) {
         guard !keys.isEmpty else { return }
 
         let ids = keys.compactMap { key -> (mangaId: String, pluginId: String)? in
@@ -405,11 +502,11 @@ struct HomeTab: View {
 
         let fetchedRecords = HistoryService.shared.get(ids: ids)
 
-        if keys == orders { records = [:] }
+        if keys == state.orders { state.records = [:] }
 
         for record in fetchedRecords {
             let key = "\(record.pluginId)+\(record.mangaId)"
-            records[key] = record
+            state.records[key] = record
         }
     }
 

@@ -22,10 +22,10 @@ struct DebugIsOnline: View {
                         LabeledContent {
                             Text(String(describing: isOnline))
                         } label: {
-                            Text("isOnline")
+                            Text(verbatim: "isOnline")
                         }
                     } header: {
-                        Text("isOnline")
+                        Text(verbatim: "isOnline")
                     }
                 }
             } else {
@@ -37,6 +37,6 @@ struct DebugIsOnline: View {
             isOnline = try! await plugin.isOnline()
             Logger.jsPlugin.debug("isOnline: \(isOnline as Any)")
         }
-        .navigationTitle("isOnline")
+        .navigationTitle(Text(verbatim: "isOnline"))
     }
 }

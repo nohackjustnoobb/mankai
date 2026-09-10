@@ -5,12 +5,20 @@
 //  Created by Travis XU on 17/7/2025.
 //
 
+import Combine
 import Foundation
 import GRDB
 
 final class HistoryService: ObservableObject {
+    enum Change { case upserted([RecordModel]) }
+
     /// The shared singleton instance of HistoryService.
     static let shared = HistoryService()
+
+    private let changeSubject = PassthroughSubject<Change, Never>()
+
+    /// Publishes the history records affected by a successful database change.
+    var changes: AnyPublisher<Change, Never> { changeSubject.eraseToAnyPublisher() }
 
     private init() { Logger.historyService.debug("Initializing HistoryService") }
 
@@ -59,7 +67,7 @@ final class HistoryService: ObservableObject {
     /// - Returns: `true` if successful, throws an error if an error occurred.
     func add(record: RecordModel, manga: MangaModel? = nil) async throws -> Bool {
         Logger.historyService.debug("Adding history record for mangaId: \(record.mangaId)")
-        let result = try await update(record: record, manga: manga)
+        let result = try await update(record: record, manga: manga, publishesChange: false)
 
         do {
             try await DbService.shared.appDb?
@@ -84,6 +92,8 @@ final class HistoryService: ObservableObject {
             throw error
         }
 
+        await publish(.upserted([record]))
+
         return result
     }
 
@@ -93,12 +103,20 @@ final class HistoryService: ObservableObject {
     ///   - manga: The optional `MangaModel` to update.
     /// - Returns: `true` if successful, throws an error if an error occurred.
     func update(record: RecordModel, manga: MangaModel? = nil) async throws -> Bool {
+        try await update(record: record, manga: manga, publishesChange: true)
+    }
+
+    private func update(record: RecordModel, manga: MangaModel?, publishesChange: Bool) async throws
+        -> Bool
+    {
         Logger.historyService.debug("Updating history record for mangaId: \(record.mangaId)")
         var result: Bool?
         do {
             result = try await DbService.shared.appDb?
                 .write { db in
-                    if let manga = manga { try? manga.update(db) }
+                    if let manga = manga {
+                        _ = try? MangaSnapshotService.shared.update(manga, in: db)
+                    }
                     try record.upsert(db)
 
                     return true
@@ -113,7 +131,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        await MainActor.run { self.objectWillChange.send() }
+        if publishesChange { await publish(.upserted([record])) }
 
         return result
     }
@@ -129,7 +147,11 @@ final class HistoryService: ObservableObject {
         do {
             result = try await DbService.shared.appDb?
                 .write { db in
-                    if let mangas = mangas { for manga in mangas { try? manga.update(db) } }
+                    if let mangas = mangas {
+                        for manga in mangas {
+                            _ = try? MangaSnapshotService.shared.update(manga, in: db)
+                        }
+                    }
 
                     for record in records { try record.upsert(db) }
 
@@ -145,7 +167,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        await MainActor.run { self.objectWillChange.send() }
+        await publish(.upserted(records))
 
         return result
     }
@@ -200,6 +222,13 @@ final class HistoryService: ObservableObject {
         } catch {
             Logger.historyService.error("Failed to get history records since date", error: error)
             return []
+        }
+    }
+
+    private func publish(_ change: Change) async {
+        await MainActor.run {
+            self.changeSubject.send(change)
+            self.objectWillChange.send()
         }
     }
 

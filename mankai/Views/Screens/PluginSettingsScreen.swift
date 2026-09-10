@@ -40,8 +40,7 @@ struct PluginSettingsScreen: View {
                             ForEach(plugin.tags, id: \.self) { tag in Text(tag).smallTagStyle() }
 
                             if let version = plugin.version {
-                                Text(String(format: String(localized: "versionFormat"), version))
-                                    .smallTagStyle()
+                                Text(verbatim: "v\(version)").smallTagStyle()
                             }
 
                             if plugin is Editable,

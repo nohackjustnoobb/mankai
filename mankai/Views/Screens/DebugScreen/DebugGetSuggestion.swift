@@ -31,6 +31,6 @@ struct DebugGetSuggestion: View {
             suggestions = try! await plugin.getSuggestions("mankai")
             Logger.jsPlugin.debug("suggestions: \(suggestions as Any)")
         }
-        .navigationTitle("getSuggestion")
+        .navigationTitle(Text(verbatim: "getSuggestion"))
     }
 }

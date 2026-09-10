@@ -13,6 +13,7 @@ enum LogCategory: String {
     // Services
     case dbService = "DbService"
     case historyService = "HistoryService"
+    case mangaSnapshotService = "MangaSnapshotService"
     case savedService = "SavedService"
     case updateService = "UpdateService"
     case pluginService = "PluginService"
@@ -174,6 +175,7 @@ extension Logger {
     // Services
     static let dbService = Logger(category: .dbService)
     static let historyService = Logger(category: .historyService)
+    static let mangaSnapshotService = Logger(category: .mangaSnapshotService)
     static let savedService = Logger(category: .savedService)
     static let updateService = Logger(category: .updateService)
     static let pluginService = Logger(category: .pluginService)

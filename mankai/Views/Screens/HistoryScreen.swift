@@ -5,7 +5,6 @@
 //  Created by Travis XU on 12/7/2025.
 //
 
-import GRDB
 import SwiftUI
 
 struct HistoryScreen: View {
@@ -118,7 +117,7 @@ struct HistoryItemView: View {
                                             record.chapterId))
                                 }
 
-                                Text("•")
+                                Text(verbatim: "•")
                                 Text(
                                     String(
                                         format: String(localized: "historyPageFormat"),
@@ -141,14 +140,7 @@ struct HistoryItemView: View {
             PluginService.shared.getPlugin(record.pluginId)
             ?? BrowseService.shared.getPlugin(record.pluginId)
 
-        // Try to get manga from DbService
-        if let mangaModel = getMangaModel(mangaId: record.mangaId, pluginId: record.pluginId),
-            let infoData = mangaModel.info.data(using: .utf8)
-        {
-            do { manga = try JSONDecoder().decode(Manga.self, from: infoData) } catch {
-                Logger.ui.error("Failed to decode manga data", error: error)
-            }
-        }
+        manga = MangaSnapshotService.shared.get(mangaId: record.mangaId, pluginId: record.pluginId)
 
         // If not found locally, try fetching from plugin
         if manga == nil, let plugin = plugin,
@@ -170,15 +162,5 @@ struct HistoryItemView: View {
         }
 
         if manga == nil { Logger.ui.warning("Failed to load manga for record: \(record)") }
-    }
-
-    private func getMangaModel(mangaId: String, pluginId: String) -> MangaModel? {
-        return try? DbService.shared.appDb?
-            .read { db in
-                try MangaModel.filter(
-                    Column("mangaId") == mangaId && Column("pluginId") == pluginId
-                )
-                .fetchOne(db)
-            }
     }
 }

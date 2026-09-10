@@ -54,7 +54,7 @@ struct DebugGetDetailedManga: View {
                     Section("methods") {
                         NavigationLink(
                             destination: DebugGetMangaUpdates(manga: detailedManga, plugin: plugin)
-                        ) { Text("getMangaUpdates") }
+                        ) { Text(verbatim: "getMangaUpdates") }
                     }
 
                     Section("detailedManga") {
@@ -126,6 +126,6 @@ struct DebugGetDetailedManga: View {
             detailedManga = try! await plugin.getDetailedManga(mangaId)
             Logger.jsPlugin.debug("detailedManga: \(detailedManga as Any)")
         }
-        .navigationTitle("getDetailedManga")
+        .navigationTitle(Text(verbatim: "getDetailedManga"))
     }
 }

@@ -66,6 +66,6 @@ struct DebugGetImage: View {
             imageData = try! await plugin.getImage(url)
             Logger.jsPlugin.debug("imageData count: \(imageData?.count ?? 0)")
         }
-        .navigationTitle("getImage")
+        .navigationTitle(Text(verbatim: "getImage"))
     }
 }

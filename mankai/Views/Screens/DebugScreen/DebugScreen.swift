@@ -31,8 +31,10 @@ struct DebugScreen: View {
                     LabeledContent("repository") {
                         Text(plugin.repository ?? String(localized: "nil"))
                     }
-                    LabeledContent("updatesUrl") {
+                    LabeledContent {
                         Text(plugin.updatesUrl ?? String(localized: "nil"))
+                    } label: {
+                        Text(verbatim: "updatesUrl")
                     }
                 }
 
@@ -88,25 +90,29 @@ struct DebugScreen: View {
                 }
 
                 Section("methods") {
-                    NavigationLink(destination: DebugIsOnline(plugin: plugin)) { Text("isOnline") }
+                    NavigationLink(destination: DebugIsOnline(plugin: plugin)) {
+                        Text(verbatim: "isOnline")
+                    }
 
                     NavigationLink(destination: DebugGetSuggestion(plugin: plugin)) {
-                        Text("getSuggestion")
+                        Text(verbatim: "getSuggestion")
                     }
 
                     NavigationLink(destination: DebugSearch(plugin: plugin)) { Text("search") }
 
-                    NavigationLink(destination: DebugGetList(plugin: plugin)) { Text("getList") }
+                    NavigationLink(destination: DebugGetList(plugin: plugin)) {
+                        Text(verbatim: "getList")
+                    }
 
-                    Text("getMangas")
+                    Text(verbatim: "getMangas")
 
-                    Text("getMangaUpdates")
+                    Text(verbatim: "getMangaUpdates")
 
-                    Text("getDetailedManga")
+                    Text(verbatim: "getDetailedManga")
 
-                    Text("getChapter")
+                    Text(verbatim: "getChapter")
 
-                    Text("getImage")
+                    Text(verbatim: "getImage")
                 }
 
             } else {

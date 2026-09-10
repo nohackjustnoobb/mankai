@@ -27,22 +27,35 @@ struct GeneralSettingsScreen: View {
             Section { Toggle("checkClipboard", isOn: $checkClipboard) }
 
             Section("libraryUpdates") {
-                LabeledContent("lastUpdateTime") {
-                    if let lastUpdateTime = updateService.lastUpdateTime {
-                        Text(lastUpdateTime, style: .relative).foregroundColor(.secondary)
-                    } else {
-                        Text("never").foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    LabeledContent("lastUpdateTime") {
+                        if let progress = updateService.progress {
+                            if progress.total > 0 {
+                                Text(verbatim: "\(progress.completed)/\(progress.total)")
+                                    .monospacedDigit().foregroundColor(.secondary)
+                            } else {
+                                ProgressView()
+                            }
+                        } else if let lastUpdateTime = updateService.lastUpdateTime {
+                            Text(lastUpdateTime, style: .relative).foregroundColor(.secondary)
+                        } else {
+                            Text("never").foregroundColor(.secondary)
+                        }
+                    }
+
+                    if let progress = updateService.progress, progress.total > 0 {
+                        ProgressView(value: progress.fractionCompleted).progressViewStyle(.linear)
                     }
                 }
             }
 
             Section {
                 Picker("inMemoryCacheItemCount", selection: $inMemoryCacheItemCount) {
-                    Text("25").tag(25)
-                    Text("50").tag(50)
-                    Text("100").tag(100)
-                    Text("250").tag(250)
-                    Text("500").tag(500)
+                    Text(verbatim: "25").tag(25)
+                    Text(verbatim: "50").tag(50)
+                    Text(verbatim: "100").tag(100)
+                    Text(verbatim: "250").tag(250)
+                    Text(verbatim: "500").tag(500)
                 }
 
                 Picker(
@@ -118,7 +131,7 @@ struct GeneralSettingsScreen: View {
                 NavigationLink {
                     AppLicenseScreen()
                 } label: {
-                    LabeledContent("license") { Text("GNU GPLv3") }
+                    LabeledContent("license") { Text(verbatim: "GNU GPLv3") }
                 }
 
                 NavigationLink("thirdPartyLicenses") { ThirdPartyLicensesScreen() }

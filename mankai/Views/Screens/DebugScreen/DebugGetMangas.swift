@@ -28,6 +28,6 @@ struct DebugGetMangas: View {
             mangas = try! await plugin.getMangas(mangaIds)
             Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
-        .navigationTitle("getMangas")
+        .navigationTitle(Text(verbatim: "getMangas"))
     }
 }

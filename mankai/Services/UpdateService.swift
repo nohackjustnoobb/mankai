@@ -6,9 +6,23 @@
 //
 
 import Foundation
-import GRDB
 
 final class UpdateService: ObservableObject {
+    struct UpdateProgress: Equatable {
+        var completed: Int
+        let total: Int
+
+        var fractionCompleted: Double {
+            guard total > 0 else { return 0 }
+            return Double(completed) / Double(total)
+        }
+    }
+
+    private struct Persistence {
+        let saved: SavedModel
+        let manga: MangaModel?
+    }
+
     /// The shared singleton instance of UpdateService.
     static let shared = UpdateService()
 
@@ -20,23 +34,42 @@ final class UpdateService: ObservableObject {
         return defaults.object(forKey: "UpdateService.lastUpdateTime") as? Date
     }
 
-    /// A flag indicating if an update process is currently in progress.
-    @Published var isUpdating = false
+    /// The current update progress, or `nil` when no update is running.
+    @Published private(set) var progress: UpdateProgress?
+
+    private var updateTask: Task<Void, Error>?
 
     /// Triggers the update process to check for new manga chapters.
     /// - Throws: An error if the update process fails.
     func update() async throws {
-        if isUpdating {
+        let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
+            if let current = updateTask { return (current, true) }
+
+            progress = UpdateProgress(completed: 0, total: 0)
+            let newTask = Task {
+                defer {
+                    Task { @MainActor in
+                        self.progress = nil
+                        self.updateTask = nil
+                    }
+                }
+                try await self.internalUpdate()
+            }
+            updateTask = newTask
+            return (newTask, false)
+        }
+
+        if wasAlreadyRunning {
             Logger.updateService.debug("Update already in progress, skipping")
             return
         }
 
-        await MainActor.run { isUpdating = true }
-        defer { Task { @MainActor in isUpdating = false } }
-
         Logger.updateService.debug("Starting update process")
 
-        do { try await internalUpdate() } catch {
+        do { try await task.value } catch is CancellationError {
+            Logger.updateService.debug("Update cancelled")
+            throw CancellationError()
+        } catch {
             Logger.updateService.error("Update failed", error: error)
             if case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToUpdateLibraryFormat")
@@ -72,6 +105,7 @@ final class UpdateService: ObservableObject {
 
         // Get all saved mangas
         let saveds = SavedService.shared.getAll()
+        await MainActor.run { progress = UpdateProgress(completed: 0, total: saveds.count) }
         Logger.updateService.debug("Found \(saveds.count) saved mangas to check for updates")
 
         // Group saveds by pluginId
@@ -82,8 +116,8 @@ final class UpdateService: ObservableObject {
         }
 
         // Process each plugin's saved mangas
-        var updatedSaveds: [SavedModel] = []
-        var updatedMangaModels: [MangaModel] = []
+        var updatedSavedCount = 0
+        var updatedMangaCount = 0
 
         for (pluginId, pluginSaveds) in savedsByPlugin {
             Logger.updateService.debug(
@@ -91,31 +125,20 @@ final class UpdateService: ObservableObject {
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
+                await advanceProgress(by: pluginSaveds.count)
                 continue  // Skip if plugin doesn't exist
             }
 
             guard plugin.canUpdate else {
                 Logger.updateService.debug("Skipping plugin without update support: \(pluginId)")
+                await advanceProgress(by: pluginSaveds.count)
                 continue
             }
 
             let mangaIds = pluginSaveds.map { $0.mangaId }
 
-            let cachedMangaModels =
-                try await DbService.shared.appDb?
-                .read { db in
-                    try MangaModel.filter(
-                        mangaIds.contains(Column("mangaId")) && Column("pluginId") == pluginId
-                    )
-                    .fetchAll(db)
-                } ?? []
-            var cachedMangas: [String: Manga] = [:]
-            for mangaModel in cachedMangaModels {
-                guard let data = mangaModel.info.data(using: .utf8),
-                    let manga = try? JSONDecoder().decode(Manga.self, from: data)
-                else { continue }
-                cachedMangas[mangaModel.mangaId] = manga
-            }
+            let cachedMangas = MangaSnapshotService.shared.get(
+                mangaIds: mangaIds, pluginId: pluginId)
 
             var hydrationIds: [String] = []
             var updateRequests: [MangaUpdateRequest] = []
@@ -133,93 +156,118 @@ final class UpdateService: ObservableObject {
                 }
             }
 
-            var resolvedMangas: [String: Manga] = [:]
             var unresolvedHydrationIds = Set(hydrationIds)
             var pluginHadError = false
+            var completedMangaIds: Set<String> = []
             let savedsByMangaId = Dictionary(
                 uniqueKeysWithValues: pluginSaveds.map { ($0.mangaId, $0) })
 
             // Let the update result provide the manga snapshot whenever possible.
             if !updateRequests.isEmpty {
-                do {
-                    let requestIds = Set(updateRequests.map(\.id))
-                    let results = try await plugin.getMangaUpdates(updateRequests)
-                    for result in results {
-                        guard requestIds.contains(result.id) else {
-                            Logger.updateService.warning(
-                                "Ignoring manga update result for unexpected ID \(result.id) from plugin \(pluginId)"
-                            )
-                            continue
-                        }
+                var results: [Manga] = []
+                do { results = try await plugin.getMangaUpdates(updateRequests) } catch {
+                    pluginHadError = true
+                    Logger.updateService.error(
+                        "Failed to check manga updates for plugin \(pluginId)", error: error)
+                }
 
-                        guard result.updates != nil else {
-                            Logger.updateService.warning(
-                                "Ignoring manga update result without an updates flag for \(result.id) from plugin \(pluginId)"
-                            )
-                            continue
-                        }
+                let requestIds = Set(updateRequests.map(\.id))
+                let completedBeforeRequest = completedMangaIds.count
+                var persistenceBatch: [Persistence] = []
+                for result in results {
+                    guard requestIds.contains(result.id) else {
+                        Logger.updateService.warning(
+                            "Ignoring manga update result for unexpected ID \(result.id) from plugin \(pluginId)"
+                        )
+                        continue
+                    }
 
-                        var manga = cachedMangas[result.id] ?? result
-                        if let title = result.title { manga.title = title }
-                        if let cover = result.cover { manga.cover = cover }
-                        if let status = result.status { manga.status = status }
-                        if let latestChapter = result.latestChapter {
-                            manga.latestChapter = latestChapter
-                        }
-                        if let meta = result.meta { manga.meta = meta }
-                        manga.updates = nil
-                        resolvedMangas[result.id] = manga
-                        unresolvedHydrationIds.remove(result.id)
+                    guard result.updates != nil else {
+                        Logger.updateService.warning(
+                            "Ignoring manga update result without an updates flag for \(result.id) from plugin \(pluginId)"
+                        )
+                        completedMangaIds.insert(result.id)
+                        continue
+                    }
 
-                        guard result.updates == true, var saved = savedsByMangaId[result.id] else {
-                            continue
-                        }
+                    var manga = cachedMangas[result.id] ?? result
+                    if let title = result.title { manga.title = title }
+                    if let cover = result.cover { manga.cover = cover }
+                    if let status = result.status { manga.status = status }
+                    if let latestChapter = result.latestChapter {
+                        manga.latestChapter = latestChapter
+                    }
+                    if let meta = result.meta { manga.meta = meta }
+                    manga.updates = nil
+                    unresolvedHydrationIds.remove(result.id)
 
+                    guard var saved = savedsByMangaId[result.id] else { continue }
+                    let hasUpdate = result.updates == true
+                    if hasUpdate {
                         if let latestChapter = result.latestChapter {
                             saved.latestChapter = latestChapter.encode()
                         }
                         saved.datetime = Date()
                         saved.updates = true
-                        updatedSaveds.append(saved)
                         Logger.updateService.info(
                             "Plugin reported an update for manga: \(result.id) (Plugin: \(pluginId))"
                         )
                     }
-                } catch {
-                    pluginHadError = true
-                    Logger.updateService.error(
-                        "Failed to check manga updates for plugin \(pluginId)", error: error)
+
+                    persistenceBatch.append(
+                        makePersistence(
+                            manga: manga, mangaId: result.id, saved: saved, pluginId: pluginId))
+                    if hasUpdate { updatedSavedCount += 1 }
+                    completedMangaIds.insert(result.id)
                 }
+
+                updatedMangaCount += try await persist(persistenceBatch)
+                await advanceProgress(by: completedMangaIds.count - completedBeforeRequest)
             }
 
             // Hydrate only manga that the update response did not resolve.
             if !unresolvedHydrationIds.isEmpty, plugin.supports(.batchMangas) {
-                do {
-                    let mangas = try await plugin.getMangas(Array(unresolvedHydrationIds))
-                    for manga in mangas where unresolvedHydrationIds.contains(manga.id) {
-                        resolvedMangas[manga.id] = manga
-                        unresolvedHydrationIds.remove(manga.id)
-                    }
-                } catch {
+                var mangas: [Manga] = []
+                do { mangas = try await plugin.getMangas(Array(unresolvedHydrationIds)) } catch {
                     pluginHadError = true
                     Logger.updateService.error(
                         "Failed to hydrate manga snapshots in a batch for plugin \(pluginId)",
                         error: error)
                 }
+
+                let completedBeforeRequest = completedMangaIds.count
+                var persistenceBatch: [Persistence] = []
+                for manga in mangas where unresolvedHydrationIds.contains(manga.id) {
+                    guard let saved = savedsByMangaId[manga.id] else { continue }
+                    persistenceBatch.append(
+                        makePersistence(
+                            manga: manga, mangaId: manga.id, saved: saved, pluginId: pluginId))
+                    unresolvedHydrationIds.remove(manga.id)
+                    completedMangaIds.insert(manga.id)
+                }
+
+                updatedMangaCount += try await persist(persistenceBatch)
+                await advanceProgress(by: completedMangaIds.count - completedBeforeRequest)
             }
 
             if !unresolvedHydrationIds.isEmpty, plugin.supports(.mangaDetails) {
                 for mangaId in hydrationIds where unresolvedHydrationIds.contains(mangaId) {
-                    do {
-                        let manga = try await plugin.getDetailedManga(mangaId).toManga()
-                        resolvedMangas[mangaId] = manga
-                        unresolvedHydrationIds.remove(mangaId)
-                    } catch {
+                    let manga: Manga
+                    do { manga = try await plugin.getDetailedManga(mangaId).toManga() } catch {
                         pluginHadError = true
                         Logger.updateService.error(
                             "Failed to hydrate manga snapshot \(mangaId) for plugin \(pluginId)",
                             error: error)
+                        if completedMangaIds.insert(mangaId).inserted { await advanceProgress() }
+                        continue
                     }
+
+                    guard let saved = savedsByMangaId[mangaId] else { continue }
+                    let persistence = makePersistence(
+                        manga: manga, mangaId: mangaId, saved: saved, pluginId: pluginId)
+                    updatedMangaCount += try await persist([persistence])
+                    unresolvedHydrationIds.remove(mangaId)
+                    if completedMangaIds.insert(mangaId).inserted { await advanceProgress() }
                 }
             }
 
@@ -229,14 +277,7 @@ final class UpdateService: ObservableObject {
                 )
             }
 
-            for (mangaId, manga) in resolvedMangas {
-                if let data = try? JSONEncoder().encode(manga),
-                    let info = String(data: data, encoding: .utf8)
-                {
-                    updatedMangaModels.append(
-                        MangaModel(mangaId: mangaId, pluginId: pluginId, info: info))
-                }
-            }
+            await advanceProgress(by: pluginSaveds.count - completedMangaIds.count)
 
             if pluginHadError, case .online = Reach().connectionStatus() {
                 let message = String(localized: "failedToCheckUpdatesForPluginFormat")
@@ -244,15 +285,11 @@ final class UpdateService: ObservableObject {
             }
         }
 
-        // Batch update all changed saveds and mangas
-        _ = try await SavedService.shared.batchUpdate(
-            saveds: updatedSaveds, mangas: updatedMangaModels)
-        if !updatedSaveds.isEmpty || !updatedMangaModels.isEmpty {
+        if updatedSavedCount > 0 || updatedMangaCount > 0 {
             Logger.updateService.info(
-                "Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas"
-            )
+                "Live updated \(updatedSavedCount) saveds and \(updatedMangaCount) mangas")
 
-            if !updatedSaveds.isEmpty {
+            if updatedSavedCount > 0 {
                 do { try await SyncService.shared.sync() } catch {
                     Logger.updateService.error("Sync failed after update", error: error)
                 }
@@ -266,5 +303,39 @@ final class UpdateService: ObservableObject {
 
         await MainActor.run { self.objectWillChange.send() }
         Logger.updateService.debug("Update process completed")
+    }
+
+    private func makePersistence(manga: Manga, mangaId: String, saved: SavedModel, pluginId: String)
+        -> Persistence
+    {
+        var mangaModel: MangaModel?
+        do {
+            mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                for: manga, pluginId: pluginId)
+        } catch {
+            Logger.updateService.warning(
+                "Failed to encode manga snapshot \(mangaId) from plugin \(pluginId): \(error.localizedDescription)"
+            )
+        }
+
+        return Persistence(saved: saved, manga: mangaModel)
+    }
+
+    /// Persists all results produced by one plugin request in one transaction and UI event.
+    private func persist(_ batch: [Persistence]) async throws -> Int {
+        guard !batch.isEmpty else { return 0 }
+
+        let mangas = batch.compactMap(\.manga)
+        _ = try await SavedService.shared.batchUpdate(saveds: batch.map(\.saved), mangas: mangas)
+        return mangas.count
+    }
+
+    private func advanceProgress(by count: Int = 1) async {
+        guard count > 0 else { return }
+        await MainActor.run {
+            guard var progress = self.progress else { return }
+            progress.completed = min(progress.completed + count, progress.total)
+            self.progress = progress
+        }
     }
 }

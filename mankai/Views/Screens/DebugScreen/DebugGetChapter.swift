@@ -36,6 +36,6 @@ struct DebugGetChapter: View {
             urls = try! await plugin.getChapter(manga: manga, chapter: chapter)
             Logger.jsPlugin.debug("urls: \(urls ?? [])")
         }
-        .navigationTitle("getChapter")
+        .navigationTitle(Text(verbatim: "getChapter"))
     }
 }

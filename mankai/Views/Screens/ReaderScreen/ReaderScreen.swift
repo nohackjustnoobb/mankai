@@ -770,12 +770,7 @@ struct ReaderScreen: View {
                 Button {
                     isShowingChapters = true
                 } label: {
-                    Text(
-                        String(
-                            format: String(localized: "readerPageProgressFormat"), displayedPage,
-                            pageCount)
-                    )
-                    .frame(minWidth: 72)
+                    Text(verbatim: "\(displayedPage) / \(pageCount)").frame(minWidth: 72)
                 }
                 .buttonStyle(.plain).foregroundStyle(Color.accentColor)
 
@@ -1140,14 +1135,13 @@ struct ReaderScreen: View {
         let position = ReaderSavedPosition(chapterID: chapter.id, page: page)
         guard lastSavedPosition != position else { return }
 
-        let mangaInfo =
-            (try? JSONEncoder().encode(manga)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        let mangaModel = MangaModel(mangaId: manga.id, pluginId: plugin.id, info: mangaInfo)
         let record = RecordModel(
             mangaId: manga.id, pluginId: plugin.id, datetime: Date(), chapterId: chapter.id,
             chapterTitle: chapter.title, page: page, shouldSync: plugin.shouldSync)
 
         do {
+            let mangaModel = try MangaSnapshotService.shared.makeSnapshot(
+                for: manga.toManga(), pluginId: plugin.id)
             _ = try await HistoryService.shared.add(record: record, manga: mangaModel)
             lastSavedPosition = position
         } catch { Logger.ui.error("Failed to save reader position", error: error) }

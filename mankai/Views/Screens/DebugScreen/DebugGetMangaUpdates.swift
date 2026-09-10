@@ -42,6 +42,6 @@ struct DebugGetMangaUpdates: View {
             ])
             Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
-        .navigationTitle("getMangaUpdates")
+        .navigationTitle(Text(verbatim: "getMangaUpdates"))
     }
 }

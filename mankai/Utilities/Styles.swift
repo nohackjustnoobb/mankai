@@ -31,7 +31,23 @@ struct NavigationTitleSubtitleModifier<LegacyContent: View>: ViewModifier {
     }
 }
 
+private struct NavigationSubtitleIfAvailableModifier: ViewModifier {
+    let subtitle: Text?
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 26.0, *), let subtitle {
+            content.navigationSubtitle(subtitle)
+        } else {
+            content
+        }
+    }
+}
+
 extension View {
+    func navigationSubtitleIfAvailable(_ subtitle: Text?) -> some View {
+        modifier(NavigationSubtitleIfAvailableModifier(subtitle: subtitle))
+    }
+
     func navigationTitleWithSubtitle(title: Text, subtitle: Text?) -> some View {
         modifier(
             NavigationTitleSubtitleModifier(title: title, subtitle: subtitle) {

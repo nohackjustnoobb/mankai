@@ -27,6 +27,6 @@ struct DebugGetList: View {
             mangas = try! await plugin.getList(page: 1, genre: .all, status: .any)
             Logger.jsPlugin.debug("mangas: \(mangas ?? [])")
         }
-        .navigationTitle("getList")
+        .navigationTitle(Text(verbatim: "getList"))
     }
 }
