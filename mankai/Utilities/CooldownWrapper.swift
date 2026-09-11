@@ -8,22 +8,87 @@
 import Foundation
 
 private actor CooldownScheduler {
+    private struct Waiter {
+        let id: UUID
+        let continuation: CheckedContinuation<Void, Error>
+    }
+
     private let clock = ContinuousClock()
     private var nextExecutionTime: ContinuousClock.Instant?
+    private var waiters: [Waiter] = []
+    private var pendingWaiterId: UUID?
+    private var wakeTask: Task<Void, Never>?
 
     func wait(milliseconds: Int) async throws -> Bool {
+        try Task.checkCancellation()
         guard milliseconds > 0 else { return false }
 
         let now = clock.now
-        let executionTime = max(now, nextExecutionTime ?? now)
-        nextExecutionTime = executionTime.advanced(by: .milliseconds(milliseconds))
-
-        if executionTime > now {
-            try await clock.sleep(until: executionTime)
-            return true
+        if pendingWaiterId == nil, waiters.isEmpty, nextExecutionTime.map({ $0 <= now }) ?? true {
+            nextExecutionTime = now.advanced(by: .milliseconds(milliseconds))
+            return false
         }
 
-        return false
+        let id = UUID()
+
+        do {
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    waiters.append(Waiter(id: id, continuation: continuation))
+                    scheduleNextWaiter()
+                }
+            } onCancel: {
+                Task { await self.cancelWaiter(id: id) }
+            }
+
+            try Task.checkCancellation()
+            confirmWaiter(id: id, milliseconds: milliseconds)
+            return true
+        } catch {
+            cancelWaiter(id: id)
+            throw error
+        }
+    }
+
+    private func scheduleNextWaiter(clearingWakeTask: Bool = false) {
+        if clearingWakeTask { wakeTask = nil }
+
+        guard pendingWaiterId == nil, !waiters.isEmpty else { return }
+
+        let now = clock.now
+        if let nextExecutionTime, nextExecutionTime > now {
+            guard wakeTask == nil else { return }
+
+            let clock = clock
+            wakeTask = Task { [weak self] in
+                do { try await clock.sleep(until: nextExecutionTime) } catch { return }
+                await self?.scheduleNextWaiter(clearingWakeTask: true)
+            }
+            return
+        }
+
+        let waiter = waiters.removeFirst()
+        pendingWaiterId = waiter.id
+        waiter.continuation.resume()
+    }
+
+    private func confirmWaiter(id: UUID, milliseconds: Int) {
+        guard pendingWaiterId == id else { return }
+
+        pendingWaiterId = nil
+        nextExecutionTime = clock.now.advanced(by: .milliseconds(milliseconds))
+        scheduleNextWaiter()
+    }
+
+    private func cancelWaiter(id: UUID) {
+        if let index = waiters.firstIndex(where: { $0.id == id }) {
+            waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+            return
+        }
+
+        guard pendingWaiterId == id else { return }
+        pendingWaiterId = nil
+        scheduleNextWaiter()
     }
 }
 

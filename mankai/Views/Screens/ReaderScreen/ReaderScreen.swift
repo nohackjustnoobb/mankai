@@ -990,6 +990,7 @@ struct ReaderScreen: View {
             } catch { Logger.ui.warning("Failed to load chapter from download") }
         }
 
+        try Task.checkCancellation()
         guard plugin.supports(.chapter) else { throw ReaderSourceCapabilityError() }
         return try await plugin.getChapter(manga: manga, chapter: chapter)
     }
@@ -997,11 +998,12 @@ struct ReaderScreen: View {
     private func loadImage(url: String) async -> ReaderImageLoadResult {
         for retry in 0...3 {
             do {
-                try Task.checkCancellation()
                 let data: Data
-                if let downloaded = try? await DownloadPlugin.shared.isImageDownloaded(url),
-                    downloaded
-                {
+                let isDownloaded =
+                    (try? await DownloadPlugin.shared.isImageDownloaded(url)) ?? false
+                try Task.checkCancellation()
+
+                if isDownloaded {
                     data = try await DownloadPlugin.shared.getImage(url)
                 } else {
                     guard plugin.supports(.image) else { throw ReaderSourceCapabilityError() }

@@ -132,10 +132,10 @@ struct HistoryItemView: View {
                 }
             }
         }
-        .frame(height: 100).onAppear { loadMangaData() }
+        .frame(height: 100).task { await loadMangaData() }
     }
 
-    private func loadMangaData() {
+    private func loadMangaData() async {
         plugin =
             PluginService.shared.getPlugin(record.pluginId)
             ?? BrowseService.shared.getPlugin(record.pluginId)
@@ -146,20 +146,22 @@ struct HistoryItemView: View {
         if manga == nil, let plugin = plugin,
             plugin.supports(.batchMangas) || plugin.supports(.mangaDetails)
         {
-            Task {
-                do {
-                    if plugin.supports(.batchMangas) {
-                        manga = try await plugin.getManga(id: record.mangaId)
-                    } else {
-                        manga = try await plugin.getDetailedManga(record.mangaId).toManga()
-                    }
-                } catch { Logger.ui.error("Failed to fetch manga from plugin", error: error) }
+            do {
+                let fetchedManga: Manga
+                if plugin.supports(.batchMangas) {
+                    fetchedManga = try await plugin.getManga(id: record.mangaId)
+                } else {
+                    fetchedManga = try await plugin.getDetailedManga(record.mangaId).toManga()
+                }
 
-                isLoading = false
+                try Task.checkCancellation()
+                manga = fetchedManga
+            } catch is CancellationError { return } catch {
+                Logger.ui.error("Failed to fetch manga from plugin", error: error)
             }
-        } else {
-            isLoading = false
         }
+
+        isLoading = false
 
         if manga == nil { Logger.ui.warning("Failed to load manga for record: \(record)") }
     }

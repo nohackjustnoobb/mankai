@@ -10,48 +10,33 @@ import Foundation
 import SwiftUI
 
 /// Coordinates parser downloads that target the same local cache file.
-actor ParserFileDownloadRegistry {
+final class ParserFileDownloadRegistry: @unchecked Sendable {
     static let shared = ParserFileDownloadRegistry()
 
-    private var downloadTasks: [String: Task<URL, Error>] = [:]
+    private let downloads = AsyncLoadRegistry<URL>()
 
     func file(at localURL: URL, download: @escaping @Sendable (URL) async throws -> Void)
         async throws -> URL
     {
-        let fileManager = FileManager.default
         let key = localURL.path(percentEncoded: false)
+        return try await downloads.value(for: key) {
+            let fileManager = FileManager.default
+            if fileManager.fileExists(atPath: key) {
+                Logger.browseService.debug("Parser cache hit: \(key)")
+                return localURL
+            }
 
-        if fileManager.fileExists(atPath: key) {
-            Logger.browseService.debug("Parser cache hit: \(key)")
-            return localURL
-        }
+            try fileManager.createDirectory(
+                at: localURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
-        if let existingTask = downloadTasks[key] {
-            Logger.browseService.debug("Waiting for parser download: \(key)")
-            return try await existingTask.value
-        }
-
-        try fileManager.createDirectory(
-            at: localURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-
-        let task = Task<URL, Error> {
             do {
                 try await download(localURL)
+                try Task.checkCancellation()
                 return localURL
             } catch {
                 try? fileManager.removeItem(at: localURL)
                 throw error
             }
-        }
-        downloadTasks[key] = task
-
-        do {
-            let result = try await task.value
-            downloadTasks.removeValue(forKey: key)
-            return result
-        } catch {
-            downloadTasks.removeValue(forKey: key)
-            throw error
         }
     }
 }

@@ -45,7 +45,7 @@ struct MangaCoverView: View {
 
             if let tag = tag, !tag.isEmpty { tagView(tag) }
         }
-        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius)).onAppear { loadImage() }
+        .clipShape(RoundedRectangle(cornerRadius: effectiveCornerRadius)).task { await loadImage() }
     }
 
     @ViewBuilder private func tagView(_ tag: String) -> some View {
@@ -78,20 +78,31 @@ struct MangaCoverView: View {
         return 8
     }
 
-    private func loadImage() {
+    private func loadImage() async {
         guard let coverUrl = coverUrl, let plugin = plugin, image == nil else { return }
 
         isLoading = true
 
-        Task {
-            if plugin.supports(.image), let data = try? await plugin.getImage(coverUrl) {
-                self.image = Self.downsampledThumbnail(data: data)
-            } else if let data = try? await DownloadPlugin.shared.getImage(coverUrl) {
-                self.image = Self.downsampledThumbnail(data: data)
+        do {
+            let data: Data
+            if plugin.supports(.image) {
+                do {
+                    try Task.checkCancellation()
+                    data = try await plugin.getImage(coverUrl)
+                } catch is CancellationError { throw CancellationError() } catch {
+                    data = try await DownloadPlugin.shared.getImage(coverUrl)
+                }
+            } else {
+                data = try await DownloadPlugin.shared.getImage(coverUrl)
             }
 
-            self.isLoading = false
+            let thumbnail = Self.downsampledThumbnail(data: data)
+            image = thumbnail
+        } catch is CancellationError { return } catch {
+            // Keep the existing failed-image state when neither source can load the cover.
         }
+
+        isLoading = false
     }
 
     private static func downsampledThumbnail(data: Data) -> UIImage? {

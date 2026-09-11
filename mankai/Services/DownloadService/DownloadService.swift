@@ -13,7 +13,6 @@ enum DownloadStatus {
     case downloading(progress: Double)
     case completed
     case failed(error: Error)
-    case cancelled
 }
 
 final class DownloadTask: Identifiable, ObservableObject {
@@ -46,6 +45,7 @@ final class DownloadTask: Identifiable, ObservableObject {
     }
 
     func download() async throws {
+        try Task.checkCancellation()
         await MainActor.run { status = .downloading(progress: 0.0) }
 
         // 1. Get Source Plugin
@@ -64,14 +64,18 @@ final class DownloadTask: Identifiable, ObservableObject {
             do {
                 if try await !DownloadPlugin.shared.isImageDownloaded(coverUrl) {
                     let data = try await plugin.getImage(coverUrl)
+                    try Task.checkCancellation()
                     try await DownloadPlugin.shared.saveImage(
                         url: coverUrl, data: data, mangaId: manga.id)
                 }
-            } catch { Logger.downloadService.warning("Failed to download cover: \(error)") }
+            } catch is CancellationError { throw CancellationError() } catch {
+                Logger.downloadService.warning("Failed to download cover: \(error)")
+            }
         }
 
         // 3. Process Chapters
         let detailedManga = try await DownloadPlugin.shared.getDetailedManga(manga.id)
+        try Task.checkCancellation()
 
         var chaptersToDownload: [Chapter] = []
         if let chaptersJson = manga.chapters, let chaptersData = chaptersJson.data(using: .utf8),
@@ -84,7 +88,7 @@ final class DownloadTask: Identifiable, ObservableObject {
         var downloadedChaptersCount = 0.0
 
         for chapter in chaptersToDownload {
-            if case .cancelled = status { return }
+            try Task.checkCancellation()
 
             var chapterUrls: [String] = []
             var isNewChapter = false
@@ -94,6 +98,7 @@ final class DownloadTask: Identifiable, ObservableObject {
                 chapterUrls = try await DownloadPlugin.shared.getChapter(
                     manga: detailedManga, chapter: chapter)
             } catch {
+                try Task.checkCancellation()
                 // Not found, fetch from source
                 chapterUrls = try await plugin.getChapter(manga: detailedManga, chapter: chapter)
                 isNewChapter = true
@@ -111,10 +116,11 @@ final class DownloadTask: Identifiable, ObservableObject {
             let totalPages = Double(chapterUrls.count)
             if totalPages > 0 {
                 for (index, url) in chapterUrls.enumerated() {
-                    if case .cancelled = status { return }
+                    try Task.checkCancellation()
 
                     if try await !DownloadPlugin.shared.isImageDownloaded(url) {
                         let data = try await plugin.getImage(url)
+                        try Task.checkCancellation()
                         try await DownloadPlugin.shared.saveImage(
                             url: url, data: data, mangaId: manga.id)
                     }
@@ -126,6 +132,7 @@ final class DownloadTask: Identifiable, ObservableObject {
             }
 
             // Mark chapter as downloaded
+            try Task.checkCancellation()
             let completedChapterModel = DownloadChapterModel(
                 mangaId: manga.id, chapterId: chapter.id, urls: chapterUrls.joined(separator: "|"),
                 downloaded: true)
@@ -137,17 +144,13 @@ final class DownloadTask: Identifiable, ObservableObject {
         }
 
         // Mark manga as downloaded
+        try Task.checkCancellation()
         var completedManga = manga
         completedManga.downloaded = true
         try await DownloadPlugin.shared.saveManga(completedManga)
 
+        try Task.checkCancellation()
         await MainActor.run { status = .completed }
-    }
-
-    func cancel() async throws {
-        await MainActor.run { status = .cancelled }
-
-        try await delete()
     }
 
     func markFailed(error: Error) async throws {
@@ -172,6 +175,7 @@ final class DownloadService: ObservableObject {
     static let shared = DownloadService()
 
     @Published var tasks: [String: DownloadTask] = [:]
+    private var runningTasks: [String: Task<Void, Never>] = [:]
 
     private init() {
         Logger.downloadService.debug("Initializing DownloadService")
@@ -289,13 +293,17 @@ final class DownloadService: ObservableObject {
     }
 
     func cancelTask(id: String) async throws {
-        if let task = tasks[id] {
-            try await task.cancel()
+        guard let task = tasks[id] else { return }
 
-            await MainActor.run { _ = tasks.removeValue(forKey: id) }
-
-            Logger.downloadService.info("Cancelled task for \(task.manga.title ?? task.manga.id)")
+        if let runningTask = runningTasks[id] {
+            runningTask.cancel()
+            await runningTask.value
         }
+
+        try await task.delete()
+        await MainActor.run { _ = tasks.removeValue(forKey: id) }
+
+        Logger.downloadService.info("Cancelled task for \(task.manga.title ?? task.manga.id)")
     }
 
     func retryTask(id: String) async throws {
@@ -334,9 +342,10 @@ final class DownloadService: ObservableObject {
     }
 
     private func startTask(_ task: DownloadTask) {
-        Task {
+        let runningTask = Task {
             do {
                 try await task.download()
+                try Task.checkCancellation()
 
                 Logger.downloadService.info(
                     "Successfully downloaded task for \(task.manga.title ?? task.manga.id)")
@@ -346,9 +355,7 @@ final class DownloadService: ObservableObject {
 
                 await MainActor.run { _ = tasks.removeValue(forKey: task.id) }
             } catch {
-                if case .cancelled = task.status {
-                    // Already cancelled
-                } else {
+                if !(error is CancellationError) && !Task.isCancelled {
                     Logger.downloadService.error("Task failed: \(error)")
                     try? await task.markFailed(error: error)
 
@@ -360,8 +367,12 @@ final class DownloadService: ObservableObject {
                 }
             }
 
+            await MainActor.run { _ = runningTasks.removeValue(forKey: task.id) }
+
             // Trigger scheduler again to pick up next task
             self.scheduleDownloads()
         }
+
+        runningTasks[task.id] = runningTask
     }
 }

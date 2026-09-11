@@ -9,9 +9,15 @@ import Foundation
 
 /// Coalesces concurrent asynchronous operations for the same key.
 final class AsyncLoadRegistry<Value>: @unchecked Sendable {
-    private struct Entry {
+    private final class Entry {
         let id: UUID
-        let task: Task<Value, Error>
+        var task: Task<Void, Never>?
+        var waiters: [UUID: CheckedContinuation<Value, Error>]
+
+        init(id: UUID, waiterId: UUID, continuation: CheckedContinuation<Value, Error>) {
+            self.id = id
+            waiters = [waiterId: continuation]
+        }
     }
 
     private let lock = NSLock()
@@ -19,28 +25,60 @@ final class AsyncLoadRegistry<Value>: @unchecked Sendable {
 
     func value(for key: String, operation: @escaping () async throws -> Value) async throws -> Value
     {
-        let entry = lock.withLock {
-            if let existing = entries[key] { return existing }
+        try Task.checkCancellation()
+        let waiterId = UUID()
 
-            let created = Entry(id: UUID(), task: Task { try await operation() })
-            entries[key] = created
-            return created
+        let value = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let isCancelled = lock.withLock {
+                    guard !Task.isCancelled else { return true }
+
+                    if let entry = entries[key] {
+                        entry.waiters[waiterId] = continuation
+                    } else {
+                        let entryId = UUID()
+                        let entry = Entry(
+                            id: entryId, waiterId: waiterId, continuation: continuation)
+                        entries[key] = entry
+                        entry.task = Task { [weak self] in
+                            let result: Result<Value, Error>
+                            do { result = .success(try await operation()) } catch {
+                                result = .failure(error)
+                            }
+
+                            self?.complete(result, for: key, entryId: entryId)
+                        }
+                    }
+
+                    return false
+                }
+
+                if isCancelled { continuation.resume(throwing: CancellationError()) }
+            }
+        } onCancel: {
+            cancelWaiter(id: waiterId, for: key)
         }
 
-        do {
-            let result = try await entry.task.value
-            removeEntry(for: key, id: entry.id)
-            return result
-        } catch {
-            removeEntry(for: key, id: entry.id)
-            throw error
-        }
+        try Task.checkCancellation()
+        return value
     }
 
-    private func removeEntry(for key: String, id: UUID) {
-        lock.withLock {
-            guard entries[key]?.id == id else { return }
+    private func complete(_ result: Result<Value, Error>, for key: String, entryId: UUID) {
+        let continuations: [CheckedContinuation<Value, Error>] = lock.withLock {
+            guard let entry = entries[key], entry.id == entryId else { return [] }
             entries.removeValue(forKey: key)
+            return Array(entry.waiters.values)
         }
+
+        for continuation in continuations { continuation.resume(with: result) }
+    }
+
+    private func cancelWaiter(id: UUID, for key: String) {
+        let continuation: CheckedContinuation<Value, Error>? = lock.withLock {
+            guard let entry = entries[key] else { return nil }
+            return entry.waiters.removeValue(forKey: id)
+        }
+
+        continuation?.resume(throwing: CancellationError())
     }
 }

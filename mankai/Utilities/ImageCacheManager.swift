@@ -45,6 +45,7 @@ final class ImageCacheManager: @unchecked Sendable {
             }
 
             Logger.cacheWrapper.debug("Disk cache miss for image key: \(key)")
+            try Task.checkCancellation()
             let data = try await load()
             cacheImage(data, for: key, pluginID: pluginID)
             return data

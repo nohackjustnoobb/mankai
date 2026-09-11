@@ -78,7 +78,6 @@ struct DownloadModal: View {
     var activeTasks: [DownloadTask] {
         downloadService.tasks.values
             .filter {
-                if case .cancelled = $0.status { return false }
                 if case .completed = $0.status { return false }
                 return true
             }
@@ -161,8 +160,10 @@ struct DownloadTaskRow: View {
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: progress).progressViewStyle(.linear)
 
-                            Text(progress, format: .percent.scale(100).precision(.integerLength(0)))
-                                .font(.caption).foregroundStyle(.secondary)
+                            Text(
+                                progress, format: .percent.scale(100).precision(.fractionLength(0))
+                            )
+                            .font(.caption).foregroundStyle(.secondary)
                         }
                     case .completed: Text("completed").font(.subheadline).foregroundStyle(.green)
                     case .failed(let error):
@@ -172,8 +173,6 @@ struct DownloadTaskRow: View {
                             Text(error.localizedDescription).font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                    case .cancelled:
-                        Text("cancelled").font(.subheadline).foregroundStyle(.secondary)
                 }
             }
 

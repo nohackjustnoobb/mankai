@@ -142,7 +142,7 @@ struct BrowseScreen: View {
                     "noEntities", systemImage: "tray", description: Text("noEntitiesDescription"))
             }
         }
-        .onAppear { loadEntities() }
+        .task { await loadEntities() }
     }
 
     private var viewMode: BrowseViewMode {
@@ -168,7 +168,7 @@ struct BrowseScreen: View {
         if let url = URL(string: "shareddocuments://\(encoded)") { openURL(url) }
     }
 
-    private func loadEntities() {
+    private func loadEntities() async {
         guard !isLoading, !isParsing else { return }
 
         isLoading = true
@@ -178,54 +178,49 @@ struct BrowseScreen: View {
         parsingPaths = []
         parseErrors = [:]
 
-        Task {
-            do {
-                let result = try await plugin.getEntities(path: entry?.path)
-                let sorted = result.sorted { lhs, rhs in
-                    switch (lhs.type, rhs.type) { case (.directory, .book): return true
-                        case (.book, .directory): return false
-                        default:
-                            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
-                    }
-                }
-                await MainActor.run {
-                    self.entities = sorted
-                    self.isLoading = false
-                    self.isParsing = true
-                }
+        defer {
+            isLoading = false
+            isParsing = false
+        }
 
-                for entity in sorted {
-                    guard case .book(let fileType) = entity.type else { continue }
-                    let filePath = entity.path
+        do {
+            try Task.checkCancellation()
+            let result = try await plugin.getEntities(path: entry?.path)
 
-                    await MainActor.run { _ = self.parsingPaths.insert(filePath) }
-
-                    do {
-                        let manga = try await plugin.parseFile(path: filePath, fileType: fileType)
-                        let isUnread =
-                            HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
-                        await MainActor.run {
-                            self.parsedMangas[filePath] = manga
-                            if isUnread { self.unreadMangaPaths.insert(filePath) }
-                            self.parsingPaths.remove(filePath)
-                        }
-                    } catch {
-                        await MainActor.run {
-                            self.parseErrors[filePath] = error.localizedDescription
-                            self.parsingPaths.remove(filePath)
-                        }
-                    }
-                }
-
-                await MainActor.run { self.isParsing = false }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = error.localizedDescription
-                    self.isLoading = false
-                    self.isParsing = false
+            let sorted = result.sorted { lhs, rhs in
+                switch (lhs.type, rhs.type) { case (.directory, .book): return true
+                    case (.book, .directory): return false
+                    default: return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
                 }
             }
-        }
+            entities = sorted
+            isLoading = false
+            isParsing = true
+
+            for entity in sorted {
+                guard case .book(let fileType) = entity.type else { continue }
+                let filePath = entity.path
+
+                parsingPaths.insert(filePath)
+
+                do {
+                    try Task.checkCancellation()
+                    let manga = try await plugin.parseFile(path: filePath, fileType: fileType)
+
+                    let isUnread =
+                        HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id) == nil
+                    parsedMangas[filePath] = manga
+                    if isUnread { unreadMangaPaths.insert(filePath) }
+                    parsingPaths.remove(filePath)
+                } catch is CancellationError {
+                    parsingPaths.remove(filePath)
+                    return
+                } catch {
+                    parseErrors[filePath] = error.localizedDescription
+                    parsingPaths.remove(filePath)
+                }
+            }
+        } catch is CancellationError { return } catch { errorMessage = error.localizedDescription }
     }
 
     private func thumbnailView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
