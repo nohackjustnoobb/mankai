@@ -10,8 +10,8 @@ import Foundation
 import GRDB
 
 /// Manages the locally persisted snapshot of manga metadata.
-final class MangaSnapshotService: ObservableObject, @unchecked Sendable {
-    struct Upsert {
+@MainActor final class MangaSnapshotService: ObservableObject {
+    nonisolated struct Upsert {
         let manga: Manga
         let pluginId: String
     }
@@ -89,77 +89,79 @@ final class MangaSnapshotService: ObservableObject, @unchecked Sendable {
             mangaId: manga.id, pluginId: pluginId, info: String(decoding: data, as: UTF8.self))
     }
 
-    /// Inserts or replaces a snapshot, optionally as part of the caller's database transaction.
-    @discardableResult func upsert(
-        _ snapshot: MangaModel, in db: Database? = nil, publishesChange: Bool = true
-    ) throws -> Upsert? {
-        if let db {
-            try snapshot.upsert(db)
-            let upsert = try? makeUpsert(from: snapshot)
-            if publishesChange, let upsert { publish(.upserted([upsert]), afterCommitIn: db) }
-            return upsert
-        } else {
-            guard let appDb = DbService.shared.appDb else {
-                throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
-            }
-            return try appDb.write { db in
-                try self.upsert(snapshot, in: db, publishesChange: publishesChange)
-            }
+    /// Inserts or replaces a snapshot in its own database transaction.
+    @discardableResult func upsert(_ snapshot: MangaModel) async throws -> Upsert? {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
+
+        let upsert = try await appDb.write { db -> Upsert? in
+            try snapshot.upsert(db)
+            guard let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
+            else { return nil }
+            return Upsert(manga: manga, pluginId: snapshot.pluginId)
+        }
+
+        if let upsert { publish(.upserted([upsert])) }
+        return upsert
     }
 
-    /// Inserts or replaces multiple snapshots and optionally emits one change for the batch.
-    @discardableResult func batchUpsert(
-        _ snapshots: [MangaModel], in db: Database, publishesChange: Bool = true
-    ) throws -> [Upsert] {
-        var upserts: [Upsert] = []
-        upserts.reserveCapacity(snapshots.count)
-
-        for snapshot in snapshots {
-            try snapshot.upsert(db)
-            if let upsert = try? makeUpsert(from: snapshot) { upserts.append(upsert) }
+    /// Inserts or replaces multiple snapshots in their own database transaction.
+    @discardableResult func batchUpsert(_ snapshots: [MangaModel]) async throws -> [Upsert] {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        if publishesChange, !upserts.isEmpty { publish(.upserted(upserts), afterCommitIn: db) }
+        let upserts = try await appDb.write { db -> [Upsert] in
+            var upserts: [Upsert] = []
+            upserts.reserveCapacity(snapshots.count)
+
+            for snapshot in snapshots {
+                try snapshot.upsert(db)
+                if let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
+                {
+                    upserts.append(Upsert(manga: manga, pluginId: snapshot.pluginId))
+                }
+            }
+
+            return upserts
+        }
+
+        if !upserts.isEmpty { publish(.upserted(upserts)) }
 
         return upserts
     }
 
-    /// Updates an existing snapshot, optionally as part of the caller's database transaction.
-    @discardableResult func update(
-        _ snapshot: MangaModel, in db: Database? = nil, publishesChange: Bool = true
-    ) throws -> Upsert? {
-        if let db {
-            try snapshot.update(db)
-            let upsert = try? makeUpsert(from: snapshot)
-            if publishesChange, let upsert { publish(.upserted([upsert]), afterCommitIn: db) }
-            return upsert
-        } else {
-            guard let appDb = DbService.shared.appDb else {
-                throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
-            }
-            return try appDb.write { db in
-                try self.update(snapshot, in: db, publishesChange: publishesChange)
-            }
+    /// Updates an existing snapshot in its own database transaction.
+    @discardableResult func update(_ snapshot: MangaModel) async throws -> Upsert? {
+        guard let appDb = DbService.shared.appDb else {
+            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
+
+        let upsert = try await appDb.write { db -> Upsert? in
+            try snapshot.update(db)
+            guard let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
+            else { return nil }
+            return Upsert(manga: manga, pluginId: snapshot.pluginId)
+        }
+
+        if let upsert { publish(.upserted([upsert])) }
+        return upsert
     }
 
-    /// Deletes a snapshot, optionally as part of the caller's database transaction.
-    @discardableResult func delete(
-        mangaId: String, pluginId: String, in db: Database? = nil, publishesChange: Bool = true
-    ) throws -> Bool {
-        if let db {
-            return try delete(
-                mangaId: mangaId, pluginId: pluginId, from: db, publishesChange: publishesChange)
-        }
-
+    /// Deletes a snapshot in its own database transaction.
+    @discardableResult func delete(mangaId: String, pluginId: String) async throws -> Bool {
         guard let appDb = DbService.shared.appDb else {
             throw MankaiErrorCode.libraryFailedToDeleteSavedManga.makeError()
         }
-        return try appDb.write { db in
-            try self.delete(
-                mangaId: mangaId, pluginId: pluginId, from: db, publishesChange: publishesChange)
+
+        let deleted = try await appDb.write { db in
+            try MangaModel.filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+                .deleteAll(db) > 0
         }
+
+        if deleted { publish(.deleted(mangaId: mangaId, pluginId: pluginId)) }
+        return deleted
     }
 
     private func fetch(mangaId: String, pluginId: String, in db: Database) throws -> MangaModel? {
@@ -175,30 +177,12 @@ final class MangaSnapshotService: ObservableObject, @unchecked Sendable {
         .fetchAll(db)
     }
 
-    private func delete(mangaId: String, pluginId: String, from db: Database, publishesChange: Bool)
-        throws -> Bool
-    {
-        let deleted =
-            try MangaModel.filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-            .deleteAll(db) > 0
-
-        if deleted, publishesChange {
-            publish(.deleted(mangaId: mangaId, pluginId: pluginId), afterCommitIn: db)
-        }
-
-        return deleted
-    }
-
-    private func publish(_ change: Change, afterCommitIn db: Database) {
-        db.afterNextTransaction { _ in DispatchQueue.main.async { self.changeSubject.send(change) }
-        }
-    }
-
     private func decode(_ snapshot: MangaModel) throws -> Manga {
         try JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
     }
 
-    private func makeUpsert(from snapshot: MangaModel) throws -> Upsert {
-        Upsert(manga: try decode(snapshot), pluginId: snapshot.pluginId)
+    private func publish(_ change: Change) {
+        changeSubject.send(change)
+        objectWillChange.send()
     }
 }

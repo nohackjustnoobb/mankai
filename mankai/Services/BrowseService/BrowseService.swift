@@ -31,7 +31,7 @@ struct Entity {
     }
 }
 
-protocol Browsable {
+@MainActor protocol Browsable {
     /// An optional user-defined display name for the plugin.
     ///
     /// When `nil`, the plugin uses its backend-specific default name.
@@ -57,7 +57,7 @@ protocol Browsable {
 }
 
 /// A plugin that can receive files from the system file importer.
-protocol Importable {
+@MainActor protocol Importable {
     /// The file extensions accepted by this importable plugin.
     var supportedExtensions: [String] { get }
 
@@ -75,7 +75,7 @@ protocol Importable {
 typealias BrowsablePlugin = Browsable & Plugin
 typealias ImportableBrowsablePlugin = Browsable & Importable & Plugin
 
-protocol LocalBrowsablePluginConvertible { func convertToLocalPlugin() }
+@MainActor protocol LocalBrowsablePluginConvertible { func convertToLocalPlugin() }
 
 enum BrowsePluginAddConflictResolution {
     case reject
@@ -83,7 +83,7 @@ enum BrowsePluginAddConflictResolution {
     case makeLocal
 }
 
-final class BrowseService: ObservableObject {
+@MainActor final class BrowseService: ObservableObject {
     static let shared = BrowseService()
 
     private init() {
@@ -213,7 +213,7 @@ final class BrowseService: ObservableObject {
             try plugin.savePlugin()
             _plugins[plugin.id] = plugin
 
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
 
             Logger.browseService.info("Plugin added successfully: \(plugin.id)")
         } catch {
@@ -234,7 +234,7 @@ final class BrowseService: ObservableObject {
     func removePlugin(_ id: String) throws {
         Logger.browseService.debug("Removing plugin: \(id)")
         if let plugin = _plugins.removeValue(forKey: id) {
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
 
             do {
                 try plugin.deletePlugin()

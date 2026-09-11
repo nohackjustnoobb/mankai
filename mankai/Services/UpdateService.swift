@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class UpdateService: ObservableObject {
+@MainActor final class UpdateService: ObservableObject {
     struct UpdateProgress: Equatable {
         var completed: Int
         let total: Int
@@ -42,21 +42,23 @@ final class UpdateService: ObservableObject {
     /// Triggers the update process to check for new manga chapters.
     /// - Throws: An error if the update process fails.
     func update() async throws {
-        let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
-            if let current = updateTask { return (current, true) }
-
+        let task: Task<Void, Error>
+        let wasAlreadyRunning: Bool
+        if let current = updateTask {
+            task = current
+            wasAlreadyRunning = true
+        } else {
             progress = UpdateProgress(completed: 0, total: 0)
             let newTask = Task {
                 defer {
-                    Task { @MainActor in
-                        self.progress = nil
-                        self.updateTask = nil
-                    }
+                    self.progress = nil
+                    self.updateTask = nil
                 }
                 try await self.internalUpdate()
             }
             updateTask = newTask
-            return (newTask, false)
+            task = newTask
+            wasAlreadyRunning = false
         }
 
         if wasAlreadyRunning {
@@ -105,7 +107,7 @@ final class UpdateService: ObservableObject {
 
         // Get all saved mangas
         let saveds = SavedService.shared.getAll()
-        await MainActor.run { progress = UpdateProgress(completed: 0, total: saveds.count) }
+        progress = UpdateProgress(completed: 0, total: saveds.count)
         Logger.updateService.debug("Found \(saveds.count) saved mangas to check for updates")
 
         // Group saveds by pluginId
@@ -301,7 +303,7 @@ final class UpdateService: ObservableObject {
         // Update last update time
         UserDefaults.standard.set(Date(), forKey: "UpdateService.lastUpdateTime")
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
         Logger.updateService.debug("Update process completed")
     }
 
@@ -332,10 +334,8 @@ final class UpdateService: ObservableObject {
 
     private func advanceProgress(by count: Int = 1) async {
         guard count > 0 else { return }
-        await MainActor.run {
-            guard var progress = self.progress else { return }
-            progress.completed = min(progress.completed + count, progress.total)
-            self.progress = progress
-        }
+        guard var progress else { return }
+        progress.completed = min(progress.completed + count, progress.total)
+        self.progress = progress
     }
 }

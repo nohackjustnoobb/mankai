@@ -10,7 +10,7 @@ import GRDB
 import SwiftUI
 
 /// A backend-neutral entry returned by a browsable plugin.
-struct BrowsableEntry {
+struct BrowsableEntry: Sendable {
     let path: String
     let isDirectory: Bool
     let isRegularFile: Bool
@@ -19,15 +19,15 @@ struct BrowsableEntry {
 }
 
 /// A backend-neutral entry returned by a browsable session.
-struct BrowsableSessionEntry {
+struct BrowsableSessionEntry: Sendable {
     let name: String
     let isDirectory: Bool
     let isRegularFile: Bool
 }
 
 /// A backend session that can be created from its connection configuration.
-protocol BrowsableSession {
-    associatedtype Config
+protocol BrowsableSession: Sendable {
+    associatedtype Config: Sendable
 
     static var backendName: String { get }
     static var logger: Logger { get }
@@ -221,10 +221,7 @@ where Session: BrowsableSession, Session.Config == Config {
         try clearTemporaryDirectory()
     }
 
-    deinit {
-        disconnectSessionIfNeeded()
-        try? clearTemporaryDirectory()
-    }
+    @_optimize(none) isolated deinit { cleanUpOnDeinit() }
 
     // MARK: - Session-backed hooks
 
@@ -255,7 +252,7 @@ where Session: BrowsableSession, Session.Config == Config {
     func hashFile(relativePath: String) async throws -> String {
         let file = try await parserFile(relativePath: relativePath, cacheKey: "hash")
         let fileURL = try await file.getUrl()
-        return try BrowsableFileUtilities.sha256(of: fileURL)
+        return try await BrowsableFileUtilities.sha256(of: fileURL)
     }
 
     func absoluteURL(for path: String?) -> URL? { try? session.localURL(for: path) }
@@ -529,10 +526,11 @@ where Session: BrowsableSession, Session.Config == Config {
 
     private func fetchCachedManga(mangaId: String, parserId: String) async throws -> CachedManga? {
         guard let db else { return nil }
+        let pluginId = id
         let row = try await db.read { db in
             try BrowsablePluginMangaModel.filter(
                 Column("mangaId") == mangaId && Column("parserId") == parserId
-                    && Column("pluginId") == id
+                    && Column("pluginId") == pluginId
             )
             .fetchOne(db)
         }
@@ -541,9 +539,11 @@ where Session: BrowsableSession, Session.Config == Config {
 
     private func fetchCachedManga(path: String, parserId: String) async throws -> CachedManga? {
         guard let db else { return nil }
+        let pluginId = id
         let row = try await db.read { db in
             try BrowsablePluginMangaModel.filter(
-                Column("path") == path && Column("parserId") == parserId && Column("pluginId") == id
+                Column("path") == path && Column("parserId") == parserId
+                    && Column("pluginId") == pluginId
             )
             .fetchOne(db)
         }
@@ -622,6 +622,13 @@ where Session: BrowsableSession, Session.Config == Config {
         sessionNeedsCleanup = false
         let session = session
         Task { await session.disconnect() }
+    }
+
+    /// Kept out of the optimizer's early inliner to work around a Swift 6.3 compiler crash
+    /// when optimizing an actor-isolated generic class deinitializer.
+    @inline(never) private func cleanUpOnDeinit() {
+        disconnectSessionIfNeeded()
+        try? clearTemporaryDirectory()
     }
 
     // MARK: - Browsable methods

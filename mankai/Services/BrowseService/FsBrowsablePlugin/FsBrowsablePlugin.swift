@@ -15,19 +15,15 @@ struct FilesystemSession: BrowsableSession {
     static let logger = Logger.fsBrowsablePlugin
 
     let rootURL: URL
-    let fileManager: FileManager
 
-    init(configuration: URL) {
-        rootURL = configuration.standardizedFileURL
-        fileManager = .default
-    }
+    init(configuration: URL) { rootURL = configuration.standardizedFileURL }
 
     func disconnect() async {}
 
     func list(path: String) async throws -> [BrowsableSessionEntry] {
         let target = try sourceURL(for: path)
         let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isRegularFileKey]
-        let entries = try fileManager.contentsOfDirectory(
+        let entries = try FileManager.default.contentsOfDirectory(
             at: target, includingPropertiesForKeys: Array(resourceKeys))
 
         return try entries.compactMap { entry in
@@ -46,11 +42,12 @@ struct FilesystemSession: BrowsableSession {
     }
 
     func upload(file: URL, path: String) async throws {
-        try fileManager.copyItem(at: file, to: sourceURL(for: path))
+        try FileManager.default.copyItem(at: file, to: sourceURL(for: path))
     }
 
     func createDirectory(path: String) async throws {
-        try fileManager.createDirectory(at: sourceURL(for: path), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: sourceURL(for: path), withIntermediateDirectories: true)
     }
 
     func localURL(for path: String?) throws -> URL? { try sourceURL(for: path) }
@@ -122,7 +119,9 @@ class FsBrowsablePlugin: GenericBrowsablePlugin<URL, FilesystemSession> {
         try self.init(url: url, id: id, name: name, shouldSync: shouldSync)
     }
 
-    deinit { if isAccessingSecurityScopedResource { url.stopAccessingSecurityScopedResource() } }
+    isolated deinit {
+        if isAccessingSecurityScopedResource { url.stopAccessingSecurityScopedResource() }
+    }
 
     static func loadPlugins() -> [FsBrowsablePlugin] {
         Logger.fsBrowsablePlugin.debug("Loading book plugins")

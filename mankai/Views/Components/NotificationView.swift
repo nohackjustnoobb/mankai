@@ -43,7 +43,10 @@ struct NotificationView: View {
                 .onEnded { gesture in
                     if gesture.translation.height > 50 {
                         withAnimation(.easeOut(duration: 0.3)) { dragOffset = 300 }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onDismiss() }
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(300))
+                            onDismiss()
+                        }
                     } else {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             dragOffset = 0

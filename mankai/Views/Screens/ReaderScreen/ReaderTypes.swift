@@ -23,7 +23,7 @@ func readerOverscrollProgress(_ distance: CGFloat, spacing: CGFloat) -> CGFloat 
     return min(visibleDistance / READER_OVERSCROLL_THRESHOLD, 1)
 }
 
-struct ReaderRoute: Identifiable, Hashable {
+@MainActor struct ReaderRoute: Identifiable, Hashable {
     let plugin: Plugin
     let manga: DetailedManga
     let downloadManga: DetailedManga?

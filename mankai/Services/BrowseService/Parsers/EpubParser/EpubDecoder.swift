@@ -8,7 +8,7 @@
 import Foundation
 import ZIPFoundation
 
-struct EpubPublication {
+struct EpubPublication: Sendable {
     let title: String?
     let credits: [String]
     let description: String?

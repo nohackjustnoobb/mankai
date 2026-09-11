@@ -244,10 +244,11 @@ struct UpdateMangaContent: View {
                         }
                     }
 
+                    let isCoverSet = coverImageData != nil
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         HStack {
                             Image(systemName: "photo.badge.plus")
-                            Text(coverImageData != nil ? "changeCover" : "addCover")
+                            Text(isCoverSet ? "changeCover" : "addCover")
                         }
                         .frame(maxWidth: .infinity)
                     }

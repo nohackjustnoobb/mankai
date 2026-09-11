@@ -29,7 +29,7 @@ final class ImageCacheManager: @unchecked Sendable {
 
     deinit { pruningTimer.cancel() }
 
-    func image(for key: String, pluginID: String, load: @escaping () async throws -> Data)
+    func image(for key: String, pluginID: String, load: @escaping @Sendable () async throws -> Data)
         async throws -> Data
     {
         if let data = cachedImage(for: key, pluginID: pluginID) {

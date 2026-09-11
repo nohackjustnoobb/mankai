@@ -12,7 +12,7 @@ enum PluginAddConflictResolution: Equatable {
     case overwrite
 }
 
-final class PluginService: ObservableObject {
+@MainActor final class PluginService: ObservableObject {
     /// The shared singleton instance of `PluginService`.
     static let shared = PluginService()
 
@@ -103,7 +103,7 @@ final class PluginService: ObservableObject {
             try plugin.savePlugin()
             _plugins[plugin.id] = wrap(plugin)
 
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
 
             Logger.pluginService.info("Plugin added successfully: \(plugin.id)")
         } catch {
@@ -124,7 +124,7 @@ final class PluginService: ObservableObject {
     func removePlugin(_ id: String) throws {
         Logger.pluginService.debug("Removing plugin: \(id)")
         if let plugin = _plugins.removeValue(forKey: id) {
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
 
             do {
                 try plugin.deletePlugin()

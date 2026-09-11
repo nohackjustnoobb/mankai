@@ -10,7 +10,7 @@ import GRDB
 import SwiftSMB
 import SwiftUI
 
-struct SmbConnectionConfiguration {
+struct SmbConnectionConfiguration: Sendable {
     let host: String
     let port: Int
     let share: String

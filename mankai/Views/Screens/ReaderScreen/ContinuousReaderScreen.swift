@@ -158,7 +158,7 @@ private final class ContinuousReaderViewController: UIViewController, UIScrollVi
         guard !isNavigationCommandApplicationScheduled else { return }
         isNavigationCommandApplicationScheduled = true
 
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self else { return }
             isNavigationCommandApplicationScheduled = false
             guard pendingNavigationCommand != nil else { return }

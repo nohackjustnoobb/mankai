@@ -21,7 +21,7 @@ private struct ReaderAdjacencyKey: Hashable {
     let enabled: Bool
 }
 
-private struct ReaderAdjacencyPair {
+@MainActor private struct ReaderAdjacencyPair {
     let firstURL: String
     let secondURL: String
     let leftImage: AppImage
@@ -40,7 +40,7 @@ private struct ReaderGroupingKey: Equatable {
     let viewportHeight: Int
 }
 
-private enum ReaderGrouping {
+@MainActor private enum ReaderGrouping {
     static func defaultGroupSize(
         readingDirection: ReadingDirection, imageLayout: ImageLayout, viewportSize: CGSize
     ) -> Int {
@@ -136,7 +136,7 @@ private struct ReaderSavedPosition: Equatable {
     let page: Int
 }
 
-private enum ReaderImageLoadResult {
+private enum ReaderImageLoadResult: Sendable {
     case success(String, AppImage)
     case failed(String)
 }
@@ -833,7 +833,7 @@ struct ReaderScreen: View {
         let chapterID = currentChapter?.id
         let pageURL = urls[page]
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             guard currentChapter?.id == chapterID, urls.indices.contains(page),
                 urls[page] == pageURL, currentPage != page
             else { return }
@@ -871,7 +871,7 @@ struct ReaderScreen: View {
         guard urls.indices.contains(currentPage) else { return }
         let targetURL = urls[currentPage]
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             guard let targetPage = urls.firstIndex(of: targetURL) else { return }
 
             currentPage = targetPage
@@ -1010,14 +1010,13 @@ struct ReaderScreen: View {
                     data = try await plugin.getImage(url)
                 }
 
-                if let image = AppImage(data: data) { return .success(url, image) }
+                if let image = await AppImage.load(data: data) { return .success(url, image) }
             } catch is CancellationError { return .failed(url) } catch {
                 if retry == 3 { Logger.ui.error("Failed to load reader image", error: error) }
             }
 
             guard retry < 3 else { break }
-            let delay = UInt64(1 << retry) * 1_000_000_000
-            do { try await Task.sleep(nanoseconds: delay) } catch { return .failed(url) }
+            do { try await Task.sleep(for: .seconds(1 << retry)) } catch { return .failed(url) }
         }
 
         return .failed(url)
@@ -1113,7 +1112,7 @@ struct ReaderScreen: View {
 
     @MainActor private func performScheduledSave() async {
         guard saveScheduled else { return }
-        do { try await Task.sleep(nanoseconds: 3_000_000_000) } catch { return }
+        do { try await Task.sleep(for: .seconds(3)) } catch { return }
 
         guard saveScheduled else { return }
         saveScheduled = false

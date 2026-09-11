@@ -12,7 +12,7 @@ import SwiftUI
 
 /// OPDS support is based on the [OPDS 1.2 specification](https://specs.opds.io/opds-1.2) and the [OPDS Page Streaming Extension 1.2 specification](https://anansi-project.github.io/docs/opds-pse/specs/v1.2).
 
-struct OpdsConnectionConfiguration {
+struct OpdsConnectionConfiguration: Sendable {
     let catalogURL: URL
     var username: String?
     var password: String?
@@ -152,7 +152,7 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         try BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory)
     }
 
-    deinit { try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) }
+    isolated deinit { try? BrowsableFileUtilities.clearDirectoryIfPresent(at: temporaryDirectory) }
 
     func getEntities(path: String?) async throws -> [Entity] {
         let catalogURL: URL
@@ -397,10 +397,11 @@ final class OpdsBrowsablePlugin: Plugin, Browsable, LocalBrowsablePluginConverti
         guard let db = DbService.shared.openOpdsBrowsablePluginDb() else {
             throw MankaiErrorCode.browseFilesystemDatabaseNotAvailable.makeError()
         }
+        let pluginId = id
 
         let models = try await db.read { db in
             try OpdsBrowsableBookModel.filter(
-                Column("pluginId") == id && ids.contains(Column("bookId"))
+                Column("pluginId") == pluginId && ids.contains(Column("bookId"))
             )
             .fetchAll(db)
         }

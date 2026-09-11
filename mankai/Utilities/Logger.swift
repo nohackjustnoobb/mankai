@@ -65,7 +65,7 @@ enum LogCategory: String {
 }
 
 /// Unified logger for the application
-final class Logger {
+final class Logger: Sendable {
     private let osLogger: os.Logger
     private let category: LogCategory
 

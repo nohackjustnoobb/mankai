@@ -22,12 +22,18 @@ private enum CacheMethod: String {
 }
 
 class CacheWrapper: Plugin {
+    private final class CachedValue: @unchecked Sendable {
+        let value: AnyObject
+
+        init(_ value: AnyObject) { self.value = value }
+    }
+
     private let plugin: Plugin
 
     // MARK: - Cache Properties
 
     private let cache = NSCache<NSString, AnyObject>()
-    private let requestRegistry = AsyncLoadRegistry<AnyObject>()
+    private let requestRegistry = AsyncLoadRegistry<CachedValue>()
     private var inMemoryCacheItemCountObserver: NSObjectProtocol?
 
     // MARK: - Init
@@ -47,11 +53,12 @@ class CacheWrapper: Plugin {
         updateInMemoryCacheItemCount()
         inMemoryCacheItemCountObserver = NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification, object: nil, queue: nil
-        ) { [weak self] _ in self?.updateInMemoryCacheItemCount() }
+        ) { [weak self] _ in Task { @MainActor [weak self] in self?.updateInMemoryCacheItemCount() }
+        }
         Logger.cacheWrapper.debug("Initialized CacheWrapper for plugin: \(plugin.id)")
     }
 
-    deinit {
+    isolated deinit {
         if let inMemoryCacheItemCountObserver {
             NotificationCenter.default.removeObserver(inMemoryCacheItemCountObserver)
         }
@@ -152,22 +159,22 @@ class CacheWrapper: Plugin {
         cache.setObject(data as AnyObject, forKey: key as NSString)
     }
 
-    private func getOrLoadCachedData<T>(for key: String, load: @escaping () async throws -> T)
-        async throws -> T
-    {
+    private func getOrLoadCachedData<T>(
+        for key: String, load: @escaping @Sendable () async throws -> T
+    ) async throws -> T {
         if let cachedData = getCachedData(for: key, as: T.self) { return cachedData }
 
-        let data = try await requestRegistry.value(for: key) { [self] () -> AnyObject in
+        let data = try await requestRegistry.value(for: key) { @MainActor [self] in
             if let cachedData = getCachedData(for: key, as: T.self) {
-                return cachedData as AnyObject
+                return CachedValue(cachedData as AnyObject)
             }
 
             let data = try await load()
             setCachedData(data, for: key)
-            return data as AnyObject
+            return CachedValue(data as AnyObject)
         }
 
-        guard let typedData = data as? T else {
+        guard let typedData = data.value as? T else {
             preconditionFailure("Cached request type mismatch for key: \(key)")
         }
         return typedData
@@ -177,7 +184,7 @@ class CacheWrapper: Plugin {
         Logger.cacheWrapper.info("Clearing all in-memory cache")
         cache.removeAllObjects()
 
-        DispatchQueue.main.async { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     // MARK: - Methods (Cached)

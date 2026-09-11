@@ -139,19 +139,23 @@ enum BrowsableFileUtilities {
         return directory.appendingPathComponent(fileName, isDirectory: false)
     }
 
-    static func sha256(of fileURL: URL) throws -> String {
-        guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
-            throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
-        }
-        defer { try? handle.close() }
+    static func sha256(of fileURL: URL) async throws -> String {
+        try await Task.detached(priority: .utility) {
+            guard let handle = try? FileHandle(forReadingFrom: fileURL) else {
+                throw MankaiErrorCode.browseFilesystemUnableToOpenFileForHashing.makeError()
+            }
+            defer { try? handle.close() }
 
-        var hasher = SHA256()
-        while true {
-            let chunk = handle.readData(ofLength: 1 << 16)
-            if chunk.isEmpty { break }
-            hasher.update(data: chunk)
+            var hasher = SHA256()
+            while true {
+                try Task.checkCancellation()
+                let chunk = handle.readData(ofLength: 1 << 16)
+                if chunk.isEmpty { break }
+                hasher.update(data: chunk)
+            }
+            return hasher.finalize().map { String(format: "%02x", $0) }.joined()
         }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        .value
     }
 
     static func uniqueFileName(for source: URL, existingNames: Set<String>) -> String {

@@ -95,7 +95,9 @@ enum PluginCapability: String, Codable, CaseIterable {
     static var defaultCapabilities: [PluginCapability] { allCases.filter { $0 != .mangaUpdates } }
 }
 
-class Plugin: Identifiable, ObservableObject {
+@MainActor class Plugin: Identifiable, ObservableObject {
+    init() {}
+
     // MARK: - Metadata
 
     /// The unique identifier of the plugin.
@@ -161,7 +163,7 @@ class Plugin: Identifiable, ObservableObject {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
 
-        DispatchQueue.main.async { self.objectWillChange.send() }
+        objectWillChange.send()
 
         try savePlugin()
     }
@@ -173,7 +175,7 @@ class Plugin: Identifiable, ObservableObject {
             _configValues[config.key] = ConfigValue(key: config.key, value: config.defaultValue)
         }
 
-        DispatchQueue.main.async { self.objectWillChange.send() }
+        objectWillChange.send()
 
         try savePlugin()
     }

@@ -7,7 +7,9 @@
 
 import Foundation
 
-class SyncEngine: Identifiable, ObservableObject, Hashable {
+@MainActor class SyncEngine: Identifiable, ObservableObject, Hashable {
+    init() {}
+
     static func == (lhs: SyncEngine, rhs: SyncEngine) -> Bool { return lhs.id == rhs.id }
 
     func hash(into hasher: inout Hasher) { hasher.combine(id) }

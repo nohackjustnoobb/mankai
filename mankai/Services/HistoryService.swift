@@ -9,7 +9,7 @@ import Combine
 import Foundation
 import GRDB
 
-final class HistoryService: ObservableObject {
+@MainActor final class HistoryService: ObservableObject {
     enum Change { case upserted([RecordModel]) }
 
     /// The shared singleton instance of HistoryService.
@@ -92,7 +92,7 @@ final class HistoryService: ObservableObject {
             throw error
         }
 
-        await publish(.upserted([record]))
+        publish(.upserted([record]))
 
         return result
     }
@@ -112,11 +112,10 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug("Updating history record for mangaId: \(record.mangaId)")
         var result: Bool?
         do {
+            if let manga { _ = try? await MangaSnapshotService.shared.update(manga) }
+
             result = try await DbService.shared.appDb?
                 .write { db in
-                    if let manga = manga {
-                        _ = try? MangaSnapshotService.shared.update(manga, in: db)
-                    }
                     try record.upsert(db)
 
                     return true
@@ -131,7 +130,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        if publishesChange { await publish(.upserted([record])) }
+        if publishesChange { publish(.upserted([record])) }
 
         return result
     }
@@ -145,14 +144,12 @@ final class HistoryService: ObservableObject {
         Logger.historyService.debug("Batch updating \(records.count) records")
         var result: Bool?
         do {
+            if let mangas {
+                for manga in mangas { _ = try? await MangaSnapshotService.shared.update(manga) }
+            }
+
             result = try await DbService.shared.appDb?
                 .write { db in
-                    if let mangas = mangas {
-                        for manga in mangas {
-                            _ = try? MangaSnapshotService.shared.update(manga, in: db)
-                        }
-                    }
-
                     for record in records { try record.upsert(db) }
 
                     return true
@@ -167,7 +164,7 @@ final class HistoryService: ObservableObject {
             throw MankaiErrorCode.historyFailedToUpdateHistoryRecord.makeError()
         }
 
-        await publish(.upserted(records))
+        publish(.upserted(records))
 
         return result
     }
@@ -225,11 +222,9 @@ final class HistoryService: ObservableObject {
         }
     }
 
-    private func publish(_ change: Change) async {
-        await MainActor.run {
-            self.changeSubject.send(change)
-            self.objectWillChange.send()
-        }
+    private func publish(_ change: Change) {
+        changeSubject.send(change)
+        objectWillChange.send()
     }
 
     //    func delete(mangaId: String, pluginId: String) -> Bool? {

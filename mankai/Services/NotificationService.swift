@@ -28,7 +28,7 @@ struct AppNotification: Identifiable, Equatable {
     }
 }
 
-final class NotificationService: ObservableObject {
+@MainActor final class NotificationService: ObservableObject {
     /// The shared singleton instance of NotificationService.
     static let shared = NotificationService()
 
@@ -46,16 +46,14 @@ final class NotificationService: ObservableObject {
     func show(type: NotificationType, message: String, duration: TimeInterval = 5.0) {
         let notification = AppNotification(type: type, message: message, duration: duration)
 
-        Task { @MainActor in
-            notifications.append(notification)
+        notifications.append(notification)
 
-            // Auto dismiss after duration
-            let task = Task {
-                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
-                dismiss(notification.id)
-            }
-            dismissTasks[notification.id] = task
+        // Auto dismiss after duration
+        let task = Task {
+            try? await Task.sleep(for: .seconds(duration))
+            dismiss(notification.id)
         }
+        dismissTasks[notification.id] = task
     }
 
     /// Shows an error notification.
@@ -92,14 +90,14 @@ final class NotificationService: ObservableObject {
 
     /// Dismisses a notification by its ID.
     /// - Parameter id: The UUID of the notification to dismiss.
-    @MainActor func dismiss(_ id: UUID) {
+    func dismiss(_ id: UUID) {
         notifications.removeAll { $0.id == id }
         dismissTasks[id]?.cancel()
         dismissTasks.removeValue(forKey: id)
     }
 
     /// Dismisses all active notifications.
-    @MainActor func dismissAll() {
+    func dismissAll() {
         notifications.removeAll()
         dismissTasks.values.forEach { $0.cancel() }
         dismissTasks.removeAll()

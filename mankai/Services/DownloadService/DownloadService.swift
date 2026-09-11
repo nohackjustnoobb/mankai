@@ -15,7 +15,7 @@ enum DownloadStatus {
     case failed(error: Error)
 }
 
-final class DownloadTask: Identifiable, ObservableObject {
+@MainActor final class DownloadTask: Identifiable, ObservableObject {
     let id: String
     let manga: DownloadMangaModel
 
@@ -46,7 +46,7 @@ final class DownloadTask: Identifiable, ObservableObject {
 
     func download() async throws {
         try Task.checkCancellation()
-        await MainActor.run { status = .downloading(progress: 0.0) }
+        status = .downloading(progress: 0.0)
 
         // 1. Get Source Plugin
         guard let plugin = PluginService.shared.getPlugin(manga.pluginId) else {
@@ -127,7 +127,7 @@ final class DownloadTask: Identifiable, ObservableObject {
 
                     let currentProgress =
                         (downloadedChaptersCount + (Double(index + 1) / totalPages)) / totalChapters
-                    await MainActor.run { status = .downloading(progress: currentProgress) }
+                    status = .downloading(progress: currentProgress)
                 }
             }
 
@@ -140,7 +140,7 @@ final class DownloadTask: Identifiable, ObservableObject {
 
             downloadedChaptersCount += 1.0
             let finalProgress = downloadedChaptersCount / totalChapters
-            await MainActor.run { status = .downloading(progress: finalProgress) }
+            status = .downloading(progress: finalProgress)
         }
 
         // Mark manga as downloaded
@@ -150,11 +150,11 @@ final class DownloadTask: Identifiable, ObservableObject {
         try await DownloadPlugin.shared.saveManga(completedManga)
 
         try Task.checkCancellation()
-        await MainActor.run { status = .completed }
+        status = .completed
     }
 
     func markFailed(error: Error) async throws {
-        await MainActor.run { status = .failed(error: error) }
+        status = .failed(error: error)
 
         try await delete()
     }
@@ -162,7 +162,7 @@ final class DownloadTask: Identifiable, ObservableObject {
     func retry() async throws {
         try await save()
 
-        await MainActor.run { status = .queued }
+        status = .queued
     }
 
     func save() async throws { try await DownloadPlugin.shared.saveManga(manga) }
@@ -170,7 +170,7 @@ final class DownloadTask: Identifiable, ObservableObject {
     func delete() async throws { try await DownloadPlugin.shared.deleteManga(manga.id) }
 }
 
-final class DownloadService: ObservableObject {
+@MainActor final class DownloadService: ObservableObject {
     /// The shared singleton instance of DownloadService.
     static let shared = DownloadService()
 
@@ -184,12 +184,8 @@ final class DownloadService: ObservableObject {
             Logger.downloadService.debug("Restoring unfinished tasks")
             do {
                 let unfinishedTasks = try await DownloadTask.restoreUnfinishedTasks()
-                await MainActor.run {
-                    tasks = unfinishedTasks.reduce(into: [:]) { result, task in
-                        result[task.id] = task
-                    }
-                    self.scheduleDownloads()
-                }
+                tasks = unfinishedTasks.reduce(into: [:]) { result, task in result[task.id] = task }
+                scheduleDownloads()
             } catch { Logger.downloadService.error("Failed to restore unfinished tasks: \(error)") }
         }
     }
@@ -279,10 +275,8 @@ final class DownloadService: ObservableObject {
             latestChapter: latestChapterJson, chapters: chaptersJson, downloaded: false)
 
         let task = try await DownloadTask(manga: mangaModel)
-        await MainActor.run {
-            tasks[task.id] = task
-            self.scheduleDownloads()
-        }
+        tasks[task.id] = task
+        scheduleDownloads()
 
         Logger.downloadService.info(
             "Successfully queued download task for \(manga.title ?? manga.id)")
@@ -301,7 +295,7 @@ final class DownloadService: ObservableObject {
         }
 
         try await task.delete()
-        await MainActor.run { _ = tasks.removeValue(forKey: id) }
+        _ = tasks.removeValue(forKey: id)
 
         Logger.downloadService.info("Cancelled task for \(task.manga.title ?? task.manga.id)")
     }
@@ -309,7 +303,7 @@ final class DownloadService: ObservableObject {
     func retryTask(id: String) async throws {
         if let task = tasks[id] {
             try await task.retry()
-            await MainActor.run { self.scheduleDownloads() }
+            scheduleDownloads()
         }
     }
 
@@ -317,7 +311,7 @@ final class DownloadService: ObservableObject {
 
     func scheduleDownloads() {
         scheduleTask?.cancel()
-        scheduleTask = Task { @MainActor in
+        scheduleTask = Task {
             let tasks = self.tasks.values
             let groupedTasks = Dictionary(grouping: tasks, by: { $0.manga.pluginId })
 
@@ -353,7 +347,7 @@ final class DownloadService: ObservableObject {
                 NotificationService.shared.showSuccess(
                     String(format: message, task.manga.title ?? task.manga.id))
 
-                await MainActor.run { _ = tasks.removeValue(forKey: task.id) }
+                _ = tasks.removeValue(forKey: task.id)
             } catch {
                 if !(error is CancellationError) && !Task.isCancelled {
                     Logger.downloadService.error("Task failed: \(error)")
@@ -367,7 +361,7 @@ final class DownloadService: ObservableObject {
                 }
             }
 
-            await MainActor.run { _ = runningTasks.removeValue(forKey: task.id) }
+            _ = runningTasks.removeValue(forKey: task.id)
 
             // Trigger scheduler again to pick up next task
             self.scheduleDownloads()

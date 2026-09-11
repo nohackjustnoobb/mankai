@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol ThumbnailHandler {
+protocol ThumbnailHandler: Sendable {
     /// Lowercased file extensions (without a leading dot) this handler supports.
     var supportedExtensions: Set<String> { get }
 
@@ -17,10 +17,7 @@ protocol ThumbnailHandler {
 }
 
 enum ThumbnailHandlers {
-    static let all: [ThumbnailHandler] = [
-        CbzThumbnailHandler(),
-        CbrThumbnailHandler(),
-    ]
+    static let all: [ThumbnailHandler] = [CbzThumbnailHandler(), CbrThumbnailHandler()]
 
     static func handler(forExtension ext: String) -> ThumbnailHandler? {
         let ext = ext.lowercased()

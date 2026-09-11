@@ -77,7 +77,7 @@ final class SupabaseEngine: SyncEngine {
             defaults.removeObject(forKey: "SupabaseEngine.url")
             defaults.removeObject(forKey: "SupabaseEngine.key")
 
-            Task { @MainActor in self.objectWillChange.send() }
+            objectWillChange.send()
         }
     }
 
@@ -94,7 +94,7 @@ final class SupabaseEngine: SyncEngine {
 
         try? await SyncService.shared.onEngineChange()
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func logout() async throws {
@@ -105,7 +105,7 @@ final class SupabaseEngine: SyncEngine {
         Logger.supabaseEngine.info("Logging out")
         try await supabase.auth.signOut()
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func save() {

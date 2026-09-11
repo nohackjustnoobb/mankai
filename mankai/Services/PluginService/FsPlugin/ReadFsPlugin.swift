@@ -80,7 +80,7 @@ class ReadFsPlugin: Plugin {
         }
     }
 
-    deinit { if _isAccessing { url.stopAccessingSecurityScopedResource() } }
+    isolated deinit { if _isAccessing { url.stopAccessingSecurityScopedResource() } }
 
     static func loadPlugins() -> [ReadFsPlugin] {
         Logger.fsPlugin.debug("Loading FS plugins")
@@ -192,7 +192,9 @@ class ReadFsPlugin: Plugin {
 
     // MARK: - Helper Functions
 
-    private func convertToManga(_ mangaModel: FsMangaModel, db: Database) throws -> Manga? {
+    nonisolated private static func convertToManga(_ mangaModel: FsMangaModel, db: Database) throws
+        -> Manga?
+    {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
 
@@ -213,9 +215,9 @@ class ReadFsPlugin: Plugin {
         return Manga(from: mangaDict)
     }
 
-    private func convertToDetailedManga(_ mangaModel: FsMangaModel, db: Database) throws
-        -> DetailedManga?
-    {
+    nonisolated private static func convertToDetailedManga(
+        _ mangaModel: FsMangaModel, db: Database, isEditable: Bool
+    ) throws -> DetailedManga? {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
         let chapterGroupModels = try mangaModel.chapters.order(Column("id").asc).fetchAll(db)
@@ -255,7 +257,7 @@ class ReadFsPlugin: Plugin {
                 .map { chapter in Chapter(id: String(chapter.id!), title: chapter.title) }
             chapterGroups.append(
                 ChapterGroup(
-                    id: self is Editable ? group.id.map(String.init) : nil, title: group.title,
+                    id: isEditable ? group.id.map(String.init) : nil, title: group.title,
                     chapters: chaptersArray))
         }
         let chapterGroupsData = try JSONEncoder().encode(chapterGroups)
@@ -312,7 +314,7 @@ class ReadFsPlugin: Plugin {
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try Self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -341,7 +343,7 @@ class ReadFsPlugin: Plugin {
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try Self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -356,7 +358,7 @@ class ReadFsPlugin: Plugin {
         return try await db.read { db in
             let mangas = try FsMangaModel.filter(ids.contains(Column("id"))).fetchAll(db)
 
-            return try mangas.compactMap { mangaModel in try self.convertToManga(mangaModel, db: db)
+            return try mangas.compactMap { mangaModel in try Self.convertToManga(mangaModel, db: db)
             }
         }
     }
@@ -367,6 +369,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for getDetailedManga")
             throw MankaiErrorCode.pluginFilesystemDatabaseNotAvailable.makeError()
         }
+        let isEditable = self is Editable
 
         return try await db.read { db in
             guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
@@ -374,7 +377,10 @@ class ReadFsPlugin: Plugin {
                 throw MankaiErrorCode.pluginFilesystemMangaDirectoryNotFound.makeError()
             }
 
-            guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
+            guard
+                let detailedManga = try Self.convertToDetailedManga(
+                    mangaModel, db: db, isEditable: isEditable)
+            else {
                 Logger.fsPlugin.error("Failed to convert manga model to detailed manga: \(id)")
                 throw MankaiErrorCode.pluginFilesystemFailedToLoadMangaDetails.makeError()
             }

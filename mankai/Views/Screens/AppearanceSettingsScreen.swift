@@ -130,7 +130,7 @@ struct AppearanceSettingsScreen: View {
 
         pendingIcon = icon
         UIApplication.shared.setAlternateIconName(icon.alternateIconName) { error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 pendingIcon = nil
 
                 if let error {

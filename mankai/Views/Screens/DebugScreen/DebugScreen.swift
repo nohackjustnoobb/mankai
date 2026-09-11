@@ -197,23 +197,18 @@ struct DebugScreen: View {
         .navigationTitle("debug").navigationBarTitleDisplayMode(.inline)
     }
 
-    private func clearCacheDir() {
-        DispatchQueue.global(qos: .userInitiated)
-            .async {
-                let fileManager = FileManager.default
-                guard
-                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
-                        .first
-                else { return }
+    @MainActor private func clearCacheDir() {
+        DbService.shared.closeBrowsablePluginDb()
+        DbService.shared.closeOpdsBrowsablePluginDb()
 
-                DbService.shared.closeBrowsablePluginDb()
-                DbService.shared.closeOpdsBrowsablePluginDb()
+        let fileManager = FileManager.default
+        guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+        else { return }
 
-                do {
-                    let contents = try fileManager.contentsOfDirectory(
-                        at: cacheDir, includingPropertiesForKeys: nil)
-                    for url in contents { try fileManager.removeItem(at: url) }
-                } catch { Logger.ui.error("Failed to clear cache directory: \(error)") }
-            }
+        do {
+            let contents = try fileManager.contentsOfDirectory(
+                at: cacheDir, includingPropertiesForKeys: nil)
+            for url in contents { try fileManager.removeItem(at: url) }
+        } catch { Logger.ui.error("Failed to clear cache directory: \(error)") }
     }
 }

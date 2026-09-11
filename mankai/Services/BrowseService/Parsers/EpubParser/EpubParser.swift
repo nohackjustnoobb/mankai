@@ -9,7 +9,7 @@ import Foundation
 import ZIPFoundation
 
 final class EpubParser: Parser {
-    private final class CachedArchive {
+    nonisolated private final class CachedArchive: @unchecked Sendable {
         let archive: Archive
         let readLock = NSLock()
         var publication: EpubPublication?
@@ -46,7 +46,7 @@ final class EpubParser: Parser {
             return cached
         }
 
-        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { @MainActor [self, file] in
             if let cached = cachedArchive(for: file.cacheKey) {
                 Logger.epubParser.debug("Reusing cached EPUB archive: \(file.cacheKey)")
                 return cached
@@ -55,8 +55,13 @@ final class EpubParser: Parser {
             Logger.epubParser.debug("Loading EPUB archive content: \(file.cacheKey)")
             let data = try await file.getContent()
             do {
-                let archive = try Archive(data: data, accessMode: .read)
-                return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
+                let loadedArchive =
+                    try await Task.detached(priority: .utility) {
+                        let archive = try Archive(data: data, accessMode: .read)
+                        return CachedArchive(archive: archive)
+                    }
+                    .value
+                return storeArchive(loadedArchive, for: file.cacheKey)
             } catch {
                 Logger.epubParser.error("Invalid EPUB ZIP container", error: error)
                 throw MankaiErrorCode.browseEpubInvalidContainer.makeError(underlyingError: error)
@@ -64,19 +69,23 @@ final class EpubParser: Parser {
         }
     }
 
-    private func performRead<T>(cachedArchive: CachedArchive, body: (CachedArchive) throws -> T)
-        rethrows -> T
-    {
+    nonisolated private static func performRead<T>(
+        cachedArchive: CachedArchive, body: @Sendable (CachedArchive) throws -> T
+    ) rethrows -> T {
         cachedArchive.readLock.lock()
         defer { cachedArchive.readLock.unlock() }
         return try body(cachedArchive)
     }
 
-    private func withReadLock<T>(for file: ParserFile, body: (CachedArchive) throws -> T)
-        async throws -> T
-    {
+    private func withReadLock<T: Sendable>(
+        for file: ParserFile, body: @escaping @Sendable (CachedArchive) throws -> T
+    ) async throws -> T {
         let cachedArchive = try await archive(for: file)
-        return try performRead(cachedArchive: cachedArchive, body: body)
+        return
+            try await Task.detached(priority: .utility) {
+                try Self.performRead(cachedArchive: cachedArchive, body: body)
+            }
+            .value
     }
 
     override var id: String { "epub" }
@@ -179,7 +188,7 @@ final class EpubParser: Parser {
         }
     }
 
-    private static func entryData(archive: Archive, entry: Entry) throws -> Data {
+    nonisolated private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
         _ = try archive.extract(entry, consumer: { chunk in data.append(chunk) })
         return data

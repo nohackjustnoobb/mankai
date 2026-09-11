@@ -10,7 +10,7 @@ import Foundation
 /// Page references discovered while parsing a file, persisted with the cached manga.
 ///
 /// Keeping these references in `DetailedManga.meta` lets `parseChapter` avoid inspecting the source file again.
-struct ParserChapterMetadata: Codable {
+struct ParserChapterMetadata: Codable, Sendable {
     let chapters: [String: [String]]
 
     init(chapterId: String, pages: [String]) { chapters = [chapterId: pages] }
@@ -35,7 +35,7 @@ struct ParserChapterMetadata: Codable {
 ///
 /// `cacheKey` must identify the current content.
 /// Callers should provide a new key whenever the content changes so parsers can safely reuse derived state.
-protocol ParserFile {
+protocol ParserFile: Sendable {
     var cacheKey: String { get }
     var fileName: String { get }
 
@@ -43,7 +43,9 @@ protocol ParserFile {
     func getUrl() async throws -> URL
 }
 
-class Parser {
+@MainActor class Parser {
+    init() {}
+
     /// The unique identifier for this parser.
     var id: String { fatalError("Not Implemented") }
 

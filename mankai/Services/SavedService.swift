@@ -10,7 +10,7 @@ import CryptoKit
 import Foundation
 import GRDB
 
-final class SavedService: ObservableObject {
+@MainActor final class SavedService: ObservableObject {
     enum Change {
         case upserted(saveds: [SavedModel], snapshots: [MangaSnapshotService.Upsert])
         case deleted(mangaId: String, pluginId: String)
@@ -98,19 +98,17 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Updating saved manga: \(saved.mangaId)")
         let outcome: (result: Bool, snapshotUpserts: [MangaSnapshotService.Upsert])?
         do {
-            outcome = try await DbService.shared.appDb?
-                .write { db in
-                    var snapshotUpserts: [MangaSnapshotService.Upsert] = []
-                    if let manga = manga,
-                        let upsert = try MangaSnapshotService.shared.upsert(
-                            manga, in: db, publishesChange: false)
-                    {
-                        snapshotUpserts.append(upsert)
-                    }
-                    try saved.upsert(db)
+            var snapshotUpserts: [MangaSnapshotService.Upsert] = []
+            if let manga, let upsert = try await MangaSnapshotService.shared.upsert(manga) {
+                snapshotUpserts.append(upsert)
+            }
 
-                    return (true, snapshotUpserts)
+            let result = try await DbService.shared.appDb?
+                .write { db in
+                    try saved.upsert(db)
+                    return true
                 }
+            outcome = result.map { ($0, snapshotUpserts) }
         } catch {
             Logger.savedService.error("Failed to update saved manga", error: error)
             throw error
@@ -121,7 +119,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        await publish(.upserted(saveds: [saved], snapshots: outcome.snapshotUpserts))
+        publish(.upserted(saveds: [saved], snapshots: outcome.snapshotUpserts))
 
         return outcome.result
     }
@@ -135,20 +133,19 @@ final class SavedService: ObservableObject {
         Logger.savedService.debug("Batch updating \(saveds.count) saved mangas")
         let outcome: (result: Bool, snapshotUpserts: [MangaSnapshotService.Upsert])?
         do {
-            outcome = try await DbService.shared.appDb?
+            let snapshotUpserts: [MangaSnapshotService.Upsert]
+            if let mangas {
+                snapshotUpserts = try await MangaSnapshotService.shared.batchUpsert(mangas)
+            } else {
+                snapshotUpserts = []
+            }
+
+            let result = try await DbService.shared.appDb?
                 .write { db in
-                    let snapshotUpserts: [MangaSnapshotService.Upsert]
-                    if let mangas {
-                        snapshotUpserts = try MangaSnapshotService.shared.batchUpsert(
-                            mangas, in: db, publishesChange: false)
-                    } else {
-                        snapshotUpserts = []
-                    }
-
                     for saved in saveds { try saved.upsert(db) }
-
-                    return (true, snapshotUpserts)
+                    return true
                 }
+            outcome = result.map { ($0, snapshotUpserts) }
         } catch {
             Logger.savedService.error("Failed to batch update saved mangas", error: error)
             throw error
@@ -159,7 +156,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
         }
 
-        await publish(.upserted(saveds: saveds, snapshots: outcome.snapshotUpserts))
+        publish(.upserted(saveds: saveds, snapshots: outcome.snapshotUpserts))
 
         return outcome.result
     }
@@ -175,17 +172,12 @@ final class SavedService: ObservableObject {
         do {
             result = try await DbService.shared.appDb?
                 .write { db in
-                    let deleted =
-                        try SavedModel.filter(
-                            Column("mangaId") == mangaId && Column("pluginId") == pluginId
-                        )
-                        .deleteAll(db)
-
-                    try MangaSnapshotService.shared.delete(
-                        mangaId: mangaId, pluginId: pluginId, in: db, publishesChange: false)
-
-                    return deleted > 0
+                    try SavedModel
+                        .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+                        .deleteAll(db) > 0
                 }
+
+            _ = try await MangaSnapshotService.shared.delete(mangaId: mangaId, pluginId: pluginId)
         } catch {
             Logger.savedService.error("Failed to delete saved manga", error: error)
             throw error
@@ -196,7 +188,7 @@ final class SavedService: ObservableObject {
             throw MankaiErrorCode.libraryFailedToDeleteSavedManga.makeError()
         }
 
-        await publish(.deleted(mangaId: mangaId, pluginId: pluginId))
+        publish(.deleted(mangaId: mangaId, pluginId: pluginId))
 
         return result
     }
@@ -250,35 +242,33 @@ final class SavedService: ObservableObject {
 
     /// Generates a hash string representing the current state of saved mangas.
     /// - Returns: A SHA256 hash string, or `nil` if generation fails.
-    func generateHash() -> String? {
+    func generateHash() async -> String? {
         Logger.savedService.debug("Generating hash for saved mangas")
+        guard let appDb = DbService.shared.appDb else { return nil }
+
         do {
-            return try DbService.shared.appDb?
-                .read { db in
-                    // Fetch all saved items, sorted by mangaId and pluginId
-                    let saveds = try SavedModel.filter(Column("shouldSync") == true)
-                        .order(Column("mangaId").asc, Column("pluginId").asc).fetchAll(db)
+            return try await appDb.read { db in
+                // Fetch all saved items, sorted by mangaId and pluginId
+                let saveds = try SavedModel.filter(Column("shouldSync") == true)
+                    .order(Column("mangaId").asc, Column("pluginId").asc).fetchAll(db)
 
-                    // Concatenate primary keys
-                    let keyString = saveds.map { "\($0.mangaId)|\($0.pluginId)" }.joined()
+                // Concatenate primary keys
+                let keyString = saveds.map { "\($0.mangaId)|\($0.pluginId)" }.joined()
 
-                    // Generate SHA256 hash
-                    let data = Data(keyString.utf8)
-                    let hash = SHA256.hash(data: data)
+                // Generate SHA256 hash on the database executor.
+                let data = Data(keyString.utf8)
+                let hash = SHA256.hash(data: data)
 
-                    // Convert hash to hex string
-                    return hash.compactMap { String(format: "%02x", $0) }.joined()
-                }
+                return hash.compactMap { String(format: "%02x", $0) }.joined()
+            }
         } catch {
             Logger.savedService.error("Failed to generate hash for saved mangas", error: error)
             return nil
         }
     }
 
-    private func publish(_ change: Change) async {
-        await MainActor.run {
-            self.changeSubject.send(change)
-            self.objectWillChange.send()
-        }
+    private func publish(_ change: Change) {
+        changeSubject.send(change)
+        objectWillChange.send()
     }
 }

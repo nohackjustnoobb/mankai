@@ -8,7 +8,7 @@
 import Foundation
 
 /// Coalesces concurrent asynchronous operations for the same key.
-final class AsyncLoadRegistry<Value>: @unchecked Sendable {
+final class AsyncLoadRegistry<Value: Sendable>: @unchecked Sendable {
     private final class Entry {
         let id: UUID
         var task: Task<Void, Never>?
@@ -23,7 +23,8 @@ final class AsyncLoadRegistry<Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [String: Entry] = [:]
 
-    func value(for key: String, operation: @escaping () async throws -> Value) async throws -> Value
+    func value(for key: String, operation: @escaping @Sendable () async throws -> Value)
+        async throws -> Value
     {
         try Task.checkCancellation()
         let waiterId = UUID()

@@ -52,13 +52,13 @@ final class DownloadPlugin: Plugin {
 
     // MARK: - Helper Functions
 
-    private func convertToManga(_ mangaModel: DownloadMangaModel) -> Manga? {
+    nonisolated private static func convertToManga(_ mangaModel: DownloadMangaModel) -> Manga? {
         return convertToDetailedManga(mangaModel)?.toManga()
     }
 
-    private func convertToDetailedManga(_ mangaModel: DownloadMangaModel, db: Database? = nil)
-        -> DetailedManga?
-    {
+    nonisolated private static func convertToDetailedManga(
+        _ mangaModel: DownloadMangaModel, db: Database? = nil
+    ) -> DetailedManga? {
         var mangaDict: [String: Any] = ["id": mangaModel.mangaId]
 
         if let title = mangaModel.title { mangaDict["title"] = title }
@@ -174,7 +174,7 @@ final class DownloadPlugin: Plugin {
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
+            return mangas.compactMap(Self.convertToManga)
         }
     }
 
@@ -203,7 +203,7 @@ final class DownloadPlugin: Plugin {
 
             let mangas = try query.limit(limit, offset: offset).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
+            return mangas.compactMap(Self.convertToManga)
         }
     }
 
@@ -217,7 +217,7 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             let mangas = try DownloadMangaModel.filter(ids.contains(Column("id"))).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in self.convertToManga(mangaModel) }
+            return mangas.compactMap(Self.convertToManga)
         }
     }
 
@@ -234,7 +234,7 @@ final class DownloadPlugin: Plugin {
                 throw MankaiErrorCode.pluginDownloadMangaNotFound.makeError()
             }
 
-            guard let detailedManga = self.convertToDetailedManga(mangaModel, db: db) else {
+            guard let detailedManga = Self.convertToDetailedManga(mangaModel, db: db) else {
                 Logger.downloadPlugin.error(
                     "Failed to convert manga model to detailed manga: \(id)")
                 throw MankaiErrorCode.pluginDownloadFailedToLoadMangaDetails.makeError()
@@ -318,7 +318,7 @@ final class DownloadPlugin: Plugin {
         return try await db.read { db in
             let mangas = try DownloadMangaModel.filter(Column("downloaded") == true).fetchAll(db)
 
-            return mangas.compactMap { mangaModel in self.convertToDetailedManga(mangaModel, db: db)
+            return mangas.compactMap { mangaModel in Self.convertToDetailedManga(mangaModel, db: db)
             }
         }
     }
@@ -374,7 +374,7 @@ final class DownloadPlugin: Plugin {
 
         try await db.write { db in try manga.save(db) }
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func saveChapter(_ chapter: DownloadChapterModel) async throws {
@@ -386,7 +386,7 @@ final class DownloadPlugin: Plugin {
 
         try await db.write { db in try chapter.save(db) }
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func saveImage(_ image: DownloadImageModel) async throws {
@@ -398,7 +398,7 @@ final class DownloadPlugin: Plugin {
 
         try await db.write { db in try image.save(db) }
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
     }
 
     /// Deletes a manga from the database and removes its image directory from disk
@@ -437,7 +437,7 @@ final class DownloadPlugin: Plugin {
             Logger.downloadPlugin.debug("Successfully deleted manga from database: \(mangaId)")
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func deleteManga(_ manga: DetailedManga) async throws {

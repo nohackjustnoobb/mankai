@@ -10,17 +10,19 @@ import CoreImage
 import UIKit
 
 /// A reader image that displays its source immediately, then publishes a processed replacement.
-final class AppImage: ObservableObject {
+@MainActor final class AppImage: ObservableObject {
     enum SlideEdge {
         case left
         case right
     }
 
-    private static let sourceSlideWidth = SmartGrouping.inputSize.width
-    private static let outputSlideSize = CGSize(
+    nonisolated private static let sourceSlideWidth = SmartGrouping.inputSize.width
+    nonisolated private static let outputSlideSize = CGSize(
         width: SmartGrouping.inputSize.width / 2, height: SmartGrouping.inputSize.height)
-    private static let upscalingTileContext = 16
-    private static let renderingContext = CIContext(options: [.cacheIntermediates: false])
+    nonisolated private static let upscalingTileContext = 16
+    nonisolated private static let renderingContext = CIContext(options: [
+        .cacheIntermediates: false
+    ])
 
     @Published private(set) var image: UIImage
     @Published private(set) var isProcessingFinished = false
@@ -32,8 +34,13 @@ final class AppImage: ObservableObject {
 
     var size: CGSize { image.size }
 
-    init?(data: Data) {
-        guard let image = UIImage(data: data) else { return nil }
+    static func load(data: Data) async -> AppImage? {
+        let image = await Task.detached(priority: .userInitiated) { UIImage(data: data) }.value
+        guard let image else { return nil }
+        return AppImage(image: image, data: data)
+    }
+
+    private init(image: UIImage, data: Data) {
         self.image = image
 
         slideTask = Task.detached(priority: .utility) {
@@ -91,7 +98,7 @@ final class AppImage: ObservableObject {
 
     /// Returns one generated edge slide and releases the stored reference immediately.
     /// Each edge can only be read once.
-    @MainActor func takeSlide(_ edge: SlideEdge) async -> CIImage? {
+    func takeSlide(_ edge: SlideEdge) async -> CIImage? {
         if let slideTask {
             if let slides = await slideTask.value {
                 leftSlide = slides.left
@@ -109,19 +116,21 @@ final class AppImage: ObservableObject {
         }
     }
 
-    @MainActor func releaseSlides() {
+    func releaseSlides() {
         slideTask?.cancel()
         slideTask = nil
         leftSlide = nil
         rightSlide = nil
     }
 
-    deinit {
+    isolated deinit {
         processingTask?.cancel()
         slideTask?.cancel()
     }
 
-    private static func makeSlides(from image: CIImage) -> (left: CIImage, right: CIImage)? {
+    nonisolated private static func makeSlides(from image: CIImage) -> (
+        left: CIImage, right: CIImage
+    )? {
         let extent = image.extent.standardized
         guard extent.width.isFinite, extent.height.isFinite, extent.width > 0, extent.height > 0
         else { return nil }
@@ -143,7 +152,7 @@ final class AppImage: ObservableObject {
         return (left: resizeSlide(leftSlide), right: resizeSlide(rightSlide))
     }
 
-    private static func resizeSlide(_ image: CIImage) -> CIImage {
+    nonisolated private static func resizeSlide(_ image: CIImage) -> CIImage {
         let scaleX = outputSlideSize.width / image.extent.width
         let scaleY = outputSlideSize.height / image.extent.height
 
@@ -151,7 +160,7 @@ final class AppImage: ObservableObject {
             .cropped(to: CGRect(origin: .zero, size: outputSlideSize))
     }
 
-    @MainActor private static func makeProcessors() -> [any ImageProcessor] {
+    private static func makeProcessors() -> [any ImageProcessor] {
         let shouldUpscale =
             (UserDefaults.standard.object(forKey: SettingsKey.imageUpscaling.rawValue) as? Bool)
             ?? SettingsDefaults.imageUpscaling

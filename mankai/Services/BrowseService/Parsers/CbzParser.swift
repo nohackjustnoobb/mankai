@@ -11,7 +11,7 @@ import ZIPFoundation
 final class CbzParser: Parser {
     /// Couples each ZIPFoundation archive to the lock that serializes its reads.
     /// Retaining this wrapper for an operation keeps an evicted archive alive until that operation has finished.
-    private final class CachedArchive {
+    nonisolated private final class CachedArchive: @unchecked Sendable {
         let archive: Archive
         let readLock = NSLock()
 
@@ -50,7 +50,7 @@ final class CbzParser: Parser {
             return cached
         }
 
-        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { @MainActor [self, file] in
             if let cached = cachedArchive(for: file.cacheKey) {
                 Logger.cbzParser.debug("Reusing cached archive: \(file.cacheKey)")
                 return cached
@@ -58,27 +58,36 @@ final class CbzParser: Parser {
 
             Logger.cbzParser.debug("Loading archive content: \(file.cacheKey)")
             let data = try await file.getContent()
-            let archive = try Archive(data: data, accessMode: .read)
-            return storeArchive(CachedArchive(archive: archive), for: file.cacheKey)
+            let loadedArchive =
+                try await Task.detached(priority: .utility) {
+                    let archive = try Archive(data: data, accessMode: .read)
+                    return CachedArchive(archive: archive)
+                }
+                .value
+            return storeArchive(loadedArchive, for: file.cacheKey)
         }
     }
 
     /// Keeping the lock operation in a synchronous helper avoids suspending while an `NSLock` is held.
-    private func performRead<T>(cachedArchive: CachedArchive, body: (Archive) throws -> T) rethrows
-        -> T
-    {
+    nonisolated private static func performRead<T>(
+        cachedArchive: CachedArchive, body: @Sendable (Archive) throws -> T
+    ) rethrows -> T {
         cachedArchive.readLock.lock()
         defer { cachedArchive.readLock.unlock() }
         return try body(cachedArchive.archive)
     }
 
     /// Resolves the (cached) `Archive` for `file` and runs `body` under its read lock.
-    private func withReadLock<T>(for file: ParserFile, body: (Archive) throws -> T) async throws
-        -> T
-    {
+    private func withReadLock<T: Sendable>(
+        for file: ParserFile, body: @escaping @Sendable (Archive) throws -> T
+    ) async throws -> T {
         Logger.cbzParser.debug("Acquiring read lock for: \(file.cacheKey)")
         let cachedArchive = try await archive(for: file)
-        return try performRead(cachedArchive: cachedArchive, body: body)
+        return
+            try await Task.detached(priority: .utility) {
+                try Self.performRead(cachedArchive: cachedArchive, body: body)
+            }
+            .value
     }
 
     override var id: String { "cbz" }
@@ -92,58 +101,57 @@ final class CbzParser: Parser {
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.cbzParser.debug("Parsing archive: \(file.fileName)")
 
-        var imageEntries: [Entry] = []
-        var info: ComicInfo? = nil
-        var coverEntryPath: String? = nil
-        try await withReadLock(for: file) { archive in
-            imageEntries =
-                archive.compactMap { entry -> Entry? in
-                    guard entry.type == .file, ComicArchiveSupport.isImagePath(entry.path) else {
-                        return nil
+        let fileName = file.fileName
+        let parsed: (imagePaths: [String], info: ComicInfo?, coverPath: String?) =
+            try await withReadLock(for: file) { archive in
+                let imageEntries =
+                    archive.compactMap { entry -> Entry? in
+                        guard entry.type == .file, ComicArchiveSupport.isImagePath(entry.path)
+                        else { return nil }
+                        return entry
                     }
-                    return entry
-                }
-                .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+                    .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
 
-            guard !imageEntries.isEmpty else {
-                Logger.cbzParser.error("No supported images found in archive: \(file.fileName)")
-                throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
+                guard !imageEntries.isEmpty else {
+                    Logger.cbzParser.error("No supported images found in archive: \(fileName)")
+                    throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
+                }
+
+                let info: ComicInfo?
+                if let infoEntry = archive["ComicInfo.xml"],
+                    let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
+                {
+                    Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
+                    info = ComicInfoParser.parse(data: infoData)
+                    if info == nil {
+                        Logger.cbzParser.warning(
+                            "ComicInfo.xml exists but could not be parsed, proceeding with image-only mode"
+                        )
+                    }
+                } else {
+                    info = nil
+                    Logger.cbzParser.debug(
+                        "No ComicInfo.xml found, deferring filename metadata to presentation")
+                }
+
+                let coverEntry =
+                    info?.frontCoverIndex
+                    .flatMap { idx -> Entry? in
+                        guard idx >= 0, idx < imageEntries.count else { return nil }
+                        return imageEntries[idx]
+                    } ?? imageEntries.first
+
+                return (imageEntries.map(\.path), info, coverEntry?.path)
             }
 
-            if let infoEntry = archive["ComicInfo.xml"],
-                let infoData = try? Self.entryData(archive: archive, entry: infoEntry)
-            {
-                Logger.cbzParser.debug("Found ComicInfo.xml, parsing metadata")
-                info = ComicInfoParser.parse(data: infoData)
-                if info == nil {
-                    Logger.cbzParser.warning(
-                        "ComicInfo.xml exists but could not be parsed, proceeding with image-only mode"
-                    )
-                }
-            } else {
-                Logger.cbzParser.debug(
-                    "No ComicInfo.xml found, deferring filename metadata to presentation")
-            }
-
-            let coverEntry =
-                info?.frontCoverIndex
-                .flatMap { idx -> Entry? in
-                    guard idx >= 0, idx < imageEntries.count else { return nil }
-                    return imageEntries[idx]
-                } ?? imageEntries.first
-
-            if let coverEntry { coverEntryPath = coverEntry.path }
-        }
-
-        var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverEntryPath)
+        var manga = ComicArchiveSupport.detailedManga(
+            info: parsed.info, coverPath: parsed.coverPath)
         if let chapter = manga.latestChapter {
-            manga.meta = try ParserChapterMetadata(
-                chapterId: chapter.id, pages: imageEntries.map(\.path)
-            )
-            .encoded()
+            manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: parsed.imagePaths)
+                .encoded()
         }
 
-        Logger.cbzParser.debug("Parsed \(imageEntries.count) images")
+        Logger.cbzParser.debug("Parsed \(parsed.imagePaths.count) images")
         return manga
     }
 
@@ -163,18 +171,18 @@ final class CbzParser: Parser {
 
         Logger.cbzParser.debug("No compatible chapter metadata found, reparsing archive")
 
-        let imageEntries: [Entry] = try await withReadLock(for: file) { archive in
-            archive.compactMap { entry -> Entry? in
+        let imagePaths = try await withReadLock(for: file) { archive in
+            archive.compactMap { entry -> String? in
                 guard entry.type == .file, ComicArchiveSupport.isImagePath(entry.path) else {
                     return nil
                 }
-                return entry
+                return entry.path
             }
-            .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         }
 
-        Logger.cbzParser.debug("Found \(imageEntries.count) images for chapter of \(manga.id)")
-        return imageEntries.map(\.path)
+        Logger.cbzParser.debug("Found \(imagePaths.count) images for chapter of \(manga.id)")
+        return imagePaths
     }
 
     override func parseImage(url: String, file: ParserFile) async throws -> Data {
@@ -192,7 +200,7 @@ final class CbzParser: Parser {
 
     // MARK: - Helpers
 
-    private static func entryData(archive: Archive, entry: Entry) throws -> Data {
+    nonisolated private static func entryData(archive: Archive, entry: Entry) throws -> Data {
         var data = Data()
         _ = try archive.extract(entry, consumer: { chunk in data.append(chunk) })
         return data

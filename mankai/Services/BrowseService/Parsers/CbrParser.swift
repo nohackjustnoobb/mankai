@@ -10,7 +10,7 @@ import UnrarKit
 
 final class CbrParser: Parser {
     /// Couples each UnrarKit archive to its filenames and the lock that serializes reads.
-    private final class CachedArchive {
+    nonisolated private final class CachedArchive: @unchecked Sendable {
         let archive: URKArchive
         let filenames: [String]
         let readLock = NSLock()
@@ -50,7 +50,7 @@ final class CbrParser: Parser {
             return cached
         }
 
-        return try await archiveLoadRegistry.value(for: file.cacheKey) { [self, file] in
+        return try await archiveLoadRegistry.value(for: file.cacheKey) { @MainActor [self, file] in
             if let cached = cachedArchive(for: file.cacheKey) {
                 Logger.cbrParser.debug("Reusing cached archive: \(file.cacheKey)")
                 return cached
@@ -58,27 +58,35 @@ final class CbrParser: Parser {
 
             Logger.cbrParser.debug("Loading archive: \(file.cacheKey)")
             let url = try await file.getUrl()
-            let archive = try URKArchive(url: url)
-            let filenames = try archive.listFilenames()
-            return storeArchive(
-                CachedArchive(archive: archive, filenames: filenames), for: file.cacheKey)
+            let loadedArchive =
+                try await Task.detached(priority: .utility) {
+                    let archive = try URKArchive(url: url)
+                    let filenames = try archive.listFilenames()
+                    return CachedArchive(archive: archive, filenames: filenames)
+                }
+                .value
+            return storeArchive(loadedArchive, for: file.cacheKey)
         }
     }
 
-    private func performRead<T>(cachedArchive: CachedArchive, body: (CachedArchive) throws -> T)
-        rethrows -> T
-    {
+    nonisolated private static func performRead<T>(
+        cachedArchive: CachedArchive, body: @Sendable (CachedArchive) throws -> T
+    ) rethrows -> T {
         cachedArchive.readLock.lock()
         defer { cachedArchive.readLock.unlock() }
         return try body(cachedArchive)
     }
 
-    private func withReadLock<T>(for file: ParserFile, body: (CachedArchive) throws -> T)
-        async throws -> T
-    {
+    private func withReadLock<T: Sendable>(
+        for file: ParserFile, body: @escaping @Sendable (CachedArchive) throws -> T
+    ) async throws -> T {
         Logger.cbrParser.debug("Acquiring read lock for: \(file.cacheKey)")
         let cachedArchive = try await archive(for: file)
-        return try performRead(cachedArchive: cachedArchive, body: body)
+        return
+            try await Task.detached(priority: .utility) {
+                try Self.performRead(cachedArchive: cachedArchive, body: body)
+            }
+            .value
     }
 
     override var id: String { "cbr" }
@@ -92,49 +100,53 @@ final class CbrParser: Parser {
     override func parse(file: ParserFile) async throws -> DetailedManga {
         Logger.cbrParser.debug("Parsing archive: \(file.fileName)")
 
-        var imagePaths: [String] = []
-        var info: ComicInfo?
-        var coverPath: String?
-        try await withReadLock(for: file) { cachedArchive in
-            let archive = cachedArchive.archive
-            let filenames = cachedArchive.filenames
-            imagePaths = Self.sortedImagePaths(in: filenames)
+        let fileName = file.fileName
+        let parsed: (imagePaths: [String], info: ComicInfo?, coverPath: String?) =
+            try await withReadLock(for: file) { cachedArchive in
+                let archive = cachedArchive.archive
+                let filenames = cachedArchive.filenames
+                let imagePaths = Self.sortedImagePaths(in: filenames)
 
-            guard !imagePaths.isEmpty else {
-                Logger.cbrParser.error("No supported images found in archive: \(file.fileName)")
-                throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
-            }
-
-            if filenames.contains("ComicInfo.xml"),
-                let infoData = try? archive.extractData(fromFile: "ComicInfo.xml")
-            {
-                Logger.cbrParser.debug("Found ComicInfo.xml, parsing metadata")
-                info = ComicInfoParser.parse(data: infoData)
-                if info == nil {
-                    Logger.cbrParser.warning(
-                        "ComicInfo.xml exists but could not be parsed, proceeding with image-only mode"
-                    )
+                guard !imagePaths.isEmpty else {
+                    Logger.cbrParser.error("No supported images found in archive: \(fileName)")
+                    throw MankaiErrorCode.browseArchiveNoImagesFoundInArchive.makeError()
                 }
-            } else {
-                Logger.cbrParser.debug(
-                    "No ComicInfo.xml found, deferring filename metadata to presentation")
+
+                let info: ComicInfo?
+                if filenames.contains("ComicInfo.xml"),
+                    let infoData = try? archive.extractData(fromFile: "ComicInfo.xml")
+                {
+                    Logger.cbrParser.debug("Found ComicInfo.xml, parsing metadata")
+                    info = ComicInfoParser.parse(data: infoData)
+                    if info == nil {
+                        Logger.cbrParser.warning(
+                            "ComicInfo.xml exists but could not be parsed, proceeding with image-only mode"
+                        )
+                    }
+                } else {
+                    info = nil
+                    Logger.cbrParser.debug(
+                        "No ComicInfo.xml found, deferring filename metadata to presentation")
+                }
+
+                let coverPath =
+                    info?.frontCoverIndex
+                    .flatMap { index in
+                        guard index >= 0, index < imagePaths.count else { return nil }
+                        return imagePaths[index]
+                    } ?? imagePaths.first
+
+                return (imagePaths, info, coverPath)
             }
 
-            coverPath =
-                info?.frontCoverIndex
-                .flatMap { index in
-                    guard index >= 0, index < imagePaths.count else { return nil }
-                    return imagePaths[index]
-                } ?? imagePaths.first
-        }
-
-        var manga = ComicArchiveSupport.detailedManga(info: info, coverPath: coverPath)
+        var manga = ComicArchiveSupport.detailedManga(
+            info: parsed.info, coverPath: parsed.coverPath)
         if let chapter = manga.latestChapter {
-            manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: imagePaths)
+            manga.meta = try ParserChapterMetadata(chapterId: chapter.id, pages: parsed.imagePaths)
                 .encoded()
         }
 
-        Logger.cbrParser.debug("Parsed \(imagePaths.count) images")
+        Logger.cbrParser.debug("Parsed \(parsed.imagePaths.count) images")
         return manga
     }
 
@@ -174,7 +186,7 @@ final class CbrParser: Parser {
         }
     }
 
-    private static func sortedImagePaths(in filenames: [String]) -> [String] {
+    nonisolated private static func sortedImagePaths(in filenames: [String]) -> [String] {
         filenames.filter(ComicArchiveSupport.isImagePath)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }

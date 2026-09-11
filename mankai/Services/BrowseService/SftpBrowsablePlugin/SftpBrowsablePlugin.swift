@@ -5,12 +5,12 @@
 //  Created by Travis XU on 31/8/2026.
 //
 
-import Citadel
+@preconcurrency import Citadel
 import Foundation
 import GRDB
 import SwiftUI
 
-struct SftpConnectionConfiguration {
+struct SftpConnectionConfiguration: Sendable {
     let host: String
     let port: Int
     let username: String

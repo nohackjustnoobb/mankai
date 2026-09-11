@@ -122,7 +122,7 @@ enum ComicArchiveSupport {
 
 // MARK: - ComicInfo.xml parsing
 
-struct ComicInfo {
+struct ComicInfo: Sendable {
     var title: String?
     var series: String?
     var summary: String?

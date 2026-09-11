@@ -10,7 +10,7 @@ import GRDB
 import SwiftUI
 import WebDAV
 
-struct WebDavConnectionConfiguration {
+struct WebDavConnectionConfiguration: Sendable {
     let baseURL: URL
     var username: String?
     var password: String?
@@ -27,7 +27,7 @@ struct WebDavConnectionConfiguration {
     }
 }
 
-private struct MankaiWebDavAccount: WebDAVAccount {
+private struct MankaiWebDavAccount: WebDAVAccount, Sendable {
     let username: String?
     let baseURL: String?
 }
@@ -53,7 +53,7 @@ actor WebDavSession: BrowsableSession {
     func disconnect() async {}
 
     func list(path: String) async throws -> [BrowsableSessionEntry] {
-        let files: [WebDAVFile] = try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             client.listFiles(
                 atPath: path, account: account, password: configuration.password ?? "",
                 caching: .disableCache
@@ -61,17 +61,17 @@ actor WebDavSession: BrowsableSession {
                 if let error {
                     continuation.resume(throwing: Self.requestError(error))
                 } else if let files {
-                    continuation.resume(returning: files)
+                    let entries = files.map { file in
+                        BrowsableSessionEntry(
+                            name: file.fileName, isDirectory: file.isDirectory,
+                            isRegularFile: !file.isDirectory)
+                    }
+                    continuation.resume(returning: entries)
                 } else {
                     continuation.resume(
                         throwing: MankaiErrorCode.browseWebDavRequestFailed.makeError())
                 }
             }
-        }
-        return files.map { file in
-            BrowsableSessionEntry(
-                name: file.fileName, isDirectory: file.isDirectory, isRegularFile: !file.isDirectory
-            )
         }
     }
 

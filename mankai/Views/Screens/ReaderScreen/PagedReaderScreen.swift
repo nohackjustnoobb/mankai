@@ -448,7 +448,9 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
             self, action: #selector(handlePageTransitionPan(_:)))
         pageTransitionScrollObservation = transitionScrollView.observe(
             \.contentOffset, options: [.new]
-        ) { [weak self] scrollView, _ in self?.updateOverscrollDistances(from: scrollView) }
+        ) { [weak self] scrollView, _ in
+            Task { @MainActor in self?.updateOverscrollDistances(from: scrollView) }
+        }
     }
 
     private func tearDownPageTransitionOverscrollTracking() {
@@ -474,7 +476,8 @@ private final class PagedReaderViewController: UIViewController, UIPageViewContr
             return
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
             guard let self, generation == overscrollGestureGeneration else { return }
             isTrackingPageTransitionOverscroll = false
             leadingOverscrollDistance = 0

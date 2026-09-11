@@ -20,7 +20,7 @@ enum Method: String {
     case removeValue
 }
 
-final class JsRuntime: NSObject {
+@MainActor final class JsRuntime: NSObject {
     static let shared = JsRuntime()
 
     static func javascriptStringLiteral(_ value: String) -> String {
@@ -52,7 +52,7 @@ final class JsRuntime: NSObject {
 
     private var webview: WKWebView?
 
-    @MainActor private func initWebview() async {
+    private func initWebview() async {
         Logger.jsRuntime.debug("Initializing WebView")
         if webview == nil {
             webview = WKWebView(frame: .zero)
@@ -61,7 +61,7 @@ final class JsRuntime: NSObject {
         }
     }
 
-    @MainActor private func ping(_ webview: WKWebView) async -> Bool {
+    private func ping(_ webview: WKWebView) async -> Bool {
         await withCheckedContinuation { continuation in
             var didFinish = false
 
@@ -71,7 +71,8 @@ final class JsRuntime: NSObject {
                 continuation.resume(returning: ((try? result.get()) as? Bool) == true)
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(2))
                 guard !didFinish else { return }
                 didFinish = true
                 continuation.resume(returning: false)
@@ -82,9 +83,7 @@ final class JsRuntime: NSObject {
     /// Executes JavaScript in the hidden WKWebView using async/await
     /// - Parameter js: The JavaScript code to execute
     /// - Returns: The result of the JavaScript execution
-    @MainActor func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
-        -> Any?
-    {
+    func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws -> Any? {
         Logger.jsRuntime.debug("Executing JS (from: \(from ?? plugin?.id ?? "unknown"))")
         await initWebview()
 

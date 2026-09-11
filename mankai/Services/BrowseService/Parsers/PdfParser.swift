@@ -10,7 +10,7 @@ import PDFKit
 import UIKit
 
 final class PdfParser: Parser {
-    private final class CachedDocument {
+    nonisolated private final class CachedDocument: @unchecked Sendable {
         let document: PDFDocument
         let readLock = NSLock()
 
@@ -46,7 +46,7 @@ final class PdfParser: Parser {
             return cached
         }
 
-        return try await documentLoadRegistry.value(for: file.cacheKey) { [self, file] in
+        return try await documentLoadRegistry.value(for: file.cacheKey) { @MainActor [self, file] in
             if let cached = cachedDocument(for: file.cacheKey) {
                 Logger.pdfParser.debug("Reusing cached document: \(file.cacheKey)")
                 return cached
@@ -54,37 +54,48 @@ final class PdfParser: Parser {
 
             Logger.pdfParser.debug("Loading document content: \(file.cacheKey)")
             let data = try await file.getContent()
-            guard let document = PDFDocument(data: data) else {
-                Logger.pdfParser.error("Invalid PDF document: \(file.fileName)")
-                throw MankaiErrorCode.browsePdfInvalidDocument.makeError()
-            }
-            guard !document.isLocked else {
-                Logger.pdfParser.error("Locked PDF document: \(file.fileName)")
-                throw MankaiErrorCode.browsePdfPasswordProtectedDocument.makeError()
-            }
-            guard document.pageCount > 0 else {
-                Logger.pdfParser.error("Empty PDF document: \(file.fileName)")
-                throw MankaiErrorCode.browsePdfNoPagesFound.makeError()
-            }
+            let fileName = file.fileName
+            let loadedDocument =
+                try await Task.detached(priority: .utility) {
+                    guard let document = PDFDocument(data: data) else {
+                        Logger.pdfParser.error("Invalid PDF document: \(fileName)")
+                        throw MankaiErrorCode.browsePdfInvalidDocument.makeError()
+                    }
+                    guard !document.isLocked else {
+                        Logger.pdfParser.error("Locked PDF document: \(fileName)")
+                        throw MankaiErrorCode.browsePdfPasswordProtectedDocument.makeError()
+                    }
+                    guard document.pageCount > 0 else {
+                        Logger.pdfParser.error("Empty PDF document: \(fileName)")
+                        throw MankaiErrorCode.browsePdfNoPagesFound.makeError()
+                    }
 
-            return storeDocument(CachedDocument(document: document), for: file.cacheKey)
+                    return CachedDocument(document: document)
+                }
+                .value
+
+            return storeDocument(loadedDocument, for: file.cacheKey)
         }
     }
 
-    private func performRead<T>(cachedDocument: CachedDocument, body: (CachedDocument) throws -> T)
-        rethrows -> T
-    {
+    nonisolated private static func performRead<T>(
+        cachedDocument: CachedDocument, body: @Sendable (CachedDocument) throws -> T
+    ) rethrows -> T {
         cachedDocument.readLock.lock()
         defer { cachedDocument.readLock.unlock() }
         return try body(cachedDocument)
     }
 
-    private func withReadLock<T>(for file: ParserFile, body: (CachedDocument) throws -> T)
-        async throws -> T
-    {
+    private func withReadLock<T: Sendable>(
+        for file: ParserFile, body: @escaping @Sendable (CachedDocument) throws -> T
+    ) async throws -> T {
         Logger.pdfParser.debug("Acquiring read lock for: \(file.cacheKey)")
         let cachedDocument = try await document(for: file)
-        return try performRead(cachedDocument: cachedDocument, body: body)
+        return
+            try await Task.detached(priority: .utility) {
+                try Self.performRead(cachedDocument: cachedDocument, body: body)
+            }
+            .value
     }
 
     override var id: String { "pdf" }

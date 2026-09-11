@@ -7,6 +7,35 @@
 
 import SwiftUI
 
+private func formattedCacheSize(for directoryName: String) -> String? {
+    let fileManager = FileManager.default
+    guard let cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+    else { return nil }
+
+    let directory = cacheDirectory.appendingPathComponent(directoryName)
+    let size = (try? fileManager.allocatedSizeOfDirectory(at: directory)) ?? 0
+
+    let formatter = ByteCountFormatter()
+    formatter.allowedUnits = [.useAll]
+    formatter.countStyle = .file
+    return formatter.string(fromByteCount: Int64(size))
+}
+
+private func clearCacheContents(in directoryName: String) {
+    let fileManager = FileManager.default
+    guard let cacheDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+    else { return }
+
+    let directory = cacheDirectory.appendingPathComponent(directoryName)
+    guard fileManager.fileExists(atPath: directory.path) else { return }
+
+    do {
+        let contents = try fileManager.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil)
+        for url in contents { try fileManager.removeItem(at: url) }
+    } catch { Logger.ui.error("Failed to clear cache: \(error)") }
+}
+
 struct GeneralSettingsScreen: View {
     @AppStorage(SettingsKey.inMemoryCacheItemCount.rawValue) private var inMemoryCacheItemCount:
         Int = SettingsDefaults.inMemoryCacheItemCount
@@ -160,98 +189,53 @@ struct GeneralSettingsScreen: View {
     }
 
     private func updateCacheSize() {
-        DispatchQueue.global(qos: .userInitiated)
-            .async {
-                let fileManager = FileManager.default
-                guard
-                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
-                        .first
-                else { return }
+        Task { @MainActor in
+            let formattedSize =
+                await Task.detached(priority: .userInitiated) {
+                    formattedCacheSize(for: CacheDirectory.regular)
+                }
+                .value
+            guard let formattedSize else { return }
 
-                // Only report the size of the clearable regular cache, index cache is
-                // intentionally excluded since the user cannot clear it from here.
-                let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
-                let size = (try? fileManager.allocatedSizeOfDirectory(at: regularCacheDir)) ?? 0
-
-                let formatter = ByteCountFormatter()
-                formatter.allowedUnits = [.useAll]
-                formatter.countStyle = .file
-                let formattedSize = formatter.string(fromByteCount: Int64(size))
-
-                DispatchQueue.main.async { self.cacheSize = formattedSize }
-            }
+            cacheSize = formattedSize
+        }
     }
 
     private func updateIndexCacheSize() {
-        DispatchQueue.global(qos: .userInitiated)
-            .async {
-                let fileManager = FileManager.default
-                guard
-                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
-                        .first
-                else { return }
+        Task { @MainActor in
+            let formattedSize =
+                await Task.detached(priority: .userInitiated) {
+                    formattedCacheSize(for: CacheDirectory.index)
+                }
+                .value
+            guard let formattedSize else { return }
 
-                let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
-                let size = (try? fileManager.allocatedSizeOfDirectory(at: indexCacheDir)) ?? 0
-
-                let formatter = ByteCountFormatter()
-                formatter.allowedUnits = [.useAll]
-                formatter.countStyle = .file
-                let formattedSize = formatter.string(fromByteCount: Int64(size))
-
-                DispatchQueue.main.async { self.indexCacheSize = formattedSize }
-            }
+            indexCacheSize = formattedSize
+        }
     }
 
     private func clearCache() {
-        DispatchQueue.global(qos: .userInitiated)
-            .async {
-                let fileManager = FileManager.default
-                guard
-                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
-                        .first
-                else { return }
-
-                // Only clear the regular cache, index cache must be preserved.
-                let regularCacheDir = cacheDir.appendingPathComponent(CacheDirectory.regular)
-                if fileManager.fileExists(atPath: regularCacheDir.path) {
-                    do {
-                        let contents = try fileManager.contentsOfDirectory(
-                            at: regularCacheDir, includingPropertiesForKeys: nil)
-                        for url in contents { try fileManager.removeItem(at: url) }
-                    } catch { Logger.ui.error("Failed to clear cache: \(error)") }
-                }
-
-                DispatchQueue.main.async {
-                    // Determine new size (should be small/zero)
-                    self.updateCacheSize()
-                }
+        Task { @MainActor in
+            await Task.detached(priority: .userInitiated) {
+                clearCacheContents(in: CacheDirectory.regular)
             }
+            .value
+
+            updateCacheSize()
+        }
     }
 
-    private func clearIndexCache() {
-        DispatchQueue.global(qos: .userInitiated)
-            .async {
-                let fileManager = FileManager.default
-                guard
-                    let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
-                        .first
-                else { return }
+    @MainActor private func clearIndexCache() {
+        DbService.shared.closeBrowsablePluginDb()
+        DbService.shared.closeOpdsBrowsablePluginDb()
 
-                let indexCacheDir = cacheDir.appendingPathComponent(CacheDirectory.index)
-
-                DbService.shared.closeBrowsablePluginDb()
-                DbService.shared.closeOpdsBrowsablePluginDb()
-
-                if fileManager.fileExists(atPath: indexCacheDir.path) {
-                    do {
-                        let contents = try fileManager.contentsOfDirectory(
-                            at: indexCacheDir, includingPropertiesForKeys: nil)
-                        for url in contents { try fileManager.removeItem(at: url) }
-                    } catch { Logger.ui.error("Failed to clear index cache: \(error)") }
-                }
-
-                DispatchQueue.main.async { self.updateIndexCacheSize() }
+        Task { @MainActor in
+            await Task.detached(priority: .userInitiated) {
+                clearCacheContents(in: CacheDirectory.index)
             }
+            .value
+
+            updateIndexCacheSize()
+        }
     }
 }

@@ -8,23 +8,23 @@
 import Foundation
 import SWXMLHash
 
-enum OpdsEntry {
+enum OpdsEntry: Sendable {
     case navigation(OpdsNavigationEntry)
     case book(OpdsBookEntry)
 }
 
-struct OpdsNavigationEntry {
+struct OpdsNavigationEntry: Sendable {
     let id: String?
     let title: String?
     let url: URL
 }
 
-enum OpdsMediaType: Codable {
+enum OpdsMediaType: Codable, Sendable {
     case regular(url: URL, type: String?)
     case pse(urlTemplate: URL, pageCount: Int)
 }
 
-struct OpdsBookEntry: Codable {
+struct OpdsBookEntry: Codable, Sendable {
     let id: String
     let title: String?
     let authors: [String]
@@ -34,7 +34,7 @@ struct OpdsBookEntry: Codable {
     let mediaType: OpdsMediaType
 }
 
-struct OpdsFeed {
+struct OpdsFeed: Sendable {
     let metadata: OpdsNavigationEntry
     let entries: [OpdsEntry]
 }

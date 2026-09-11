@@ -7,10 +7,10 @@
 
 import Foundation
 import GRDB
-import NFSKit
+@preconcurrency import NFSKit
 import SwiftUI
 
-struct NfsConnectionConfiguration {
+struct NfsConnectionConfiguration: Sendable {
     let host: String
     let export: String
 
@@ -80,18 +80,21 @@ actor NfsSession: BrowsableSession {
         let nfsPath = path.isEmpty ? "/" : path
 
         do {
-            let values: [[URLResourceKey: Any]] = try await withCheckedThrowingContinuation {
-                continuation in
+            return try await withCheckedThrowingContinuation { continuation in
                 client.contentsOfDirectory(atPath: nfsPath) { result in
-                    continuation.resume(with: result)
+                    switch result { case .success(let values):
+                        let entries: [BrowsableSessionEntry] = values.compactMap {
+                            value -> BrowsableSessionEntry? in
+                            guard let name = value[.nameKey] as? String else { return nil }
+                            let type = value[.fileResourceTypeKey] as? URLFileResourceType
+                            return BrowsableSessionEntry(
+                                name: name, isDirectory: type == .directory,
+                                isRegularFile: type == .regular)
+                        }
+                        continuation.resume(returning: entries)
+                        case .failure(let error): continuation.resume(throwing: error)
+                    }
                 }
-            }
-
-            return values.compactMap { value in
-                guard let name = value[.nameKey] as? String else { return nil }
-                let type = value[.fileResourceTypeKey] as? URLFileResourceType
-                return BrowsableSessionEntry(
-                    name: name, isDirectory: type == .directory, isRegularFile: type == .regular)
             }
         } catch {
             invalidate(client)

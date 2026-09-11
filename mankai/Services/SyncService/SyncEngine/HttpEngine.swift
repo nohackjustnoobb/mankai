@@ -89,12 +89,10 @@ final class HttpEngine: SyncEngine {
         authManager = AuthManager(id: "HttpEngine")
 
         super.init()
-        authManager.postSave = { [weak self] in
-            DispatchQueue.main.async { self?.objectWillChange.send() }
-        }
+        authManager.postSave = { [weak self] in self?.objectWillChange.send() }
 
         authManager.postLogin = { [weak self] in
-            DispatchQueue.main.async { self?.objectWillChange.send() }
+            self?.objectWillChange.send()
 
             Task { try? await SyncService.shared.onEngineChange() }
         }
@@ -113,7 +111,7 @@ final class HttpEngine: SyncEngine {
         set {
             authManager.serverUrl = newValue
 
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
         }
     }
 
@@ -250,7 +248,7 @@ final class HttpEngine: SyncEngine {
         let remoteHash = try await getSavedsHash()
 
         // Get local hash
-        let localHash = SavedService.shared.generateHash()
+        let localHash = await SavedService.shared.generateHash()
 
         // Compare hashes
         if remoteHash != localHash {

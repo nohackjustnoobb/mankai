@@ -9,7 +9,7 @@ import Combine
 import Foundation
 import GRDB
 
-final class SyncService: ObservableObject {
+@MainActor final class SyncService: ObservableObject {
     /// The shared singleton instance of SyncService.
     static let shared = SyncService()
     /// The list of available synchronization engines.
@@ -48,7 +48,7 @@ final class SyncService: ObservableObject {
 
             if newValue != nil { startPeriodicSync() } else { stopPeriodicSync() }
 
-            DispatchQueue.main.async { self.objectWillChange.send() }
+            objectWillChange.send()
 
             Task { try? await self.onEngineChange() }
         }
@@ -79,7 +79,7 @@ final class SyncService: ObservableObject {
     private func subscribeToEngine() {
         engineCancellable?.cancel()
         engineCancellable = engine?.objectWillChange
-            .sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }
+            .sink { [weak self] _ in Task { @MainActor in self?.objectWillChange.send() } }
     }
 
     private func startPeriodicSync() {
@@ -105,7 +105,7 @@ final class SyncService: ObservableObject {
         syncTimer = nil
     }
 
-    deinit {
+    isolated deinit {
         stopPeriodicSync()
         engineCancellable?.cancel()
     }
@@ -114,21 +114,23 @@ final class SyncService: ObservableObject {
     /// - Parameter wait: If true, waits for an ongoing sync to complete before proceeding (or skipping).
     /// - Throws: An error if the synchronization fails.
     func sync(wait: Bool = false, showError: Bool = true) async throws {
-        let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
-            if let current = syncTask { return (current, true) }
-
+        let task: Task<Void, Error>
+        let wasAlreadyRunning: Bool
+        if let current = syncTask {
+            task = current
+            wasAlreadyRunning = true
+        } else {
             isSyncing = true
             let newTask = Task {
                 defer {
-                    Task { @MainActor in
-                        self.isSyncing = false
-                        self.syncTask = nil
-                    }
+                    self.isSyncing = false
+                    self.syncTask = nil
                 }
                 try await internalSync()
             }
             syncTask = newTask
-            return (newTask, false)
+            task = newTask
+            wasAlreadyRunning = false
         }
 
         if wasAlreadyRunning {
@@ -171,7 +173,7 @@ final class SyncService: ObservableObject {
         // Update sync time
         UserDefaults.standard.set(Date(), forKey: "SyncService.lastSyncTime")
 
-        await MainActor.run { self.objectWillChange.send() }
+        objectWillChange.send()
         Logger.syncService.debug("Sync completed")
     }
 

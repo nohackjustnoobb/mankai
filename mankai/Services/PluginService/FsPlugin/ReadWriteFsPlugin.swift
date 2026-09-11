@@ -30,14 +30,19 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Helper Methods
 
-    private func getImageInfo(from imageData: Data) -> (format: String, width: Int, height: Int) {
-        let format = NSData(data: imageData).imageFormat.rawValue
+    private static func getImageInfo(from imageData: Data) async -> (
+        format: String, width: Int, height: Int
+    ) {
+        await Task.detached(priority: .utility) {
+            let format = NSData(data: imageData).imageFormat.rawValue
 
-        if let uiImage = UIImage(data: imageData) {
-            return (format, Int(uiImage.size.width), Int(uiImage.size.height))
+            if let uiImage = UIImage(data: imageData) {
+                return (format, Int(uiImage.size.width), Int(uiImage.size.height))
+            }
+
+            return (format, 0, 0)
         }
-
-        return (format, 0, 0)
+        .value
     }
 
     // MARK: - Methods
@@ -73,7 +78,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             try mangaModel?.upsert(db)
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
 
         return id
     }
@@ -96,7 +101,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             try? fileManager.removeItem(at: mangaDir)
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func upsertCover(mangaId: String, image: Data) async throws {
@@ -109,7 +114,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         let fileManager = FileManager.default
         let mangaCoverDir = url.appendingPathComponent(mangaId)
 
-        let imageInfo = getImageInfo(from: image)
+        let imageInfo = await Self.getImageInfo(from: image)
         let coverFileName = "cover.\(imageInfo.format)"
         let coverId = "cover-\(mangaId)"
 
@@ -148,7 +153,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             }
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     // MARK: - Chapter Group Methods
@@ -170,7 +175,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             try newGroup.upsert(db)
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func deleteChapterGroup(id: String) async throws {
@@ -205,7 +210,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         // Delete the chapter group (cascade deletes chapters)
         _ = try await db.write { db in try FsChapterGroupModel.filter(key: intId).deleteAll(db) }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func getChapters(groupId: String) async throws -> [Chapter] {
@@ -267,7 +272,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             }
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func deleteChapter(id: String) async throws {
@@ -297,7 +302,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             }
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func arrangeChapterOrder(ids: [String]) async throws {
@@ -318,7 +323,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             }
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func addImages(chapterId: String, images: [Data]) async throws {
@@ -350,7 +355,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
         do {
             for imageData in images {
-                let imageInfo = getImageInfo(from: imageData)
+                let imageInfo = await Self.getImageInfo(from: imageData)
                 let imageId = UUID().uuidString
                 let imageFileName = "\(imageId).\(imageInfo.format)"
 
@@ -388,7 +393,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             throw error
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func deleteImages(ids: [String]) async throws {
@@ -412,7 +417,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
         _ = try await db.write { db in try FsImageModel.filter(keys: ids).deleteAll(db) }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 
     func arrangeImageOrder(ids: [String]) async throws {
@@ -432,6 +437,6 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             }
         }
 
-        await MainActor.run { objectWillChange.send() }
+        objectWillChange.send()
     }
 }
