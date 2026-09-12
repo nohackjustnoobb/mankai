@@ -1,19 +1,13 @@
 {
-  "fill" : {
-    "automatic-gradient" : "display-p3:0.89676,0.91828,0.87104,1.00000"
-  },
+  "fill" : "automatic",
   "groups" : [
     {
-      "blend-mode" : "normal",
-      "blur-material" : null,
-      "hidden" : false,
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "image-name" : "icon.svg",
-          "name" : "icon",
+          "image-name" : "stamens.svg",
+          "name" : "Six stamens",
           "position" : {
-            "scale" : 1.83,
+            "scale" : 1.85,
             "translation-in-points" : [
               0,
               0
@@ -21,15 +15,82 @@
           }
         }
       ],
-      "lighting" : "individual",
       "shadow" : {
         "kind" : "neutral",
-        "opacity" : 0.75
+        "opacity" : 0.5
       },
-      "specular" : true,
       "translucency" : {
-        "enabled" : false,
-        "value" : 0.25
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "throat.svg",
+          "name" : "Pale throat",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "main-petals.svg",
+          "name" : "Main petals",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "back-petals.svg",
+          "name" : "Outer petals",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
       }
     }
   ],

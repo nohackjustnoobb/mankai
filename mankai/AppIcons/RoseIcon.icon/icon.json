@@ -1,18 +1,16 @@
 {
-  "fill" : {
-    "automatic-gradient" : "srgb:0.95686,0.90980,0.91765,1.00000"
-  },
+  "fill" : "automatic",
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "icon.svg",
-          "name" : "icon",
+          "image-name" : "heart.svg",
+          "name" : "Folded center",
           "position" : {
-            "scale" : 1.72,
+            "scale" : 1.85,
             "translation-in-points" : [
               0,
-              20
+              0
             ]
           }
         }
@@ -21,10 +19,188 @@
         "kind" : "neutral",
         "opacity" : 0.5
       },
-      "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0.25
+        "value" : 0.35
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "inner-1.svg",
+          "name" : "Inner petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-2.svg",
+          "name" : "Inner petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "inner-3.svg",
+          "name" : "Inner petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.35
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "main-1.svg",
+          "name" : "Cupped petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-2.svg",
+          "name" : "Cupped petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-3.svg",
+          "name" : "Cupped petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-4.svg",
+          "name" : "Cupped petal 4",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "main-5.svg",
+          "name" : "Cupped petal 5",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.35
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "outer-1.svg",
+          "name" : "Outer petal 1",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "outer-2.svg",
+          "name" : "Outer petal 2",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "outer-3.svg",
+          "name" : "Outer petal 3",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "outer-4.svg",
+          "name" : "Outer petal 4",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "image-name" : "outer-5.svg",
+          "name" : "Outer petal 5",
+          "position" : {
+            "scale" : 1.85,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.35
       }
     }
   ],
