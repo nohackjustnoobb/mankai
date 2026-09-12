@@ -32,6 +32,7 @@ private struct HomeLibraryState {
 struct HomeTab: View {
     private let pluginService = PluginService.shared
     private let browseService = BrowseService.shared
+    @ObservedObject private var syncService = SyncService.shared
     @ObservedObject private var updateService = UpdateService.shared
 
     @State private var library = HomeLibraryState()
@@ -69,6 +70,8 @@ struct HomeTab: View {
     private var isDownloadsMode: Bool { dataSource == .downloads }
 
     private var homeNavigationSubtitle: Text {
+        if syncService.isSyncing { return Text("syncing") }
+
         if let progress = updateService.progress {
             guard progress.total > 0 else { return Text("updating") }
             let format = String(localized: "updatingProgressFormat")

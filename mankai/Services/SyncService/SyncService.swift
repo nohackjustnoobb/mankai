@@ -32,7 +32,7 @@ import GRDB
     private let syncInterval: TimeInterval = 60 * 3  // 3 minutes
 
     /// A flag indicating if a synchronization process is currently in progress.
-    @Published var isSyncing = false
+    @Published private(set) var isSyncing = false
 
     /// The currently active synchronization engine.
     var engine: SyncEngine? {

@@ -32,23 +32,7 @@ import GRDB
 
     /// Returns a decoded manga snapshot, or `nil` when it is unavailable or invalid.
     func get(mangaId: String, pluginId: String, in db: Database? = nil) -> Manga? {
-        do {
-            let snapshot: MangaModel?
-            if let db {
-                snapshot = try fetch(mangaId: mangaId, pluginId: pluginId, in: db)
-            } else {
-                snapshot = try DbService.shared.appDb?
-                    .read { db in try self.fetch(mangaId: mangaId, pluginId: pluginId, in: db) }
-            }
-
-            guard let snapshot else { return nil }
-
-            return try decode(snapshot)
-        } catch {
-            Logger.mangaSnapshotService.error(
-                "Failed to get manga snapshot \(mangaId) from plugin \(pluginId)", error: error)
-            return nil
-        }
+        get(mangaIds: [mangaId], pluginId: pluginId, in: db)[mangaId]
     }
 
     /// Returns all valid decoded snapshots for the requested manga IDs.
@@ -68,7 +52,7 @@ import GRDB
 
             var mangas: [String: Manga] = [:]
             for snapshot in snapshots {
-                do { mangas[snapshot.mangaId] = try decode(snapshot) } catch {
+                do { mangas[snapshot.mangaId] = try snapshot.decode() } catch {
                     Logger.mangaSnapshotService.error(
                         "Failed to decode manga snapshot \(snapshot.mangaId) from plugin \(pluginId)",
                         error: error)
@@ -91,19 +75,7 @@ import GRDB
 
     /// Inserts or replaces a snapshot in its own database transaction.
     @discardableResult func upsert(_ snapshot: MangaModel) async throws -> Upsert? {
-        guard let appDb = DbService.shared.appDb else {
-            throw MankaiErrorCode.libraryFailedToUpdateSavedManga.makeError()
-        }
-
-        let upsert = try await appDb.write { db -> Upsert? in
-            try snapshot.upsert(db)
-            guard let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
-            else { return nil }
-            return Upsert(manga: manga, pluginId: snapshot.pluginId)
-        }
-
-        if let upsert { publish(.upserted([upsert])) }
-        return upsert
+        try await batchUpsert([snapshot]).first
     }
 
     /// Inserts or replaces multiple snapshots in their own database transaction.
@@ -118,8 +90,7 @@ import GRDB
 
             for snapshot in snapshots {
                 try snapshot.upsert(db)
-                if let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
-                {
+                if let manga = try? snapshot.decode() {
                     upserts.append(Upsert(manga: manga, pluginId: snapshot.pluginId))
                 }
             }
@@ -140,8 +111,7 @@ import GRDB
 
         let upsert = try await appDb.write { db -> Upsert? in
             try snapshot.update(db)
-            guard let manga = try? JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
-            else { return nil }
+            guard let manga = try? snapshot.decode() else { return nil }
             return Upsert(manga: manga, pluginId: snapshot.pluginId)
         }
 
@@ -164,11 +134,6 @@ import GRDB
         return deleted
     }
 
-    private func fetch(mangaId: String, pluginId: String, in db: Database) throws -> MangaModel? {
-        try MangaModel.filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-            .fetchOne(db)
-    }
-
     private func fetch(mangaIds: [String], pluginId: String, in db: Database) throws -> [MangaModel]
     {
         try MangaModel.filter(
@@ -177,12 +142,14 @@ import GRDB
         .fetchAll(db)
     }
 
-    private func decode(_ snapshot: MangaModel) throws -> Manga {
-        try JSONDecoder().decode(Manga.self, from: Data(snapshot.info.utf8))
-    }
-
     private func publish(_ change: Change) {
         changeSubject.send(change)
         objectWillChange.send()
+    }
+}
+
+extension MangaModel {
+    fileprivate func decode() throws -> Manga {
+        try JSONDecoder().decode(Manga.self, from: Data(info.utf8))
     }
 }

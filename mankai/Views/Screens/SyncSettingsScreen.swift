@@ -10,9 +10,11 @@ import SwiftUI
 
 struct SyncSettingsScreen: View {
     @ObservedObject private var syncService = SyncService.shared
-    @State private var isSyncing = false
+    @State private var isClearingSyncCache = false
     @State private var syncError: String?
     @State private var showErrorAlert = false
+
+    private var isBusy: Bool { syncService.isSyncing || isClearingSyncCache }
 
     var body: some View {
         List {
@@ -55,11 +57,11 @@ struct SyncSettingsScreen: View {
                         Task { await performSync() }
                     } label: {
                         HStack {
-                            if isSyncing { ProgressView().padding(.trailing, 4) }
+                            if syncService.isSyncing { ProgressView().padding(.trailing, 4) }
                             Text("syncNow")
                         }
                     }
-                    .disabled(isSyncing || !engine.active)
+                    .disabled(isBusy || !engine.active)
                 }
             }
 
@@ -69,11 +71,11 @@ struct SyncSettingsScreen: View {
                         Task { await clearSyncCache() }
                     } label: {
                         HStack {
-                            if isSyncing { ProgressView().padding(.trailing, 4) }
+                            if isClearingSyncCache { ProgressView().padding(.trailing, 4) }
                             Text("clearSyncCache")
                         }
                     }
-                    .disabled(isSyncing)
+                    .disabled(isBusy)
                 }
             }
         }
@@ -86,27 +88,23 @@ struct SyncSettingsScreen: View {
     }
 
     private func performSync() async {
-        isSyncing = true
         syncError = nil
 
         do { try await syncService.sync() } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }
-
-        isSyncing = false
     }
 
     private func clearSyncCache() async {
-        isSyncing = true
+        isClearingSyncCache = true
+        defer { isClearingSyncCache = false }
         syncError = nil
 
         do { try await syncService.onEngineChange() } catch {
             syncError = error.localizedDescription
             showErrorAlert = true
         }
-
-        isSyncing = false
     }
 }
 
