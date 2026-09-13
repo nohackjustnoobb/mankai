@@ -59,7 +59,9 @@ struct PluginSettingsScreen: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(action: { showModal = true }) { Image(systemName: "plus.circle") }
+                Button(action: { showModal = true }) {
+                    ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
+                }
             }
         }
         .navigationTitle("plugins").navigationBarTitleDisplayMode(.inline)

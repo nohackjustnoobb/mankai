@@ -172,7 +172,9 @@ struct PluginLibraryScreen: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { showingFilters = true }) {
                         ZStack {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
+                            ToolbarIcon(
+                                systemName: "line.3.horizontal.decrease",
+                                legacySystemName: "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
                                 Circle().fill(Color.red).frame(width: 8, height: 8)

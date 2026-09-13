@@ -46,7 +46,7 @@ struct FolderSettingsScreen: View {
                 Button {
                     showingAddFolderModal = true
                 } label: {
-                    Image(systemName: "plus.circle")
+                    ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                 }
             }
         }

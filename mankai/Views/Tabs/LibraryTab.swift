@@ -61,7 +61,7 @@ struct LibraryTab: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { isUpdateMangaModalPresented = true }) {
-                        Image(systemName: "plus.circle")
+                        ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                     }
                 }
             }

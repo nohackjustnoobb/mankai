@@ -529,13 +529,13 @@ struct MangaDetailsScreen: View {
             ToolbarItemGroup(placement: .primaryAction) {
                 if plugin.supportsDownloads, mangaData == nil || detailedManga != nil {
                     Button(action: { isSelectChaptersModalPresented = true }) {
-                        Image(systemName: "arrow.down.circle")
+                        ToolbarIcon(systemName: "arrow.down", legacySystemName: "arrow.down.circle")
                     }
                 }
 
                 if plugin is Editable, detailedManga?.editable ?? true {
                     Button(action: { isUpdateMangaModalPresented = true }) {
-                        Image(systemName: "pencil.circle")
+                        ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
                     }
                 }
             }

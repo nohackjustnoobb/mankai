@@ -169,12 +169,14 @@ struct HomeTab: View {
 
                 ToolbarItemGroup(placement: .primaryAction) {
                     Button(action: { showingDownloads = true }) {
-                        Image(systemName: "arrow.down.circle")
+                        ToolbarIcon(systemName: "arrow.down", legacySystemName: "arrow.down.circle")
                     }
 
                     Button(action: { showingFilters = true }) {
                         ZStack {
-                            Image(systemName: "line.3.horizontal.decrease.circle")
+                            ToolbarIcon(
+                                systemName: "line.3.horizontal.decrease",
+                                legacySystemName: "line.3.horizontal.decrease.circle")
 
                             if hasActiveFilters {
                                 Circle().fill(Color.red).frame(width: 8, height: 8)

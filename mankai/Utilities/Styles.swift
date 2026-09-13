@@ -7,6 +7,19 @@
 
 import SwiftUI
 
+struct ToolbarIcon: View {
+    let systemName: String
+    let legacySystemName: String
+
+    @ViewBuilder var body: some View {
+        if #available(iOS 26.0, *) {
+            Image(systemName: systemName)
+        } else {
+            Image(systemName: legacySystemName)
+        }
+    }
+}
+
 struct NavigationTitleSubtitleModifier<LegacyContent: View>: ViewModifier {
     let title: Text
     let subtitle: Text?
