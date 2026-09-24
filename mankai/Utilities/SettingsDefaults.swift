@@ -28,9 +28,12 @@ enum SettingsDefaults {
     static let upscaleThreshold: Double = 1.5
     static let smartGrouping: Bool = false
     static let smartGroupingSensitivity: Double = 0.5
+    static let showCoverOnExternalDisplay: Bool = true
 
     /// Default Reader
-    @MainActor static var readerType: ReaderType { UIDevice.isIPad ? .paged : .continuous }
+    @MainActor static var readerType: ReaderType {
+        UIDevice.isIPad || UIDevice.isDuo ? .paged : .continuous
+    }
 
     // Continuous Reader Defaults
     static let CR_readingDirection: ReadingDirection = .rightToLeft

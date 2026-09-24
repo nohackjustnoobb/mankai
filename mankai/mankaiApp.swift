@@ -35,10 +35,22 @@ import SwiftUI
 
     var body: some Scene {
         WindowGroup {
-            MainScreen()
+            MainScreen().detectDuo()
                 .accentColor(
                     (AppAccentColor(rawValue: accentColorRawValue) ?? SettingsDefaults.accentColor)
                         .color)
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder fileprivate func detectDuo() -> some View {
+        if #available(iOS 27.1, *) {
+            onHingeChange { _, context in
+                UserDefaults.standard.set(context.hinge != nil, forKey: SettingsKey.isDuo.rawValue)
+            }
+        } else {
+            self
         }
     }
 }

@@ -26,6 +26,8 @@ struct ReaderSettingsScreen: View {
         SettingsDefaults.smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity:
         Double = SettingsDefaults.smartGroupingSensitivity
+    @AppStorage(SettingsKey.showCoverOnExternalDisplay.rawValue) private
+        var showCoverOnExternalDisplay: Bool = SettingsDefaults.showCoverOnExternalDisplay
 
     private var upscaleSensitivityLabel: LocalizedStringKey {
         switch upscaleThreshold { case ..<0.75: return "upscaleSensitivityVeryLow" case ..<1.25:
@@ -68,6 +70,16 @@ struct ReaderSettingsScreen: View {
                         isOn: $respectMangaReadingDirection)
                     Text("respectMangaReadingDirectionDescription").font(.caption)
                         .foregroundColor(.secondary)
+                }
+            }
+
+            if #available(iOS 27.0, *) {
+                Section("externalDisplay") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Toggle("showCoverOnExternalDisplay", isOn: $showCoverOnExternalDisplay)
+                        Text("showCoverOnExternalDisplayDescription").font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
 

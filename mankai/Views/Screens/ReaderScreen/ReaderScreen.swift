@@ -147,6 +147,25 @@ private struct ReaderLegacyTabBarModifier: ViewModifier {
     }
 }
 
+private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
+    @Binding var isEnabled: Bool
+    let coverURL: String?
+    let plugin: Plugin
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 27.0, *) {
+            content.sceneAccessory {
+                ExternalNonInteractiveAccessory(isEnabled: $isEnabled) {
+                    MangaCoverView(coverUrl: coverURL, plugin: plugin, cornerRadius: 0)
+                        .ignoresSafeArea()
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+
 private struct ReaderControlsBackgroundModifier: ViewModifier {
     let bottomSafeAreaInset: CGFloat
 
@@ -313,6 +332,8 @@ struct ReaderScreen: View {
         .smartGrouping
     @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private
         var smartGroupingSensitivity = SettingsDefaults.smartGroupingSensitivity
+    @AppStorage(SettingsKey.showCoverOnExternalDisplay.rawValue) private
+        var showCoverOnExternalDisplay = SettingsDefaults.showCoverOnExternalDisplay
     /// Continuous Reader
     @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var continuousDirectionRawValue =
         SettingsDefaults.CR_readingDirection.rawValue
@@ -604,6 +625,11 @@ struct ReaderScreen: View {
         .navigationTitle(currentChapter.map { $0.title ?? $0.id } ?? "")
         .navigationBarTitleDisplayMode(.inline).toolbarBackground(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { readerSettingsMenu } }
+        .modifier(
+            ReaderCoverSceneAccessoryModifier(
+                isEnabled: $showCoverOnExternalDisplay,
+                coverURL: manga.cover ?? downloadManga?.cover, plugin: plugin)
+        )
         .modifier(ReaderLegacyTabBarModifier())
         .background {
             ReaderNavigationBarController(isNavigationBarHidden: !isChromeVisible) {

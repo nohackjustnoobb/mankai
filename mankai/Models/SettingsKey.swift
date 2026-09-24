@@ -8,6 +8,7 @@
 import Foundation
 
 enum SettingsKey: String {
+    case isDuo
     case hideBuiltInPlugins
     case showDebugScreen
     case downsampleImages
@@ -28,6 +29,7 @@ enum SettingsKey: String {
     case upscaleThreshold
     case smartGrouping
     case smartGroupingSensitivity
+    case showCoverOnExternalDisplay
 
     // Continuous Reader
     case CR_readingDirection

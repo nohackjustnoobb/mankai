@@ -4195,6 +4195,34 @@
         }
       }
     },
+    "externalDisplay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "External Display"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部ディスプレイ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外接显示器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外接顯示器"
+          }
+        }
+      }
+    },
     "extra" : {
       "comment" : "Used as a chapter group label.",
       "extractionState" : "manual",
@@ -12763,6 +12791,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "共用資料夾"
+          }
+        }
+      }
+    },
+    "showCoverOnExternalDisplay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Cover on External Display"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外部ディスプレイに表紙を表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在外接显示器上显示封面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在外接顯示器上顯示封面"
+          }
+        }
+      }
+    },
+    "showCoverOnExternalDisplayDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While reading, show the current manga’s cover on a connected external display."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閲覧中に、接続した外部ディスプレイへ現在の漫画の表紙を表示します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "阅读时，在已连接的外接显示器上显示当前漫画的封面。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀時，在已連接的外接顯示器上顯示目前漫畫的封面。"
           }
         }
       }

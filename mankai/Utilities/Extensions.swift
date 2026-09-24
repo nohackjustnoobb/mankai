@@ -31,6 +31,8 @@ extension UIDevice {
     static var isIPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     static var isIPhone: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+
+    static var isDuo: Bool { UserDefaults.standard.bool(forKey: SettingsKey.isDuo.rawValue) }
 }
 
 enum ImageFormat: String {

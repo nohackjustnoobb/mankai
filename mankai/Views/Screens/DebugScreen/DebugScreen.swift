@@ -144,7 +144,7 @@ struct DebugScreen: View {
                             Logger.jsRuntime.debug("\(result ?? "nil")")
 
                             // Test t2s/s2t
-                            let t2s = try await JsRuntime.shared.execute(
+                            let t2s = try? await JsRuntime.shared.execute(
                                 "return await t2s('繁體轉簡體')")
                             Logger.jsRuntime.debug("t2s: \(t2s ?? "nil")")
 
