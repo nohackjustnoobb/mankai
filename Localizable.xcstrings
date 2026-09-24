@@ -5781,34 +5781,6 @@
         }
       }
     },
-    "higanbana" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Higanbana"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "彼岸花"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "彼岸花"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "彼岸花"
-          }
-        }
-      }
-    },
     "historical" : {
       "comment" : "Used as a manga genre label.",
       "extractionState" : "manual",
