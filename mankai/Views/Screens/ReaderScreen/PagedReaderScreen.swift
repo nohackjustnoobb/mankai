@@ -714,6 +714,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
 
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
+    private var contentCenterXConstraint: NSLayoutConstraint!
     private var imageViews: [String: UIImageView] = [:]
     private var imageWidthConstraints: [String: NSLayoutConstraint] = [:]
     private var loadingIndicators: [String: UIActivityIndicatorView] = [:]
@@ -770,6 +771,8 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
         contentStackView.spacing = 0
         scrollView.addSubview(contentStackView)
 
+        contentCenterXConstraint = contentStackView.centerXAnchor.constraint(
+            equalTo: scrollView.centerXAnchor)
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -777,7 +780,7 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             contentStackView.topAnchor.constraint(equalTo: scrollView.topAnchor),
             contentStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentStackView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            contentCenterXConstraint,
             contentStackView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
         ])
 
@@ -848,8 +851,10 @@ private final class PageContentViewController: UIViewController, UIScrollViewDel
             }
         }
 
+        let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame
+        contentCenterXConstraint.constant = safeAreaFrame.midX - view.bounds.midX
         let availableHeight = max(view.bounds.height, 1)
-        let availableWidth = max(view.bounds.width, 1)
+        let availableWidth = max(safeAreaFrame.width, 1)
 
         for url in urls {
             guard let imageView = imageViews[url], let loadingIndicator = loadingIndicators[url],
