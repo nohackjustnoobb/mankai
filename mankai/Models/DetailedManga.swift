@@ -24,6 +24,7 @@ typealias ChapterGroups = [ChapterGroup]
     var readingDirection: ReadingDirection?
     var latestChapter: Chapter?
     var description: String?
+    var externalLink: String?
     @DateCoding(.millisecondsSince1970) var updatedAt: Date?
     @DecodingDefault([]) var authors: [String]
     @DecodingDefault([]) var genres: [Genre]

@@ -308,6 +308,7 @@ interface DetailedManga {
   readingDirection?: ReadingDirection;
   latestChapter?: Chapter;
   description?: string;
+  externalLink?: string;
   updatedAt?: number; // Unix timestamp in milliseconds
   authors?: string[];
   genres?: Genre[];

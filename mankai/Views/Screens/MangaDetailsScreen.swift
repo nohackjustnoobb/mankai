@@ -538,6 +538,16 @@ struct MangaDetailsScreen: View {
                         ToolbarIcon(systemName: "pencil", legacySystemName: "pencil.circle")
                     }
                 }
+
+                if let externalLink = mangaData?.externalLink,
+                    let externalLinkURL = URL(string: externalLink)
+                {
+                    Link(destination: externalLinkURL) {
+                        ToolbarIcon(
+                            systemName: "arrow.up.right.square",
+                            legacySystemName: "arrow.up.right.square")
+                    }
+                }
             }
         }
         .navigationTitleWithSubtitle(
