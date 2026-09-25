@@ -166,23 +166,6 @@ private struct ReaderCoverSceneAccessoryModifier: ViewModifier {
     }
 }
 
-private struct ReaderControlsBackgroundModifier: ViewModifier {
-    let bottomSafeAreaInset: CGFloat
-
-    @ViewBuilder func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.padding().padding(.horizontal).glassEffect().padding(.horizontal)
-                .padding(.bottom, max(12, bottomSafeAreaInset))
-        } else {
-            content.padding(.horizontal, 20).padding(.top)
-                .padding(.bottom, max(12, bottomSafeAreaInset)).background(.bar)
-                .overlay(alignment: .top) {
-                    Rectangle().fill(Color(uiColor: .separator)).frame(height: 0.5)
-                }
-        }
-    }
-}
-
 private struct ReaderNavigationBarController: UIViewControllerRepresentable {
     let isNavigationBarHidden: Bool
     let onWillDisappear: () -> Void
@@ -602,7 +585,7 @@ struct ReaderScreen: View {
                     if #available(iOS 26.0, *) {
                         GlassEffectContainer {
                             if isChromeVisible {
-                                controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
                                     .frame(maxHeight: .infinity, alignment: .bottom)
                             }
                         }
@@ -610,8 +593,8 @@ struct ReaderScreen: View {
                     } else {
                         ZStack(alignment: .bottom) {
                             if isChromeVisible {
-                                controls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
-                                    .transition(.move(edge: .bottom))
+                                readerControls(bottomSafeAreaInset: proxy.safeAreaInsets.bottom)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -776,57 +759,46 @@ struct ReaderScreen: View {
         }
     }
 
-    private func controls(bottomSafeAreaInset: CGFloat) -> some View {
-        let pageCount = max(urls.count, 1)
-        let displayedPage = min(currentPage + 1, pageCount)
-        let sliderUpperBound = Double(max(pageCount, 2))
+    private func readerControls(bottomSafeAreaInset: CGFloat) -> some View {
+        HStack {
+            chapterButton(
+                systemImage: "chevron.left.to.line", label: "previousChapter",
+                enabled: previousChapterAvailability == .available
+            ) { stepChapter(.previous) }
 
-        return VStack(spacing: 10) {
-            HStack {
-                controlButton(
-                    systemImage: "chevron.left.to.line", label: "previousChapter",
-                    enabled: previousChapterAvailability == .available
-                ) { stepChapter(.previous) }
+            readerSlider
 
-                controlButton(
-                    systemImage: "chevron.left", label: "previousPage",
-                    enabled: canStepGroup(.previous)
-                ) { stepGroup(.previous) }
-
-                Button {
-                    isShowingChapters = true
-                } label: {
-                    Text(verbatim: "\(displayedPage) / \(pageCount)").frame(minWidth: 72)
-                }
-                .buttonStyle(.plain).foregroundStyle(Color.accentColor)
-
-                controlButton(
-                    systemImage: "chevron.right", label: "nextPage", enabled: canStepGroup(.next)
-                ) { stepGroup(.next) }
-
-                controlButton(
-                    systemImage: "chevron.right.to.line", label: "nextChapter",
-                    enabled: nextChapterAvailability == .available
-                ) { stepChapter(.next) }
-            }
-
-            Slider(
-                value: Binding(
-                    get: { Double(displayedPage) },
-                    set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
-                in: 1...sliderUpperBound, step: 1
-            )
-            .disabled(urls.count <= 1)
+            chapterButton(
+                systemImage: "chevron.right.to.line", label: "nextChapter",
+                enabled: nextChapterAvailability == .available
+            ) { stepChapter(.next) }
         }
-        .modifier(ReaderControlsBackgroundModifier(bottomSafeAreaInset: bottomSafeAreaInset))
-        .contentShape(Rectangle()).ignoresSafeArea(edges: .bottom)
+        .padding(.horizontal, 16).padding(.bottom, max(8, bottomSafeAreaInset))
     }
 
-    private func controlButton(
+    private var readerSlider: some View {
+        let pageCount = max(urls.count, 1)
+        let displayedPage = min(currentPage + 1, pageCount)
+
+        return BooksSlider(
+            value: Binding(
+                get: { Double(displayedPage) },
+                set: { requestPage(Int($0.rounded()) - 1, animated: false) }),
+            bounds: 1...Double(pageCount), step: 1, canScrub: urls.count > 1,
+            previewTitle: currentChapter.map { $0.title ?? $0.id },
+            action: { isShowingChapters = true }
+        )
+        .frame(minWidth: 200, idealWidth: 240, maxWidth: 420)
+    }
+
+    private func chapterButton(
         systemImage: String, label: LocalizedStringKey, enabled: Bool, action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) { Image(systemName: systemImage).frame(minWidth: 44, minHeight: 32) }
-            .buttonStyle(.plain).disabled(!enabled).foregroundStyle(Color.accentColor)
+        Button(action: action) {
+            Label(label, systemImage: systemImage).labelStyle(.iconOnly)
+                .frame(width: 44, height: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain).adaptiveGlassBackground(in: Circle()).disabled(!enabled).zIndex(2)
     }
 
     private func chapterAvailability(at index: Int) -> ReaderChapterAvailability {

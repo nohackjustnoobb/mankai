@@ -7,6 +7,18 @@
 
 import SwiftUI
 
+struct AdaptiveGlassBackgroundModifier<BackgroundShape: Shape>: ViewModifier {
+    let shape: BackgroundShape
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: shape)
+        } else {
+            content.background(.regularMaterial, in: shape)
+        }
+    }
+}
+
 struct ToolbarIcon: View {
     let systemName: String
     let legacySystemName: String
@@ -57,6 +69,10 @@ private struct NavigationSubtitleIfAvailableModifier: ViewModifier {
 }
 
 extension View {
+    func adaptiveGlassBackground<BackgroundShape: Shape>(in shape: BackgroundShape) -> some View {
+        modifier(AdaptiveGlassBackgroundModifier(shape: shape))
+    }
+
     func navigationSubtitleIfAvailable(_ subtitle: Text?) -> some View {
         modifier(NavigationSubtitleIfAvailableModifier(subtitle: subtitle))
     }
