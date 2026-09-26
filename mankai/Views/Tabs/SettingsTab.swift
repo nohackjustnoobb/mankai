@@ -29,6 +29,11 @@ struct SettingsTab: View {
                         Label("reader", systemImage: "book.pages.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .orange))
                     }
+
+                    NavigationLink(destination: ImageProcessorSettingsScreen()) {
+                        Label("imageProcessing", systemImage: "photo.on.rectangle.angled.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .purple))
+                    }
                 }
 
                 Section("libraryAndData") {

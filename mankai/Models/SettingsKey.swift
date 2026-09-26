@@ -11,8 +11,6 @@ enum SettingsKey: String {
     case isDuo
     case hideBuiltInPlugins
     case showDebugScreen
-    case downsampleImages
-    case downsampleAggressiveness
     case checkClipboard
     case browseViewMode
     case accentColor
@@ -25,8 +23,6 @@ enum SettingsKey: String {
     case readerType
     case imageLayout
     case respectMangaReadingDirection
-    case imageUpscaling
-    case upscaleThreshold
     case smartGrouping
     case smartGroupingSensitivity
     case showCoverOnExternalDisplay

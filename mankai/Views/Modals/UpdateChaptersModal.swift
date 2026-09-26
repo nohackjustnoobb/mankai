@@ -20,6 +20,8 @@ struct UpdateChaptersModal: View {
     @State private var newChapterName = ""
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
+    @State private var showingDeleteConfirmation = false
+    @State private var chapterIdsToDelete: [String] = []
 
     @State private var chapterGroupId: String? = nil
 
@@ -68,22 +70,6 @@ struct UpdateChaptersModal: View {
         }
     }
 
-    private func deleteChapter(at offsets: IndexSet) {
-        let chaptersToDelete = offsets.map { chapters[$0] }
-        chapters.remove(atOffsets: offsets)
-
-        Task {
-            do {
-                for chapter in chaptersToDelete { try await plugin.deleteChapter(id: chapter.id) }
-
-                fetchChapters()
-            } catch {
-                errorMessage = error.localizedDescription
-                showingErrorAlert = true
-            }
-        }
-    }
-
     private func renameChapter(for chapterId: String, to newTitle: String) {
         Task {
             do {
@@ -115,7 +101,11 @@ struct UpdateChaptersModal: View {
                     }) { Text(chapter.title ?? chapter.id).foregroundColor(.primary) }
                     .padding(.horizontal, 20)
                 }
-                .onMove(perform: moveChapter).onDelete(perform: deleteChapter)
+                .onMove(perform: moveChapter)
+                .onDelete { offsets in
+                    chapterIdsToDelete = offsets.map { chapters[$0].id }
+                    showingDeleteConfirmation = true
+                }
             } header: {
                 Text("editChaptersInstructions").font(.caption).textCase(.none)
                     .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.bottom)
@@ -171,6 +161,27 @@ struct UpdateChaptersModal: View {
             Button("ok") {}
         } message: {
             Text(errorMessage)
+        }
+        .confirmationDialog(
+            "delete", isPresented: $showingDeleteConfirmation, titleVisibility: .visible
+        ) {
+            Button("delete", role: .destructive) {
+                let idsToDelete = chapterIdsToDelete
+                chapterIdsToDelete = []
+                chapters.removeAll { idsToDelete.contains($0.id) }
+                Task {
+                    do {
+                        for id in idsToDelete { try await plugin.deleteChapter(id: id) }
+                        fetchChapters()
+                    } catch {
+                        errorMessage = error.localizedDescription
+                        showingErrorAlert = true
+                    }
+                }
+            }
+            Button("cancel", role: .cancel) { chapterIdsToDelete = [] }
+        } message: {
+            Text("deleteChaptersConfirmation")
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitleWithSubtitle(

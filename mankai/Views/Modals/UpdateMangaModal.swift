@@ -40,6 +40,10 @@ struct UpdateMangaContent: View {
 
     @State private var showingAddAuthorAlert = false
     @State private var newAuthorName = ""
+    @State private var showingRemoveAuthorsConfirmation = false
+    @State private var authorsToRemove: [String] = []
+    @State private var showingRemoveGenresConfirmation = false
+    @State private var genresToRemove: [Genre] = []
     @State private var showingAddChapterGroupAlert = false
     @State private var newChapterGroup = ""
     @State private var showingRemoveChapterGroupAlert = false
@@ -119,6 +123,21 @@ struct UpdateMangaContent: View {
             showingErrorAlert = true
             isProcessing = false
         }
+    }
+
+    private func requestRemoveAuthors(_ authors: [String]) {
+        authorsToRemove = authors
+        showingRemoveAuthorsConfirmation = true
+    }
+
+    private func requestRemoveGenres(_ genres: [Genre]) {
+        genresToRemove = genres
+        showingRemoveGenresConfirmation = true
+    }
+
+    private func requestRemoveChapterGroup(at index: Int) {
+        chapterGroupIndexToRemove = index
+        showingRemoveChapterGroupAlert = true
     }
 
     private func deleteChapterGroup() async {
@@ -273,18 +292,14 @@ struct UpdateMangaContent: View {
                             Text(author)
                             Spacer()
 
-                            Button(action: { manga.authors.removeAll { $0 == author } }) {
+                            Button {
+                                requestRemoveAuthors([author])
+                            } label: {
                                 Image(systemName: "minus.circle.fill").foregroundColor(.red)
                             }
                         }
-                        .swipeActions(allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                manga.authors.removeAll { $0 == author }
-                            } label: {
-                                Label("remove", systemImage: "trash")
-                            }
-                        }
                     }
+                    .onDelete { offsets in requestRemoveAuthors(offsets.map { manga.authors[$0] }) }
                 }
 
                 Button(action: { showingAddAuthorAlert = true }) {
@@ -294,6 +309,17 @@ struct UpdateMangaContent: View {
                     }
                 }
             }
+            .confirmationDialog(
+                "remove", isPresented: $showingRemoveAuthorsConfirmation, titleVisibility: .visible
+            ) {
+                Button("remove", role: .destructive) {
+                    manga.authors.removeAll { authorsToRemove.contains($0) }
+                    authorsToRemove = []
+                }
+                Button("cancel", role: .cancel) { authorsToRemove = [] }
+            } message: {
+                Text("removeAuthorsConfirmation")
+            }
 
             Section("genres") {
                 if !manga.genres.isEmpty {
@@ -302,18 +328,14 @@ struct UpdateMangaContent: View {
                             Text(LocalizedStringKey(genre.rawValue))
                             Spacer()
 
-                            Button(action: { manga.genres.removeAll { $0 == genre } }) {
+                            Button {
+                                requestRemoveGenres([genre])
+                            } label: {
                                 Image(systemName: "minus.circle.fill").foregroundColor(.red)
                             }
                         }
-                        .swipeActions(allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                manga.genres.removeAll { $0 == genre }
-                            } label: {
-                                Label("remove", systemImage: "trash")
-                            }
-                        }
                     }
+                    .onDelete { offsets in requestRemoveGenres(offsets.map { manga.genres[$0] }) }
                 }
 
                 Menu {
@@ -334,6 +356,17 @@ struct UpdateMangaContent: View {
                 }
                 .disabled(manga.genres.count >= Genre.allCases.count - 1)
             }
+            .confirmationDialog(
+                "remove", isPresented: $showingRemoveGenresConfirmation, titleVisibility: .visible
+            ) {
+                Button("remove", role: .destructive) {
+                    manga.genres.removeAll { genresToRemove.contains($0) }
+                    genresToRemove = []
+                }
+                Button("cancel", role: .cancel) { genresToRemove = [] }
+            } message: {
+                Text("removeGenresConfirmation")
+            }
 
             if !isCreatingManga {
                 Section("chapterGroups") {
@@ -344,19 +377,16 @@ struct UpdateMangaContent: View {
                                 Text(LocalizedStringKey(chapterGroup.title))
                                 Spacer()
 
-                                Button(action: {
-                                    chapterGroupIndexToRemove = chapterGroupIndex
-                                    showingRemoveChapterGroupAlert = true
-                                }) { Image(systemName: "minus.circle.fill").foregroundColor(.red) }
-                            }
-                            .swipeActions(allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    chapterGroupIndexToRemove = chapterGroupIndex
-                                    showingRemoveChapterGroupAlert = true
+                                Button {
+                                    requestRemoveChapterGroup(at: chapterGroupIndex)
                                 } label: {
-                                    Label("remove", systemImage: "trash")
+                                    Image(systemName: "minus.circle.fill").foregroundColor(.red)
                                 }
                             }
+                        }
+                        .onDelete { offsets in
+                            guard let index = offsets.first else { return }
+                            requestRemoveChapterGroup(at: index)
                         }
                     }
 

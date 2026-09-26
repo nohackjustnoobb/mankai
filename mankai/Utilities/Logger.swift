@@ -20,6 +20,7 @@ enum LogCategory: String {
     case syncService = "SyncService"
     case downloadService = "DownloadService"
     case browseService = "BrowseService"
+    case imageProcessingService = "ImageProcessingService"
 
     // UI
     case ui = "UI"
@@ -182,6 +183,7 @@ extension Logger {
     static let syncService = Logger(category: .syncService)
     static let downloadService = Logger(category: .downloadService)
     static let browseService = Logger(category: .browseService)
+    static let imageProcessingService = Logger(category: .imageProcessingService)
 
     // UI
     static let ui = Logger(category: .ui)

@@ -22,6 +22,8 @@ struct UpdateChapterModal: View {
     @State private var showingErrorAlert = false
     @State private var errorTitle = ""
     @State private var errorMessage = ""
+    @State private var showingDeleteConfirmation = false
+    @State private var imageIdsToDelete: [String] = []
 
     private func showError(title: String, message: String) {
         errorTitle = title
@@ -87,24 +89,6 @@ struct UpdateChapterModal: View {
         }
     }
 
-    private func deleteImage(at offsets: IndexSet) {
-        guard let urls = urls else { return }
-        let idsToRemove: [String] = offsets.map { idx in
-            URL(fileURLWithPath: urls[idx]).deletingPathExtension().lastPathComponent
-        }
-
-        Task {
-            do {
-                try await plugin.deleteImages(ids: idsToRemove)
-                loadUrls()
-            } catch {
-                showError(
-                    title: String(localized: "failedToRemoveImages"),
-                    message: error.localizedDescription)
-            }
-        }
-    }
-
     private func addSelectedImages() {
         guard !selectedItems.isEmpty else { return }
 
@@ -158,7 +142,14 @@ struct UpdateChapterModal: View {
                             }
                         }
                     }
-                    .onMove(perform: moveImage).onDelete(perform: deleteImage)
+                    .onMove(perform: moveImage)
+                    .onDelete { offsets in
+                        imageIdsToDelete = offsets.map { idx in
+                            URL(fileURLWithPath: urls[idx]).deletingPathExtension()
+                                .lastPathComponent
+                        }
+                        showingDeleteConfirmation = true
+                    }
                 } header: {
                     Text("editChaptersInstructions").font(.caption).textCase(.none)
                         .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.bottom)
@@ -191,6 +182,27 @@ struct UpdateChapterModal: View {
                     Button(action: showRenameAlert) { Image(systemName: "pencil") }
                 }
             }
+        }
+        .confirmationDialog(
+            "delete", isPresented: $showingDeleteConfirmation, titleVisibility: .visible
+        ) {
+            Button("delete", role: .destructive) {
+                let idsToRemove = imageIdsToDelete
+                imageIdsToDelete = []
+                Task {
+                    do {
+                        try await plugin.deleteImages(ids: idsToRemove)
+                        loadUrls()
+                    } catch {
+                        showError(
+                            title: String(localized: "failedToRemoveImages"),
+                            message: error.localizedDescription)
+                    }
+                }
+            }
+            Button("cancel", role: .cancel) { imageIdsToDelete = [] }
+        } message: {
+            Text("deleteImagesConfirmation")
         }
         .alert(Text("editChapterTitle"), isPresented: $showingTitleAlert) {
             TextField("chapterTitle", text: $newTitle)

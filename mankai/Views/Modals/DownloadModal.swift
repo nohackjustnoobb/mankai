@@ -37,14 +37,13 @@ struct DownloadModal: View {
                             Section {
                                 ForEach(downloadedMangas) { manga in
                                     DownloadedMangaRow(manga: manga, navigate: navigate)
-                                        .swipeActions(allowsFullSwipe: false) {
-                                            Button(role: .destructive) {
-                                                mangaToDelete = manga
-                                                showDeleteConfirmation = true
-                                            } label: {
-                                                Label("remove", systemImage: "trash")
-                                            }
-                                        }
+                                }
+                                .onDelete { offsets in
+                                    guard let index = offsets.first,
+                                        downloadedMangas.indices.contains(index)
+                                    else { return }
+                                    mangaToDelete = downloadedMangas[index]
+                                    showDeleteConfirmation = true
                                 }
                             } header: {
                                 Text("downloaded")
@@ -57,7 +56,9 @@ struct DownloadModal: View {
                         "deleteManga", isPresented: $showDeleteConfirmation,
                         titleVisibility: .visible, presenting: mangaToDelete
                     ) { manga in
-                        Button("remove", role: .destructive) { deleteManga(manga) }
+                        Button("remove", role: .destructive) {
+                            Task { try? await downloadPlugin.deleteManga(manga) }
+                        }
                         Button("cancel", role: .cancel) {}
                     } message: { _ in
                         Text("deleteMangaConfirmation")
@@ -90,9 +91,6 @@ struct DownloadModal: View {
         }
     }
 
-    func deleteManga(_ manga: DetailedManga) {
-        Task { try? await downloadPlugin.deleteManga(manga) }
-    }
 }
 
 struct DownloadedMangaRow: View {

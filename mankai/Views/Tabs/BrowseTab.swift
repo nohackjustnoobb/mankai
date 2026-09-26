@@ -34,24 +34,25 @@ struct BrowseTab: View {
                             }
                             .labelStyle(ColorfulIconLabelStyle(color: plugin.color))
                         }
-                        .swipeActions(allowsFullSwipe: false) {
+                        .deleteDisabled(plugin is AppDirBrowsablePlugin)
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
                             if !(plugin is AppDirBrowsablePlugin) {
-                                Button(role: .destructive) {
-                                    pluginPendingDeletion = plugin
-                                } label: {
-                                    Label("remove", systemImage: "trash")
-                                }
-                                .labelStyle(.iconOnly)
-
                                 Button {
                                     editDestinationPluginId = plugin.id
                                 } label: {
                                     Label("edit", systemImage: "pencil")
                                 }
                                 .tint(.blue).labelStyle(.iconOnly)
-
                             }
                         }
+                    }
+                    .onDelete { offsets in
+                        guard let index = offsets.first,
+                            browseService.plugins.indices.contains(index)
+                        else { return }
+                        let plugin = browseService.plugins[index]
+                        guard !(plugin is AppDirBrowsablePlugin) else { return }
+                        pluginPendingDeletion = plugin
                     }
 
                     Button {

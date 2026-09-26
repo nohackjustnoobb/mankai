@@ -10,6 +10,7 @@ import Foundation
 enum MankaiErrorDomain: String {
     case readerAdjacency = "app.mankai.reader.adjacency"
     case readerUpscaling = "app.mankai.reader.upscaling"
+    case imageProcessing = "app.mankai.image.processing"
     case auth = "app.mankai.auth"
     case browse = "app.mankai.browse"
     case browseArchive = "app.mankai.browse.archive"
@@ -37,8 +38,9 @@ enum MankaiErrorDomain: String {
     case update = "app.mankai.update"
 
     var codePrefix: Int {
-        switch self { case .readerAdjacency: return 10 case .readerUpscaling: return 11 case .auth:
-            return 20
+        switch self { case .readerAdjacency: return 10 case .readerUpscaling: return 11
+            case .imageProcessing: return 12
+            case .auth: return 20
             case .browse: return 29
             case .browseArchive: return 30
             case .browseFilesystem: return 31
@@ -84,6 +86,15 @@ enum MankaiErrorCode: CaseIterable, Hashable {
     case readerUpscalingInvalidInputImage
     case readerUpscalingFailedToCreatePixelBuffer
     case readerUpscalingInvalidTileContext
+    case imageProcessingDatabaseNotAvailable
+    case imageProcessingFailedToLoad
+    case imageProcessingFailedToSave
+    case imageProcessingUnknownProcessorType
+    case imageProcessingInvalidConfiguration
+    case imageProcessingInvalidOrder
+    case imageProcessingInvalidInputImage
+    case imageProcessingFailed
+    case imageProcessingFailedToRender
 
     case authMissingCredentialsOrServerUrl
     case authInvalidServerUrl
@@ -203,6 +214,24 @@ enum MankaiErrorCode: CaseIterable, Hashable {
             domain: .readerUpscaling, code: 2, messageKey: "failedToCreatePixelBuffer"),
         .readerUpscalingInvalidTileContext: .init(
             domain: .readerUpscaling, code: 3, messageKey: "invalidTileContext"),
+        .imageProcessingDatabaseNotAvailable: .init(
+            domain: .imageProcessing, code: 1, messageKey: "databaseNotAvailable"),
+        .imageProcessingFailedToLoad: .init(
+            domain: .imageProcessing, code: 2, messageKey: "failedToLoadImageProcessors"),
+        .imageProcessingFailedToSave: .init(
+            domain: .imageProcessing, code: 3, messageKey: "failedToSaveImageProcessor"),
+        .imageProcessingUnknownProcessorType: .init(
+            domain: .imageProcessing, code: 4, messageKey: "unknownImageProcessorType"),
+        .imageProcessingInvalidConfiguration: .init(
+            domain: .imageProcessing, code: 5, messageKey: "invalidImageProcessorConfiguration"),
+        .imageProcessingInvalidOrder: .init(
+            domain: .imageProcessing, code: 6, messageKey: "invalidImageProcessorOrder"),
+        .imageProcessingInvalidInputImage: .init(
+            domain: .imageProcessing, code: 7, messageKey: "invalidInputImage"),
+        .imageProcessingFailed: .init(
+            domain: .imageProcessing, code: 8, messageKey: "imageProcessingFailed"),
+        .imageProcessingFailedToRender: .init(
+            domain: .imageProcessing, code: 9, messageKey: "failedToRenderImage"),
 
         .authMissingCredentialsOrServerUrl: .init(
             domain: .auth, code: 1, messageKey: "missingCredentialsOrServerUrl"),

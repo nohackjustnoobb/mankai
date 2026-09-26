@@ -39,6 +39,23 @@ import GRDB
                 try SavedModel.createTable(db)
                 try RecordModel.createTable(db)
 
+                let hasImageProcessorTable = try db.tableExists(
+                    ImageProcessorModel.databaseTableName)
+                try ImageProcessorModel.createTable(db)
+
+                if !hasImageProcessorTable {
+                    let defaults: [(processor: any ImageProcessor, isEnabled: Bool)] = [
+                        (UpscalingImageProcessor.defaultProcessor, false),
+                        (DownsampleImageProcessor.defaultProcessor, true)
+                    ]
+                    for (order, entry) in defaults.enumerated() {
+                        let model = try entry.processor.encode(
+                            id: UUID().uuidString, order: order, isEnabled: entry.isEnabled)
+                        try model.insert(db)
+                    }
+                    Logger.dbService.info("Added default image processors")
+                }
+
                 try JsPluginModel.createTable(db)
                 try JsRuntimeKvPairModel.createTable(db)
 

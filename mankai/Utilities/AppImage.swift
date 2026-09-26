@@ -9,7 +9,7 @@ import Combine
 import CoreImage
 import UIKit
 
-/// A reader image that displays its source immediately, then publishes a processed replacement.
+/// A reader image that publishes a processed replacement when needed.
 @MainActor final class AppImage: ObservableObject {
     enum SlideEdge {
         case left
@@ -19,10 +19,6 @@ import UIKit
     nonisolated private static let sourceSlideWidth = SmartGrouping.inputSize.width
     nonisolated private static let outputSlideSize = CGSize(
         width: SmartGrouping.inputSize.width / 2, height: SmartGrouping.inputSize.height)
-    nonisolated private static let upscalingTileContext = 16
-    nonisolated private static let renderingContext = CIContext(options: [
-        .cacheIntermediates: false
-    ])
 
     @Published private(set) var image: UIImage
     @Published private(set) var isProcessingFinished = false
@@ -35,13 +31,16 @@ import UIKit
     var size: CGSize { image.size }
 
     static func load(data: Data) async -> AppImage? {
-        let image = await Task.detached(priority: .userInitiated) { UIImage(data: data) }.value
-        guard let image else { return nil }
-        return AppImage(image: image, data: data)
+        guard let prepared = await ImageProcessingService.shared.load(data: data) else {
+            return nil
+        }
+        return AppImage(image: prepared.image, data: data, processingTask: prepared.processingTask)
     }
 
-    private init(image: UIImage, data: Data) {
+    private init(image: UIImage, data: Data, processingTask: Task<UIImage?, Never>?) {
         self.image = image
+        self.processingTask = processingTask
+        isProcessingFinished = processingTask == nil
 
         slideTask = Task.detached(priority: .utility) {
             guard !Task.isCancelled,
@@ -51,48 +50,14 @@ import UIKit
             return Self.makeSlides(from: image)
         }
 
-        let processingTask: Task<UIImage?, Never> = Task.detached(priority: .utility) {
-            let processors = await Self.makeProcessors()
-            guard !processors.isEmpty,
-                var processedImage = CIImage(data: data, options: [.applyOrientationProperty: true])
-            else { return nil }
+        if let processingTask {
+            Task { @MainActor [weak self] in
+                let processedImage = await processingTask.value
+                guard !processingTask.isCancelled, let self else { return }
 
-            Logger.ui.debug(
-                "Processing reader image at \(Int(processedImage.extent.width))x\(Int(processedImage.extent.height))"
-            )
-
-            do {
-                for processor in processors {
-                    processedImage = try await processor.process(image: processedImage)
-                    try Task.checkCancellation()
-                }
-            } catch is CancellationError { return nil } catch {
-                Logger.ui.error("Failed to process reader image", error: error)
-                return nil
+                if let processedImage { self.image = processedImage }
+                isProcessingFinished = true
             }
-
-            Logger.ui.debug(
-                "Processed reader image to \(Int(processedImage.extent.width))x\(Int(processedImage.extent.height))"
-            )
-
-            guard
-                let renderedImage = Self.renderingContext.createCGImage(
-                    processedImage, from: processedImage.extent.integral)
-            else {
-                Logger.ui.error("Failed to render processed reader image")
-                return nil
-            }
-
-            return UIImage(cgImage: renderedImage)
-        }
-        self.processingTask = processingTask
-
-        Task { @MainActor [weak self] in
-            let processedImage = await processingTask.value
-            guard !processingTask.isCancelled, let self else { return }
-
-            if let processedImage { self.image = processedImage }
-            isProcessingFinished = true
         }
     }
 
@@ -158,39 +123,6 @@ import UIKit
 
         return image.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
             .cropped(to: CGRect(origin: .zero, size: outputSlideSize))
-    }
-
-    private static func makeProcessors() -> [any ImageProcessor] {
-        let shouldUpscale =
-            (UserDefaults.standard.object(forKey: SettingsKey.imageUpscaling.rawValue) as? Bool)
-            ?? SettingsDefaults.imageUpscaling
-        let upscaleThreshold =
-            (UserDefaults.standard.object(forKey: SettingsKey.upscaleThreshold.rawValue) as? Double)
-            ?? SettingsDefaults.upscaleThreshold
-        let shouldDownsample =
-            (UserDefaults.standard.object(forKey: SettingsKey.downsampleImages.rawValue) as? Bool)
-            ?? SettingsDefaults.downsampleImages
-        let downsampleAggressiveness =
-            (UserDefaults.standard.object(forKey: SettingsKey.downsampleAggressiveness.rawValue)
-                as? Double) ?? SettingsDefaults.downsampleAggressiveness
-        let pointSize = UIApplication.windowBounds.size
-
-        var processors: [any ImageProcessor] = []
-
-        if shouldUpscale {
-            processors.append(
-                UpscalingImageProcessor(
-                    context: upscalingTileContext, pointSize: pointSize, threshold: upscaleThreshold
-                ))
-        }
-
-        if shouldDownsample {
-            processors.append(
-                DownsampleImageProcessor(
-                    pointSize: pointSize, aggressiveness: downsampleAggressiveness))
-        }
-
-        return processors
     }
 
 }
