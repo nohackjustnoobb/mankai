@@ -6401,6 +6401,34 @@
         }
       }
     },
+    "imageProcessingDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Customize reader images by adding, ordering, and configuring image processors."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像プロセッサを追加、並べ替え、設定して、リーダーの画像を調整します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加、排序和配置图片处理器，自定义阅读器中的图片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增、排序和設定圖片處理器，自訂閱讀器中的圖片。"
+          }
+        }
+      }
+    },
     "imageProcessingFailed" : {
       "localizations" : {
         "en" : {
@@ -6425,6 +6453,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法處理圖片。"
+          }
+        }
+      }
+    },
+    "imageProcessor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Processor"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像プロセッサ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片处理器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片處理器"
           }
         }
       }
@@ -6481,34 +6537,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚無圖片處理器"
-          }
-        }
-      }
-    },
-    "imageProcessorEnabled" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Processor enabled"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "処理を有効にする"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "启用处理器"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "啟用處理器"
           }
         }
       }
@@ -11941,6 +11969,34 @@
         }
       }
     },
+    "removeFoldersConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove the selected folders?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したフォルダを削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除所选文件夹吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除所選資料夾嗎？"
+          }
+        }
+      }
+    },
     "removeGenresConfirmation" : {
       "localizations" : {
         "en" : {
@@ -12049,6 +12105,34 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你確定要移除這個外掛模組嗎？"
+          }
+        }
+      }
+    },
+    "removePluginsConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove the selected plugins?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択したプラグインを削除してもよろしいですか？"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你确定要移除所选插件吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除所選外掛模組嗎？"
           }
         }
       }

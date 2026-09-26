@@ -10,6 +10,9 @@ import SwiftUI
 struct FolderSettingsScreen: View {
     @ObservedObject private var browseService = BrowseService.shared
     @State private var showingAddFolderModal = false
+    @State private var showingRemoveConfirmation = false
+    @State private var folderIdsToRemove: [String] = []
+    @State private var errorMessage: String?
 
     var body: some View {
         List {
@@ -39,9 +42,21 @@ struct FolderSettingsScreen: View {
                     }
                     .labelStyle(ColorfulIconLabelStyle(color: plugin.color))
                 }
+                .deleteDisabled(plugin is AppDirBrowsablePlugin)
+            }
+            .onDelete { offsets in
+                let plugins = browseService.plugins
+                folderIdsToRemove = offsets.compactMap { index in
+                    let plugin = plugins[index]
+                    return plugin is AppDirBrowsablePlugin ? nil : plugin.id
+                }
+                showingRemoveConfirmation = !folderIdsToRemove.isEmpty
             }
         }
         .toolbar {
+            if browseService.plugins.contains(where: { !($0 is AppDirBrowsablePlugin) }) {
+                ToolbarItem(placement: .topBarTrailing) { EditButton() }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showingAddFolderModal = true
@@ -52,6 +67,36 @@ struct FolderSettingsScreen: View {
         }
         .navigationTitle("folders").navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingAddFolderModal) { AddBrowsableFolderModal() }
+        .confirmationDialog(
+            "removeFolder", isPresented: $showingRemoveConfirmation, titleVisibility: .visible
+        ) {
+            Button("remove", role: .destructive) {
+                let ids = folderIdsToRemove
+                folderIdsToRemove = []
+                for id in ids {
+                    do { try browseService.removePlugin(id) } catch {
+                        errorMessage = error.localizedDescription
+                        break
+                    }
+                }
+            }
+            Button("cancel", role: .cancel) { folderIdsToRemove = [] }
+        } message: {
+            if folderIdsToRemove.count == 1 {
+                Text("removeFolderConfirmation")
+            } else {
+                Text("removeFoldersConfirmation")
+            }
+        }
+        .alert(
+            "failedToRemovePlugin",
+            isPresented: Binding(
+                get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
+        ) {
+            Button("ok", role: .cancel) { errorMessage = nil }
+        } message: {
+            if let errorMessage { Text(errorMessage) }
+        }
     }
 }
 

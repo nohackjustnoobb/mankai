@@ -1,6 +1,14 @@
+//
+//  ImageProcessorSettingsScreen.swift
+//  mankai
+//
+//  Created by Travis XU on 26/9/2026.
+//
+
 import SwiftUI
 
 struct ImageProcessorSettingsScreen: View {
+    @Environment(\.editMode) private var editMode
     @ObservedObject private var service = ImageProcessingService.shared
     @State private var showingAdd = false
     @State private var showingDeleteConfirmation = false
@@ -8,6 +16,11 @@ struct ImageProcessorSettingsScreen: View {
 
     var body: some View {
         List {
+            SettingsHeaderView(
+                image: Image(systemName: "photo.on.rectangle.angled.fill"), color: .purple,
+                title: String(localized: "imageProcessing"),
+                description: String(localized: "imageProcessingDescription"))
+
             if service.processors.isEmpty {
                 ContentUnavailableView(
                     "imageProcessorEmptyTitle", systemImage: "photo.on.rectangle.angled",
@@ -16,24 +29,28 @@ struct ImageProcessorSettingsScreen: View {
                 Section {
                     ForEach(service.processors, id: \.id) { model in
                         HStack {
-                            NavigationLink {
-                                ImageProcessorConfigurationScreen(id: model.id)
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(model.titleKey)
-                                    Text(model.descriptionKey).font(.caption)
-                                        .foregroundColor(.secondary)
+                            if editMode?.wrappedValue.isEditing == true {
+                                Text(model.titleKey)
+                            } else {
+                                NavigationLink {
+                                    ImageProcessorConfigurationScreen(id: model.id)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(model.titleKey)
+                                        Text(model.descriptionKey).font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
-                            }
 
-                            Toggle(
-                                isOn: Binding(
-                                    get: {
-                                        service.processors.first(where: { $0.id == model.id })?
-                                            .isEnabled ?? false
-                                    }, set: { service.setEnabled($0, for: model.id) })
-                            ) { Text(model.titleKey) }
-                            .labelsHidden()
+                                Toggle(
+                                    isOn: Binding(
+                                        get: {
+                                            service.processors.first(where: { $0.id == model.id })?
+                                                .isEnabled ?? false
+                                        }, set: { service.setEnabled($0, for: model.id) })
+                                ) { Text(model.titleKey) }
+                                .labelsHidden()
+                            }
                         }
                     }
                     .onMove { source, destination in
@@ -46,7 +63,7 @@ struct ImageProcessorSettingsScreen: View {
                         showingDeleteConfirmation = true
                     }
                 } header: {
-                    Text("imageProcessing")
+                    Text("imageProcessor")
                 } footer: {
                     Text("imageProcessorOrderHint")
                 }
@@ -57,11 +74,11 @@ struct ImageProcessorSettingsScreen: View {
             if !service.processors.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) { EditButton() }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button {
                     showingAdd = true
                 } label: {
-                    Image(systemName: "plus")
+                    ToolbarIcon(systemName: "plus", legacySystemName: "plus.circle")
                 }
             }
         }
@@ -77,144 +94,6 @@ struct ImageProcessorSettingsScreen: View {
         } message: {
             Text("removeImageProcessorsConfirmation")
         }
-        .alert(
-            "error",
-            isPresented: Binding(
-                get: { service.errorMessage != nil }, set: { if !$0 { service.errorMessage = nil } }
-            )
-        ) {
-            Button("ok", role: .cancel) { service.errorMessage = nil }
-        } message: {
-            Text(service.errorMessage ?? "")
-        }
-    }
-}
-
-private struct AddImageProcessorModal: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var service = ImageProcessingService.shared
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Button {
-                    if service.add(UpscalingImageProcessor.defaultProcessor) { dismiss() }
-                } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(UpscalingImageProcessor.titleKey)
-                        Text(UpscalingImageProcessor.descriptionKey).font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Button {
-                    if service.add(DownsampleImageProcessor.defaultProcessor) { dismiss() }
-                } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(DownsampleImageProcessor.titleKey)
-                        Text(DownsampleImageProcessor.descriptionKey).font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            .buttonStyle(.plain).navigationTitle("addImageProcessor")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("cancel") { dismiss() } }
-            }
-            .alert(
-                "error",
-                isPresented: Binding(
-                    get: { service.errorMessage != nil },
-                    set: { if !$0 { service.errorMessage = nil } })
-            ) {
-                Button("ok", role: .cancel) { service.errorMessage = nil }
-            } message: {
-                Text(service.errorMessage ?? "")
-            }
-        }
-    }
-}
-
-private struct ImageProcessorConfigurationScreen: View {
-    let id: String
-    @ObservedObject private var service = ImageProcessingService.shared
-
-    private var model: ImageProcessorInstance? { service.processors.first(where: { $0.id == id }) }
-
-    var body: some View {
-        Form {
-            if let model {
-                Section {
-                    Toggle(
-                        "imageProcessorEnabled",
-                        isOn: Binding(
-                            get: {
-                                service.processors.first(where: { $0.id == id })?.isEnabled ?? false
-                            }, set: { service.setEnabled($0, for: id) }))
-                }
-
-                if model.type == UpscalingImageProcessor.type,
-                    let processor = service.processor(id: id, as: UpscalingImageProcessor.self)
-                {
-                    Section("imageUpscaling") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("upscaleSensitivity")
-                                Spacer()
-                                Text(processor.sensitivityLabel).foregroundStyle(.secondary)
-                            }
-                            Slider(
-                                value: Binding(
-                                    get: {
-                                        service.processor(id: id, as: UpscalingImageProcessor.self)?
-                                            .threshold ?? processor.threshold
-                                    },
-                                    set: {
-                                        service.update(
-                                            id: id,
-                                            processor: UpscalingImageProcessor(
-                                                context: processor.context, threshold: $0))
-                                    }), in: 0.5...2.5, step: 0.5)
-                            Text("upscaleSensitivityDescription").font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } else if model.type == DownsampleImageProcessor.type,
-                    let processor = service.processor(id: id, as: DownsampleImageProcessor.self)
-                {
-                    Section("downsampleImages") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text("downsampleMemorySavings")
-                                Spacer()
-                                Text(processor.memorySavingsLabel).foregroundStyle(.secondary)
-                            }
-                            Slider(
-                                value: Binding(
-                                    get: {
-                                        service.processor(
-                                            id: id, as: DownsampleImageProcessor.self)?
-                                            .aggressiveness ?? processor.aggressiveness
-                                    },
-                                    set: {
-                                        service.update(
-                                            id: id,
-                                            processor: DownsampleImageProcessor(aggressiveness: $0))
-                                    }), in: 0...1, step: 0.5)
-                            Text("downsampleMemorySavingsDescription").font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } else {
-                    Text("imageProcessorNoSettings").foregroundStyle(.secondary)
-                }
-            } else {
-                ContentUnavailableView("imageProcessorRemoved", systemImage: "slider.horizontal.3")
-            }
-        }
-        .navigationTitle(Text(model?.titleKey ?? "imageProcessing"))
-        .navigationBarTitleDisplayMode(.inline)
         .alert(
             "error",
             isPresented: Binding(
